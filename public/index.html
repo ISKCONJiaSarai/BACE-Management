@@ -1234,7 +1234,7 @@ const ICONS={
 const ic=(n,c='')=>`<svg class="${c}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="${ICONS[n]||ICONS.grid}"/></svg>`;
 const av=(name,size='s')=>`<span class="av ${size}" style="background:${avc(name||'?')}">${initials(name||'?')}</span>`;
 const badge=(txt,tone='grey')=>`<span class="badge b-${tone}">${esc(txt)}</span>`;
-const TONE={Active:'green',New:'saffron',Inactive:'grey',Archived:'grey',Completed:'green','Completed by Another':'teal',
+const TONE={Active:'green',New:'saffron',Inactive:'grey',Archived:'grey','Pending Approval':'amber',Completed:'green','Completed by Another':'teal',
  Scheduled:'grey',Assigned:'sky',Accepted:'green','In Progress':'amber',Cancelled:'grey',Missed:'red',Excused:'sky',
  Pending:'amber',Approved:'green',Submitted:'sky',Rejected:'red',Issued:'sky',Returned:'green',Blocked:'red',
  Present:'green',Absent:'red',Late:'amber',High:'red',Medium:'amber',Low:'grey',Overdue:'red',Declined:'red',
@@ -1462,7 +1462,7 @@ function sidebar(){
      <div style="height:8px"></div>
      ${NAV_BOTTOM.map(i=>navItem(i,'var(--mustard)')).join('')}
    </div>
-   <div class="sb-foot"><button class="sb-user" data-act="switch-user">
+   <div class="sb-foot"><button class="sb-user" data-act="account" title="My Account & Sign out">
      ${av(nameOf(APP.user.devotee),'m')}
      <span><span class="nm">${esc(nameOf(APP.user.devotee))}</span><span class="rl">${ROLES[APP.user.role].emoji} ${ROLES[APP.user.role].name}</span></span>
      <span style="margin-left:auto;color:#9C8F79">${ic('more')}</span></button></div></aside>`;
@@ -1483,7 +1483,7 @@ function topbar(){
     <div class="searchbox">${ic('search')}<input type="search" placeholder="Search devotees, seva, batches, SOPs…" value="${esc(APP.search)}" data-act="global-search" aria-label="Global search"></div>
     <button class="icon-btn" data-act="go" data-r="#/messages" title="Messages">${ic('chat')}${unreadMsgs()?`<i class="dot">${unreadMsgs()}</i>`:''}</button>
     <button class="icon-btn" data-act="notifications" title="Notifications">${ic('bell')}${unread?`<i class="dot">${unread}</i>`:''}</button>
-    <button class="icon-btn" data-act="switch-user" title="Switch role">${av(nameOf(APP.user.devotee),'s')}</button>
+    <button class="icon-btn" data-act="account" title="Devotee Account">${av(nameOf(APP.user.devotee),'s')}</button>
   </header>`;
 }
 function botnav(){
@@ -1600,20 +1600,22 @@ async function handleGoogleAuthResponse(response){
 
     let d=DB.devotees.find(x=>x.id===data.user.devotee||(x.email&&x.email.toLowerCase()===data.user.email.toLowerCase()));
     if(!d){
-      d={
+      d=normalizeDevotee({
         id:data.user.devotee||('d_'+Date.now()),
         name:data.user.name,
         email:data.user.email,
         avatar:data.user.avatar||'',
-        status:'Active',
+        status:data.user.isApproved?'Active':'Pending Approval',
         joined:iso(TODAY),
-        batch:'b1',
-        dept:'kitchen',
         rounds:16,
-        morning:90,
+        morning:85,
         swabhav:'Organising'
-      };
+      });
       DB.devotees.push(d);
+    } else if(data.user.devoteeDetails){
+      Object.assign(d, data.user.devoteeDetails);
+      if(!data.user.isApproved && d.status==='Active') d.status='Pending Approval';
+      normalizeDevotee(d);
     }
 
     APP.user={
@@ -1622,7 +1624,9 @@ async function handleGoogleAuthResponse(response){
       role:data.user.role||'devotee',
       email:data.user.email,
       name:data.user.name,
-      avatar:data.user.avatar
+      avatar:data.user.avatar,
+      approvalStatus:data.user.approvalStatus || (data.user.isApproved ? 'approved' : 'pending_profile'),
+      profileCompleted:!!data.user.profileCompleted
     };
 
     APP.nav.open={
@@ -1633,6 +1637,23 @@ async function handleGoogleAuthResponse(response){
     if(!APP.nav.open.mgmt&&!APP.nav.open.preach&&!APP.nav.open.care)APP.nav.open.mgmt=true;
 
     logAudit('Google Login',`${data.user.name} logged in`);
+
+    if(APP.user.approvalStatus==='pending_profile'){
+      toast('Hare Krishna! Please complete your devotee profile 🙏','📝');
+      render();
+      return;
+    }
+    if(APP.user.approvalStatus==='pending_approval'){
+      toast('Registration pending approval by Area Leader ⏳','⏳');
+      render();
+      return;
+    }
+    if(APP.user.approvalStatus==='rejected'){
+      toast('Registration not approved','❌');
+      render();
+      return;
+    }
+
     toast(`Hare Krishna, ${data.user.name.split(' ')[0]}! 🙏`);
     go('#/');
   }catch(err){
@@ -1727,6 +1748,401 @@ function viewLogin(){
     </div>
   </div>
 </div>`;
+}
+
+/* ---------------- devotee onboarding & approval views ---------------- */
+function viewCompleteProfile(){
+  const u = APP.user || {};
+  const d = DB.devotees.find(x => x.id === u.devotee || (x.email && x.email.toLowerCase() === (u.email || '').toLowerCase())) || {};
+  const defName = d.name || u.name || '';
+  const defPhone = d.phone || '';
+  const defDob = d.dob || '';
+  const defGender = d.gender || 'M';
+  const defAddress = d.address || '';
+  const defResidence = d.residence || 'Hostel';
+  const defOrg = d.org || 'IIT Delhi';
+  const defOcc = d.occupation || 'Student';
+  const defEmergency = d.emergency || '';
+  const defAttendanceMode = d.attendanceMode || 'Offline at BACE';
+  const defRounds = d.sadhana?.rounds ?? 16;
+  const defMorning = d.sadhana?.morningProgram ?? 85;
+  const defNature = d.swabhav?.nature || 'Teaching';
+  const defInterests = Array.isArray(d.swabhav?.interests) ? d.swabhav.interests.join(', ') : (d.swabhav?.interests || 'Reading, Kirtan');
+  const defSkills = Array.isArray(d.skills) ? d.skills.join(', ') : 'Organising, Cooking';
+  const defAvailability = d.availability || 'Weekends';
+  const defSource = d.source || 'Campus stall';
+
+  return `<div class="login" style="grid-template-columns:1fr;min-height:100vh;background:var(--paper);padding:24px 16px;overflow-y:auto">
+    <div style="max-width:800px;margin:0 auto;width:100%">
+      <!-- Header Card -->
+      <div style="background:linear-gradient(135deg,#1C150D 0%,#2D1C10 50%,#3D2312 100%);border-radius:20px;padding:28px 30px;color:#FFF7EC;position:relative;overflow:hidden;box-shadow:var(--sh-2);margin-bottom:20px;border:1px solid rgba(232,200,138,0.25)">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;position:relative;z-index:2">
+          <div style="display:flex;align-items:center;gap:14px">
+            <img src="/logo.png" alt="ISKCON BACE Logo" style="height:50px;width:50px;border-radius:12px;background:#000;padding:3px;border:1px solid rgba(232,200,138,0.4);flex:none">
+            <div>
+              <div style="font-family:var(--f-head);font-size:22px;color:#FFF7EC;line-height:1.2">Hare Krishna 🙏 Devotee Registration</div>
+              <div style="font-size:12px;color:#E8C88A;margin-top:3px">ISKCON BACE Jia Sarai · Profile & Seva Onboarding</div>
+            </div>
+          </div>
+          <button class="btn sm" style="color:#FFF;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2)" data-act="logout">Sign out</button>
+        </div>
+        <div style="margin-top:14px;font-size:13px;color:#D8C5AB;line-height:1.55;position:relative;z-index:2">
+          Welcome to ISKCON BACE Jia Sarai! Please fill in all the devotee profile details below. Once submitted, your profile will be reviewed by the <b>Area Leader</b> for verification before portal access is activated.
+        </div>
+      </div>
+
+      <!-- Form -->
+      <form id="devoteeProfileForm" onsubmit="submitDevoteeProfile(this);return false" style="display:flex;flex-direction:column;gap:18px">
+        <!-- Card 1: Personal & Contact -->
+        <div class="card pad" style="background:var(--paper-card);border-radius:16px;border:1px solid var(--line);box-shadow:var(--sh-1)">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--line)">
+            <span style="font-size:18px">👤</span>
+            <h3 style="font-size:15px;font-weight:700">1. Personal & Contact Details</h3>
+          </div>
+          <div class="form-row">
+            <div class="field">
+              <label>Full Devotee Name <b style="color:var(--danger)">*</b></label>
+              <input type="text" name="name" required placeholder="e.g. Radheshyam Sharma" value="${esc(defName)}">
+            </div>
+            <div class="field">
+              <label>Gender <b style="color:var(--danger)">*</b></label>
+              <select name="gender">
+                <option value="M" ${defGender==='M'?'selected':''}>Male</option>
+                <option value="F" ${defGender==='F'?'selected':''}>Female</option>
+                <option value="Other" ${defGender==='Other'?'selected':''}>Other</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="field">
+              <label>Phone / WhatsApp Number <b style="color:var(--danger)">*</b></label>
+              <input type="tel" name="phone" required placeholder="e.g. 9876543210" value="${esc(defPhone)}">
+              <div class="hint">Required for BACE communications and batch notifications</div>
+            </div>
+            <div class="field">
+              <label>Date of Birth</label>
+              <input type="date" name="dob" value="${esc(defDob ? String(defDob).slice(0,10) : '')}">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="field">
+              <label>Current Address</label>
+              <input type="text" name="address" placeholder="e.g. Room 102, Kumaon Hostel, IIT Delhi" value="${esc(defAddress)}">
+            </div>
+            <div class="field">
+              <label>Emergency Contact (Name & Phone) <b style="color:var(--danger)">*</b></label>
+              <input type="text" name="emergency" required placeholder="e.g. Father: 9812345678" value="${esc(defEmergency)}">
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 2: College, Occupation & Residence -->
+        <div class="card pad" style="background:var(--paper-card);border-radius:16px;border:1px solid var(--line);box-shadow:var(--sh-1)">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--line)">
+            <span style="font-size:18px">🎓</span>
+            <h3 style="font-size:15px;font-weight:700">2. College, Occupation & Residence</h3>
+          </div>
+          <div class="form-row">
+            <div class="field">
+              <label>College / Organisation <b style="color:var(--danger)">*</b></label>
+              <select name="org">
+                ${ORGS.map(o=>`<option value="${esc(o)}" ${defOrg===o?'selected':''}>${esc(o)}</option>`).join('')}
+              </select>
+            </div>
+            <div class="field">
+              <label>Occupation</label>
+              <select name="occupation">
+                ${OCC.map(o=>`<option value="${esc(o)}" ${defOcc===o?'selected':''}>${esc(o)}</option>`).join('')}
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="field">
+              <label>Residence Type</label>
+              <select name="residence">
+                <option value="Hostel" ${defResidence==='Hostel'?'selected':''}>College Hostel</option>
+                <option value="PG" ${defResidence==='PG'?'selected':''}>Paying Guest (PG)</option>
+                <option value="Flat" ${defResidence==='Flat'?'selected':''}>Rented Flat</option>
+                <option value="Home" ${defResidence==='Home'?'selected':''}>Home with Family</option>
+                <option value="BACE" ${defResidence==='BACE'?'selected':''}>Resident at BACE</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Attendance Mode</label>
+              <select name="attendanceMode">
+                <option value="Offline at BACE" ${defAttendanceMode==='Offline at BACE'?'selected':''}>Offline at BACE</option>
+                <option value="Online" ${defAttendanceMode==='Online'?'selected':''}>Online</option>
+                <option value="Hybrid" ${defAttendanceMode==='Hybrid'?'selected':''}>Hybrid (Offline + Online)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 3: Sadhana & Spiritual Connection -->
+        <div class="card pad" style="background:var(--paper-card);border-radius:16px;border:1px solid var(--line);box-shadow:var(--sh-1)">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--line)">
+            <span style="font-size:18px">📿</span>
+            <h3 style="font-size:15px;font-weight:700">3. Spiritual Sadhana & BACE Connection</h3>
+          </div>
+          <div class="form-row">
+            <div class="field">
+              <label>Daily Japa Rounds Chanted <b style="color:var(--danger)">*</b></label>
+              <input type="number" name="rounds" min="0" max="64" value="${defRounds}">
+              <div class="hint">Daily rounds of Hare Krishna Mahamantra (0 to 16+)</div>
+            </div>
+            <div class="field">
+              <label>Morning Program Attendance (%)</label>
+              <input type="number" name="morningProgram" min="0" max="100" value="${defMorning}">
+              <div class="hint">Approximate weekly morning program attendance percentage</div>
+            </div>
+          </div>
+          <div class="field">
+            <label>How did you first connect with BACE? <b style="color:var(--danger)">*</b></label>
+            <select name="source">
+              ${['Book distribution', 'Friend referral', 'Campus stall', 'Instagram', 'Class visit', 'Prasadam distribution', 'Festival', 'Hostel outreach', 'Alumni network', 'Other'].map(s=>`
+                <option value="${esc(s)}" ${defSource===s?'selected':''}>${esc(s)}</option>
+              `).join('')}
+            </select>
+          </div>
+        </div>
+
+        <!-- Card 4: Swabhav, Skills & Seva -->
+        <div class="card pad" style="background:var(--paper-card);border-radius:16px;border:1px solid var(--line);box-shadow:var(--sh-1)">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--line)">
+            <span style="font-size:18px">🤝</span>
+            <h3 style="font-size:15px;font-weight:700">4. Swabhav, Interests & Seva Preferences</h3>
+          </div>
+          <div class="form-row">
+            <div class="field">
+              <label>Dominant Swabhav / Nature <b style="color:var(--danger)">*</b></label>
+              <select name="nature">
+                ${['Teaching', 'Organising', 'Music', 'Design', 'Cooking', 'Writing', 'Numbers', 'Building', 'Hospitality', 'Gardening', 'Other'].map(n=>`
+                  <option value="${esc(n)}" ${defNature===n?'selected':''}>${esc(n)}</option>
+                `).join('')}
+              </select>
+              <div class="hint">Assists leadership in allotting fulfilling devotional service</div>
+            </div>
+            <div class="field">
+              <label>Seva Availability</label>
+              <select name="availability">
+                <option value="Weekday mornings" ${defAvailability==='Weekday mornings'?'selected':''}>Weekday mornings</option>
+                <option value="Weekday evenings" ${defAvailability==='Weekday evenings'?'selected':''}>Weekday evenings</option>
+                <option value="Weekends" ${defAvailability==='Weekends'?'selected':''}>Weekends</option>
+                <option value="Anytime" ${defAvailability==='Anytime'?'selected':''}>Anytime</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="field">
+              <label>Key Skills & Talents</label>
+              <input type="text" name="skills" placeholder="e.g. Sound system, Public speaking, Cooking, Design" value="${esc(defSkills)}">
+              <div class="hint">Comma separated list of skills you can contribute to temple activities</div>
+            </div>
+            <div class="field">
+              <label>Personal Interests</label>
+              <input type="text" name="interests" placeholder="e.g. Kirtan, Deity worship, Tech, Book reading" value="${esc(defInterests)}">
+            </div>
+          </div>
+        </div>
+
+        <!-- Submit Controls -->
+        <div style="display:flex;flex-direction:column;gap:8px;margin-top:6px">
+          <button type="submit" class="btn pri" style="padding:14px;font-size:16px;font-weight:600;border-radius:14px;box-shadow:var(--sh-2)">
+            ${ic('check')} Submit Profile for Area Leader Approval
+          </button>
+          <div class="tiny" style="text-align:center;color:var(--ink-3)">
+            All items will be stored in the database and reviewed by the Area Leader before portal access is enabled.
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>`;
+}
+
+function viewPendingApproval(){
+  const u = APP.user || {};
+  const d = DB.devotees.find(x => x.id === u.devotee || (x.email && x.email.toLowerCase() === (u.email || '').toLowerCase())) || {};
+  return `<div class="login" style="grid-template-columns:1fr;min-height:100vh;background:var(--paper);display:flex;align-items:center;justify-content:center;padding:30px 16px">
+    <div style="max-width:520px;width:100%;background:var(--paper-card);border:1px solid var(--line);border-radius:24px;padding:36px 30px;box-shadow:var(--sh-3);text-align:center;position:relative">
+      <div style="width:68px;height:68px;border-radius:18px;background:#000;border:1px solid rgba(201,96,27,0.35);padding:5px;margin:0 auto 16px;box-shadow:0 8px 24px rgba(0,0,0,0.14)">
+        <img src="/logo.png" alt="ISKCON BACE Logo" style="width:100%;height:100%;object-fit:contain;display:block">
+      </div>
+      <div style="display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--amber);background:var(--amber-soft);padding:4px 12px;border-radius:20px;margin-bottom:14px">
+        ⏳ Verification Pending
+      </div>
+      <h2 style="font-size:22px;color:var(--ink);margin-bottom:8px">Registration Submitted 🙏</h2>
+      <p style="font-size:14px;color:var(--ink-2);line-height:1.6;margin-bottom:20px">
+        Hare Krishna, <b>${esc(u.name || d.name || 'Devotee')}</b>! Your profile has been received and is currently in the approval queue.
+        The <b>Area Leader (Admin)</b> will review and approve your registration before full portal access is granted.
+      </p>
+
+      <div style="text-align:left;background:var(--surface-2);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:22px">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-3);margin-bottom:10px">Submitted Profile Summary</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;font-size:13px">
+          <div><span style="color:var(--ink-3)">Name:</span> <b>${esc(d.name || u.name)}</b></div>
+          <div><span style="color:var(--ink-3)">Email:</span> <span class="tiny">${esc(d.email || u.email)}</span></div>
+          <div><span style="color:var(--ink-3)">Phone:</span> <b>${esc(d.phone || 'Recorded')}</b></div>
+          <div><span style="color:var(--ink-3)">College/Org:</span> <b>${esc(d.org || 'Recorded')}</b></div>
+          <div><span style="color:var(--ink-3)">Sadhana:</span> <b>${d.sadhana?.rounds || 0} rounds</b></div>
+          <div><span style="color:var(--ink-3)">Swabhav:</span> <b>${esc(d.swabhav?.nature || 'Recorded')}</b></div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <button class="btn pri" data-act="check-approval-status" style="width:100%;padding:13px;font-size:15px;border-radius:12px">
+          🔄 Check Approval Status
+        </button>
+        <button class="btn" data-act="logout" style="width:100%;padding:11px;font-size:14px;border-radius:12px;color:var(--danger);border-color:var(--danger-soft)">
+          Sign out
+        </button>
+      </div>
+      <div class="tiny" style="margin-top:16px;color:var(--ink-3)">
+        Need help? Speak to your BACE coordinator or email admin@iskconjiasarai.org
+      </div>
+    </div>
+  </div>`;
+}
+
+function viewRejectedApproval(){
+  const u = APP.user || {};
+  return `<div class="login" style="grid-template-columns:1fr;min-height:100vh;background:var(--paper);display:flex;align-items:center;justify-content:center;padding:30px 16px">
+    <div style="max-width:480px;width:100%;background:var(--paper-card);border:1px solid var(--danger-soft);border-radius:24px;padding:36px 30px;box-shadow:var(--sh-3);text-align:center">
+      <div style="font-size:42px;margin-bottom:12px">🚫</div>
+      <h2 style="font-size:22px;color:var(--danger);margin-bottom:8px">Registration Declined</h2>
+      <p style="font-size:14px;color:var(--ink-2);line-height:1.6;margin-bottom:18px">
+        Hare Krishna. Your registration request was not approved by the Area Leader at this time.
+        ${u.rejectionReason ? `<br><br><b>Reason:</b> <em>${esc(u.rejectionReason)}</em>` : ''}
+      </p>
+      <div style="display:flex;gap:10px;justify-content:center">
+        <button class="btn pri" data-act="re-apply">Update Profile</button>
+        <button class="btn" data-act="logout">Sign out</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+async function submitDevoteeProfile(form){
+  const formData = new FormData(form);
+  const body = {};
+  formData.forEach((val, key) => body[key] = val);
+  
+  if(!body.name || !body.phone){
+    toast('Please fill in your Full Name and Phone number','⚠️');
+    return;
+  }
+
+  const token = localStorage.getItem('bace_token');
+  const submitBtn = form.querySelector('button[type="submit"]');
+  if(submitBtn){ submitBtn.disabled = true; submitBtn.innerHTML = 'Submitting profile...'; }
+
+  try{
+    const res = await fetch('/api/auth/complete-profile', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? {'Authorization': 'Bearer ' + token} : {})
+      },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if(!res.ok || !data.success) throw new Error(data.error || data.message || 'Failed to submit profile');
+
+    let d = DB.devotees.find(x => x.id === APP.user.devotee || (x.email && x.email.toLowerCase() === (APP.user.email || '').toLowerCase()));
+    if(d){
+      Object.assign(d, data.user.devoteeDetails || {});
+      d.status = data.user.approvalStatus === 'approved' ? 'Active' : 'Pending Approval';
+      normalizeDevotee(d);
+    } else if(data.user.devoteeDetails) {
+      d = normalizeDevotee(data.user.devoteeDetails);
+      DB.devotees.push(d);
+    }
+
+    APP.user.approvalStatus = data.user.approvalStatus;
+    APP.user.profileCompleted = true;
+    APP.user.name = data.user.name;
+    localStorage.setItem('bace_user', JSON.stringify(APP.user));
+
+    toast('Profile submitted for approval! 🙏', '✅');
+    render();
+  }catch(err){
+    console.error(err);
+    toast(err.message || 'Error submitting profile', '❌');
+    if(submitBtn){ submitBtn.disabled = false; submitBtn.innerHTML = `${ic('check')} Submit Profile for Area Leader Approval`; }
+  }
+}
+
+async function checkApprovalStatus(){
+  const token = localStorage.getItem('bace_token');
+  if(!token){ toast('Please sign in again','⚠️'); APP.user=null; render(); return; }
+  try{
+    toast('Checking approval with temple server...','⏳');
+    const res = await fetch('/api/auth/me',{
+      headers:{'Authorization':'Bearer '+token}
+    });
+    const data = await res.json();
+    if(!res.ok || !data.success) throw new Error(data.message || 'Failed to check status');
+
+    APP.user.approvalStatus = data.user.approvalStatus;
+    APP.user.role = data.user.role;
+    APP.user.profileCompleted = !!data.user.profileCompleted;
+    if(data.user.devoteeDetails){
+      let d = DB.devotees.find(x => x.id === APP.user.devotee || (x.email && x.email.toLowerCase() === (APP.user.email || '').toLowerCase()));
+      if(d){ Object.assign(d, data.user.devoteeDetails); normalizeDevotee(d); }
+    }
+    localStorage.setItem('bace_user', JSON.stringify(APP.user));
+
+    if(data.user.approvalStatus === 'approved'){
+      toast('Hare Krishna! Your account has been approved by Area Leader! 🙏','🎉');
+      APP.nav.open={mgmt:can('management',APP.user.role),preach:can('preaching',APP.user.role),care:can('care',APP.user.role)};
+      if(!APP.nav.open.mgmt&&!APP.nav.open.preach&&!APP.nav.open.care)APP.nav.open.mgmt=true;
+      go('#/');
+    } else if(data.user.approvalStatus === 'rejected'){
+      toast('Registration not approved: ' + (data.user.rejectionReason || ''), '❌');
+      render();
+    } else {
+      toast('Still pending approval from Area Leader. Please check back soon.','⏳');
+      render();
+    }
+  }catch(err){
+    console.error(err);
+    toast(err.message || 'Could not check status', '⚠️');
+  }
+}
+
+let lastPendingFetch = 0;
+async function fetchServerPendingApprovals(){
+  const token = localStorage.getItem('bace_token');
+  if(!token || Date.now() - lastPendingFetch < 8000) return;
+  lastPendingFetch = Date.now();
+  try{
+    const res = await fetch('/api/auth/pending-approvals',{
+      headers: {'Authorization': 'Bearer ' + token}
+    });
+    if(!res.ok) return;
+    const json = await res.json();
+    if(json.success && Array.isArray(json.data)){
+      let addedAny = false;
+      json.data.forEach(item => {
+        if(item.devotee){
+          const targetId = item.devotee.customId || item.devotee._id || item.devotee.id;
+          let d = DB.devotees.find(x => x.id === targetId || (x.email && x.email.toLowerCase() === (item.email || '').toLowerCase()));
+          if(!d){
+            d = normalizeDevotee({
+              ...item.devotee,
+              id: targetId,
+              status: 'Pending Approval'
+            });
+            DB.devotees.unshift(d);
+            addedAny = true;
+          } else if(d.status !== 'Pending Approval') {
+            d.status = 'Pending Approval';
+            addedAny = true;
+          }
+        }
+      });
+      if(addedAny) render();
+    }
+  }catch(e){}
 }
 
 /* =========================================================================
@@ -1999,7 +2415,7 @@ function viewDevotees(){
     return true;});
   const scoped=['dept_head','preaching_coord','facilitator'].includes(APP.user.role);
   const toolbar=`<input type="search" placeholder="Search name, phone, college or skill" value="${esc(f.q)}" data-act="f" data-k="dev" data-n="q">
-   <select data-act="f" data-k="dev" data-n="status"><option value="">All statuses</option>${['Active','New','Inactive'].map(s=>`<option ${f.status===s?'selected':''}>${s}</option>`).join('')}</select>
+   <select data-act="f" data-k="dev" data-n="status"><option value="">All statuses</option>${['Active','Pending Approval','New','Inactive'].map(s=>`<option ${f.status===s?'selected':''}>${s}</option>`).join('')}</select>
    <select data-act="f" data-k="dev" data-n="dept"><option value="">All departments</option>${activeDepts().map(d=>`<option value="${d.id}" ${f.dept===d.id?'selected':''}>${esc(d.name)}</option>`).join('')}</select>
    <select data-act="f" data-k="dev" data-n="batch"><option value="">All batches</option>${DB.batches.map(b=>`<option value="${b.id}" ${f.batch===b.id?'selected':''}>${esc(b.name)}</option>`).join('')}</select>
    <select data-act="f" data-k="dev" data-n="level"><option value="">All levels</option>${[1,2,3].map(l=>`<option value="${l}" ${f.level==String(l)?'selected':''}>Level ${l}</option>`).join('')}</select>
@@ -3521,15 +3937,56 @@ function viewNotifications(){
    ⚙️ ADMINISTRATION
    ========================================================================= */
 function viewAdmin(){
-  const tab=APP.tab.admin||'Users';
-  const modules=['directory','management','manage_departments','assign','preaching','manage_batches','care','care_notes','inventory','reports','admin'];
-  const body={
+  fetchServerPendingApprovals();
+  const pendingDevs = DB.devotees.filter(d => d.status === 'Pending Approval');
+  const tab = APP.tab.admin || (pendingDevs.length > 0 ? 'Approvals' : 'Users');
+  const modules = ['directory','management','manage_departments','assign','preaching','manage_batches','care','care_notes','inventory','reports','admin'];
+  const body = {
+   Approvals: section('Devotee applications awaiting approval', pendingDevs.length ? `
+     <div style="margin-bottom:14px;font-size:13px;color:var(--ink-2)">
+       The following devotees have submitted their profile and require <b>Area Leader approval</b> before they can log in to the BACE system.
+     </div>
+     <div class="grid g2" style="gap:16px">
+       ${pendingDevs.map(d => `
+         <div class="card pad" style="border:1px solid var(--line);border-radius:16px;background:var(--paper-card);box-shadow:var(--sh-1);display:flex;flex-direction:column;justify-content:space-between">
+           <div>
+             <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:12px">
+               ${av(d.name, 'l')}
+               <div style="flex:1;min-width:0">
+                 <div style="font-size:16px;font-weight:700;color:var(--ink)">${esc(d.name)}</div>
+                 <div class="tiny" style="color:var(--ink-2);margin-top:2px">${esc(d.email || 'No email')} · ${esc(d.phone || 'No phone')}</div>
+                 <div style="margin-top:5px">${badge('Pending Approval', 'amber')} ${d.org ? badge(d.org, 'saffron') : ''}</div>
+               </div>
+             </div>
+             <div class="list" style="border:1px solid var(--line);border-radius:10px;font-size:12.5px;margin-bottom:14px">
+               <div class="li" style="padding:6px 10px"><span class="grow" style="color:var(--ink-3)">Occupation</span><b>${esc(d.occupation || 'Student')}</b></div>
+               <div class="li" style="padding:6px 10px"><span class="grow" style="color:var(--ink-3)">Residence</span><b>${esc(d.residence || 'Not specified')}</b></div>
+               <div class="li" style="padding:6px 10px"><span class="grow" style="color:var(--ink-3)">Address</span><b>${esc(d.address || 'Not specified')}</b></div>
+               <div class="li" style="padding:6px 10px"><span class="grow" style="color:var(--ink-3)">Sadhana Rounds</span><b>${d.sadhana?.rounds || 0} rounds daily</b></div>
+               <div class="li" style="padding:6px 10px"><span class="grow" style="color:var(--ink-3)">Swabhav / Nature</span><b>${esc(d.swabhav?.nature || 'Not assessed')}</b></div>
+               <div class="li" style="padding:6px 10px"><span class="grow" style="color:var(--ink-3)">Skills</span><b>${esc(Array.isArray(d.skills) ? d.skills.join(', ') : d.skills || 'None')}</b></div>
+               <div class="li" style="padding:6px 10px"><span class="grow" style="color:var(--ink-3)">Availability</span><b>${esc(d.availability || 'Weekends')}</b></div>
+               <div class="li" style="padding:6px 10px"><span class="grow" style="color:var(--ink-3)">Emergency Contact</span><b>${esc(d.emergency || 'None')}</b></div>
+             </div>
+           </div>
+           <div style="display:flex;gap:10px;border-top:1px solid var(--line);padding-top:12px;margin-top:6px">
+             <button class="btn sm pri" data-act="approve-devotee" data-id="${d.id}" style="flex:1">
+               ${ic('check')} Approve Devotee
+             </button>
+             <button class="btn sm" style="color:var(--danger);border-color:var(--danger-soft)" data-act="reject-devotee" data-id="${d.id}">
+               ${ic('x')} Reject
+             </button>
+           </div>
+         </div>
+       `).join('')}
+     </div>
+   ` : emptyState('No pending applications', 'All devotee registrations have been reviewed and approved.', '', 'calm')),
    Users:section('User accounts',`<div class="tbl-wrap"><table class="tbl"><thead><tr><th>User</th><th>Role</th><th>Scope</th><th>Area</th><th>Status</th><th></th></tr></thead><tbody>
      ${DB.users.map(u=>`<tr><td data-l="User"><div class="who">${av(nameOf(u.devotee),'m')}<div><b>${esc(nameOf(u.devotee))}</b><span>${esc(dv(u.devotee)?.email||'')}</span></div></div></td>
       <td data-l="Role">${badge(ROLES[u.role].emoji+' '+ROLES[u.role].name,'saffron')}</td>
       <td data-l="Scope"><span class="tiny">${esc(ROLES[u.role].scope)}</span></td>
       <td data-l="Area">${esc(u.dept?dept(u.dept).name:u.batch?batch(u.batch).name:'Community-wide')}</td>
-      <td data-l="Status">${badge('Active','green')}</td>
+      <td data-l="Status">${badge(u.approvalStatus==='pending_approval'?'Pending':'Active',u.approvalStatus==='pending_approval'?'amber':'green')}</td>
       <td><button class="btn sm" data-act="edit-user" data-id="${u.id}">${ic('edit')}Edit</button></td></tr>`).join('')}</tbody></table></div>`,
      `<button class="btn sm pri" data-act="add-user">${ic('plus')}Add user</button>`),
    Permissions:section('Role and permission matrix',`<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Role</th>${modules.map(m=>`<th style="font-size:10.5px">${esc(m.replace('_',' '))}</th>`).join('')}</tr></thead><tbody>
@@ -3564,8 +4021,16 @@ function viewAdmin(){
        <div class="li"><span class="grow"><span class="t">Attendance corrections</span><span class="d">Administrator only, written to the audit log</span></span>${badge('Audited','sky')}</div></div>
        <div class="note" style="margin-top:12px">This demo stores everything in memory. In production, swap the data layer for an authenticated API with row-level permissions.</div></div>`)}</div>`
   }[tab];
+  const adminTabs = [
+    { k: 'Approvals', l: `Approvals ${pendingDevs.length ? `<span class="cnt hot" style="margin-left:4px">${pendingDevs.length}</span>` : ''}` },
+    { k: 'Users', l: 'Users' },
+    { k: 'Permissions', l: 'Permissions' },
+    { k: 'Departments', l: 'Departments' },
+    { k: 'Audit', l: 'Audit' },
+    { k: 'Data', l: 'Data' }
+  ];
   return head('⚙️ Administration','Administration','Users, roles, permissions, configuration and the audit trail')+
-   `<div class="tabs">${['Users','Permissions','Departments','Audit','Data'].map(t=>`<button class="${tab===t?'on':''}" data-act="tab" data-k="admin" data-v="${t}">${t}</button>`).join('')}</div>${body}`;
+   `<div class="tabs">${adminTabs.map(t=>`<button class="${tab===t.k?'on':''}" data-act="tab" data-k="admin" data-v="${t.k}">${t.l}</button>`).join('')}</div>${body}`;
 }
 
 /* ---------------- mobile "More" menu ---------------- */
@@ -3578,7 +4043,7 @@ function viewMore(){
    `<div style="height:15px"></div>${section('Session',`<div class="list">
      <div class="li">${av(nameOf(APP.user.devotee),'m')}<span class="grow"><span class="t">${esc(nameOf(APP.user.devotee))}</span>
        <span class="d">${ROLES[APP.user.role].emoji} ${esc(ROLES[APP.user.role].name)}</span></span>
-       <button class="btn sm" data-act="switch-user">Switch role</button></div>
+       <button class="btn sm" style="color:var(--danger);border-color:var(--danger-soft)" data-act="logout">Sign out</button></div>
      <button class="li click" data-act="install-hint"><span class="grow"><span class="t">📱 Install as an app</span>
        <span class="d">Add to Home Screen for a full-screen, app-like experience</span></span>${ic('arrow')}</button></div>`)}`;
 }
@@ -3654,16 +4119,46 @@ function listModal(){
    <div class="modal-f"><button class="btn" data-act="close-scrim">Close</button>
      ${m.exportRows?`<button class="btn pri" data-act="export-drill">${ic('download')}Export CSV</button>`:''}</div></div></div>`;
 }
-function switchUserModal(){
-  return `<div class="scrim" data-act="close-scrim"><div class="modal" data-stop="1">
-   <div class="modal-h"><h2 style="font-size:18px">Switch role</h2><button class="icon-btn" style="margin-left:auto" data-act="close-scrim">${ic('x')}</button></div>
-   <div class="modal-b"><p class="tiny" style="margin-top:0">Each role sees different pages, different data and different permissions.</p>
+function accountModal(){
+  const me = dv(APP.user.devotee) || {};
+  const r = ROLES[APP.user.role] || { name: APP.user.role || 'Devotee', emoji: '👤', scope: 'Community member' };
+  return `<div class="scrim" data-act="close-scrim"><div class="modal" data-stop="1" style="max-width:440px">
+   <div class="modal-h">
+     <div>
+       <h2 style="font-size:18px">Devotee Account</h2>
+       <div class="tiny">${esc(APP.user.email || me.email || '')}</div>
+     </div>
+     <button class="icon-btn" style="margin-left:auto" data-act="close-scrim">${ic('x')}</button>
+   </div>
+   <div class="modal-b">
+     <div style="display:flex;align-items:center;gap:14px;padding:14px;background:var(--surface-2);border-radius:14px;border:1px solid var(--line);margin-bottom:14px">
+       ${av(me.name || APP.user.name, 'l')}
+       <div style="flex:1;min-width:0">
+         <div style="font-weight:700;font-size:16px;color:var(--ink)">${esc(me.name || APP.user.name)}</div>
+         <div style="font-size:13px;color:var(--ink-2);margin-top:2px">${r.emoji} ${esc(r.name)}</div>
+         <div class="tiny" style="color:var(--ink-3);margin-top:2px">${esc(me.org || 'BACE Community')}${me.phone ? ' · ' + esc(me.phone) : ''}</div>
+       </div>
+     </div>
      <div class="list" style="border:1px solid var(--line);border-radius:12px">
-     ${DB.users.map(u=>`<button class="li click ${u.id===APP.user.id?'':''}" data-act="do-switch" data-id="${u.id}">
-       ${av(nameOf(u.devotee),'m')}<span class="grow"><span class="t">${esc(nameOf(u.devotee))}</span>
-       <span class="d">${ROLES[u.role].emoji} ${ROLES[u.role].name} — ${esc(ROLES[u.role].scope)}</span></span>
-       ${u.id===APP.user.id?badge('Current','green'):ic('arrow')}</button>`).join('')}</div></div>
-   <div class="modal-f"><button class="btn" style="color:var(--danger);border-color:var(--danger-soft)" data-act="logout">Sign out</button><button class="btn" style="margin-left:auto" data-act="close-scrim">Cancel</button></div></div></div>`;
+       <a class="li click" href="#/devotee/${APP.user.devotee}">
+         <span style="font-size:16px">📿</span>
+         <span class="grow"><span class="t">My Devotee Profile</span><span class="d">Check personal info, sadhana, seva & attendance</span></span>
+         ${ic('arrow')}
+       </a>
+       ${can('admin') ? `<a class="li click" href="#/admin">
+         <span style="font-size:16px">⚙️</span>
+         <span class="grow"><span class="t">Administration</span><span class="d">User accounts, roles & pending devotee approvals</span></span>
+         ${ic('arrow')}
+       </a>` : ''}
+     </div>
+   </div>
+   <div class="modal-f">
+     <button class="btn" style="color:var(--danger);border-color:var(--danger-soft);font-weight:600" data-act="logout">
+       ${ic('x')} Sign out
+     </button>
+     <button class="btn" style="margin-left:auto" data-act="close-scrim">Cancel</button>
+   </div>
+  </div></div>`;
 }
 function notifDrawer(){
   return `<div class="drawer-wrap" data-act="close-scrim"><div class="drawer" data-stop="1">
@@ -3688,15 +4183,16 @@ function searchModal(){
   const total=dv_.length+ct.length+ac.length+dp.length+bt.length+sp.length;
   const grp=(t,items)=>items.length?`<h3 style="margin:14px 0 7px">${t}</h3><div class="list" style="border:1px solid var(--line);border-radius:12px">${items.join('')}</div>`:'';
   return `<div class="scrim" data-act="close-scrim"><div class="modal" data-stop="1">
-   <div class="modal-h"><h2 style="font-size:18px">Search results for “${esc(APP.search)}”</h2>
+   <div class="modal-h"><div><h2 style="font-size:18px">🔍 Search BACE</h2><div class="tiny">Search devotees, contacts, seva and SOPs</div></div>
      <button class="icon-btn" style="margin-left:auto" data-act="close-scrim">${ic('x')}</button></div>
-   <div class="modal-b">${total?`
-     ${grp('Devotees',dv_.map(d=>`<button class="li click" data-act="open-devotee" data-id="${d.id}">${av(d.name)}<span class="grow"><span class="t">${esc(d.name)}</span><span class="d">${esc(d.org)}</span></span></button>`))}
-     ${grp('Contacts',ct.map(c=>`<button class="li click" data-act="open-contact" data-id="${c.id}">${av(c.name)}<span class="grow"><span class="t">${esc(c.name)}</span><span class="d">${esc(c.stage)}</span></span></button>`))}
-     ${grp('Activities',ac.map(a=>`<button class="li click" data-act="open-activity" data-id="${a.id}"><span class="badge b-grey">${typeEmoji(a.type)}</span><span class="grow"><span class="t">${esc(a.name)}</span><span class="d">${esc(scopeName(a))} · ${fmtD(a.date)}</span></span></button>`))}
-     ${grp('Departments',dp.map(d=>`<button class="li click" data-act="open-dept" data-id="${d.id}"><span class="badge b-saffron">${d.icon}</span><span class="grow"><span class="t">${esc(d.name)}</span></span></button>`))}
-     ${grp('Batches',bt.map(b=>`<button class="li click" data-act="open-batch" data-id="${b.id}"><span class="badge b-indigo">📖</span><span class="grow"><span class="t">${esc(b.name)}</span><span class="d">Level ${b.level}</span></span></button>`))}
-     ${grp('SOPs',sp.map(s=>`<button class="li click" data-act="open-sop" data-id="${s.id}"><span class="badge b-teal">📘</span><span class="grow"><span class="t">${esc(s.name)}</span></span></button>`))}`
+   <div class="modal-b">
+     <input type="search" placeholder="Type name, seva, department or keyword…" value="${esc(APP.search)}" data-act="global-search" style="width:100%;padding:10px 14px;border:1px solid var(--line);border-radius:10px;margin-bottom:10px">
+     ${total?grp('Devotees',dv_.map(d=>`<a class="li click" href="#/devotee/${d.id}">${av(d.name)}<span class="grow"><span class="t">${esc(d.name)}</span><span class="d">${esc(d.org)}</span></span>${ic('arrow')}</a>`))+
+       grp('Contacts',ct.map(c=>`<button class="li click" data-act="open-contact" data-id="${c.id}"><span style="font-size:16px">🌱</span><span class="grow"><span class="t">${esc(c.name)}</span><span class="d">${esc(c.stage)}</span></span>${ic('arrow')}</button>`))+
+       grp('Activities',ac.map(a=>`<button class="li click" data-act="open-activity" data-id="${a.id}"><span style="font-size:16px">🕉</span><span class="grow"><span class="t">${esc(a.name)}</span><span class="d">${esc(a.date)}</span></span>${ic('arrow')}</button>`))+
+       grp('Departments',dp.map(d=>`<a class="li click" href="#/dept/${d.id}"><span style="font-size:16px">${d.icon}</span><span class="grow"><span class="t">${esc(d.name)}</span></span>${ic('arrow')}</a>`))+
+       grp('Batches',bt.map(b=>`<a class="li click" href="#/batch/${b.id}"><span style="font-size:16px">📖</span><span class="grow"><span class="t">${esc(b.name)}</span></span>${ic('arrow')}</a>`))+
+       grp('SOPs',sp.map(s=>`<button class="li click" data-act="open-sop" data-id="${s.id}"><span style="font-size:16px">📜</span><span class="grow"><span class="t">${esc(s.name)}</span></span>${ic('arrow')}</a>`))
      :emptyState('No matches','Nothing in the devotee database, pipeline, activities or SOPs matches that search.','')}</div>
    <div class="modal-f"><button class="btn" data-act="close-scrim">Close</button></div></div></div>`;
 }
@@ -3895,6 +4391,21 @@ function render(){
   DB.devotees.forEach(normalizeDevotee);
   const app=document.getElementById('app');
   if(!APP.user){app.innerHTML=viewLogin();initGoogleAuth();return}
+
+  // Gating for unapproved devotees:
+  if(APP.user.approvalStatus==='pending_profile' || (!APP.user.profileCompleted && !['admin','area_leader'].includes(APP.user.role))){
+    app.innerHTML=viewCompleteProfile();
+    return;
+  }
+  if(APP.user.approvalStatus==='pending_approval'){
+    app.innerHTML=viewPendingApproval();
+    return;
+  }
+  if(APP.user.approvalStatus==='rejected'){
+    app.innerHTML=viewRejectedApproval();
+    return;
+  }
+
   applyAccent(APP.route);
   const body=routeView();
   app.innerHTML=`<div class="shell">${sidebar()}<div class="main">${topbar()}<div class="view">${body}</div></div></div>
@@ -3904,6 +4415,62 @@ function render(){
   const cb=document.getElementById('chatbody');if(cb)cb.scrollTop=cb.scrollHeight;
 }
 function go(r){APP.route=r;APP.modal='';if(location.hash!==r)location.hash=r;else render();window.scrollTo(0,0)}
+
+async function approveDevoteeAction(id){
+  const token = localStorage.getItem('bace_token');
+  const d = dv(id) || DB.devotees.find(x => x.id === id || x.customId === id);
+  const name = d ? d.name : 'Devotee';
+  try{
+    toast(`Approving ${name}...`, '⏳');
+    if(token){
+      const res = await fetch(`/api/auth/approve-devotee/${id}`,{
+        method: 'POST',
+        headers: {'Authorization': 'Bearer ' + token}
+      });
+      const data = await res.json();
+      if(!res.ok || !data.success) throw new Error(data.message || 'Approval failed on server');
+    }
+    if(d){
+      d.status = 'Active';
+    }
+    const u = DB.users.find(x => x.devotee === id || x.id === id);
+    if(u){
+      u.approvalStatus = 'approved';
+    }
+    logAudit('Devotee Approved', `${name} approved by Area Leader`);
+    toast(`${name} approved successfully! They can now log in.`, '✅');
+    render();
+  }catch(err){
+    console.error(err);
+    toast(err.message || 'Approval failed', '❌');
+  }
+}
+
+async function rejectDevoteeAction(id){
+  const reason = prompt('Please enter the reason for rejection (optional):');
+  if(reason === null) return;
+  const token = localStorage.getItem('bace_token');
+  const d = dv(id) || DB.devotees.find(x => x.id === id || x.customId === id);
+  const name = d ? d.name : 'Devotee';
+  try{
+    if(token){
+      await fetch(`/api/auth/reject-devotee/${id}`,{
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token},
+        body: JSON.stringify({reason})
+      });
+    }
+    if(d){ d.status = 'Inactive'; }
+    const u = DB.users.find(x => x.devotee === id || x.id === id);
+    if(u){ u.approvalStatus = 'rejected'; u.rejectionReason = reason; }
+    logAudit('Devotee Rejected', `${name} registration declined: ${reason || 'No reason specified'}`);
+    toast(`Registration for ${name} declined`, 'ℹ️');
+    render();
+  }catch(err){
+    console.error(err);
+    toast(err.message || 'Action failed', '❌');
+  }
+}
 
 /* =========================================================================
    EVENT HANDLING
@@ -3929,9 +4496,13 @@ document.addEventListener('click',e=>{
     APP.nav.open={mgmt:can('management',u.role),preach:can('preaching',u.role)&&!can('management',u.role),care:can('care',u.role)&&!can('management',u.role)&&!can('preaching',u.role)};
     if(!APP.nav.open.mgmt&&!APP.nav.open.preach&&!APP.nav.open.care)APP.nav.open.mgmt=true;
     go('#/');break}
-  case 'switch-user':APP.modal='switch';render();break;
+  case 'account':APP.modal='account';render();break;
+  case 'switch-user':APP.modal='account';render();break;
   case 'logout':localStorage.removeItem('bace_token');localStorage.removeItem('bace_user');APP.user=null;APP.modal='';render();toast('Signed out successfully','👋');break;
-  case 'do-switch':{const u=DB.users.find(x=>x.id===id);APP.user={...u};APP.modal='';APP.filters={};APP.page={};go('#/');toast('Now viewing as '+ROLES[u.role].name,ROLES[u.role].emoji);break}
+  case 'check-approval-status':checkApprovalStatus();break;
+  case 'approve-devotee':stop();approveDevoteeAction(id);break;
+  case 'reject-devotee':stop();rejectDevoteeAction(id);break;
+  case 're-apply':if(APP.user)APP.user.approvalStatus='pending_profile';render();break;
   case 'go':go(t.dataset.r);break;
   case 'drill':go(t.dataset.r);break;
   case 'pillar':APP.nav.open[t.dataset.k]=!APP.nav.open[t.dataset.k];render();break;
@@ -4628,7 +5199,9 @@ try {
         role: u.role,
         email: u.email,
         name: u.name,
-        avatar: u.avatar
+        avatar: u.avatar,
+        approvalStatus: u.approvalStatus || (['admin', 'area_leader'].includes(u.role) ? 'approved' : 'pending_profile'),
+        profileCompleted: !!u.profileCompleted
       };
       APP.nav.open = {
         mgmt: can('management', u.role),

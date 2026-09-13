@@ -173,7 +173,7 @@ const DevoteeSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['Active', 'New', 'Inactive', 'Alumni'],
+    enum: ['Active', 'New', 'Inactive', 'Alumni', 'Pending Approval'],
     default: 'New',
     index: true
   },

@@ -50,6 +50,28 @@ const UserSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  approvalStatus: {
+    type: String,
+    enum: ['pending_profile', 'pending_approval', 'approved', 'rejected'],
+    default: 'pending_profile'
+  },
+  profileCompleted: {
+    type: Boolean,
+    default: false
+  },
+  approvedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null
+  },
+  approvedAt: {
+    type: Date,
+    default: null
+  },
+  rejectionReason: {
+    type: String,
+    default: null
+  },
   lastLogin: {
     type: Date
   }
