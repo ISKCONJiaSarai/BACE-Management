@@ -1,9 +1,11 @@
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const connectDB = require('../config/db');
+const loadAppConfig = require('../config/env');
 const { Devotee, Department, Batch, CareGroup } = require('../models');
 
 dotenv.config();
+loadAppConfig();
 
 const DEPT_DATA = [
   ['Gita for Life Preaching','Outreach course for working professionals and alumni','📖','#3C4E7A','Preaching','Weekly'],

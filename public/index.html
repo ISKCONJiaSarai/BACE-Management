@@ -1492,12 +1492,36 @@ function installPWA(){
 /* =========================================================================
    LOGIN
    ========================================================================= */
-const GOOGLE_CLIENT_ID = '793682083812-hp4oe9g0pbh2nfk4br8v42m2shvngbah.apps.googleusercontent.com';
+let googleClientId='';
+let googleConfigPromise;
 let loginPick='u2';
 
-function initGoogleAuth(){
+async function getGoogleClientId(){
+  if(googleClientId)return googleClientId;
+  if(!googleConfigPromise){
+    googleConfigPromise=fetch('/api/auth/config')
+      .then(async res=>{
+        const data=await res.json();
+        if(!res.ok||!data.googleClientId)throw new Error('Google login is not configured');
+        googleClientId=data.googleClientId;
+        return googleClientId;
+      })
+      .catch(err=>{googleConfigPromise=null;throw err});
+  }
+  return googleConfigPromise;
+}
+
+async function initGoogleAuth(){
   const container=document.getElementById('googleBtn');
   if(!container)return;
+  let clientId;
+  try{
+    clientId=await getGoogleClientId();
+  }catch(err){
+    const statusEl=document.getElementById('googleLoginStatus');
+    if(statusEl)statusEl.textContent=err.message;
+    return;
+  }
   function tryRender(){
     if(typeof google==='undefined'||!google.accounts||!google.accounts.id){
       setTimeout(tryRender,180);
@@ -1505,7 +1529,7 @@ function initGoogleAuth(){
     }
     try{
       google.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
+        client_id: clientId,
         callback: handleGoogleAuthResponse,
         auto_select: false,
         cancel_on_tap_outside: true

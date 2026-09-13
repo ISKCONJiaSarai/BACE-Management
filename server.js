@@ -3,9 +3,11 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const path = require('path');
 const connectDB = require('./config/db');
+const loadAppConfig = require('./config/env');
 
 // Load environment variables
 dotenv.config();
+loadAppConfig();
 
 const app = express();
 
@@ -48,6 +50,9 @@ app.get('/api/health', (req, res) => {
 
 // API Routes
 app.use('/api', async (req, res, next) => {
+  if (req.method === 'GET' && req.path === '/auth/config') {
+    return next();
+  }
   try {
     await connectDB();
     next();

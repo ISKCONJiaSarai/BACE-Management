@@ -1,9 +1,11 @@
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const connectDB = require('../config/db');
+const loadAppConfig = require('../config/env');
 const { Devotee, Batch, Department } = require('../models');
 
 dotenv.config();
+loadAppConfig();
 
 const GAURAVANI_LIST = [
   { sn: 1, name: 'Purushottam Chandra pr', phone: '9599406925', residence: 'Nilachal Dham BACE', mode: 'Offline at BACE' },
