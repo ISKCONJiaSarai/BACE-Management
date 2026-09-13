@@ -1529,13 +1529,15 @@ async function handleGoogleAuthResponse(response){
   const statusEl=document.getElementById('googleLoginStatus');
   if(statusEl)statusEl.innerHTML='<span style="color:var(--saffron);font-weight:500">Connecting with temple database...</span>';
   try{
-    const apiBase=window.location.origin.includes(':5000')?'':'http://localhost:5000';
-    const res=await fetch(`${apiBase}/api/auth/google`,{
+    const res=await fetch('/api/auth/google',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({token:response.credential})
     });
-    const data=await res.json();
+    const contentType=res.headers.get('content-type')||'';
+    const data=contentType.includes('application/json')
+      ? await res.json()
+      : {success:false,message:`Login service returned HTTP ${res.status}`};
     if(!data.success){
       throw new Error(data.message||'Authentication failed');
     }
