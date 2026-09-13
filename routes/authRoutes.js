@@ -6,7 +6,7 @@ const User = require('../models/User');
 const Devotee = require('../models/Devotee');
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-
+// trial
 function getAdminEmails() {
   return (process.env.ADMIN_EMAILS || '')
     .split(',')
