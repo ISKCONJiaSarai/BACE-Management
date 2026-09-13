@@ -1229,7 +1229,8 @@ const ICONS={
  chat:'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z',send:'M22 2 11 13M22 2l-7 20-4-9-9-4z',
  box:'M21 8v13H3V8M1 3h22v5H1zM10 12h4',qr:'M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h3v3h-3zM18 18h3v3h-3z',
  rupee:'M6 3h12M6 8h12M16 3c0 5-4 5-7 5l7 8',leaf:'M11 20A7 7 0 0 1 4 13c0-5 5-10 16-10 0 11-5 16-10 16ZM4 21c2-6 6-9 10-10',
- repeat:'M17 1l4 4-4 4M3 11V9a4 4 0 0 1 4-4h14M7 23l-4-4 4-4M21 13v2a4 4 0 0 1-4 4H3'
+ repeat:'M17 1l4 4-4 4M3 11V9a4 4 0 0 1 4-4h14M7 23l-4-4 4-4M21 13v2a4 4 0 0 1-4 4H3',
+ logout:'M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9'
 };
 const ic=(n,c='')=>`<svg class="${c}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="${ICONS[n]||ICONS.grid}"/></svg>`;
 const av=(name,size='s')=>`<span class="av ${size}" style="background:${avc(name||'?')}">${initials(name||'?')}</span>`;
@@ -1462,10 +1463,15 @@ function sidebar(){
      <div style="height:8px"></div>
      ${NAV_BOTTOM.map(i=>navItem(i,'var(--mustard)')).join('')}
    </div>
-   <div class="sb-foot"><button class="sb-user" data-act="account" title="My Account & Sign out">
-     ${av(nameOf(APP.user.devotee),'m')}
-     <span><span class="nm">${esc(nameOf(APP.user.devotee))}</span><span class="rl">${ROLES[APP.user.role].emoji} ${ROLES[APP.user.role].name}</span></span>
-     <span style="margin-left:auto;color:#9C8F79">${ic('more')}</span></button></div></aside>`;
+   <div class="sb-foot" style="display:flex;align-items:center;gap:6px">
+     <button class="sb-user" data-act="account" title="Devotee Account" style="flex:1;min-width:0">
+       ${av(nameOf(APP.user.devotee),'m')}
+       <span><span class="nm">${esc(nameOf(APP.user.devotee))}</span><span class="rl">${ROLES[APP.user.role].emoji} ${ROLES[APP.user.role].name}</span></span>
+     </button>
+     <button class="icon-btn" data-act="logout" title="Sign out" style="color:var(--danger);border:1px solid var(--danger-soft);border-radius:10px;padding:8px;background:var(--paper-card);display:flex;align-items:center;justify-content:center;flex:none">
+       ${ic('logout')}
+     </button>
+   </div></aside>`;
 }
 const CRUMBS={'':'Dashboard',today:'Today',devotees:'Devotees',devotee:'Devotee',org:'Organisation',mgmt:'BACE Management',
  depts:'Departments',dept:'Department',assign:'Assign / Schedule',attendance:'Attendance','dept-reports':'Department reports',
@@ -1484,6 +1490,9 @@ function topbar(){
     <button class="icon-btn" data-act="go" data-r="#/messages" title="Messages">${ic('chat')}${unreadMsgs()?`<i class="dot">${unreadMsgs()}</i>`:''}</button>
     <button class="icon-btn" data-act="notifications" title="Notifications">${ic('bell')}${unread?`<i class="dot">${unread}</i>`:''}</button>
     <button class="icon-btn" data-act="account" title="Devotee Account">${av(nameOf(APP.user.devotee),'s')}</button>
+    <button class="btn sm" data-act="logout" title="Sign out" style="color:var(--danger);border:1px solid var(--danger-soft);background:var(--paper-card);display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:10px;font-weight:600;font-size:12.5px;margin-left:4px">
+      ${ic('logout')}<span>Sign out</span>
+    </button>
   </header>`;
 }
 function botnav(){
@@ -4199,7 +4208,7 @@ function searchModal(){
 function modalHTML(){
   const m=APP.modal;if(!m)return'';
   if(m==='assign')return assignModal();
-  if(m==='switch')return switchUserModal();
+  if(m==='account'||m==='switch')return accountModal();
   if(m==='notif')return notifDrawer();
   if(m==='search')return searchModal();
   if(typeof m==='string')return'';
