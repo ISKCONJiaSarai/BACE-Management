@@ -3,19 +3,35 @@ const mongoose = require('mongoose');
 const UserSchema = new mongoose.Schema({
   username: {
     type: String,
-    required: true,
     unique: true,
     trim: true,
-    lowercase: true
+    lowercase: true,
+    sparse: true
+  },
+  email: {
+    type: String,
+    unique: true,
+    trim: true,
+    lowercase: true,
+    sparse: true
+  },
+  googleId: {
+    type: String,
+    unique: true,
+    sparse: true
+  },
+  avatar: {
+    type: String
   },
   password: {
     type: String,
-    required: true
+    required: function() {
+      return !this.googleId;
+    }
   },
   devotee: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Devotee',
-    required: true
+    ref: 'Devotee'
   },
   role: {
     type: String,

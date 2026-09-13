@@ -12,6 +12,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;450;500;600;700&display=swap" rel="stylesheet">
+<!-- Google Identity Services -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 :root{
   --paper:#FAF6EE; --paper-2:#F3ECE0; --surface:#FFFFFF; --surface-2:#FBF8F3;
@@ -50,26 +52,107 @@ input,select,textarea{font-family:inherit;font-size:14px;color:var(--ink)}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 
 /* ---------- login ---------- */
-.login{min-height:100vh;display:grid;grid-template-columns:1.05fr .95fr}
-.login-art{background:linear-gradient(160deg,#241D14 0%,#3A2A16 55%,#4A3115 100%);color:#F7EEDF;padding:56px;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden}
-.login-art .mandala{position:absolute;right:-140px;bottom:-160px;width:620px;opacity:.13}
-.login-art h1{font-size:44px;line-height:1.06;color:#FBF3E6;max-width:12ch}
-.login-art p{color:#D6C6AC;max-width:44ch;font-size:15px}
-.brandmark{display:flex;align-items:center;gap:12px;font-family:var(--f-head);font-size:15px;letter-spacing:.04em}
-.brandmark .glyph{width:34px;height:34px;flex:none}
-.pillar-legend{display:flex;gap:22px;flex-wrap:wrap;position:relative;z-index:2}
-.pillar-legend div{font-size:12.5px;color:#CDBCA1;border-top:1px solid rgba(247,238,223,.25);padding-top:10px;min-width:110px}
-.pillar-legend b{display:block;font-family:var(--f-head);color:#F7EEDF;font-size:14px;font-weight:500;margin-bottom:2px}
-.login-panel{display:flex;align-items:center;justify-content:center;padding:40px 32px;background:var(--paper)}
-.login-box{width:100%;max-width:430px}
-.login-box>p{color:var(--ink-2);margin:6px 0 26px}
-.role-list{display:flex;flex-direction:column;gap:8px;max-height:52vh;overflow:auto;padding-right:4px}
-.role-opt{display:flex;align-items:center;gap:13px;padding:11px 13px;border:1px solid var(--line);border-radius:var(--r-m);background:var(--surface);text-align:left;transition:border-color .15s,box-shadow .15s}
-.role-opt:hover{border-color:#D3C4A9}
-.role-opt[aria-pressed="true"]{border-color:var(--saffron);box-shadow:0 0 0 3px var(--saffron-soft)}
-.role-opt .nm{font-weight:600}
-.role-opt .rl{font-size:12.5px;color:var(--ink-3)}
-@media(max-width:900px){.login{grid-template-columns:1fr}.login-art{display:none}}
+.login{min-height:100vh;display:grid;grid-template-columns:1.08fr .92fr;background:var(--paper)}
+.login-art{
+  background:radial-gradient(ellipse at 85% 15%, rgba(201,96,27,0.22) 0%, transparent 60%),
+             linear-gradient(155deg, #1A140D 0%, #2A1D11 48%, #3E250E 100%);
+  color:#F7EEDF;
+  padding:54px 60px;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  position:relative;
+  overflow:hidden;
+}
+.login-art:before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background-image:radial-gradient(rgba(232,200,138,0.07) 1px, transparent 1px);
+  background-size:28px 28px;
+  pointer-events:none;
+}
+.login-art .mandala{
+  position:absolute;
+  right:-120px;
+  bottom:-140px;
+  width:640px;
+  height:640px;
+  opacity:.15;
+  pointer-events:none;
+  animation:mandalaRotate 160s linear infinite;
+}
+@keyframes mandalaRotate{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.brandmark{display:flex;align-items:center;gap:14px;font-family:var(--f-head);font-size:15px;letter-spacing:.04em;position:relative;z-index:2}
+.brandmark .glyph{width:36px;height:36px;flex:none;filter:drop-shadow(0 2px 10px rgba(201,96,27,0.35))}
+.brandmark-tag{font-family:var(--f-ui);font-size:10.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:#E8C88A;background:rgba(232,200,138,0.12);border:1px solid rgba(232,200,138,0.25);padding:2px 8px;border-radius:12px;margin-left:4px}
+.login-art-mid{position:relative;z-index:2;max-width:520px;margin:auto 0;padding:24px 0}
+.login-art-mid .eyebrow-pill{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#F1D3A5;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.14);padding:4px 11px;border-radius:20px;margin-bottom:18px}
+.login-art-mid .eyebrow-pill .spark-dot{width:6px;height:6px;border-radius:50%;background:#F3A953;box-shadow:0 0 8px #F3A953}
+.login-art h1{font-size:44px;line-height:1.08;color:#FFF7EC;font-weight:600;letter-spacing:-.02em}
+.login-art h1 em{font-style:italic;color:#E8C88A}
+.login-art p.art-desc{color:#D5C4AA;font-size:15px;line-height:1.6;margin:16px 0 0}
+.pillar-grid{display:grid;grid-template-columns:repeat(3, 1fr);gap:14px;position:relative;z-index:2}
+.pillar-card{background:rgba(255,255,255,0.05);backdrop-filter:blur(8px);border:1px solid rgba(247,238,223,0.12);border-radius:14px;padding:14px 15px;transition:border-color .2s,transform .2s}
+.pillar-card:hover{border-color:rgba(232,200,138,0.3);transform:translateY(-2px)}
+.pillar-card b{display:flex;align-items:center;gap:6px;font-family:var(--f-head);color:#FBF3E6;font-size:13.5px;font-weight:600;margin-bottom:4px}
+.pillar-card span{display:block;font-size:11.5px;color:#BEAE97;line-height:1.45}
+
+/* Right login panel */
+.login-panel{display:flex;align-items:center;justify-content:center;padding:48px 32px;background:radial-gradient(ellipse at 50% 12%, rgba(201,96,27,0.05), transparent 70%), var(--paper);position:relative}
+.login-box{width:100%;max-width:440px}
+.login-card{
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:24px;
+  padding:44px 38px 36px;
+  box-shadow:0 4px 6px -1px rgba(40,30,16,0.03), 0 20px 45px -4px rgba(40,30,16,0.09);
+  position:relative;
+}
+.login-card-head{text-align:center;margin-bottom:28px}
+.login-card-icon{
+  width:52px;
+  height:52px;
+  margin:0 auto 16px;
+  border-radius:16px;
+  background:linear-gradient(135deg,#FDF7EE,#F4EADB);
+  border:1px solid rgba(201,96,27,0.2);
+  display:grid;
+  place-items:center;
+  color:var(--saffron);
+  box-shadow:0 4px 14px rgba(201,96,27,0.12);
+}
+.login-card-icon svg{width:26px;height:26px}
+.login-card h2{font-family:var(--f-head);font-size:25px;font-weight:600;color:var(--ink);letter-spacing:-.01em;margin:0 0 8px}
+.login-card p.card-sub{font-size:13.5px;color:var(--ink-2);line-height:1.55;margin:0}
+.login-oauth-box{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  padding:22px 18px 18px;
+  background:var(--paper);
+  border:1px solid var(--line-2);
+  border-radius:16px;
+  margin:24px 0 20px;
+}
+.login-oauth-label{font-size:12px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px}
+.google-btn-wrapper{min-height:46px;display:flex;justify-content:center;width:100%}
+.login-status{font-size:12.5px;margin-top:10px;min-height:16px;text-align:center}
+.login-trust{padding-top:18px;border-top:1px solid var(--line-2);display:flex;flex-direction:column;gap:10px}
+.trust-row{display:flex;align-items:center;gap:9px;font-size:12px;color:var(--ink-2)}
+.trust-row svg{width:15px;height:15px;flex:none;color:var(--green)}
+.login-help{margin-top:24px;text-align:center;font-size:12.5px;color:var(--ink-3)}
+.login-help a{color:var(--saffron);font-weight:500;text-decoration:none}
+.login-help a:hover{text-decoration:underline}
+.login-footer{margin-top:26px;text-align:center;font-size:11.5px;color:var(--ink-3);display:flex;align-items:center;justify-content:center;gap:14px}
+.login-footer .sep{width:3px;height:3px;border-radius:50%;background:var(--line)}
+@media(max-width:1020px){
+  .login{grid-template-columns:1fr}
+  .login-art{display:none}
+  .login-panel{min-height:100vh;padding:32px 18px}
+  .login-card{padding:34px 24px 28px}
+}
+
 
 /* ---------- shell ---------- */
 .shell{display:grid;grid-template-columns:var(--sidebar) 1fr;min-height:100vh}
@@ -1409,35 +1492,183 @@ function installPWA(){
 /* =========================================================================
    LOGIN
    ========================================================================= */
+const GOOGLE_CLIENT_ID = '793682083812-hp4oe9g0pbh2nfk4br8v42m2shvngbah.apps.googleusercontent.com';
 let loginPick='u2';
+
+function initGoogleAuth(){
+  const container=document.getElementById('googleBtn');
+  if(!container)return;
+  function tryRender(){
+    if(typeof google==='undefined'||!google.accounts||!google.accounts.id){
+      setTimeout(tryRender,180);
+      return;
+    }
+    try{
+      google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: handleGoogleAuthResponse,
+        auto_select: false,
+        cancel_on_tap_outside: true
+      });
+      google.accounts.id.renderButton(container,{
+        theme:'outline',
+        size:'large',
+        shape:'rectangular',
+        text:'continue_with',
+        logo_alignment:'left',
+        width: 320
+      });
+    }catch(err){
+      console.warn('Google Identity initialization error:',err);
+    }
+  }
+  tryRender();
+}
+
+async function handleGoogleAuthResponse(response){
+  const statusEl=document.getElementById('googleLoginStatus');
+  if(statusEl)statusEl.innerHTML='<span style="color:var(--saffron);font-weight:500">Connecting with temple database...</span>';
+  try{
+    const apiBase=window.location.origin.includes(':5000')?'':'http://localhost:5000';
+    const res=await fetch(`${apiBase}/api/auth/google`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({token:response.credential})
+    });
+    const data=await res.json();
+    if(!data.success){
+      throw new Error(data.message||'Authentication failed');
+    }
+
+    localStorage.setItem('bace_token',data.token);
+    localStorage.setItem('bace_user',JSON.stringify(data.user));
+
+    let d=DB.devotees.find(x=>x.id===data.user.devotee||(x.email&&x.email.toLowerCase()===data.user.email.toLowerCase()));
+    if(!d){
+      d={
+        id:data.user.devotee||('d_'+Date.now()),
+        name:data.user.name,
+        email:data.user.email,
+        avatar:data.user.avatar||'',
+        status:'Active',
+        joined:iso(TODAY),
+        batch:'b1',
+        dept:'kitchen',
+        rounds:16,
+        morning:90,
+        swabhav:'Organising'
+      };
+      DB.devotees.push(d);
+    }
+
+    APP.user={
+      id:data.user.id,
+      devotee:d.id,
+      role:data.user.role||'devotee',
+      email:data.user.email,
+      name:data.user.name,
+      avatar:data.user.avatar
+    };
+
+    APP.nav.open={
+      mgmt:can('management',APP.user.role),
+      preach:can('preaching',APP.user.role)&&!can('management',APP.user.role),
+      care:can('care',APP.user.role)&&!can('management',APP.user.role)&&!can('preaching',APP.user.role)
+    };
+    if(!APP.nav.open.mgmt&&!APP.nav.open.preach&&!APP.nav.open.care)APP.nav.open.mgmt=true;
+
+    logAudit('Google Login',`${data.user.name} logged in`);
+    toast(`Hare Krishna, ${data.user.name.split(' ')[0]}! 🙏`);
+    go('#/');
+  }catch(err){
+    console.error('Google Auth Error:',err);
+    if(statusEl){
+      statusEl.innerHTML=`<span style="color:var(--danger);font-weight:500">Error: ${esc(err.message)}</span>`;
+    }else{
+      alert('Google authentication error: '+err.message);
+    }
+  }
+}
+
 function viewLogin(){
   return `<div class="login">
   <div class="login-art">
     <svg class="mandala" viewBox="0 0 200 200" fill="none" stroke="#E8C88A" stroke-width=".7">
       ${Array.from({length:16},(_,i)=>`<ellipse cx="100" cy="100" rx="78" ry="26" transform="rotate(${i*11.25} 100 100)"/>`).join('')}
-      <circle cx="100" cy="100" r="26"/><circle cx="100" cy="100" r="14"/></svg>
-    <div class="brandmark"><svg class="glyph" viewBox="0 0 24 24" fill="none" stroke="#E8C88A" stroke-width="1.2"><path d="${ICONS.lotus}"/></svg>ISKCON BACE · JIA SARAI</div>
-    <div style="position:relative;z-index:2">
-      <h1>Set it once. Automate it. Step in when it matters.</h1>
-      <p style="margin-top:16px">Management, preaching and devotee care run on one devotee record — so nothing is counted twice and nobody is quietly forgotten.</p>
+      <circle cx="100" cy="100" r="26"/><circle cx="100" cy="100" r="14"/>
+    </svg>
+
+    <div class="brandmark">
+      <svg class="glyph" viewBox="0 0 24 24" fill="none" stroke="#E8C88A" stroke-width="1.3"><path d="${ICONS.lotus}"/></svg>
+      <span>ISKCON BACE · JIA SARAI</span>
+      <span class="brandmark-tag">Official</span>
     </div>
-    <div class="pillar-legend">
-      <div><b>🕉 BACE Management</b>Departments, seva rotas, attendance, inventory</div>
-      <div><b>📖 BACE Preaching</b>8 batches across three levels, contacts, follow-ups</div>
-      <div><b>❤️ Devotee Care</b>Friends, groups, facilitators, sadhana</div>
+
+    <div class="login-art-mid">
+      <div class="eyebrow-pill"><span class="spark-dot"></span> Community Operating System</div>
+      <h1>Set it once.<br>Automate it.<br><em>Step in when it matters.</em></h1>
+      <p class="art-desc">Departments, seva rotas, devotee care and preaching pipeline synchronized seamlessly on a unified temple operating system.</p>
+    </div>
+
+    <div class="pillar-grid">
+      <div class="pillar-card">
+        <b>🕉 Management</b>
+        <span>Rotas, attendance, inventory & departments</span>
+      </div>
+      <div class="pillar-card">
+        <b>📖 Preaching</b>
+        <span>8 batches across 3 levels & contacts pipeline</span>
+      </div>
+      <div class="pillar-card">
+        <b>❤️ Devotee Care</b>
+        <span>Facilitators, sadhana & personal guidance</span>
+      </div>
     </div>
   </div>
-  <div class="login-panel"><div class="login-box">
-    <h1>Hare Krishna 🙏</h1>
-    <p>Choose a role to open its dashboard. Every role sees different pages, different data and different permissions.</p>
-    <div class="role-list">
-      ${DB.users.map(u=>{const d=dv(u.devotee);return `<button class="role-opt" aria-pressed="${loginPick===u.id}" data-act="pick-user" data-id="${u.id}">
-        ${av(d.name,'m')}<span style="min-width:0"><span class="nm">${esc(d.name)}</span>
-        <span class="rl">${ROLES[u.role].emoji} ${ROLES[u.role].name} · ${esc(ROLES[u.role].scope)}</span></span></button>`}).join('')}
+
+  <div class="login-panel">
+    <div class="login-box">
+      <div class="login-card">
+        <div class="login-card-head">
+          <div class="login-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="${ICONS.lotus}"/></svg>
+          </div>
+          <h2>Hare Krishna 🙏</h2>
+          <p class="card-sub">Welcome to the ISKCON BACE Portal. Sign in with your Google account to access your seva and community records.</p>
+        </div>
+
+        <div class="login-oauth-box">
+          <div class="login-oauth-label">Authorized Devotee Login</div>
+          <div id="googleBtn" class="google-btn-wrapper"></div>
+          <div id="googleLoginStatus" class="login-status"></div>
+        </div>
+
+        <div class="login-trust">
+          <div class="trust-row">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="${ICONS.shield}"/></svg>
+            <span>Verified OAuth 2.0 temple authentication</span>
+          </div>
+          <div class="trust-row">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="${ICONS.check}"/></svg>
+            <span>Instant role assignment & permission sync</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="login-help">
+        Facing trouble signing in? <a href="mailto:admin@iskconjiasarai.org" title="Email temple admin">Contact BACE Administration</a>
+      </div>
+
+      <div class="login-footer">
+        <span>© ISKCON Jia Sarai</span>
+        <span class="sep"></span>
+        <span>Community OS v2.4</span>
+        <span class="sep"></span>
+        <span>Confidential</span>
+      </div>
     </div>
-    <button class="btn pri block" style="margin-top:18px;padding:12px" data-act="login">Open dashboard ${ic('arrow')}</button>
-    <p class="tiny" style="margin-top:14px">Demo environment — all names and records are fictional sample data.</p>
-  </div></div></div>`;
+  </div>
+</div>`;
 }
 
 /* =========================================================================
@@ -3374,7 +3605,7 @@ function switchUserModal(){
        ${av(nameOf(u.devotee),'m')}<span class="grow"><span class="t">${esc(nameOf(u.devotee))}</span>
        <span class="d">${ROLES[u.role].emoji} ${ROLES[u.role].name} — ${esc(ROLES[u.role].scope)}</span></span>
        ${u.id===APP.user.id?badge('Current','green'):ic('arrow')}</button>`).join('')}</div></div>
-   <div class="modal-f"><button class="btn" data-act="close-scrim">Cancel</button></div></div></div>`;
+   <div class="modal-f"><button class="btn" style="color:var(--danger);border-color:var(--danger-soft)" data-act="logout">Sign out</button><button class="btn" style="margin-left:auto" data-act="close-scrim">Cancel</button></div></div></div>`;
 }
 function notifDrawer(){
   return `<div class="drawer-wrap" data-act="close-scrim"><div class="drawer" data-stop="1">
@@ -3604,7 +3835,7 @@ function routeView(){
 }
 function render(){
   const app=document.getElementById('app');
-  if(!APP.user){app.innerHTML=viewLogin();return}
+  if(!APP.user){app.innerHTML=viewLogin();initGoogleAuth();return}
   applyAccent(APP.route);
   const body=routeView();
   app.innerHTML=`<div class="shell">${sidebar()}<div class="main">${topbar()}<div class="view">${body}</div></div></div>
@@ -3640,6 +3871,7 @@ document.addEventListener('click',e=>{
     if(!APP.nav.open.mgmt&&!APP.nav.open.preach&&!APP.nav.open.care)APP.nav.open.mgmt=true;
     go('#/');break}
   case 'switch-user':APP.modal='switch';render();break;
+  case 'logout':localStorage.removeItem('bace_token');localStorage.removeItem('bace_user');APP.user=null;APP.modal='';render();toast('Signed out successfully','👋');break;
   case 'do-switch':{const u=DB.users.find(x=>x.id===id);APP.user={...u};APP.modal='';APP.filters={};APP.page={};go('#/');toast('Now viewing as '+ROLES[u.role].name,ROLES[u.role].emoji);break}
   case 'go':go(t.dataset.r);break;
   case 'drill':go(t.dataset.r);break;
@@ -4309,6 +4541,47 @@ window.addEventListener('hashchange',()=>{APP.route=location.hash||'#/';APP.moda
    BOOT
    ========================================================================= */
 installPWA();
+try {
+  const savedUser = localStorage.getItem('bace_user');
+  if (savedUser) {
+    const u = JSON.parse(savedUser);
+    if (u && u.id && u.role) {
+      let d = DB.devotees.find(x => x.id === u.devotee || (x.email && x.email.toLowerCase() === (u.email || '').toLowerCase()));
+      if (!d) {
+        d = {
+          id: u.devotee || ('d_' + Date.now()),
+          name: u.name,
+          email: u.email,
+          avatar: u.avatar || '',
+          status: 'Active',
+          joined: iso(TODAY),
+          batch: 'b1',
+          dept: 'kitchen',
+          rounds: 16,
+          morning: 90,
+          swabhav: 'Organising'
+        };
+        DB.devotees.push(d);
+      }
+      APP.user = {
+        id: u.id,
+        devotee: d.id,
+        role: u.role,
+        email: u.email,
+        name: u.name,
+        avatar: u.avatar
+      };
+      APP.nav.open = {
+        mgmt: can('management', u.role),
+        preach: can('preaching', u.role) && !can('management', u.role),
+        care: can('care', u.role) && !can('management', u.role) && !can('preaching', u.role)
+      };
+      if (!APP.nav.open.mgmt && !APP.nav.open.preach && !APP.nav.open.care) APP.nav.open.mgmt = true;
+    }
+  }
+} catch (e) {
+  console.warn('Session restore error:', e);
+}
 APP.route=location.hash||'#/';
 render();
 
