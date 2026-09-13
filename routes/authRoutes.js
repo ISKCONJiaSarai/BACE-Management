@@ -7,6 +7,13 @@ const Devotee = require('../models/Devotee');
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
+function getAdminEmails() {
+  return (process.env.ADMIN_EMAILS || '')
+    .split(',')
+    .map(email => email.toLowerCase().trim())
+    .filter(Boolean);
+}
+
 /**
  * @route   GET /api/auth/config
  * @desc    Get public OAuth configuration (Client ID)
@@ -50,6 +57,7 @@ router.post('/google', async (req, res) => {
     }
 
     const normalizedEmail = email.toLowerCase().trim();
+    const adminEmails = getAdminEmails();
 
     // 1. Check if user already exists by googleId or email
     let user = await User.findOne({
@@ -84,9 +92,9 @@ router.post('/google', async (req, res) => {
       const baseUsername = normalizedEmail.split('@')[0].replace(/[^a-zA-Z0-9_]/g, '');
       const uniqueUsername = `${baseUsername}_${Math.floor(100 + Math.random() * 900)}`;
 
-      // Default role: admin if matches temple coordinator email or if first user, else admin/devotee
+      // Default role: admin if allowlisted or if first user, else devotee
       const totalUsers = await User.countDocuments();
-      const role = totalUsers === 0 ? 'admin' : 'devotee';
+      const role = totalUsers === 0 || adminEmails.includes(normalizedEmail) ? 'admin' : 'devotee';
 
       user = await User.create({
         username: uniqueUsername,
@@ -101,6 +109,7 @@ router.post('/google', async (req, res) => {
       user.googleId = googleId;
       if (picture) user.avatar = picture;
       if (!user.devotee && devoteeDoc) user.devotee = devoteeDoc._id;
+      if (adminEmails.includes(normalizedEmail) && user.role !== 'admin') user.role = 'admin';
       user.lastLogin = new Date();
       await user.save();
     }
