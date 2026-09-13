@@ -31,6 +31,7 @@ router.get('/config', (req, res) => {
  * @access  Public
  */
 router.post('/google', async (req, res) => {
+  let stage = 'validate_request';
   try {
     const { token } = req.body;
     if (!token) {
@@ -41,6 +42,7 @@ router.post('/google', async (req, res) => {
     }
 
     // Verify Google ID token
+    stage = 'verify_google_token';
     const ticket = await client.verifyIdToken({
       idToken: token,
       audience: process.env.GOOGLE_CLIENT_ID
@@ -60,6 +62,7 @@ router.post('/google', async (req, res) => {
     const adminEmails = getAdminEmails();
 
     // 1. Check if user already exists by googleId or email
+    stage = 'find_user';
     let user = await User.findOne({
       $or: [{ googleId }, { email: normalizedEmail }]
     }).populate('devotee');
@@ -67,12 +70,14 @@ router.post('/google', async (req, res) => {
     let devoteeDoc = user ? user.devotee : null;
 
     // 2. If no user, check if a devotee record already exists with this email
+    stage = 'find_devotee';
     if (!devoteeDoc) {
       devoteeDoc = await Devotee.findOne({ email: normalizedEmail });
     }
 
     // 3. If still no devotee record, create a new one
     if (!devoteeDoc) {
+      stage = 'create_devotee';
       // Find a safe customId if needed
       const count = await Devotee.countDocuments();
       const customId = `d_g_${Date.now()}`;
@@ -89,6 +94,7 @@ router.post('/google', async (req, res) => {
 
     // 4. Create or update User record
     if (!user) {
+      stage = 'create_user';
       const baseUsername = normalizedEmail.split('@')[0].replace(/[^a-zA-Z0-9_]/g, '');
       const uniqueUsername = `${baseUsername}_${Math.floor(100 + Math.random() * 900)}`;
 
@@ -106,6 +112,7 @@ router.post('/google', async (req, res) => {
         lastLogin: new Date()
       });
     } else {
+      stage = 'update_user';
       user.googleId = googleId;
       if (picture) user.avatar = picture;
       if (!user.devotee && devoteeDoc) user.devotee = devoteeDoc._id;
@@ -115,6 +122,7 @@ router.post('/google', async (req, res) => {
     }
 
     // 5. Generate application JWT
+    stage = 'generate_session_token';
     const jwtSecret = process.env.JWT_SECRET || 'bace_jwt_secret_dev_2026';
     const jwtExpire = process.env.JWT_EXPIRE || '30d';
 
@@ -145,11 +153,16 @@ router.post('/google', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Google Auth Error:', error);
-    res.status(401).json({
+    const requestId = req.requestId || 'unknown';
+    const status = ['validate_request', 'verify_google_token'].includes(stage) ? 401 : 500;
+    console.error(`[${requestId}] Google auth failed during ${stage}:`, error.stack || error);
+    res.status(status).json({
       success: false,
-      message: 'Invalid Google authentication token',
-      error: error.message
+      message: `Google login failed during ${stage}`,
+      stage,
+      code: error.code || error.name || 'GOOGLE_AUTH_ERROR',
+      error: error.message || String(error),
+      requestId
     });
   }
 });

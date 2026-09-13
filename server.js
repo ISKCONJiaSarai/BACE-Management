@@ -11,6 +11,12 @@ loadAppConfig();
 
 const app = express();
 
+app.use((req, res, next) => {
+  req.requestId = req.headers['x-vercel-id'] || `local-${Date.now().toString(36)}`;
+  res.setHeader('X-Request-Id', req.requestId);
+  next();
+});
+
 // Allowed origins for CORS
 const allowedOrigins = [
   'http://localhost:5500',
@@ -57,6 +63,7 @@ app.use('/api', async (req, res, next) => {
     await connectDB();
     next();
   } catch (error) {
+    error.failureStage = 'mongodb_connection';
     next(error);
   }
 });
@@ -65,11 +72,17 @@ app.use('/api/devotees', require('./routes/devoteeRoutes'));
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error('Unhandled Error:', err.stack);
+  const requestId = req.requestId || 'unknown';
+  const stage = err.failureStage || 'request_processing';
+  const code = err.code || err.name || 'INTERNAL_ERROR';
+  console.error(`[${requestId}] ${stage}:`, err.stack || err);
   res.status(500).json({
     success: false,
     message: 'Server error',
-    error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    stage,
+    code,
+    error: err.message || String(err),
+    requestId
   });
 });
 
