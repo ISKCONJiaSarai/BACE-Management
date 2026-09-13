@@ -535,7 +535,7 @@ const ROLES={
   preaching_coord:{name:'Preaching Coordinator',emoji:'🎓',scope:'One assigned batch'},
   facilitator:{name:'Facilitator',emoji:'🤝',scope:'Assigned devotees and care follow-ups'},
   devotee:{name:'Devotee',emoji:'🙏',scope:'My seva, my classes, my calendar'},
-  admin:{name:'Super Admin',emoji:'⚙️',scope:'Full configuration, users, roles and audit'}
+  admin:{name:'Area Leader',emoji:'🪷',scope:'Strategic oversight, users, roles and administration'}
 };
 const ACCESS={
   dashboard:'*', calendar:'*', sops:'*', messages:'*', actions:'*', today:'*',
@@ -1118,8 +1118,30 @@ const logAudit=(action,record)=>DB.audit.unshift({id:uid('au'),user:(APP.user?na
 })();
 
 /* ---------------- lookups ---------------- */
-function dv(id){return DB.devotees.find(d=>d.id===id)||null}
+function dv(id){return DB.devotees.find(d=>d.id===id||d.customId===id)||null}
 function nameOf(id){const d=dv(id);return d?d.name:'Unassigned'}
+function devoteeDisplayName(id){
+  const d=dv(id);
+  if(d&&d.name&&d.name!=='ISKCON Jia Sarai'&&d.name!=='Google Devotee')return d.name;
+  if(APP.user&&APP.user.name&&APP.user.name!=='ISKCON Jia Sarai'&&APP.user.name!=='Google Devotee')return APP.user.name;
+  return 'Surya Narayana Das';
+}
+function devoteePositionTitle(id, role){
+  const d=dv(id);
+  if(d&&d.appointment){
+    const emojiMap={
+      'Area Leader':'🪷','Overall Coordinator':'🧭','Internal Manager':'🕉','Preaching Manager':'📖',
+      'Devotee Care Manager':'❤️','Department Head':'🛠','Preaching Coordinator':'🎓','Facilitator':'🤝',
+      'Senior Devotee':'🪷','Devotee':'🙏'
+    };
+    return `${emojiMap[d.appointment]||'🪷'} ${d.appointment}`;
+  }
+  const rKey=role||(APP.user&&APP.user.role)||'area_leader';
+  const r=ROLES[rKey]||ROLES.area_leader;
+  const name=(r.name==='Super Admin'?'Area Leader':r.name);
+  const emoji=(r.name==='Super Admin'?'🪷':(r.emoji||'🪷'));
+  return `${emoji} ${name}`;
+}
 function dept(id){return DB.departments.find(d=>d.id===id)||null}
 function batch(id){return DB.batches.find(b=>b.id===id)||null}
 function contact(id){return DB.contacts.find(c=>c.id===id)||null}
@@ -1469,9 +1491,12 @@ function sidebar(){
      ${NAV_BOTTOM.map(i=>navItem(i,'var(--mustard)')).join('')}
    </div>
    <div class="sb-foot" style="display:flex;align-items:center;gap:6px">
-     <button class="sb-user" data-act="account" title="Devotee Account" style="flex:1;min-width:0">
-       ${av(nameOf(APP.user.devotee),'m')}
-       <span><span class="nm">${esc(nameOf(APP.user.devotee))}</span><span class="rl">${ROLES[APP.user.role].emoji} ${ROLES[APP.user.role].name}</span></span>
+     <button class="sb-user" data-act="account" title="Devotee Account" style="flex:1;min-width:0;display:flex;align-items:center;gap:10px;text-align:left;overflow:hidden">
+       ${av(devoteeDisplayName(APP.user.devotee),'m')}
+       <div style="display:flex;flex-direction:column;min-width:0;flex:1;overflow:hidden">
+         <span class="nm" style="font-size:13px;font-weight:600;color:#F6EEDF;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.25">${esc(devoteeDisplayName(APP.user.devotee))}</span>
+         <span class="rl" style="font-size:11px;color:#DCC4A0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;display:flex;align-items:center;gap:4px">${esc(devoteePositionTitle(APP.user.devotee, APP.user.role))}</span>
+       </div>
      </button>
      <button class="icon-btn" data-act="logout" title="Sign out" style="color:var(--danger);border:1px solid var(--danger-soft);border-radius:10px;padding:8px;background:var(--paper-card);display:flex;align-items:center;justify-content:center;flex:none">
        ${ic('logout')}
@@ -2361,35 +2386,122 @@ function funnelRows(){
    DEVOTEE DIRECTORY + PROFILE
    ========================================================================= */
 function viewDevotees(){
-  const f=APP.filters.dev||(APP.filters.dev={q:'',status:'',dept:'',batch:'',level:'',skill:''});
+  const f=APP.filters.dev||(APP.filters.dev={q:'',status:'',dept:'',batch:'',level:'',skill:'',swabhav:'',sort:'name_asc'});
+  if(!f.sort) f.sort='name_asc';
+
   let rows=DB.devotees.filter(d=>{
-    if(f.q&&!(d.name+d.phone+d.org+d.skills.join(' ')).toLowerCase().includes(f.q.toLowerCase()))return false;
+    if(f.q){
+      const query = f.q.toLowerCase().trim();
+      const searchable = [
+        d.name,
+        d.phone,
+        d.email,
+        d.address,
+        d.residence,
+        d.highestEducation,
+        d.presentStudiesOrJob,
+        d.org,
+        d.occupation,
+        d.appointment,
+        (d.skills||[]).join(' '),
+        (d.swabhav?.nature||''),
+        (d.swabhav?.interests||[]).join(' '),
+        (batch(d.batch)?.name||''),
+        (dept(d.dept)?.name||'')
+      ].filter(Boolean).join(' ').toLowerCase();
+      if(!searchable.includes(query)) return false;
+    }
     if(f.status&&d.status!==f.status)return false;
     if(f.dept&&d.dept!==f.dept)return false;
     if(f.batch&&d.batch!==f.batch)return false;
     if(f.level&&String(d.level)!==f.level)return false;
     if(f.skill&&!d.skills.includes(f.skill))return false;
-    return true;});
+    if(f.swabhav&&(d.swabhav?.nature!==f.swabhav))return false;
+    return true;
+  });
+
+  // Apply sorting
+  rows.sort((a, b) => {
+    switch (f.sort) {
+      case 'name_desc': return b.name.localeCompare(a.name);
+      case 'date_desc': return new Date(b.joined || 0) - new Date(a.joined || 0);
+      case 'date_asc': return new Date(a.joined || 0) - new Date(b.joined || 0);
+      case 'level_desc': return (b.level || 0) - (a.level || 0) || a.name.localeCompare(b.name);
+      case 'att_desc': return (b.attendancePct || 0) - (a.attendancePct || 0);
+      case 'att_asc': return (a.attendancePct || 0) - (b.attendancePct || 0);
+      case 'sadhana_desc': return ((b.sadhana?.rounds || 0) - (a.sadhana?.rounds || 0));
+      case 'name_asc':
+      default:
+        return a.name.localeCompare(b.name);
+    }
+  });
+
   const scoped=['dept_head','preaching_coord','facilitator'].includes(APP.user.role);
-  const toolbar=`<input type="search" placeholder="Search name, phone, college or skill" value="${esc(f.q)}" data-act="f" data-k="dev" data-n="q">
-   <select data-act="f" data-k="dev" data-n="status"><option value="">All statuses</option>${['Active','Pending Approval','New','Inactive'].map(s=>`<option ${f.status===s?'selected':''}>${s}</option>`).join('')}</select>
-   <select data-act="f" data-k="dev" data-n="dept"><option value="">All departments</option>${activeDepts().map(d=>`<option value="${d.id}" ${f.dept===d.id?'selected':''}>${esc(d.name)}</option>`).join('')}</select>
-   <select data-act="f" data-k="dev" data-n="batch"><option value="">All batches</option>${DB.batches.map(b=>`<option value="${b.id}" ${f.batch===b.id?'selected':''}>${esc(b.name)}</option>`).join('')}</select>
-   <select data-act="f" data-k="dev" data-n="level"><option value="">All levels</option>${[1,2,3].map(l=>`<option value="${l}" ${f.level==String(l)?'selected':''}>Level ${l}</option>`).join('')}</select>
-   <select data-act="f" data-k="dev" data-n="skill"><option value="">All skills</option>${SKILLS.map(s=>`<option ${f.skill===s?'selected':''}>${s}</option>`).join('')}</select>
-   ${can('directory')?`<button class="btn sm" data-act="export-devotees">${ic('download')}Export CSV</button>`:''}`;
+  const hasActiveFilters = f.q || f.status || f.dept || f.batch || f.level || f.skill || f.swabhav || (f.sort && f.sort !== 'name_asc');
+
+  const toolbar=`
+   <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;width:100%">
+     <div style="position:relative;flex:1;min-width:200px">
+       <input type="search" placeholder="🔍 Search name, phone, email, college, job, skills..." value="${esc(f.q)}" data-act="f" data-k="dev" data-n="q" style="width:100%;padding:7px 10px 7px 30px;border-radius:9px;border:1px solid var(--line)">
+       <span style="position:absolute;left:9px;top:8px;font-size:13px;opacity:0.6;pointer-events:none">🔍</span>
+     </div>
+     <div style="display:flex;align-items:center;gap:4px">
+       <span class="tiny" style="font-weight:600;color:var(--ink-2);flex:none">Sort:</span>
+       <select data-act="f" data-k="dev" data-n="sort" style="min-width:140px;padding:6px 10px;border-radius:8px;border:1px solid var(--line)">
+         <option value="name_asc" ${f.sort==='name_asc'?'selected':''}>Name (A → Z)</option>
+         <option value="name_desc" ${f.sort==='name_desc'?'selected':''}>Name (Z → A)</option>
+         <option value="date_desc" ${f.sort==='date_desc'?'selected':''}>Joined (Newest)</option>
+         <option value="date_asc" ${f.sort==='date_asc'?'selected':''}>Joined (Oldest)</option>
+         <option value="level_desc" ${f.sort==='level_desc'?'selected':''}>Level (High to Low)</option>
+         <option value="att_desc" ${f.sort==='att_desc'?'selected':''}>Attendance (High to Low)</option>
+         <option value="att_asc" ${f.sort==='att_asc'?'selected':''}>Attendance (Low to High)</option>
+         <option value="sadhana_desc" ${f.sort==='sadhana_desc'?'selected':''}>Sadhana rounds</option>
+       </select>
+     </div>
+     <select data-act="f" data-k="dev" data-n="status" style="padding:6px 10px;border-radius:8px;border:1px solid var(--line)">
+       <option value="">All statuses</option>
+       ${['Active','Pending Approval','New','Inactive'].map(s=>`<option ${f.status===s?'selected':''}>${s}</option>`).join('')}
+     </select>
+     <select data-act="f" data-k="dev" data-n="dept" style="padding:6px 10px;border-radius:8px;border:1px solid var(--line)">
+       <option value="">All departments</option>
+       ${activeDepts().map(d=>`<option value="${d.id}" ${f.dept===d.id?'selected':''}>${esc(d.name)}</option>`).join('')}
+     </select>
+     <select data-act="f" data-k="dev" data-n="batch" style="padding:6px 10px;border-radius:8px;border:1px solid var(--line)">
+       <option value="">All batches</option>
+       ${DB.batches.map(b=>`<option value="${b.id}" ${f.batch===b.id?'selected':''}>${esc(b.name)}</option>`).join('')}
+     </select>
+     <select data-act="f" data-k="dev" data-n="level" style="padding:6px 10px;border-radius:8px;border:1px solid var(--line)">
+       <option value="">All levels</option>
+       ${[1,2,3].map(l=>`<option value="${l}" ${f.level==String(l)?'selected':''}>Level ${l}</option>`).join('')}
+     </select>
+     <select data-act="f" data-k="dev" data-n="skill" style="padding:6px 10px;border-radius:8px;border:1px solid var(--line)">
+       <option value="">All skills</option>
+       ${SKILLS.map(s=>`<option ${f.skill===s?'selected':''}>${s}</option>`).join('')}
+     </select>
+     <select data-act="f" data-k="dev" data-n="swabhav" style="padding:6px 10px;border-radius:8px;border:1px solid var(--line)">
+       <option value="">All swabhav</option>
+       ${SWABHAV.map(s=>`<option value="${s[0]}" ${f.swabhav===s[0]?'selected':''}>${s[0]}</option>`).join('')}
+     </select>
+     ${hasActiveFilters ? `<button class="btn sm" data-act="clear-dev-filters" title="Reset all filters" style="color:var(--danger);border-color:var(--danger-soft)">${ic('x')} Reset Filters</button>` : ''}
+     ${can('directory')?`<button class="btn sm" data-act="export-devotees" style="margin-left:auto">${ic('download')}Export CSV</button>`:''}
+   </div>`;
+
   return head('👥 One devotee, one record','Devotee directory',
-    `${rows.length} profiles — searchable by everyone with an operational role; sensitive care information stays restricted`,
+    `${rows.length} devotee${rows.length!==1?'s':''} matching filters — searchable by everyone with an operational role; sensitive care information stays restricted`,
     `<button class="btn pri" data-act="add-devotee">${ic('plus')}Add devotee</button>`)+
    (scoped?`<div class="note" style="margin-bottom:14px">You can search and view the whole community directory. You can only <b>edit</b> people inside your own ${APP.user.role==='dept_head'?'department':APP.user.role==='preaching_coord'?'batch':'care list'}.</div>`:'')+
    dataTable({id:'dev',exportName:'devotees',cols:[
-    {h:'Devotee',c:d=>`<div class="who">${av(d.name,'m')}<div><b>${esc(d.name)}</b><span>${esc(d.org)} · joined ${fmtD(d.joined)}</span></div></div>`},
+    {h:'Devotee',c:d=>`<div class="who">${av(d.name,'m')}<div><b>${esc(d.name)}</b><span>${esc(d.org || d.highestEducation || 'BACE')} · joined ${fmtD(d.joined)}</span></div></div>`},
     {h:'Status',c:d=>sbadge(d.status)},
-    {h:'Level / batch',c:d=>d.batch?`${badge('L'+d.level,'indigo')} ${esc(batch(d.batch).name)}`:'<span class="tiny">Not in a batch</span>'},
-    {h:'Department',c:d=>d.dept?esc(dept(d.dept).name):'<span class="tiny">No seva</span>'},
-    {h:'Care group',c:d=>d.careGroup?esc(group(d.careGroup).name):'<span class="tiny">—</span>'},
+    {h:'Level / batch',c:d=>d.batch?`${badge('L'+d.level,'indigo')} ${esc(batch(d.batch)?.name||'')}`:'<span class="tiny">Not in a batch</span>'},
+    {h:'Department',c:d=>d.dept?esc(dept(d.dept)?.name||''):'<span class="tiny">No seva</span>'},
+    {h:'Care group',c:d=>d.careGroup?esc(group(d.careGroup)?.name||''):'<span class="tiny">—</span>'},
     {h:'Skills',c:d=>d.skills.map(s=>badge(s,'grey')).join(' ')},
-    {h:'Attendance',c:d=>`<div style="min-width:90px">${prog(d.attendancePct)}<span class="tiny">${d.attendancePct}%</span></div>`}
+    {h:'Attendance',c:d=>`<div style="min-width:90px">${prog(d.attendancePct)}<span class="tiny">${d.attendancePct}%</span></div>`},
+    {h:'Actions',c:d=>`<div style="display:flex;gap:6px;align-items:center;justify-content:flex-end" onclick="event.stopPropagation()">
+      <button class="btn sm" data-act="open-devotee" data-id="${d.id}" title="View profile" style="padding:4px 9px">${ic('user')} View</button>
+      <button class="btn sm danger" data-act="delete-devotee" data-id="${d.id}" title="Delete devotee data" style="padding:4px 8px;color:var(--danger);border-color:rgba(220,53,69,0.25);background:rgba(220,53,69,0.06)">🗑 Delete</button>
+    </div>`}
    ],rows,onRow:'open-devotee',
    empty:emptyState('No devotees found','Nothing matches these filters. Clear one, or add a new devotee.','<button class="btn pri" data-act="add-devotee">Add devotee</button>','people')});
 }
@@ -2489,7 +2601,8 @@ function viewDevotee(id){
     <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn" data-act="dm" data-id="${d.id}">${ic('chat')}Message</button>
       <button class="btn" data-act="add-followup">${ic('clock')}Follow-up</button>
-      <button class="btn pri" data-act="edit-devotee" data-id="${d.id}">${ic('edit')}Edit profile</button></div>
+      <button class="btn pri" data-act="edit-devotee" data-id="${d.id}">${ic('edit')}Edit profile</button>
+      <button class="btn danger" data-act="delete-devotee" data-id="${d.id}" style="color:var(--danger);border-color:rgba(220,53,69,0.3);background:rgba(220,53,69,0.05)">🗑 Delete Devotee Data</button></div>
    </div>
    <div class="tabs">${tabs.map(t=>`<button class="${t===tab?'on':''}" data-act="tab" data-k="devotee" data-v="${t}">${t}${t==='Care'&&!careOK?' 🔒':''}</button>`).join('')}</div>
    ${body}`;
@@ -4078,9 +4191,10 @@ function listModal(){
      ${m.exportRows?`<button class="btn pri" data-act="export-drill">${ic('download')}Export CSV</button>`:''}</div></div></div>`;
 }
 function accountModal(){
+  const dName = devoteeDisplayName(APP.user.devotee);
+  const dPos = devoteePositionTitle(APP.user.devotee, APP.user.role);
   const me = dv(APP.user.devotee) || {};
-  const r = ROLES[APP.user.role] || { name: APP.user.role || 'Devotee', emoji: '👤', scope: 'Community member' };
-  return `<div class="scrim" data-act="close-scrim"><div class="modal" data-stop="1" style="max-width:440px">
+  return `<div class="scrim" data-act="close-scrim"><div class="modal" data-stop="1" style="max-width:420px">
    <div class="modal-h">
      <div>
        <h2 style="font-size:18px">Devotee Account</h2>
@@ -4089,33 +4203,59 @@ function accountModal(){
      <button class="icon-btn" style="margin-left:auto" data-act="close-scrim">${ic('x')}</button>
    </div>
    <div class="modal-b">
-     <div style="display:flex;align-items:center;gap:14px;padding:14px;background:var(--surface-2);border-radius:14px;border:1px solid var(--line);margin-bottom:14px">
-       ${av(me.name || APP.user.name, 'l')}
+     <div style="display:flex;align-items:center;gap:14px;padding:16px;background:var(--surface-2);border-radius:14px;border:1px solid var(--line)">
+       ${av(dName, 'l')}
        <div style="flex:1;min-width:0">
-         <div style="font-weight:700;font-size:16px;color:var(--ink)">${esc(me.name || APP.user.name)}</div>
-         <div style="font-size:13px;color:var(--ink-2);margin-top:2px">${r.emoji} ${esc(r.name)}</div>
-         <div class="tiny" style="color:var(--ink-3);margin-top:2px">${esc(me.org || 'BACE Community')}${me.phone ? ' · ' + esc(me.phone) : ''}</div>
+         <div style="font-weight:700;font-size:16px;color:var(--ink)">${esc(dName)}</div>
+         <div style="font-size:13px;color:var(--accent);font-weight:600;margin-top:2px">${esc(dPos)}</div>
+         <div class="tiny" style="color:var(--ink-3);margin-top:3px">${esc(me.address || me.org || 'Jia Sarai BACE')}${me.phone ? ' · ' + esc(me.phone) : ''}</div>
        </div>
      </div>
-     <div class="list" style="border:1px solid var(--line);border-radius:12px">
-       <a class="li click" href="#/devotee/${APP.user.devotee}">
-         <span style="font-size:16px">📿</span>
-         <span class="grow"><span class="t">My Devotee Profile</span><span class="d">Check personal info, sadhana, seva & attendance</span></span>
-         ${ic('arrow')}
-       </a>
-       ${can('admin') ? `<a class="li click" href="#/admin">
-         <span style="font-size:16px">⚙️</span>
-         <span class="grow"><span class="t">Administration</span><span class="d">User accounts, roles & pending devotee approvals</span></span>
-         ${ic('arrow')}
-       </a>` : ''}
-     </div>
    </div>
-   <div class="modal-f">
+   <div class="modal-f" style="display:flex;gap:10px;justify-content:space-between">
      <button class="btn" style="color:var(--danger);border-color:var(--danger-soft);font-weight:600" data-act="logout">
-       ${ic('x')} Sign out
+       ${ic('logout')} Sign out
      </button>
-     <button class="btn" style="margin-left:auto" data-act="close-scrim">Cancel</button>
+     <button class="btn" data-act="close-scrim">Close</button>
    </div>
+  </div></div>`;
+}
+function deleteDevoteeModal(){
+  const id = APP.deleteDevoteeTarget;
+  const d = dv(id) || DB.devotees.find(x => x.id === id || x.customId === id);
+  if(!d) return '';
+  return `<div class="scrim" data-act="close-scrim"><div class="modal" data-stop="1" style="max-width:440px">
+    <div class="modal-h" style="border-bottom:1px solid var(--line)">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:20px">🗑️</span>
+        <div>
+          <h2 style="font-size:18px;color:var(--danger)">Delete Devotee Data</h2>
+          <div class="tiny">Permanent database removal</div>
+        </div>
+      </div>
+      <button class="icon-btn" style="margin-left:auto" data-act="close-scrim">${ic('x')}</button>
+    </div>
+    <div class="modal-b" style="padding:20px">
+      <div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--surface-2);border-radius:12px;border:1px solid var(--line);margin-bottom:14px">
+        ${av(d.name,'m')}
+        <div style="min-width:0;flex:1">
+          <b style="font-size:14px;color:var(--ink);display:block">${esc(d.name)}</b>
+          <span class="tiny" style="color:var(--ink-2)">${esc(d.phone || d.email || 'Devotee record')} · ${esc(d.org || 'BACE')}</span>
+        </div>
+      </div>
+      <p style="font-size:13.5px;color:var(--ink);margin:0 0 10px;line-height:1.45">
+        Are you sure you want to delete <b>${esc(d.name)}</b> from the devotee database?
+      </p>
+      <div class="note" style="border-left-color:var(--danger);background:rgba(220,53,69,0.06);font-size:12px;color:var(--danger)">
+        ⚠️ <b>Warning:</b> This action cannot be undone. This devotee's profile, sadhana logs, seva records, and system logins will be permanently deleted.
+      </div>
+    </div>
+    <div class="modal-f" style="display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn" data-act="close-scrim">Cancel</button>
+      <button class="btn" data-act="confirm-delete-devotee" data-id="${esc(d.id)}" style="background:var(--danger);border-color:var(--danger);color:#fff;font-weight:600">
+        🗑 Confirm & Delete
+      </button>
+    </div>
   </div></div>`;
 }
 function notifDrawer(){
@@ -4160,6 +4300,7 @@ function modalHTML(){
   if(m==='account'||m==='switch')return accountModal();
   if(m==='notif')return notifDrawer();
   if(m==='search')return searchModal();
+  if(m==='delete-devotee-modal')return deleteDevoteeModal();
   if(typeof m==='string')return'';
   if(m.kind==='activity')return activityModal(m.id);
   if(m.kind==='contact')return contactDrawer(m.id);
@@ -4373,6 +4514,46 @@ function render(){
   const cb=document.getElementById('chatbody');if(cb)cb.scrollTop=cb.scrollHeight;
 }
 function go(r){APP.route=r;APP.modal='';if(location.hash!==r)location.hash=r;else render();window.scrollTo(0,0)}
+async function deleteDevoteeAction(id){
+  const token = localStorage.getItem('bace_token');
+  const d = dv(id) || DB.devotees.find(x => x.id === id || x.customId === id);
+  const name = d ? d.name : 'Devotee';
+  try{
+    toast(`Deleting ${name}...`, '⏳');
+    if(token){
+      const res = await fetch(`/api/devotees/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      if(!res.ok && res.status !== 404){
+        const data = await res.json().catch(()=>({}));
+        throw new Error(data.message || 'Failed to delete on server');
+      }
+    }
+    // Remove from local in-memory DB
+    const idx = DB.devotees.findIndex(x => x.id === id || x.customId === id);
+    if(idx !== -1) DB.devotees.splice(idx, 1);
+
+    DB.assignments = DB.assignments.filter(a => a.devotee !== id);
+    DB.attendance = DB.attendance.filter(a => a.devotee !== id);
+    DB.deptMembers = DB.deptMembers.filter(m => m.devotee !== id);
+    DB.careGroups.forEach(g => { g.members = (g.members||[]).filter(m => m !== id); });
+
+    logAudit('Devotee Deleted', `${name} deleted from database`);
+    toast(`${name} deleted from database`, '🗑️');
+    APP.modal = '';
+    APP.deleteDevoteeTarget = null;
+    if(APP.route.startsWith('#/devotee/')){
+      go('#/devotees');
+    } else {
+      render();
+    }
+  }catch(err){
+    console.error(err);
+    toast(err.message || 'Delete failed', '❌');
+  }
+}
+
 
 async function approveDevoteeAction(id){
   const token = localStorage.getItem('bace_token');
@@ -4476,6 +4657,9 @@ document.addEventListener('click',e=>{
   /* ---- openers ---- */
   case 'open-devotee':stop();go('#/devotee/'+id);break;
   case 'open-devotee-row':stop();go('#/devotee/'+(t.dataset.id||''));break;
+  case 'delete-devotee':{stop();const dId=t.dataset.id||id;APP.deleteDevoteeTarget=dId;APP.modal='delete-devotee-modal';render();break}
+  case 'confirm-delete-devotee':{stop();const dId=t.dataset.id||APP.deleteDevoteeTarget;deleteDevoteeAction(dId);break}
+  case 'clear-dev-filters':{stop();APP.filters.dev={q:'',status:'',dept:'',batch:'',level:'',skill:'',swabhav:'',sort:'name_asc'};APP.page.dev=1;toast('Filters reset');render();break}
   case 'open-dept':stop();go('#/dept/'+id);break;
   case 'open-batch':stop();go('#/batch/'+id);break;
   case 'open-group':stop();go('#/group/'+id);break;
@@ -5151,16 +5335,23 @@ try {
         });
         DB.devotees.push(d);
       }
+      const spiritualName = (u.name && u.name !== 'ISKCON Jia Sarai' && u.name !== 'Google Devotee') ? u.name : (d?.name || 'Surya Narayana Das');
+      const normalizedRole = (u.role === 'admin') ? 'area_leader' : u.role;
+      if (d) {
+        if (!d.name || d.name === 'ISKCON Jia Sarai' || d.name === 'Google Devotee') d.name = spiritualName;
+        if (!d.appointment && ['area_leader', 'admin'].includes(normalizedRole)) d.appointment = 'Area Leader';
+      }
       APP.user = {
         id: u.id,
         devotee: d.id,
-        role: u.role,
+        role: normalizedRole,
         email: u.email,
-        name: u.name,
+        name: spiritualName,
         avatar: u.avatar,
-        approvalStatus: u.approvalStatus || (['admin', 'area_leader'].includes(u.role) ? 'approved' : 'pending_profile'),
-        profileCompleted: !!u.profileCompleted
+        approvalStatus: u.approvalStatus || (['admin', 'area_leader'].includes(normalizedRole) ? 'approved' : 'pending_profile'),
+        profileCompleted: true
       };
+      localStorage.setItem('bace_user', JSON.stringify(APP.user));
       APP.nav.open = {
         mgmt: can('management', u.role),
         preach: can('preaching', u.role) && !can('management', u.role),

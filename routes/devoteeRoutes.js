@@ -1,6 +1,14 @@
 const express = require('express');
 const router = express.Router();
-const { Devotee } = require('../models');
+const mongoose = require('mongoose');
+const { Devotee, User } = require('../models');
+
+const getDevoteeQuery = (id) => {
+  if (mongoose.Types.ObjectId.isValid(id)) {
+    return { $or: [{ _id: id }, { customId: id }] };
+  }
+  return { customId: id };
+};
 
 // @route   GET /api/devotees
 // @desc    Get all devotees (with optional query filters)
@@ -23,9 +31,9 @@ router.get('/', async (req, res) => {
     }
 
     const devotees = await Devotee.find(filter)
-      .populate('dept', 'name color icon')
+      .populate('dept', 'name icon')
       .populate('batch', 'name level')
-      .populate('careGroup', 'name day time')
+      .populate('careGroup', 'name')
       .populate('facilitator', 'name')
       .populate('mentor', 'name')
       .sort({ createdAt: -1 });
@@ -40,7 +48,8 @@ router.get('/', async (req, res) => {
 // @desc    Get single devotee by ID
 router.get('/:id', async (req, res) => {
   try {
-    const devotee = await Devotee.findById(req.params.id)
+    const query = getDevoteeQuery(req.params.id);
+    const devotee = await Devotee.findOne(query)
       .populate('dept')
       .populate('batch')
       .populate('careGroup')
@@ -73,8 +82,9 @@ router.post('/', async (req, res) => {
 // @desc    Update a devotee
 router.put('/:id', async (req, res) => {
   try {
-    const devotee = await Devotee.findByIdAndUpdate(
-      req.params.id,
+    const query = getDevoteeQuery(req.params.id);
+    const devotee = await Devotee.findOneAndUpdate(
+      query,
       req.body,
       { new: true, runValidators: true }
     );
@@ -93,11 +103,15 @@ router.put('/:id', async (req, res) => {
 // @desc    Delete a devotee
 router.delete('/:id', async (req, res) => {
   try {
-    const devotee = await Devotee.findByIdAndDelete(req.params.id);
+    const query = getDevoteeQuery(req.params.id);
+    const devotee = await Devotee.findOneAndDelete(query);
 
     if (!devotee) {
       return res.status(404).json({ success: false, message: 'Devotee not found' });
     }
+
+    // Unlink or deactivate any user account tied to this devotee
+    await User.updateMany({ devotee: devotee._id }, { $set: { active: false, approvalStatus: 'rejected' } });
 
     res.json({ success: true, message: 'Devotee deleted successfully' });
   } catch (err) {
