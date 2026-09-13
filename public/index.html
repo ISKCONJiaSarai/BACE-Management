@@ -535,7 +535,7 @@ const ROLES={
   preaching_coord:{name:'Preaching Coordinator',emoji:'🎓',scope:'One assigned batch'},
   facilitator:{name:'Facilitator',emoji:'🤝',scope:'Assigned devotees and care follow-ups'},
   devotee:{name:'Devotee',emoji:'🙏',scope:'My seva, my classes, my calendar'},
-  admin:{name:'Area Leader',emoji:'🪷',scope:'Strategic oversight, users, roles and administration'}
+  admin:{name:'BACE Administrator',emoji:'⚙️',scope:'System administration, database, users, roles and audit'}
 };
 const ACCESS={
   dashboard:'*', calendar:'*', sops:'*', messages:'*', actions:'*', today:'*',
@@ -1122,25 +1122,29 @@ function dv(id){return DB.devotees.find(d=>d.id===id||d.customId===id)||null}
 function nameOf(id){const d=dv(id);return d?d.name:'Unassigned'}
 function devoteeDisplayName(id){
   const d=dv(id);
+  const curEmail = ((d&&d.email) || (APP.user&&APP.user.email) || '').toLowerCase().trim();
+  if(curEmail === 'terkadamba.js@gmail.com') return 'ISKCON BACE Admin';
+  if(curEmail === 'suryakiranjune2@gmail.com') return 'Surya Narayana Das';
   if(d&&d.name&&d.name!=='ISKCON Jia Sarai'&&d.name!=='Google Devotee')return d.name;
   if(APP.user&&APP.user.name&&APP.user.name!=='ISKCON Jia Sarai'&&APP.user.name!=='Google Devotee')return APP.user.name;
-  return 'Surya Narayana Das';
+  return 'Devotee';
 }
 function devoteePositionTitle(id, role){
   const d=dv(id);
+  const curEmail = ((d&&d.email) || (APP.user&&APP.user.email) || '').toLowerCase().trim();
+  if(curEmail === 'terkadamba.js@gmail.com') return '⚙️ BACE Administrator';
+  if(curEmail === 'suryakiranjune2@gmail.com') return '🪷 Area Leader';
   if(d&&d.appointment){
     const emojiMap={
       'Area Leader':'🪷','Overall Coordinator':'🧭','Internal Manager':'🕉','Preaching Manager':'📖',
       'Devotee Care Manager':'❤️','Department Head':'🛠','Preaching Coordinator':'🎓','Facilitator':'🤝',
-      'Senior Devotee':'🪷','Devotee':'🙏'
+      'Senior Devotee':'🪷','Devotee':'🙏','System Administrator':'⚙️','BACE Administrator':'⚙️'
     };
     return `${emojiMap[d.appointment]||'🪷'} ${d.appointment}`;
   }
-  const rKey=role||(APP.user&&APP.user.role)||'area_leader';
-  const r=ROLES[rKey]||ROLES.area_leader;
-  const name=(r.name==='Super Admin'?'Area Leader':r.name);
-  const emoji=(r.name==='Super Admin'?'🪷':(r.emoji||'🪷'));
-  return `${emoji} ${name}`;
+  const rKey=role||(APP.user&&APP.user.role)||'devotee';
+  const r=ROLES[rKey]||ROLES.devotee;
+  return `${r.emoji} ${r.name}`;
 }
 function dept(id){return DB.departments.find(d=>d.id===id)||null}
 function batch(id){return DB.batches.find(b=>b.id===id)||null}
@@ -2386,7 +2390,7 @@ function funnelRows(){
    DEVOTEE DIRECTORY + PROFILE
    ========================================================================= */
 function viewDevotees(){
-  const f=APP.filters.dev||(APP.filters.dev={q:'',status:'',dept:'',batch:'',level:'',skill:'',swabhav:'',sort:'name_asc'});
+  const f=APP.filters.dev||(APP.filters.dev={q:'',status:'',dept:'',batch:'',level:'',careGroup:'',skill:'',attendance:'',swabhav:'',sort:'name_asc'});
   if(!f.sort) f.sort='name_asc';
 
   let rows=DB.devotees.filter(d=>{
@@ -2407,15 +2411,36 @@ function viewDevotees(){
         (d.swabhav?.nature||''),
         (d.swabhav?.interests||[]).join(' '),
         (batch(d.batch)?.name||''),
-        (dept(d.dept)?.name||'')
+        (dept(d.dept)?.name||''),
+        (group(d.careGroup)?.name||'')
       ].filter(Boolean).join(' ').toLowerCase();
       if(!searchable.includes(query)) return false;
     }
     if(f.status&&d.status!==f.status)return false;
-    if(f.dept&&d.dept!==f.dept)return false;
-    if(f.batch&&d.batch!==f.batch)return false;
-    if(f.level&&String(d.level)!==f.level)return false;
-    if(f.skill&&!d.skills.includes(f.skill))return false;
+    if(f.level){
+      if(f.level==='0'&&(d.level||0)>0)return false;
+      if(f.level!=='0'&&String(d.level)!==f.level)return false;
+    }
+    if(f.batch){
+      if(f.batch==='none'&&d.batch)return false;
+      if(f.batch!=='none'&&d.batch!==f.batch)return false;
+    }
+    if(f.dept){
+      if(f.dept==='none'&&d.dept)return false;
+      if(f.dept!=='none'&&d.dept!==f.dept)return false;
+    }
+    if(f.careGroup){
+      if(f.careGroup==='none'&&d.careGroup)return false;
+      if(f.careGroup!=='none'&&d.careGroup!==f.careGroup)return false;
+    }
+    if(f.skill&&(!d.skills||!d.skills.includes(f.skill)))return false;
+    if(f.attendance){
+      const att = Number(d.attendancePct || 0);
+      if(f.attendance==='high'&&att < 80) return false;
+      if(f.attendance==='mid'&&(att < 50 || att >= 80)) return false;
+      if(f.attendance==='low'&&att >= 50) return false;
+      if(f.attendance==='critical'&&att >= 30) return false;
+    }
     if(f.swabhav&&(d.swabhav?.nature!==f.swabhav))return false;
     return true;
   });
@@ -2437,53 +2462,106 @@ function viewDevotees(){
   });
 
   const scoped=['dept_head','preaching_coord','facilitator'].includes(APP.user.role);
-  const hasActiveFilters = f.q || f.status || f.dept || f.batch || f.level || f.skill || f.swabhav || (f.sort && f.sort !== 'name_asc');
+  let activeFilterCount = 0;
+  if(f.q) activeFilterCount++;
+  if(f.status) activeFilterCount++;
+  if(f.level) activeFilterCount++;
+  if(f.batch) activeFilterCount++;
+  if(f.dept) activeFilterCount++;
+  if(f.careGroup) activeFilterCount++;
+  if(f.skill) activeFilterCount++;
+  if(f.attendance) activeFilterCount++;
+  if(f.swabhav) activeFilterCount++;
+  if(f.sort && f.sort !== 'name_asc') activeFilterCount++;
 
   const toolbar=`
-   <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;width:100%">
-     <div style="position:relative;flex:1;min-width:200px">
-       <input type="search" placeholder="🔍 Search name, phone, email, college, job, skills..." value="${esc(f.q)}" data-act="f" data-k="dev" data-n="q" style="width:100%;padding:7px 10px 7px 30px;border-radius:9px;border:1px solid var(--line)">
-       <span style="position:absolute;left:9px;top:8px;font-size:13px;opacity:0.6;pointer-events:none">🔍</span>
+   <div style="display:flex;flex-direction:column;gap:10px;width:100%">
+     <!-- Primary Search & Sort Row -->
+     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;width:100%">
+       <div style="position:relative;flex:1;min-width:240px">
+         <input type="search" placeholder="🔍 Search name, phone, email, college, job, skills..." value="${esc(f.q)}" data-act="f" data-k="dev" data-n="q" style="width:100%;padding:8px 12px 8px 32px;border-radius:9px;border:1px solid var(--line);font-size:13.5px">
+         <span style="position:absolute;left:10px;top:9px;font-size:13px;opacity:0.6;pointer-events:none">🔍</span>
+       </div>
+       <div style="display:flex;align-items:center;gap:6px">
+         <span class="tiny" style="font-weight:600;color:var(--ink-2);flex:none">Sort:</span>
+         <select data-act="f" data-k="dev" data-n="sort" style="min-width:145px;padding:7px 10px;border-radius:8px;border:1px solid var(--line);font-size:13px">
+           <option value="name_asc" ${f.sort==='name_asc'?'selected':''}>Name (A → Z)</option>
+           <option value="name_desc" ${f.sort==='name_desc'?'selected':''}>Name (Z → A)</option>
+           <option value="date_desc" ${f.sort==='date_desc'?'selected':''}>Joined (Newest)</option>
+           <option value="date_asc" ${f.sort==='date_asc'?'selected':''}>Joined (Oldest)</option>
+           <option value="level_desc" ${f.sort==='level_desc'?'selected':''}>Level (High to Low)</option>
+           <option value="att_desc" ${f.sort==='att_desc'?'selected':''}>Attendance (High to Low)</option>
+           <option value="att_asc" ${f.sort==='att_asc'?'selected':''}>Attendance (Low to High)</option>
+           <option value="sadhana_desc" ${f.sort==='sadhana_desc'?'selected':''}>Sadhana rounds</option>
+         </select>
+       </div>
+       ${activeFilterCount > 0 ? `<button class="btn sm" data-act="clear-dev-filters" title="Reset all filters" style="color:var(--danger);border-color:var(--danger-soft);font-weight:600">${ic('x')} Reset Filters (${activeFilterCount})</button>` : ''}
+       ${can('directory')?`<button class="btn sm" data-act="export-devotees" style="margin-left:auto">${ic('download')}Export CSV</button>`:''}
      </div>
-     <div style="display:flex;align-items:center;gap:4px">
-       <span class="tiny" style="font-weight:600;color:var(--ink-2);flex:none">Sort:</span>
-       <select data-act="f" data-k="dev" data-n="sort" style="min-width:140px;padding:6px 10px;border-radius:8px;border:1px solid var(--line)">
-         <option value="name_asc" ${f.sort==='name_asc'?'selected':''}>Name (A → Z)</option>
-         <option value="name_desc" ${f.sort==='name_desc'?'selected':''}>Name (Z → A)</option>
-         <option value="date_desc" ${f.sort==='date_desc'?'selected':''}>Joined (Newest)</option>
-         <option value="date_asc" ${f.sort==='date_asc'?'selected':''}>Joined (Oldest)</option>
-         <option value="level_desc" ${f.sort==='level_desc'?'selected':''}>Level (High to Low)</option>
-         <option value="att_desc" ${f.sort==='att_desc'?'selected':''}>Attendance (High to Low)</option>
-         <option value="att_asc" ${f.sort==='att_asc'?'selected':''}>Attendance (Low to High)</option>
-         <option value="sadhana_desc" ${f.sort==='sadhana_desc'?'selected':''}>Sadhana rounds</option>
+
+     <!-- Column Filters Row -->
+     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:var(--surface-2);padding:10px 12px;border-radius:10px;border:1px solid var(--line-2)">
+       <span class="tiny" style="font-weight:700;color:var(--ink);margin-right:4px;display:flex;align-items:center;gap:4px">
+         ${ic('filter')} Column Filters:
+       </span>
+
+       <!-- 1. Status Filter -->
+       <select data-act="f" data-k="dev" data-n="status" title="Filter by Status" style="padding:6px 9px;border-radius:7px;border:1px solid var(--line);font-size:12.5px;background:var(--paper-card);${f.status?'border-color:var(--accent);font-weight:600':''}">
+         <option value="">All Statuses</option>
+         ${['Active','Pending Approval','New','Inactive'].map(s=>`<option value="${s}" ${f.status===s?'selected':''}>Status: ${s}</option>`).join('')}
+       </select>
+
+       <!-- 2. Level Filter -->
+       <select data-act="f" data-k="dev" data-n="level" title="Filter by Level" style="padding:6px 9px;border-radius:7px;border:1px solid var(--line);font-size:12.5px;background:var(--paper-card);${f.level?'border-color:var(--accent);font-weight:600':''}">
+         <option value="">All Levels</option>
+         <option value="1" ${f.level==='1'?'selected':''}>Level 1</option>
+         <option value="2" ${f.level==='2'?'selected':''}>Level 2</option>
+         <option value="3" ${f.level==='3'?'selected':''}>Level 3</option>
+         <option value="0" ${f.level==='0'?'selected':''}>Unlevelled</option>
+       </select>
+
+       <!-- 3. Batch Filter -->
+       <select data-act="f" data-k="dev" data-n="batch" title="Filter by Batch" style="padding:6px 9px;border-radius:7px;border:1px solid var(--line);font-size:12.5px;background:var(--paper-card);${f.batch?'border-color:var(--accent);font-weight:600':''}">
+         <option value="">All Batches</option>
+         ${DB.batches.map(b=>`<option value="${b.id}" ${f.batch===b.id?'selected':''}>Batch: ${esc(b.name)}</option>`).join('')}
+         <option value="none" ${f.batch==='none'?'selected':''}>Not in a batch</option>
+       </select>
+
+       <!-- 4. Department Filter -->
+       <select data-act="f" data-k="dev" data-n="dept" title="Filter by Department / Seva" style="padding:6px 9px;border-radius:7px;border:1px solid var(--line);font-size:12.5px;background:var(--paper-card);${f.dept?'border-color:var(--accent);font-weight:600':''}">
+         <option value="">All Departments</option>
+         ${activeDepts().map(d=>`<option value="${d.id}" ${f.dept===d.id?'selected':''}>Dept: ${esc(d.name)}</option>`).join('')}
+         <option value="none" ${f.dept==='none'?'selected':''}>No seva / Unallocated</option>
+       </select>
+
+       <!-- 5. Care Group Filter -->
+       <select data-act="f" data-k="dev" data-n="careGroup" title="Filter by Care Group" style="padding:6px 9px;border-radius:7px;border:1px solid var(--line);font-size:12.5px;background:var(--paper-card);${f.careGroup?'border-color:var(--accent);font-weight:600':''}">
+         <option value="">All Care Groups</option>
+         ${(DB.careGroups||[]).map(g=>`<option value="${g.id}" ${f.careGroup===g.id?'selected':''}>Care: ${esc(g.name)}</option>`).join('')}
+         <option value="none" ${f.careGroup==='none'?'selected':''}>No care group</option>
+       </select>
+
+       <!-- 6. Skills Filter -->
+       <select data-act="f" data-k="dev" data-n="skill" title="Filter by Skill" style="padding:6px 9px;border-radius:7px;border:1px solid var(--line);font-size:12.5px;background:var(--paper-card);${f.skill?'border-color:var(--accent);font-weight:600':''}">
+         <option value="">All Skills</option>
+         ${SKILLS.map(s=>`<option value="${s}" ${f.skill===s?'selected':''}>Skill: ${s}</option>`).join('')}
+       </select>
+
+       <!-- 7. Attendance Filter -->
+       <select data-act="f" data-k="dev" data-n="attendance" title="Filter by Attendance %" style="padding:6px 9px;border-radius:7px;border:1px solid var(--line);font-size:12.5px;background:var(--paper-card);${f.attendance?'border-color:var(--accent);font-weight:600':''}">
+         <option value="">All Attendance</option>
+         <option value="high" ${f.attendance==='high'?'selected':''}>Att: ≥ 80% (Regular)</option>
+         <option value="mid" ${f.attendance==='mid'?'selected':''}>Att: 50% – 79% (Average)</option>
+         <option value="low" ${f.attendance==='low'?'selected':''}>Att: &lt; 50% (Irregular)</option>
+         <option value="critical" ${f.attendance==='critical'?'selected':''}>Att: &lt; 30% (Critical)</option>
+       </select>
+
+       <!-- 8. Swabhav Filter -->
+       <select data-act="f" data-k="dev" data-n="swabhav" title="Filter by Swabhav Nature" style="padding:6px 9px;border-radius:7px;border:1px solid var(--line);font-size:12.5px;background:var(--paper-card);${f.swabhav?'border-color:var(--accent);font-weight:600':''}">
+         <option value="">All Swabhav</option>
+         ${SWABHAV.map(s=>`<option value="${s[0]}" ${f.swabhav===s[0]?'selected':''}>Nature: ${s[0]}</option>`).join('')}
        </select>
      </div>
-     <select data-act="f" data-k="dev" data-n="status" style="padding:6px 10px;border-radius:8px;border:1px solid var(--line)">
-       <option value="">All statuses</option>
-       ${['Active','Pending Approval','New','Inactive'].map(s=>`<option ${f.status===s?'selected':''}>${s}</option>`).join('')}
-     </select>
-     <select data-act="f" data-k="dev" data-n="dept" style="padding:6px 10px;border-radius:8px;border:1px solid var(--line)">
-       <option value="">All departments</option>
-       ${activeDepts().map(d=>`<option value="${d.id}" ${f.dept===d.id?'selected':''}>${esc(d.name)}</option>`).join('')}
-     </select>
-     <select data-act="f" data-k="dev" data-n="batch" style="padding:6px 10px;border-radius:8px;border:1px solid var(--line)">
-       <option value="">All batches</option>
-       ${DB.batches.map(b=>`<option value="${b.id}" ${f.batch===b.id?'selected':''}>${esc(b.name)}</option>`).join('')}
-     </select>
-     <select data-act="f" data-k="dev" data-n="level" style="padding:6px 10px;border-radius:8px;border:1px solid var(--line)">
-       <option value="">All levels</option>
-       ${[1,2,3].map(l=>`<option value="${l}" ${f.level==String(l)?'selected':''}>Level ${l}</option>`).join('')}
-     </select>
-     <select data-act="f" data-k="dev" data-n="skill" style="padding:6px 10px;border-radius:8px;border:1px solid var(--line)">
-       <option value="">All skills</option>
-       ${SKILLS.map(s=>`<option ${f.skill===s?'selected':''}>${s}</option>`).join('')}
-     </select>
-     <select data-act="f" data-k="dev" data-n="swabhav" style="padding:6px 10px;border-radius:8px;border:1px solid var(--line)">
-       <option value="">All swabhav</option>
-       ${SWABHAV.map(s=>`<option value="${s[0]}" ${f.swabhav===s[0]?'selected':''}>${s[0]}</option>`).join('')}
-     </select>
-     ${hasActiveFilters ? `<button class="btn sm" data-act="clear-dev-filters" title="Reset all filters" style="color:var(--danger);border-color:var(--danger-soft)">${ic('x')} Reset Filters</button>` : ''}
-     ${can('directory')?`<button class="btn sm" data-act="export-devotees" style="margin-left:auto">${ic('download')}Export CSV</button>`:''}
    </div>`;
 
   return head('👥 One devotee, one record','Devotee directory',
@@ -2498,9 +2576,13 @@ function viewDevotees(){
     {h:'Care group',c:d=>d.careGroup?esc(group(d.careGroup)?.name||''):'<span class="tiny">—</span>'},
     {h:'Skills',c:d=>d.skills.map(s=>badge(s,'grey')).join(' ')},
     {h:'Attendance',c:d=>`<div style="min-width:90px">${prog(d.attendancePct)}<span class="tiny">${d.attendancePct}%</span></div>`},
-    {h:'Actions',c:d=>`<div style="display:flex;gap:6px;align-items:center;justify-content:flex-end" onclick="event.stopPropagation()">
-      <button class="btn sm" data-act="open-devotee" data-id="${d.id}" title="View profile" style="padding:4px 9px">${ic('user')} View</button>
-      <button class="btn sm danger" data-act="delete-devotee" data-id="${d.id}" title="Delete devotee data" style="padding:4px 8px;color:var(--danger);border-color:rgba(220,53,69,0.25);background:rgba(220,53,69,0.06)">🗑 Delete</button>
+    {h:'Actions',c:d=>`<div style="display:flex;gap:6px;align-items:center;justify-content:flex-end">
+      <a class="btn sm" href="#/devotee/${d.id}" data-act="open-devotee" data-id="${d.id}" title="View profile" style="padding:4px 10px;text-decoration:none;display:inline-flex;align-items:center;gap:4px;font-weight:600">
+        ${ic('user')} View
+      </a>
+      <button class="btn sm danger" data-act="delete-devotee" data-id="${d.id}" title="Delete devotee data" style="padding:4px 8px;color:var(--danger);border-color:rgba(220,53,69,0.25);background:rgba(220,53,69,0.06)">
+        🗑 Delete
+      </button>
     </div>`}
    ],rows,onRow:'open-devotee',
    empty:emptyState('No devotees found','Nothing matches these filters. Clear one, or add a new devotee.','<button class="btn pri" data-act="add-devotee">Add devotee</button>','people')});
@@ -4659,7 +4741,7 @@ document.addEventListener('click',e=>{
   case 'open-devotee-row':stop();go('#/devotee/'+(t.dataset.id||''));break;
   case 'delete-devotee':{stop();const dId=t.dataset.id||id;APP.deleteDevoteeTarget=dId;APP.modal='delete-devotee-modal';render();break}
   case 'confirm-delete-devotee':{stop();const dId=t.dataset.id||APP.deleteDevoteeTarget;deleteDevoteeAction(dId);break}
-  case 'clear-dev-filters':{stop();APP.filters.dev={q:'',status:'',dept:'',batch:'',level:'',skill:'',swabhav:'',sort:'name_asc'};APP.page.dev=1;toast('Filters reset');render();break}
+  case 'clear-dev-filters':{stop();APP.filters.dev={q:'',status:'',dept:'',batch:'',level:'',careGroup:'',skill:'',attendance:'',swabhav:'',sort:'name_asc'};APP.page.dev=1;toast('Filters reset');render();break}
   case 'open-dept':stop();go('#/dept/'+id);break;
   case 'open-batch':stop();go('#/batch/'+id);break;
   case 'open-group':stop();go('#/group/'+id);break;
@@ -5318,11 +5400,33 @@ try {
   if (savedUser) {
     const u = JSON.parse(savedUser);
     if (u && u.id && u.role) {
-      let d = DB.devotees.find(x => x.id === u.devotee || (x.email && x.email.toLowerCase() === (u.email || '').toLowerCase()));
+      const email = (u.email || '').toLowerCase().trim();
+      let d = DB.devotees.find(x => x.id === u.devotee || (x.email && x.email.toLowerCase() === email));
+
+      let spiritualName = u.name;
+      let effectiveRole = u.role;
+      let appointment = 'Devotee';
+
+      if (email === 'terkadamba.js@gmail.com') {
+        spiritualName = 'ISKCON BACE Admin';
+        effectiveRole = 'admin';
+        appointment = 'System Administrator';
+      } else if (email === 'suryakiranjune2@gmail.com') {
+        spiritualName = 'Surya Narayana Das';
+        effectiveRole = 'area_leader';
+        appointment = 'Area Leader';
+      } else {
+        if (!spiritualName || spiritualName === 'ISKCON Jia Sarai' || spiritualName === 'Google Devotee') {
+          spiritualName = d?.name || u.username || 'Devotee';
+        }
+        if (effectiveRole === 'area_leader') appointment = 'Area Leader';
+        else if (effectiveRole === 'admin') appointment = 'System Administrator';
+      }
+
       if (!d) {
         d = normalizeDevotee({
           id: u.devotee || ('d_' + Date.now()),
-          name: u.name,
+          name: spiritualName,
           email: u.email,
           avatar: u.avatar || '',
           status: 'Active',
@@ -5331,31 +5435,31 @@ try {
           dept: 'kitchen',
           rounds: 16,
           morning: 90,
-          swabhav: 'Organising'
+          swabhav: 'Organising',
+          appointment: appointment
         });
         DB.devotees.push(d);
+      } else {
+        d.name = spiritualName;
+        d.appointment = appointment;
+        d.status = 'Active';
       }
-      const spiritualName = (u.name && u.name !== 'ISKCON Jia Sarai' && u.name !== 'Google Devotee') ? u.name : (d?.name || 'Surya Narayana Das');
-      const normalizedRole = (u.role === 'admin') ? 'area_leader' : u.role;
-      if (d) {
-        if (!d.name || d.name === 'ISKCON Jia Sarai' || d.name === 'Google Devotee') d.name = spiritualName;
-        if (!d.appointment && ['area_leader', 'admin'].includes(normalizedRole)) d.appointment = 'Area Leader';
-      }
+
       APP.user = {
         id: u.id,
         devotee: d.id,
-        role: normalizedRole,
+        role: effectiveRole,
         email: u.email,
         name: spiritualName,
         avatar: u.avatar,
-        approvalStatus: u.approvalStatus || (['admin', 'area_leader'].includes(normalizedRole) ? 'approved' : 'pending_profile'),
+        approvalStatus: 'approved',
         profileCompleted: true
       };
       localStorage.setItem('bace_user', JSON.stringify(APP.user));
       APP.nav.open = {
-        mgmt: can('management', u.role),
-        preach: can('preaching', u.role) && !can('management', u.role),
-        care: can('care', u.role) && !can('management', u.role) && !can('preaching', u.role)
+        mgmt: can('management', effectiveRole),
+        preach: can('preaching', effectiveRole) && !can('management', effectiveRole),
+        care: can('care', effectiveRole) && !can('management', effectiveRole) && !can('preaching', effectiveRole)
       };
       if (!APP.nav.open.mgmt && !APP.nav.open.preach && !APP.nav.open.care) APP.nav.open.mgmt = true;
     }

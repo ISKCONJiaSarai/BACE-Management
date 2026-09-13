@@ -73,21 +73,28 @@ router.post('/google', async (req, res) => {
     const isFirstUser = totalUsers === 0;
     const isEmailAdmin = adminEmails.includes(normalizedEmail);
     const isAdmin = isEmailAdmin || isFirstUser;
+    const isBaceAdmin = normalizedEmail === 'terkadamba.js@gmail.com';
+    const isSuryaAreaLeader = normalizedEmail === 'suryakiranjune2@gmail.com';
 
     // 3. If still no devotee record, create a new one
     if (!devoteeDoc) {
       stage = 'create_devotee';
       const customId = `d_g_${Date.now()}`;
+      const defaultName = isBaceAdmin ? 'ISKCON BACE Admin' : (isSuryaAreaLeader ? 'Surya Narayana Das' : (name || 'Google Devotee'));
+      const defaultAppt = isBaceAdmin ? 'System Administrator' : (isSuryaAreaLeader ? 'Area Leader' : (isAdmin ? 'Area Leader' : 'Devotee'));
 
       devoteeDoc = await Devotee.create({
         customId,
-        name: name || 'Google Devotee',
+        name: defaultName,
         email: normalizedEmail,
         status: isAdmin ? 'Active' : 'Pending Approval',
+        appointment: defaultAppt,
         joined: new Date(),
-        occupation: 'Student'
+        occupation: isBaceAdmin ? 'Administration' : 'Student'
       });
     }
+
+    const determinedRole = isBaceAdmin ? 'admin' : (isSuryaAreaLeader ? 'area_leader' : (isAdmin ? 'area_leader' : 'devotee'));
 
     // 4. Create or update User record
     if (!user) {
@@ -101,7 +108,7 @@ router.post('/google', async (req, res) => {
         googleId,
         avatar: picture,
         devotee: devoteeDoc._id,
-        role: isAdmin ? 'area_leader' : 'devotee',
+        role: determinedRole,
         approvalStatus: isAdmin ? 'approved' : 'pending_profile',
         profileCompleted: isAdmin ? true : false,
         lastLogin: new Date()
@@ -112,7 +119,27 @@ router.post('/google', async (req, res) => {
       if (picture) user.avatar = picture;
       if (!user.devotee && devoteeDoc) user.devotee = devoteeDoc._id;
 
-      if (isAdmin) {
+      if (isBaceAdmin) {
+        user.role = 'admin';
+        user.approvalStatus = 'approved';
+        user.profileCompleted = true;
+        if (devoteeDoc) {
+          devoteeDoc.name = 'ISKCON BACE Admin';
+          devoteeDoc.appointment = 'System Administrator';
+          devoteeDoc.status = 'Active';
+          await devoteeDoc.save();
+        }
+      } else if (isSuryaAreaLeader) {
+        user.role = 'area_leader';
+        user.approvalStatus = 'approved';
+        user.profileCompleted = true;
+        if (devoteeDoc) {
+          devoteeDoc.name = 'Surya Narayana Das';
+          devoteeDoc.appointment = 'Area Leader';
+          devoteeDoc.status = 'Active';
+          await devoteeDoc.save();
+        }
+      } else if (isAdmin) {
         user.role = 'area_leader';
         user.approvalStatus = 'approved';
         user.profileCompleted = true;
