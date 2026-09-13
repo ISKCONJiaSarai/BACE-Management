@@ -153,6 +153,14 @@ const DevoteeSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
+  highestEducation: {
+    type: String,
+    trim: true
+  },
+  presentStudiesOrJob: {
+    type: String,
+    trim: true
+  },
   occupation: {
     type: String,
     trim: true,

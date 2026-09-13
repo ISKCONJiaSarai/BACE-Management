@@ -239,6 +239,8 @@ router.post('/complete-profile', protect, async (req, res) => {
       dob,
       phone,
       address,
+      highestEducation,
+      presentStudiesOrJob,
       residence,
       occupation,
       org,
@@ -249,6 +251,7 @@ router.post('/complete-profile', protect, async (req, res) => {
       nature,
       interests,
       skills,
+      personalSkills,
       availability,
       source
     } = req.body;
@@ -258,9 +261,21 @@ router.post('/complete-profile', protect, async (req, res) => {
     if (dob) devoteeDoc.dob = new Date(dob);
     if (phone) devoteeDoc.phone = phone.trim();
     if (address) devoteeDoc.address = address.trim();
+    if (highestEducation) {
+      devoteeDoc.highestEducation = highestEducation.trim();
+      devoteeDoc.org = highestEducation.trim();
+    } else if (org) {
+      devoteeDoc.org = org.trim();
+      devoteeDoc.highestEducation = org.trim();
+    }
+    if (presentStudiesOrJob) {
+      devoteeDoc.presentStudiesOrJob = presentStudiesOrJob.trim();
+      devoteeDoc.occupation = presentStudiesOrJob.trim();
+    } else if (occupation) {
+      devoteeDoc.occupation = occupation.trim();
+      devoteeDoc.presentStudiesOrJob = occupation.trim();
+    }
     if (residence) devoteeDoc.residence = residence.trim();
-    if (occupation) devoteeDoc.occupation = occupation.trim();
-    if (org) devoteeDoc.org = org.trim();
     if (emergency) devoteeDoc.emergency = emergency.trim();
     if (attendanceMode) devoteeDoc.attendanceMode = attendanceMode;
 
@@ -277,10 +292,11 @@ router.post('/complete-profile', protect, async (req, res) => {
         : String(interests).split(',').map(s => s.trim()).filter(Boolean);
     }
 
-    if (skills) {
-      devoteeDoc.skills = Array.isArray(skills)
-        ? skills
-        : String(skills).split(',').map(s => s.trim()).filter(Boolean);
+    const effectiveSkills = personalSkills || skills;
+    if (effectiveSkills) {
+      devoteeDoc.skills = Array.isArray(effectiveSkills)
+        ? effectiveSkills
+        : String(effectiveSkills).split(',').map(s => s.trim()).filter(Boolean);
     }
     if (availability) devoteeDoc.availability = availability;
     if (source) devoteeDoc.source = source;

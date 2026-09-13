@@ -620,6 +620,8 @@ function normalizeDevotee(d){
   d.timeline=Array.isArray(d.timeline)?d.timeline:[];
   d.history=Array.isArray(d.history)?d.history:[];
   d.dob=typeof d.dob==='string'?d.dob:'';
+  d.highestEducation=typeof d.highestEducation==='string'?d.highestEducation:(d.org||'');
+  d.presentStudiesOrJob=typeof d.presentStudiesOrJob==='string'?d.presentStudiesOrJob:(d.occupation||'');
   d.level=Number.isFinite(Number(d.level))?Number(d.level):0;
   d.attendancePct=Number.isFinite(Number(d.attendancePct))?Number(d.attendancePct):0;
   d.sadhana={rounds:0,morningProgram:0,lastReported:'',
@@ -1768,19 +1770,15 @@ function viewCompleteProfile(){
   const d = DB.devotees.find(x => x.id === u.devotee || (x.email && x.email.toLowerCase() === (u.email || '').toLowerCase())) || {};
   const defName = d.name || u.name || '';
   const defPhone = d.phone || '';
-  const defDob = d.dob || '';
+  const defDob = d.dob ? String(d.dob).slice(0, 10) : '';
   const defGender = d.gender || 'M';
   const defAddress = d.address || '';
-  const defResidence = d.residence || 'Hostel';
-  const defOrg = d.org || 'IIT Delhi';
-  const defOcc = d.occupation || 'Student';
   const defEmergency = d.emergency || '';
-  const defAttendanceMode = d.attendanceMode || 'Offline at BACE';
+  const defHighestEducation = d.highestEducation || d.org || '';
+  const defPresentStudiesOrJob = d.presentStudiesOrJob || d.occupation || '';
   const defRounds = d.sadhana?.rounds ?? 16;
-  const defMorning = d.sadhana?.morningProgram ?? 85;
   const defNature = d.swabhav?.nature || 'Teaching';
-  const defInterests = Array.isArray(d.swabhav?.interests) ? d.swabhav.interests.join(', ') : (d.swabhav?.interests || 'Reading, Kirtan');
-  const defSkills = Array.isArray(d.skills) ? d.skills.join(', ') : 'Organising, Cooking';
+  const defSkills = Array.isArray(d.skills) ? d.skills.join(', ') : (d.skills || '');
   const defAvailability = d.availability || 'Weekends';
   const defSource = d.source || 'Campus stall';
 
@@ -1803,14 +1801,9 @@ function viewCompleteProfile(){
         </div>
       </div>
 
-      <!-- Form -->
+      <!-- Form (Direct questions, no category cards) -->
       <form id="devoteeProfileForm" onsubmit="submitDevoteeProfile(this);return false" style="display:flex;flex-direction:column;gap:18px">
-        <!-- Card 1: Personal & Contact -->
-        <div class="card pad" style="background:var(--paper-card);border-radius:16px;border:1px solid var(--line);box-shadow:var(--sh-1)">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--line)">
-            <span style="font-size:18px">👤</span>
-            <h3 style="font-size:15px;font-weight:700">1. Personal & Contact Details</h3>
-          </div>
+        <div class="card pad" style="background:var(--paper-card);border-radius:18px;border:1px solid var(--line);box-shadow:var(--sh-1);padding:24px 26px">
           <div class="form-row">
             <div class="field">
               <label>Full Devotee Name <b style="color:var(--danger)">*</b></label>
@@ -1818,13 +1811,14 @@ function viewCompleteProfile(){
             </div>
             <div class="field">
               <label>Gender <b style="color:var(--danger)">*</b></label>
-              <select name="gender">
+              <select name="gender" required>
                 <option value="M" ${defGender==='M'?'selected':''}>Male</option>
                 <option value="F" ${defGender==='F'?'selected':''}>Female</option>
                 <option value="Other" ${defGender==='Other'?'selected':''}>Other</option>
               </select>
             </div>
           </div>
+
           <div class="form-row">
             <div class="field">
               <label>Phone / WhatsApp Number <b style="color:var(--danger)">*</b></label>
@@ -1832,102 +1826,53 @@ function viewCompleteProfile(){
               <div class="hint">Required for BACE communications and batch notifications</div>
             </div>
             <div class="field">
-              <label>Date of Birth</label>
-              <input type="date" name="dob" value="${esc(defDob ? String(defDob).slice(0,10) : '')}">
+              <label>Date of Birth <b style="color:var(--danger)">*</b></label>
+              <input type="date" name="dob" required value="${esc(defDob)}">
             </div>
           </div>
+
           <div class="form-row">
             <div class="field">
-              <label>Current Address</label>
-              <input type="text" name="address" placeholder="e.g. Room 102, Kumaon Hostel, IIT Delhi" value="${esc(defAddress)}">
+              <label>Current Address <b style="color:var(--danger)">*</b></label>
+              <input type="text" name="address" required placeholder="e.g. Room 102, Kumaon Hostel, IIT Delhi or Jia Sarai Flat" value="${esc(defAddress)}">
             </div>
             <div class="field">
               <label>Emergency Contact (Name & Phone) <b style="color:var(--danger)">*</b></label>
               <input type="text" name="emergency" required placeholder="e.g. Father: 9812345678" value="${esc(defEmergency)}">
             </div>
           </div>
-        </div>
 
-        <!-- Card 2: College, Occupation & Residence -->
-        <div class="card pad" style="background:var(--paper-card);border-radius:16px;border:1px solid var(--line);box-shadow:var(--sh-1)">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--line)">
-            <span style="font-size:18px">🎓</span>
-            <h3 style="font-size:15px;font-weight:700">2. College, Occupation & Residence</h3>
-          </div>
           <div class="form-row">
             <div class="field">
-              <label>College / Organisation <b style="color:var(--danger)">*</b></label>
-              <select name="org">
-                ${ORGS.map(o=>`<option value="${esc(o)}" ${defOrg===o?'selected':''}>${esc(o)}</option>`).join('')}
-              </select>
+              <label>Highest Education <b style="color:var(--danger)">*</b></label>
+              <input type="text" name="highestEducation" required placeholder="e.g. B.Tech, M.Sc, Class 12, PhD" value="${esc(defHighestEducation)}">
             </div>
             <div class="field">
-              <label>Occupation</label>
-              <select name="occupation">
-                ${OCC.map(o=>`<option value="${esc(o)}" ${defOcc===o?'selected':''}>${esc(o)}</option>`).join('')}
-              </select>
+              <label>Present Studies / Job <b style="color:var(--danger)">*</b></label>
+              <input type="text" name="presentStudiesOrJob" required placeholder="e.g. B.Tech CSE 2nd Year, Software Engineer, UPSC Prep" value="${esc(defPresentStudiesOrJob)}">
             </div>
           </div>
-          <div class="form-row">
-            <div class="field">
-              <label>Residence Type</label>
-              <select name="residence">
-                <option value="Hostel" ${defResidence==='Hostel'?'selected':''}>College Hostel</option>
-                <option value="PG" ${defResidence==='PG'?'selected':''}>Paying Guest (PG)</option>
-                <option value="Flat" ${defResidence==='Flat'?'selected':''}>Rented Flat</option>
-                <option value="Home" ${defResidence==='Home'?'selected':''}>Home with Family</option>
-                <option value="BACE" ${defResidence==='BACE'?'selected':''}>Resident at BACE</option>
-              </select>
-            </div>
-            <div class="field">
-              <label>Attendance Mode</label>
-              <select name="attendanceMode">
-                <option value="Offline at BACE" ${defAttendanceMode==='Offline at BACE'?'selected':''}>Offline at BACE</option>
-                <option value="Online" ${defAttendanceMode==='Online'?'selected':''}>Online</option>
-                <option value="Hybrid" ${defAttendanceMode==='Hybrid'?'selected':''}>Hybrid (Offline + Online)</option>
-              </select>
-            </div>
-          </div>
-        </div>
 
-        <!-- Card 3: Sadhana & Spiritual Connection -->
-        <div class="card pad" style="background:var(--paper-card);border-radius:16px;border:1px solid var(--line);box-shadow:var(--sh-1)">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--line)">
-            <span style="font-size:18px">📿</span>
-            <h3 style="font-size:15px;font-weight:700">3. Spiritual Sadhana & BACE Connection</h3>
-          </div>
           <div class="form-row">
             <div class="field">
               <label>Daily Japa Rounds Chanted <b style="color:var(--danger)">*</b></label>
-              <input type="number" name="rounds" min="0" max="64" value="${defRounds}">
+              <input type="number" name="rounds" min="0" max="64" required value="${defRounds}">
               <div class="hint">Daily rounds of Hare Krishna Mahamantra (0 to 16+)</div>
             </div>
             <div class="field">
-              <label>Morning Program Attendance (%)</label>
-              <input type="number" name="morningProgram" min="0" max="100" value="${defMorning}">
-              <div class="hint">Approximate weekly morning program attendance percentage</div>
+              <label>How did you first connect with BACE? <b style="color:var(--danger)">*</b></label>
+              <select name="source" required>
+                ${['Campus stall', 'Book distribution', 'Friend referral', 'Instagram', 'Class visit', 'Prasadam distribution', 'Festival', 'Hostel outreach', 'Alumni network', 'Other'].map(s=>`
+                  <option value="${esc(s)}" ${defSource===s?'selected':''}>${esc(s)}</option>
+                `).join('')}
+              </select>
             </div>
           </div>
-          <div class="field">
-            <label>How did you first connect with BACE? <b style="color:var(--danger)">*</b></label>
-            <select name="source">
-              ${['Book distribution', 'Friend referral', 'Campus stall', 'Instagram', 'Class visit', 'Prasadam distribution', 'Festival', 'Hostel outreach', 'Alumni network', 'Other'].map(s=>`
-                <option value="${esc(s)}" ${defSource===s?'selected':''}>${esc(s)}</option>
-              `).join('')}
-            </select>
-          </div>
-        </div>
 
-        <!-- Card 4: Swabhav, Skills & Seva -->
-        <div class="card pad" style="background:var(--paper-card);border-radius:16px;border:1px solid var(--line);box-shadow:var(--sh-1)">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--line)">
-            <span style="font-size:18px">🤝</span>
-            <h3 style="font-size:15px;font-weight:700">4. Swabhav, Interests & Seva Preferences</h3>
-          </div>
           <div class="form-row">
             <div class="field">
               <label>Dominant Swabhav / Nature <b style="color:var(--danger)">*</b></label>
-              <select name="nature">
+              <select name="nature" required>
                 ${['Teaching', 'Organising', 'Music', 'Design', 'Cooking', 'Writing', 'Numbers', 'Building', 'Hospitality', 'Gardening', 'Other'].map(n=>`
                   <option value="${esc(n)}" ${defNature===n?'selected':''}>${esc(n)}</option>
                 `).join('')}
@@ -1944,26 +1889,21 @@ function viewCompleteProfile(){
               </select>
             </div>
           </div>
-          <div class="form-row">
-            <div class="field">
-              <label>Key Skills & Talents</label>
-              <input type="text" name="skills" placeholder="e.g. Sound system, Public speaking, Cooking, Design" value="${esc(defSkills)}">
-              <div class="hint">Comma separated list of skills you can contribute to temple activities</div>
-            </div>
-            <div class="field">
-              <label>Personal Interests</label>
-              <input type="text" name="interests" placeholder="e.g. Kirtan, Deity worship, Tech, Book reading" value="${esc(defInterests)}">
-            </div>
-          </div>
-        </div>
 
-        <!-- Submit Controls -->
-        <div style="display:flex;flex-direction:column;gap:8px;margin-top:6px">
-          <button type="submit" class="btn pri" style="padding:14px;font-size:16px;font-weight:600;border-radius:14px;box-shadow:var(--sh-2)">
-            ${ic('check')} Submit Profile for Area Leader Approval
-          </button>
-          <div class="tiny" style="text-align:center;color:var(--ink-3)">
-            All items will be stored in the database and reviewed by the Area Leader before portal access is enabled.
+          <div class="field">
+            <label>Personal Skills <b style="color:var(--danger)">*</b></label>
+            <input type="text" name="skills" required placeholder="e.g. Sound system, Public speaking, Cooking, Design, Kirtan, Coding" value="${esc(defSkills)}">
+            <div class="hint">Personal skills, talents and abilities you can contribute to temple activities</div>
+          </div>
+
+          <!-- Submit Controls -->
+          <div style="display:flex;flex-direction:column;gap:8px;margin-top:14px">
+            <button type="submit" class="btn pri" style="padding:14px;font-size:16px;font-weight:600;border-radius:14px;box-shadow:var(--sh-2)">
+              ${ic('check')} Submit Profile for Area Leader Approval
+            </button>
+            <div class="tiny" style="text-align:center;color:var(--ink-3)">
+              All items will be stored in the database and reviewed by the Area Leader before portal access is enabled.
+            </div>
           </div>
         </div>
       </form>
@@ -1994,9 +1934,10 @@ function viewPendingApproval(){
           <div><span style="color:var(--ink-3)">Name:</span> <b>${esc(d.name || u.name)}</b></div>
           <div><span style="color:var(--ink-3)">Email:</span> <span class="tiny">${esc(d.email || u.email)}</span></div>
           <div><span style="color:var(--ink-3)">Phone:</span> <b>${esc(d.phone || 'Recorded')}</b></div>
-          <div><span style="color:var(--ink-3)">College/Org:</span> <b>${esc(d.org || 'Recorded')}</b></div>
+          <div><span style="color:var(--ink-3)">Education:</span> <b>${esc(d.highestEducation || d.org || 'Recorded')}</b></div>
+          <div><span style="color:var(--ink-3)">Studies/Job:</span> <b>${esc(d.presentStudiesOrJob || d.occupation || 'Recorded')}</b></div>
           <div><span style="color:var(--ink-3)">Sadhana:</span> <b>${d.sadhana?.rounds || 0} rounds</b></div>
-          <div><span style="color:var(--ink-3)">Swabhav:</span> <b>${esc(d.swabhav?.nature || 'Recorded')}</b></div>
+          <div style="grid-column:1/-1"><span style="color:var(--ink-3)">Personal Skills:</span> <b>${esc(Array.isArray(d.skills) ? d.skills.join(', ') : d.skills || 'Recorded')}</b></div>
         </div>
       </div>
 
@@ -2038,10 +1979,14 @@ async function submitDevoteeProfile(form){
   const body = {};
   formData.forEach((val, key) => body[key] = val);
   
-  if(!body.name || !body.phone){
-    toast('Please fill in your Full Name and Phone number','⚠️');
+  if(!body.name || !body.phone || !body.dob || !body.address || !body.emergency || !body.highestEducation || !body.presentStudiesOrJob || !body.skills){
+    toast('Please fill in all mandatory fields marked with *','⚠️');
     return;
   }
+
+  body.org = body.highestEducation ? body.highestEducation.trim() : '';
+  body.occupation = body.presentStudiesOrJob ? body.presentStudiesOrJob.trim() : '';
+  body.personalSkills = body.skills ? body.skills.trim() : '';
 
   const token = localStorage.getItem('bace_token');
   const submitBtn = form.querySelector('button[type="submit"]');
@@ -3971,12 +3916,13 @@ function viewAdmin(){
                </div>
              </div>
              <div class="list" style="border:1px solid var(--line);border-radius:10px;font-size:12.5px;margin-bottom:14px">
-               <div class="li" style="padding:6px 10px"><span class="grow" style="color:var(--ink-3)">Occupation</span><b>${esc(d.occupation || 'Student')}</b></div>
-               <div class="li" style="padding:6px 10px"><span class="grow" style="color:var(--ink-3)">Residence</span><b>${esc(d.residence || 'Not specified')}</b></div>
-               <div class="li" style="padding:6px 10px"><span class="grow" style="color:var(--ink-3)">Address</span><b>${esc(d.address || 'Not specified')}</b></div>
+               <div class="li" style="padding:6px 10px"><span class="grow" style="color:var(--ink-3)">Highest Education</span><b>${esc(d.highestEducation || d.org || 'Not specified')}</b></div>
+                <div class="li" style="padding:6px 10px"><span class="grow" style="color:var(--ink-3)">Present Studies / Job</span><b>${esc(d.presentStudiesOrJob || d.occupation || 'Not specified')}</b></div>
+                <div class="li" style="padding:6px 10px"><span class="grow" style="color:var(--ink-3)">Date of Birth</span><b>${d.dob ? fmtD(iso(d.dob)) : 'Not specified'}</b></div>
+                <div class="li" style="padding:6px 10px"><span class="grow" style="color:var(--ink-3)">Current Address</span><b>${esc(d.address || 'Not specified')}</b></div>
                <div class="li" style="padding:6px 10px"><span class="grow" style="color:var(--ink-3)">Sadhana Rounds</span><b>${d.sadhana?.rounds || 0} rounds daily</b></div>
                <div class="li" style="padding:6px 10px"><span class="grow" style="color:var(--ink-3)">Swabhav / Nature</span><b>${esc(d.swabhav?.nature || 'Not assessed')}</b></div>
-               <div class="li" style="padding:6px 10px"><span class="grow" style="color:var(--ink-3)">Skills</span><b>${esc(Array.isArray(d.skills) ? d.skills.join(', ') : d.skills || 'None')}</b></div>
+               <div class="li" style="padding:6px 10px"><span class="grow" style="color:var(--ink-3)">Personal Skills</span><b>${esc(Array.isArray(d.skills) ? d.skills.join(', ') : d.skills || 'None')}</b></div>
                <div class="li" style="padding:6px 10px"><span class="grow" style="color:var(--ink-3)">Availability</span><b>${esc(d.availability || 'Weekends')}</b></div>
                <div class="li" style="padding:6px 10px"><span class="grow" style="color:var(--ink-3)">Emergency Contact</span><b>${esc(d.emergency || 'None')}</b></div>
              </div>
