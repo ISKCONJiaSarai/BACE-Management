@@ -4,7 +4,7 @@
   "description": "MongoDB backend and schemas for ISKCON BACE Jia Sarai Management System",
   "main": "server.js",
   "scripts": {
-    "start": "PORT=5000 node server.js",
+    "start": "node server.js",
     "dev": "PORT=5000 nodemon server.js",
     "seed": "node scripts/seedMongo.js"
   },
