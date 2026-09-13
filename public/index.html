@@ -388,6 +388,8 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13.5px}
 .li .d{font-size:12.5px;color:var(--ink-3);display:block}
 .li.click{cursor:pointer}
 .li.click:hover{background:var(--surface-2)}
+.li svg, .list svg, svg.ic{width:16px;height:16px;min-width:16px;min-height:16px;max-width:16px;max-height:16px;flex:none}
+.li > svg:last-child{margin-left:auto;color:var(--ink-3)}
 .empty{text-align:center;padding:36px 18px;color:var(--ink-2)}
 .empty .ill{width:110px;height:84px;margin:0 auto 10px;display:block}
 .empty h3{margin-bottom:5px}
@@ -1232,7 +1234,7 @@ const ICONS={
  repeat:'M17 1l4 4-4 4M3 11V9a4 4 0 0 1 4-4h14M7 23l-4-4 4-4M21 13v2a4 4 0 0 1-4 4H3',
  logout:'M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9'
 };
-const ic=(n,c='')=>`<svg class="${c}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="${ICONS[n]||ICONS.grid}"/></svg>`;
+const ic=(n,c='')=>`<svg class="ic ${c}" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="${ICONS[n]||ICONS.grid}"/></svg>`;
 const av=(name,size='s')=>`<span class="av ${size}" style="background:${avc(name||'?')}">${initials(name||'?')}</span>`;
 const badge=(txt,tone='grey')=>`<span class="badge b-${tone}">${esc(txt)}</span>`;
 const TONE={Active:'green',New:'saffron',Inactive:'grey',Archived:'grey','Pending Approval':'amber',Completed:'green','Completed by Another':'teal',
