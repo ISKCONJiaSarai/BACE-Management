@@ -195,7 +195,7 @@ input,select,textarea{font-family:inherit;font-size:14px;color:var(--ink)}
 .searchbox{margin-left:auto;position:relative;width:min(320px,32vw)}
 .searchbox input{width:100%;padding:8px 12px 8px 34px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
 .searchbox svg{position:absolute;left:11px;top:9px;width:15px;height:15px;color:var(--ink-3)}
-.icon-btn{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;border:1px solid var(--line);background:var(--surface);position:relative;flex:none}
+.icon-btn{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;border:1px solid var(--line);background:var(--surface);position:relative;flex:none;padding:0}
 .icon-btn:hover{background:var(--surface-2)}
 .icon-btn svg{width:17px;height:17px}
 .dot{position:absolute;top:4px;right:4px;min-width:15px;height:15px;padding:0 3px;border-radius:9px;background:var(--danger);color:#fff;font-size:9.5px;line-height:15px;text-align:center;border:1.5px solid var(--surface)}
@@ -290,11 +290,11 @@ a.card:hover,button.card:hover{box-shadow:var(--sh-2);transform:translateY(-2px)
 .vchip button:hover{background:var(--danger-soft);color:var(--danger)}
 
 /* ---------- avatars ---------- */
-.av{border-radius:50%;display:grid;place-items:center;font-weight:600;color:#fff;flex:none;font-size:12px}
-.av.s{width:28px;height:28px;font-size:11px}
-.av.m{width:38px;height:38px;font-size:13px}
-.av.l{width:78px;height:78px;font-size:25px;font-family:var(--f-head);font-weight:500}
-.people{display:flex}
+.av{border-radius:50%;display:inline-flex!important;align-items:center!important;justify-content:center!important;text-align:center!important;font-weight:600!important;color:#fff;flex:none;line-height:1!important;letter-spacing:0!important;user-select:none;vertical-align:middle;box-sizing:border-box!important;overflow:hidden;padding:0!important;text-transform:uppercase}
+.av.s{width:28px;height:28px;min-width:28px;min-height:28px;font-size:11px!important}
+.av.m{width:38px;height:38px;min-width:38px;min-height:38px;font-size:13px!important}
+.av.l{width:78px;height:78px;min-width:78px;min-height:78px;font-size:25px!important;font-family:var(--f-head);font-weight:500!important}
+.people{display:flex;align-items:center}
 .people .av{border:2px solid var(--surface);margin-left:-8px}
 .people .av:first-child{margin-left:0}
 
@@ -305,9 +305,10 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13.5px}
 .tbl td{padding:11px 15px;border-bottom:1px solid var(--line-2);vertical-align:middle}
 .tbl tbody tr:hover{background:var(--surface-2)}
 .tbl tbody tr.click{cursor:pointer}
+.who{display:flex;align-items:center;gap:10px}
 .tbl .who{display:flex;align-items:center;gap:10px}
 .tbl .who b{font-weight:600}
-.tbl .who span{display:block;font-size:12px;color:var(--ink-3)}
+.tbl .who span:not(.av){display:block;font-size:12px;color:var(--ink-3)}
 .tbl-foot{display:flex;align-items:center;gap:10px;padding:11px 15px;border-top:1px solid var(--line-2);font-size:12.5px;color:var(--ink-2);flex-wrap:wrap}
 .tbl-foot .pg{margin-left:auto;display:flex;gap:5px}
 .toolbar{display:flex;gap:8px;padding:12px 15px;border-bottom:1px solid var(--line-2);flex-wrap:wrap;align-items:center}
@@ -2579,7 +2580,7 @@ function actTable(rows){
     <td data-l="Activity"><b>${typeEmoji(a.type)} ${esc(a.name)}</b><div class="tiny">${esc(a.location||'')}${a.recurrence&&a.recurrence!=='One time'?' · '+a.recurrence:''}</div></td>
     <td data-l="Scope">${esc(scopeName(a))}</td>
     <td data-l="When">${fmtD(a.date)}<div class="tiny">${a.start?a.start+'–'+a.end:relD(a.date)}</div></td>
-    <td data-l="Responsible"><div class="who">${av(nameOf(a.responsible))}<span>${esc(nameOf(a.responsible))}</span></div></td>
+    <td data-l="Responsible"><div class="who">${av(nameOf(a.responsible))}<b>${esc(nameOf(a.responsible))}</b></div></td>
     <td data-l="Volunteers">${a.type==='Task'?'<span class="tiny">—</span>':`<div style="min-width:96px">${prog(f/a.need*100,f<a.need?'var(--danger)':'var(--green)')}
       <span class="tiny">${f} of ${a.need}${f<a.need?` — ${a.need-f} more`:' ✓'}</span></div>`}</td>
     <td data-l="Status">${sbadge(a.status)}</td>
@@ -3117,7 +3118,7 @@ function batchTable(){
    ${DB.batches.map(b=>{const m=batchMetrics(b.id);return `<tr class="click" data-act="open-batch" data-id="${b.id}">
     <td data-l="Batch"><b>${esc(b.name)}</b><div class="tiny">${esc(b.day)} · ${esc(b.time)}</div></td>
     <td data-l="Level">${badge('Level '+b.level,'indigo')}</td>
-    <td data-l="Coordinator"><div class="who">${av(nameOf(b.coordinator))}<span>${esc(nameOf(b.coordinator))}</span></div></td>
+    <td data-l="Coordinator"><div class="who">${av(nameOf(b.coordinator))}<b>${esc(nameOf(b.coordinator))}</b></div></td>
     <td data-l="Members">${m.members.length}</td>
     <td data-l="Attendance"><div style="min-width:92px">${prog(m.attendance,m.attendance<65?'var(--danger)':'var(--indigo)')}<span class="tiny">${m.attendance}%</span></div></td>
     <td data-l="Budget"><span class="tiny">${money(b.budget.spent)} of ${money(b.budget.allocated)} · ${m.util}%</span></td>
