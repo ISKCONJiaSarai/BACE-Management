@@ -162,6 +162,16 @@ input,select,textarea{font-family:inherit;font-size:14px;color:var(--ink)}
 .shell.sb-closed{grid-template-columns:0px 1fr}
 .shell.sb-closed .sidebar{display:none}
 .sidebar{background:linear-gradient(180deg,#1E2230 0%,#161922 100%);color:#E2E8F0;border-right:1px solid rgba(255,255,255,0.06);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow:hidden}
+/* ---------- side panel edge toggle ---------- */
+.sb-edge-toggle{position:fixed;top:50%;z-index:85;display:flex;align-items:center;justify-content:center;cursor:pointer;background:#1E2230;color:#F1F5F9;border:1.5px solid rgba(255,255,255,0.2);box-shadow:0 2px 10px rgba(0,0,0,0.3),0 0 0 1px rgba(255,255,255,0.05);transition:left .22s cubic-bezier(0.2,0,0,1),transform .22s ease,width .2s ease,height .2s ease,background .15s ease,border-radius .2s ease,box-shadow .15s ease;user-select:none;padding:0;outline:none}
+.sb-edge-toggle:hover{background:var(--accent,#E06012);color:#FFF;border-color:rgba(255,255,255,0.45);box-shadow:0 4px 16px rgba(224,96,18,0.45),0 0 0 2px rgba(224,96,18,0.25)}
+.sb-edge-toggle.open{left:var(--sidebar,280px);transform:translate(-50%,-50%);width:26px;height:26px;border-radius:50%}
+.sb-edge-toggle.open:hover{transform:translate(-50%,-50%) scale(1.14)}
+.sb-edge-toggle.closed{left:0;transform:translateY(-50%);width:22px;height:44px;border-radius:0 10px 10px 0;border-left:none;color:#FCD34D}
+.sb-edge-toggle.closed:hover{width:28px;transform:translateY(-50%);color:#FFF}
+.sb-edge-toggle svg{width:13px;height:13px;stroke:currentColor;stroke-width:2.5;transition:transform .28s cubic-bezier(0.34,1.56,0.64,1)}
+.sb-edge-toggle.closed svg{transform:rotate(180deg)}
+@media(max-width:1080px){.sb-edge-toggle{display:none}}
 .sb-head{padding:16px 16px 14px;border-bottom:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.02)}
 .sb-head .t{font-family:var(--f-head);font-size:15.5px;color:#FFF7ED;line-height:1.25;font-weight:600}
 .sb-head .s{font-size:11.5px;color:#FCD34D;margin-top:2px;font-weight:500;letter-spacing:.02em}
@@ -1501,14 +1511,11 @@ function navItem(i,pill){
 }
 function sidebar(){
   return `<aside class="sidebar">
-   <div class="sb-head" style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+   <div class="sb-head" style="display:flex;align-items:center;gap:11px">
      <div class="brandmark" style="display:flex;align-items:center;gap:11px;min-width:0">
        <img src="/logo.png" alt="ISKCON BACE Jia Sarai" style="height:38px;width:38px;border-radius:9px;object-fit:contain;background:#fff;padding:2px;border:1px solid rgba(255,255,255,0.25);flex:none;box-shadow:0 2px 8px rgba(0,0,0,0.2)">
        <div style="min-width:0;overflow:hidden"><div class="t" style="white-space:nowrap;text-overflow:ellipsis;overflow:hidden">ISKCON BACE</div><div class="s" style="white-space:nowrap;text-overflow:ellipsis;overflow:hidden">Jia Sarai · Community OS</div></div>
      </div>
-     <button class="icon-btn sm" data-act="toggle-sidebar" title="Close sidebar" style="width:28px;height:28px;border-radius:8px;border:1px solid rgba(255,255,255,0.18);background:rgba(255,255,255,0.08);color:#FDE68A;display:inline-flex;align-items:center;justify-content:center;flex:none;cursor:pointer" aria-label="Close sidebar">
-       ${ic('x')}
-     </button>
    </div>
    <div class="sb-scroll" id="sbscroll">
      ${NAV_TOP.map(i=>navItem(i)).join('')}
@@ -4617,7 +4624,8 @@ function render(){
   applyAccent(APP.route);
   const body=routeView();
   const shellClass=`shell ${APP.sbClosed?'sb-closed':''}`;
-  app.innerHTML=`<div class="${shellClass}">${APP.sbClosed?'':sidebar()}<div class="main">${topbar()}<div class="view">${body}</div></div></div>
+  const sbToggleBtn=`<button class="sb-edge-toggle ${APP.sbClosed?'closed':'open'}" data-act="toggle-sidebar" title="${APP.sbClosed?'Open side panel':'Close side panel'}" aria-label="${APP.sbClosed?'Open side panel':'Close side panel'}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>`;
+  app.innerHTML=`<div class="${shellClass}">${APP.sbClosed?'':sidebar()}${sbToggleBtn}<div class="main">${topbar()}<div class="view">${body}</div></div></div>
     ${botnav()}${fab()}${modalHTML()}`;
   const sb=document.getElementById('sbscroll');
   if(sb){sb.scrollTop=APP.sbScroll;sb.addEventListener('scroll',()=>{APP.sbScroll=sb.scrollTop},{passive:true})}
