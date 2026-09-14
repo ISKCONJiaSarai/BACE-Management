@@ -2144,7 +2144,7 @@ const PILLARS=[
  {key:'mgmt',t:'BACE Management',em:'🕉',pill:'var(--saffron)',m:'management',items:[
    {t:'Management dashboard',em:'📊',r:'#/mgmt',m:'management'},
    {t:'Departments',em:'🏛',r:'#/depts',m:'management'},
-   {t:'Assign / Schedule',em:'📋',r:'#/assign',m:'assign'},
+   {t:'Assign Seva',em:'📋',r:'#/assign',m:'assign'},
    {t:'Attendance',em:'✅',r:'#/attendance',m:'management'},
    {t:'Department reports',em:'📄',r:'#/dept-reports',m:'reports'},
    {t:'Calendar',em:'📅',r:'#/calendar',m:'calendar'},
@@ -2260,7 +2260,7 @@ function sidebar(){
    </div></aside>`;
 }
 const CRUMBS={'':'Dashboard',today:'Today',devotees:'Devotees',devotee:'Devotee',org:'Organisation',mgmt:'BACE Management',
- depts:'Departments',dept:'Department',assign:'Assign / Schedule',attendance:'Attendance','dept-reports':'Department reports',
+ depts:'Departments',dept:'Department',assign:'Assign Seva',attendance:'Attendance','dept-reports':'Department reports',
  inventory:'Inventory & BBT',sops:'SOPs & standards',actions:'Action items',preaching:'BACE Preaching',batches:'Batch management',
  batch:'Batch',contacts:'Contacts & pipeline',followups:'Follow-ups',classes:'Classes & events','batch-attendance':'Batch attendance',
  'preaching-reports':'Preaching reports',care:'Devotee Care',friends:'Friends',groups:'Groups',group:'Group',swabhav:'Swabhav engagement',
@@ -2314,7 +2314,7 @@ function botnav(){
   }).join('')}</nav>`;
 }
 function fab(){
-  const acts=[['Assign / schedule','📋','open-assign','assign'],['Add devotee','👥','add-devotee','directory'],
+  const acts=[['Assign seva','📋','open-assign','assign'],['Schedule class','🗓️','open-schedule','preaching'],['Add devotee','👥','add-devotee','directory'],
    ['Add contact','🌱','add-contact','preaching'],['Mark attendance','✅','go-attendance','management'],
    ['Create follow-up','⏰','add-followup','preaching'],['Create group','🫂','add-group','care'],
    ['New message','💬','go-messages','messages'],['Submit report','📄','add-report','reports']].filter(a=>can(a[3]));
@@ -2995,7 +2995,7 @@ function viewToday(){
   const fus=DB.followups.filter(f=>f.status==='Pending'&&f.due<=t);
   const ann=DB.threads.find(x=>x.type==='community');
   return hero()+head('⚡ Today','What needs my attention today',fmtLong(t),
-    `<button class="btn" data-act="go" data-r="#/calendar">📅 Calendar</button><button class="btn pri" data-act="open-assign">📋 Assign / schedule</button>`)+
+    `<button class="btn" data-act="go" data-r="#/calendar">📅 Calendar</button><button class="btn pri" data-act="open-assign" data-type="Seva">📋 Assign seva</button>`)+
   `<div class="grid g-2-1" style="margin-bottom:15px">
     <div style="display:flex;flex-direction:column;gap:15px">
       ${section('🙏 My seva and classes today',mine.length?`<div class="list">${mine.map(({a,act:x})=>`
@@ -3003,7 +3003,7 @@ function viewToday(){
         <span class="grow"><span class="t">${esc(x.name)}</span><span class="d">${x.start||''}${x.end?'–'+x.end:''} · ${esc(x.location||scopeName(x))}</span></span>
         ${sbadge(a.state)}${['Completed','Completed by Another'].includes(a.state)?'':`<button class="btn sm pri" data-act="open-complete" data-id="${a.id}">I have done it ✓</button>`}</div>`).join('')}</div>`
         :emptyState('No seva assigned to you today','Enjoy the sadhana. Your next assignment will appear here.','','calm'))}
-      ${section('🕉 Community seva today',svc.length?`<div class="tbl-wrap">${actTable(svc)}</div>`:emptyState('No seva scheduled today','Nothing is on the roster for today.','<button class="btn pri" data-act="open-assign">Schedule seva</button>'))}
+      ${section('🕉 Community seva today',svc.length?`<div class="tbl-wrap">${actTable(svc)}</div>`:emptyState('No seva scheduled today','Nothing is on the roster for today.','<button class="btn pri" data-act="open-assign" data-type="Seva">Assign seva</button>'))}
       ${section('📖 Classes and events today',(cls.length+evs.length)?`<div class="list">${[...cls,...evs].map(x=>`
         <a class="li click" href="#/activity/${x.id}"><span class="badge ${x.type==='Class'?'b-indigo':'b-mustard'}">${x.type==='Class'?'📖':'✨'} ${esc(x.type)}</span>
         <span class="grow"><span class="t">${esc(x.name)}</span><span class="d">${esc(scopeName(x))} · ${x.start}–${x.end} · ${esc(x.location)}</span></span>${sbadge(x.status)}</a>`).join('')}</div>`
@@ -3486,7 +3486,7 @@ function viewOrg(){
    ========================================================================= */
 const typeEmoji=t=>(ACTIVITY_TYPES.find(x=>x[0]===t)||['','📋'])[1];
 function actTable(rows){
-  if(!rows.length)return emptyState('Nothing scheduled','No activities in this period.','<button class="btn pri" data-act="open-assign">📋 Assign / schedule</button>');
+  if(!rows.length)return emptyState('Nothing scheduled','No activities in this period.','<button class="btn pri" data-act="open-assign" data-type="Seva">📋 Assign seva</button>');
   return `<table class="tbl"><thead><tr><th>Activity</th><th>Scope</th><th>When</th><th>Responsible</th><th>Volunteers</th><th>Status</th><th></th></tr></thead><tbody>
    ${rows.slice().sort((a,b)=>a.date<b.date?-1:1).map(a=>{const f=filled(a);return `<tr>
     <td data-l="Activity"><b>${typeEmoji(a.type)} ${esc(a.name)}</b><div class="tiny">${esc(a.location||'')}${a.recurrence&&a.recurrence!=='One time'?' · '+a.recurrence:''}</div></td>
@@ -3502,7 +3502,7 @@ function viewMgmt(){
   const s=STATS();
   const tot=activeDepts().reduce((o,d)=>{const m=deptMetrics(d.id);o.done+=m.done;o.missed+=m.missed;o.pend+=m.pending;o.vol+=m.volunteers;return o},{done:0,missed:0,pend:0,vol:0});
   return head('🕉 BACE Management','Management dashboard','Departments, seva rotas, attendance, inventory and the weekly reporting cycle',
-    `<button class="btn" data-act="go" data-r="#/depts">🏛 Departments</button><button class="btn pri" data-act="open-assign">📋 Assign / schedule</button>`)+
+    `<button class="btn" data-act="go" data-r="#/depts">🏛 Departments</button><button class="btn pri" data-act="open-assign" data-type="Seva">📋 Assign seva</button>`)+
   `<div class="grid g6" style="margin-bottom:15px">
     ${stat('Departments',s.depts,'active',{em:'🏛',act:'go',r:'#/depts'})}
     ${stat('Active volunteers',s.volunteers,'engaged in seva',{em:'🛠'})}
@@ -3552,7 +3552,7 @@ function viewDepts(){
        <div class="tiny" style="margin-top:9px">Head: ${esc(nameOf(d.head))} · reports ${esc(d.reportFreq.toLowerCase())}</div></div></a>
      ${ownsDept(d.id)?`<div class="card-b" style="border-top:1px solid var(--line-2);display:flex;gap:7px;padding-top:11px">
        <button class="btn sm" data-act="edit-dept" data-id="${d.id}">${ic('edit')}Edit</button>
-       <button class="btn sm" data-act="open-assign" data-dept="${d.id}">${ic('plus')}Assign</button>
+       <button class="btn sm" data-act="open-assign" data-type="Seva" data-dept="${d.id}">${ic('plus')}Assign seva</button>
        ${can('manage_departments')&&d.status!=='Archived'?`<button class="btn sm danger" data-act="archive-dept" data-id="${d.id}">Archive</button>`:''}</div>`:''}
      </div>`}).join('')}</div>`
    :emptyState('No departments match','Change the filters, or create a department.',can('manage_departments')?'<button class="btn pri" data-act="add-dept">Create department</button>':'')}`;
@@ -3579,8 +3579,8 @@ function deptDashboardBody(dp){
     ${stat('Budget used',m.util+'%',money(dp.budget.spent)+' of '+money(dp.budget.allocated),{em:'🧾'})}</div>
    <div class="grid g-2-1" style="margin-bottom:15px">
     ${section("📅 Today's activities",today.length?`<div class="tbl-wrap">${actTable(today)}</div>`
-      :emptyState('Nothing scheduled today','No activities on the roster for today in this department.',ownsDept(dp.id)?`<button class="btn pri" data-act="open-assign" data-dept="${dp.id}">Assign / schedule</button>`:''),
-      ownsDept(dp.id)?`<button class="btn sm pri" data-act="open-assign" data-dept="${dp.id}">${ic('plus')}New activity</button>`:'')}
+      :emptyState('Nothing scheduled today','No activities on the roster for today in this department.',ownsDept(dp.id)?`<button class="btn pri" data-act="open-assign" data-type="Seva" data-dept="${dp.id}">Assign seva</button>`:''),
+      ownsDept(dp.id)?`<button class="btn sm pri" data-act="open-assign" data-type="Seva" data-dept="${dp.id}">${ic('plus')}Assign seva</button>`:'')}
     <div style="display:flex;flex-direction:column;gap:15px">
       ${section('📄 Weekly report',rep?`<div class="card-b"><div class="note" style="border-left-color:var(--amber)">The report for ${esc(rep.period)} has not been submitted.</div>
         <button class="btn pri block" style="margin-top:12px" data-act="add-report" data-id="${dp.id}">${ic('doc')}Submit report</button></div>`
@@ -3691,7 +3691,7 @@ function viewDept(id){
    head(dp.icon+' Department',dp.name,`${dp.desc} · head ${nameOf(dp.head)} · ${dp.status}`,
     `${ownsDept(dp.id)?`<button class="btn" data-act="edit-dept" data-id="${dp.id}">${ic('edit')}Edit</button>
       <button class="btn" data-act="dept-report-range" data-id="${dp.id}">📄 Reports</button>
-      <button class="btn pri" data-act="open-assign" data-dept="${dp.id}">${ic('plus')}Assign / schedule</button>`:''}`)+
+      <button class="btn pri" data-act="open-assign" data-type="Seva" data-dept="${dp.id}">${ic('plus')}Assign seva</button>`:''}`)+
    deptDashboardBody(dp);
 }
 
@@ -3707,9 +3707,9 @@ function viewAssign(){
   if(APP.user.role==='dept_head')rows=rows.filter(a=>a.dept===APP.user.dept);
   if(APP.user.role==='preaching_coord')rows=rows.filter(a=>a.batch===APP.user.batch);
   const unf=rows.filter(a=>a.type!=='Task'&&['Scheduled','Assigned'].includes(a.status)&&!isFilled(a));
-  return head('📋 One place for everything you assign','Assign / Schedule',
-    'Seva, service, classes, events, tasks and responsibilities — one workflow, one volunteer picker, one record',
-    `<button class="btn" data-act="go" data-r="#/actions">🎯 Action items</button><button class="btn pri" data-act="open-assign">${ic('plus')}Assign / schedule</button>`)+
+  return head('📋 Allocate devotees to department services','Assign Seva',
+    'Assign devotees, coordinate department duties, track roster requirements and generate recurring templates',
+    `<button class="btn" data-act="go" data-r="#/actions">🎯 Action items</button><button class="btn pri" data-act="open-assign" data-type="Seva">${ic('plus')}Assign seva</button>`)+
   `<div class="grid g4" style="margin-bottom:15px">
     ${stat('In this range',rows.length,`${fmtD(f.from)} → ${fmtD(f.to)}`,{em:'📋'})}
     ${stat('Short of volunteers',unf.length,'need allocation now',{em:'⚠️',tint:unf.length>0})}
@@ -3731,19 +3731,64 @@ function viewAssign(){
         ${DB.batches.map(b=>`<option value="${b.id}" ${f.scope===b.id?'selected':''}>${esc(b.name)}</option>`).join('')}</select>
       <select data-act="f" data-k="assign" data-n="status"><option value="">All statuses</option>${ACT_STATUS.map(s=>`<option ${f.status===s?'selected':''}>${s}</option>`).join('')}</select>
       <input type="date" value="${f.from}" data-act="f" data-k="assign" data-n="from"><input type="date" value="${f.to}" data-act="f" data-k="assign" data-n="to">`,
-    empty:emptyState('Nothing scheduled in this range','Widen the dates or create the first activity.','<button class="btn pri" data-act="open-assign">📋 Assign / schedule</button>')})}`;
+    empty:emptyState('Nothing scheduled in this range','Widen the dates or create the first activity.','<button class="btn pri" data-act="open-assign" data-type="Seva">📋 Assign seva</button>')})}`;
 }
 /* ---- the create/edit modal with live volunteer picker ---- */
 function assignDraft(){
-  if(!APP.draft.assign)APP.draft.assign={type:'Seva',name:'',dept:(APP.user.dept||activeDepts()[0].id),batch:'',
+  if(!APP.draft.assign)APP.draft.assign={type:'Seva',name:'',dept:(APP.user.dept||activeDepts()[0].id),batch:(activeBatches()[0]||{}).id||'',responsible:'',
     date:iso(TODAY),start:'07:00',end:'09:00',location:'',desc:'',priority:'Medium',need:3,recurrence:'One time',
     volunteers:[],items:[],q:'',fdept:'',fbatch:'',fskill:'',budget:0};
   return APP.draft.assign;
 }
 function assignModal(){
   const d=assignDraft();
+  const isClass=d.type==='Class';
   const isTask=d.type==='Task'||d.type==='Responsibility';
-  const scopeIsBatch=d.type==='Class'||d.type==='Event'&&d.batch;
+
+  /* ---------------- Schedule Class View (BACE Preaching) ---------------- */
+  if(isClass){
+    return `<div class="scrim" data-act="close-scrim"><div class="modal wide" data-stop="1">
+     <div class="modal-h"><h2>🗓️ Schedule Class</h2><span class="tiny">Schedule a preaching class or session for a batch</span>
+       <button class="icon-btn" style="margin-left:auto" data-act="close-scrim">${ic('x')}</button></div>
+     <div class="modal-b">
+      <div class="form-row"><div class="field"><label>Class name / Topic</label><input name="name" value="${esc(d.name)}" placeholder="e.g. Bhagavad-gita Chapter 4"></div>
+        <div class="field"><label>Batch</label>
+        <select name="batch">${activeBatches().map(b=>`<option value="${b.id}" ${d.batch===b.id?'selected':''}>${esc(b.name)}</option>`).join('')}</select></div></div>
+      <div class="form-row t3"><div class="field"><label>Date</label><input type="date" name="date" value="${d.date}"></div>
+        <div class="field"><label>Start time</label><input type="time" name="start" value="${d.start}"></div>
+        <div class="field"><label>End time</label><input type="time" name="end" value="${d.end}"></div></div>
+      <div class="form-row"><div class="field"><label>Location</label><input name="location" value="${esc(d.location)}" placeholder="e.g. Temple Hall / BACE / Online (Zoom)"></div>
+        <div class="field"><label>Teacher / Speaker</label>
+        <select name="responsible"><option value="">Select teacher / speaker</option>${DB.devotees.filter(x=>x.status!=='Inactive').map(x=>`<option value="${x.id}" ${d.responsible===x.id?'selected':''}>${esc(x.name)} (${esc(x.org||'Devotee')})</option>`).join('')}</select></div></div>
+      <div class="field"><label>Description / Notes (optional)</label><textarea name="desc" placeholder="Topic details, verses to read, or preparation notes">${esc(d.desc)}</textarea></div>
+      <div class="field"><label>🔁 Repeats</label>
+        <div class="chips">${['One time','Weekly','Daily','Monthly'].map(r=>`<button class="chip ${d.recurrence===r?'on':''}" data-act="draft" data-n="recurrence" data-v="${r}">${r}</button>`).join('')}</div>
+        ${d.recurrence!=='One time'?`<div class="hint">A recurring class schedule will be created and future class sessions generated automatically.</div>`:''}</div>
+     </div>
+     <div class="modal-f"><button class="btn" data-act="close-scrim">Cancel</button>
+       <button class="btn pri" data-act="save-assign">${ic('check')}Schedule class</button></div></div></div>`;
+  }
+
+  /* ---------------- Task / Action Item View ---------------- */
+  if(isTask){
+    return `<div class="scrim" data-act="close-scrim"><div class="modal wide" data-stop="1">
+     <div class="modal-h"><h2>🎯 New Action Item</h2><span class="tiny">Track an operational task or deliverable</span>
+       <button class="icon-btn" style="margin-left:auto" data-act="close-scrim">${ic('x')}</button></div>
+     <div class="modal-b">
+      <div class="form-row"><div class="field"><label>Task title</label><input name="name" value="${esc(d.name)}" placeholder="e.g. Confirm speaker accommodation"></div>
+        <div class="field"><label>Department</label>
+        <select name="dept">${activeDepts().map(x=>`<option value="${x.id}" ${d.dept===x.id?'selected':''}>${x.icon} ${esc(x.name)}</option>`).join('')}</select></div></div>
+      <div class="form-row t3"><div class="field"><label>Due date</label><input type="date" name="date" value="${d.date}"></div>
+        <div class="field"><label>Priority</label><select name="priority">${['High','Medium','Low'].map(p=>`<option ${d.priority===p?'selected':''}>${p}</option>`).join('')}</select></div>
+        <div class="field"><label>Assignee</label>
+        <select name="responsible"><option value="">Select assignee</option>${DB.devotees.filter(x=>x.status!=='Inactive').map(x=>`<option value="${x.id}" ${d.responsible===x.id?'selected':''}>${esc(x.name)}</option>`).join('')}</select></div></div>
+      <div class="field"><label>Description</label><textarea name="desc" placeholder="Details of what needs to be done">${esc(d.desc)}</textarea></div>
+     </div>
+     <div class="modal-f"><button class="btn" data-act="close-scrim">Cancel</button>
+       <button class="btn pri" data-act="save-assign">${ic('check')}Create action item</button></div></div></div>`;
+  }
+
+  /* ---------------- Assign Seva View (BACE Management & Departments) ---------------- */
   let cands=DB.devotees.filter(x=>x.status!=='Inactive');
   if(d.q)cands=cands.filter(x=>(x.name+x.org+x.skills.join(' ')).toLowerCase().includes(d.q.toLowerCase()));
   if(d.fdept)cands=cands.filter(x=>x.dept===d.fdept);
@@ -3753,15 +3798,12 @@ function assignModal(){
     .sort((a,b)=>b.score-a.score).slice(0,40).map(o=>o.x);
   const rem=Math.max(0,d.need-d.volunteers.length);
   return `<div class="scrim" data-act="close-scrim"><div class="modal wide" data-stop="1">
-   <div class="modal-h"><h2>📋 Assign / Schedule</h2><span class="tiny">Set it once — recurring activities generate themselves</span>
+   <div class="modal-h"><h2>📋 Assign Seva</h2><span class="tiny">Assign devotees and volunteers to department services</span>
      <button class="icon-btn" style="margin-left:auto" data-act="close-scrim">${ic('x')}</button></div>
    <div class="modal-b">
-    <div class="field"><label>Activity type</label>
-      <div class="chips">${ACTIVITY_TYPES.map(([t,e])=>`<button class="chip ${d.type===t?'on':''}" data-act="draft" data-n="type" data-v="${t}">${e} ${t}</button>`).join('')}</div></div>
-    <div class="form-row"><div class="field"><label>Activity name</label><input name="name" value="${esc(d.name)}" placeholder="${d.type==='Class'?'Bhagavad-gita Chapter 3':'Sunday feast cooking'}"></div>
-      <div class="field"><label>${scopeIsBatch||d.type==='Class'?'Batch':'Department'}</label>
-      ${d.type==='Class'?`<select name="batch">${activeBatches().map(b=>`<option value="${b.id}" ${d.batch===b.id?'selected':''}>${esc(b.name)}</option>`).join('')}</select>`
-        :`<select name="dept">${activeDepts().map(x=>`<option value="${x.id}" ${d.dept===x.id?'selected':''}>${x.icon} ${esc(x.name)}</option>`).join('')}</select>`}</div></div>
+    <div class="form-row"><div class="field"><label>Seva / Service name</label><input name="name" value="${esc(d.name)}" placeholder="e.g. Sunday feast cooking, Temple cleaning"></div>
+      <div class="field"><label>Department</label>
+      <select name="dept">${activeDepts().map(x=>`<option value="${x.id}" ${d.dept===x.id?'selected':''}>${x.icon} ${esc(x.name)}</option>`).join('')}</select></div></div>
     <div class="form-row t3"><div class="field"><label>Date</label><input type="date" name="date" value="${d.date}"></div>
       <div class="field"><label>Start time</label><input type="time" name="start" value="${d.start}"></div>
       <div class="field"><label>End time</label><input type="time" name="end" value="${d.end}"></div></div>
@@ -3772,7 +3814,6 @@ function assignModal(){
     <div class="field"><label>🔁 Repeats</label>
       <div class="chips">${['One time','Daily','Weekly','Monthly','Custom'].map(r=>`<button class="chip ${d.recurrence===r?'on':''}" data-act="draft" data-n="recurrence" data-v="${r}">${r}</button>`).join('')}</div>
       ${d.recurrence!=='One time'?`<div class="hint">A recurring template is created and the next 8 occurrences are generated automatically. You can later change a single day or everything from a date onward.</div>`:''}</div>
-    ${isTask?'':`
     <div class="field"><label>Number of volunteers required</label>
       <div style="display:flex;gap:8px;align-items:center">
         <button class="btn sm" data-act="need" data-v="-1">−</button>
@@ -3796,7 +3837,7 @@ function assignModal(){
           <span class="d">${esc(dept(x.dept)?.name||'No department')} · ${x.attendancePct}% attendance · ${esc(x.skills.join(', '))}</span></span>
           ${x.dept===d.dept?badge('Department fit','green'):''}</label>`}).join('')
         :`<div class="li tiny">No devotees match these filters.</div>`}</div>
-      <div class="hint">Suggestions are ranked by department fit, past attendance and stated availability.</div></div>`}
+      <div class="hint">Suggestions are ranked by department fit, past attendance and stated availability.</div></div>
     <div class="field"><label>Action items (optional)</label>
       <div class="list" style="border:1px solid var(--line);border-radius:12px">
         ${d.items.map((t,i)=>`<div class="li"><span class="grow"><span class="t">□ ${esc(t)}</span></span>
@@ -3805,7 +3846,7 @@ function assignModal(){
           <button class="btn sm" data-act="draft-item-add">Add</button></div></div></div>
    </div>
    <div class="modal-f"><button class="btn" data-act="close-scrim">Cancel</button>
-     <button class="btn pri" data-act="save-assign">${ic('check')}Create ${esc(d.type.toLowerCase())}</button></div></div></div>`;
+     <button class="btn pri" data-act="save-assign">${ic('check')}Assign seva</button></div></div></div>`;
 }
 /* ---- activity detail: completion, actual performer, exceptions ---- */
 function activityModal(id){
@@ -3898,7 +3939,7 @@ function viewAttendance(){
   const tabs=['Batch classes','Seva & activities','Morning programme','Matrix'];
   const bid=APP.filters.attBatch||(APP.user.batch||DB.batches[0].id);
   return head('✅ Attendance','Attendance','One engine for classes, seva, the morning programme, camps and meetings',
-    `<button class="btn pri" data-act="open-assign" data-batch="${bid}" data-type="Class">${ic('plus')}Schedule class</button>`)+
+    `<button class="btn pri" data-act="open-schedule" data-batch="${bid}" data-type="Class">${ic('plus')}Schedule class</button>`)+
    `<div class="tabs">${tabs.map(t=>`<button class="${t===tab?'on':''}" data-act="tab" data-k="att" data-v="${t}">${t}</button>`).join('')}</div>`+
    (tab==='Batch classes'?batchAttendancePanel()
    :tab==='Seva & activities'?sevaAttendancePanel()
@@ -3922,7 +3963,7 @@ function batchAttendancePanel(){
      <div class="att-toolbar-row att-actions-row">
        <button class="btn sm pri" data-act="save-attendance">${ic('check')}Save attendance</button>
        <button class="btn sm" data-act="mark-all" data-ref="${cid}" data-b="${bid}">Mark all present</button>
-       <button class="btn sm" data-act="open-assign" data-batch="${bid}" data-type="Class" style="border-color:var(--indigo-soft);color:var(--indigo)">${ic('plus')}Schedule class</button>
+       <button class="btn sm" data-act="open-schedule" data-batch="${bid}" data-type="Class" style="border-color:var(--indigo-soft);color:var(--indigo)">${ic('plus')}Schedule class</button>
      </div>
    </div>
    ${cl?`<div class="card-b att-summary-bar" style="padding-bottom:0"><div class="tiny">${fmtLong(cl.date)} · ${esc(cl.location||'Online / BACE')} · <b>${present} of ${members.length}</b> present (${pct(present,members.length)}%)</div></div>`:''}
@@ -3955,7 +3996,7 @@ function sevaAttendancePanel(){
       <div class="att-toolbar-row att-actions-row">
         <button class="btn sm pri" data-act="save-attendance">${ic('check')}Save attendance</button>
         <button class="btn sm" data-act="mark-all-act" data-ref="${aid}">Mark all present</button>
-        <button class="btn sm" data-act="open-assign" data-type="Seva">${ic('plus')}Schedule seva</button>
+        <button class="btn sm" data-act="open-assign" data-type="Seva">${ic('plus')}Assign seva</button>
       </div>
     </div>
     ${people.length?`<div class="list">${people.map(d=>{const st=cur(d.id);return `<div class="li att-row">
@@ -3971,7 +4012,7 @@ function sevaAttendancePanel(){
         ${['Present','Late','Excused','Absent'].map(s=>`<button type="button" class="chip att-btn ${s.toLowerCase()} ${st===s?'on':''}" data-act="mark" data-ref="${aid}" data-d="${d.id}" data-s="${s}" data-cat="Seva">${s==='Present'?'✓ ':''}${s}</button>`).join('')}
       </div>
     </div>`}).join('')}</div>`
-    :emptyState('Nobody assigned','Assign volunteers to this activity first.','<button class="btn pri" data-act="open-assign">Assign / schedule</button>')}`,
+    :emptyState('Nobody assigned','Assign volunteers to this activity first.','<button class="btn pri" data-act="open-assign" data-type="Seva">Assign seva</button>')}`,
     `<span class="tiny">Tap once per devotee</span>`);
 }
 function attendanceMatrix(){
@@ -4123,7 +4164,7 @@ function viewBatches(){
       ${ownsBatch(b.id)?`<div class="card-b" style="border-top:1px solid var(--line-2);display:flex;gap:7px;flex-wrap:wrap;padding-top:11px">
         <button class="btn sm" data-act="edit-batch" data-id="${b.id}">${ic('edit')}Edit</button>
         <button class="btn sm" data-act="batch-members" data-id="${b.id}">${ic('people')}Members</button>
-        <button class="btn sm" data-act="open-assign" data-batch="${b.id}">${ic('plus')}Schedule class</button>
+        <button class="btn sm" data-act="open-schedule" data-batch="${b.id}" data-type="Class">${ic('plus')}Schedule class</button>
         ${can('manage_batches')&&b.status==='Active'?`<button class="btn sm danger" data-act="archive-batch" data-id="${b.id}">Archive</button>`:''}</div>`:''}
     </div>`}).join('')}</div>`;
   }).join('');
@@ -4155,8 +4196,8 @@ function batchDashboardBody(b){
         ${nextClass&&!today.some(t=>t.id===nextClass.id)?`<div class="li click" data-act="open-activity" data-id="${nextClass.id}"><span class="badge b-grey">Next</span>
           <span class="grow"><span class="t">${esc(nextClass.name)}</span><span class="d">${fmtD(nextClass.date)} · ${relD(nextClass.date)} · ${esc(nextClass.location)}</span></span>
           ${ownsBatch(b.id)?`<button class="btn sm" data-act="go-batch-attendance" data-b="${b.id}">Attendance</button>`:''}</div>`:''}</div>`
-        :emptyState('No class scheduled','Schedule the next class for this batch.',ownsBatch(b.id)?`<button class="btn pri" data-act="open-assign" data-batch="${b.id}">Schedule class</button>`:''),
-        ownsBatch(b.id)?`<button class="btn sm pri" data-act="open-assign" data-batch="${b.id}">${ic('plus')}Schedule</button>`:'')}
+        :emptyState('No class scheduled','Schedule the next class for this batch.',ownsBatch(b.id)?`<button class="btn pri" data-act="open-schedule" data-batch="${b.id}" data-type="Class">Schedule class</button>`:''),
+        ownsBatch(b.id)?`<button class="btn sm pri" data-act="open-schedule" data-batch="${b.id}" data-type="Class">${ic('plus')}Schedule class</button>`:'')}
       ${section('📊 Class attendance trend',trend.length?`<div class="card-b">${lineChart(trend,{unit:'%',color:'var(--indigo)'})}
         <div class="tiny" style="margin-top:8px">Hover a point for present / absent / total for that class</div></div>`
         :emptyState('No attendance yet','The trend appears once classes are held and attendance is marked.',''))}
@@ -4199,7 +4240,7 @@ function viewBatch(id){
    head('📖 Level '+b.level+' batch',b.name,`${b.desc} · ${b.freq} on ${b.day} at ${b.time} · coordinator ${nameOf(b.coordinator)}`,
     ownsBatch(b.id)?`<button class="btn" data-act="edit-batch" data-id="${b.id}">${ic('edit')}Edit batch</button>
       <button class="btn" data-act="go-batch-attendance" data-b="${b.id}">✅ Attendance</button>
-      <button class="btn pri" data-act="open-assign" data-batch="${b.id}">${ic('plus')}Schedule class</button>`:'')+
+      <button class="btn pri" data-act="open-schedule" data-batch="${b.id}" data-type="Class">${ic('plus')}Schedule class</button>`:'')+
    batchDashboardBody(b);
 }
 
@@ -4299,7 +4340,7 @@ function viewClasses(){
   rows=rows.filter(a=>f.when==='Upcoming'?a.date>=iso(TODAY):f.when==='Past'?a.date<iso(TODAY):true);
   const budget=rows.reduce((o,a)=>{o.al+=a.budget.allocated;o.sp+=a.budget.spent;return o},{al:0,sp:0});
   return head('✨ BACE Preaching','Classes & events','Classes, seminars, discussions, special programmes and camps — all with attendance and budget',
-    `<button class="btn pri" data-act="open-assign" data-type="Class">${ic('plus')}Schedule class or event</button>`)+
+    `<button class="btn pri" data-act="open-schedule" data-type="Class">${ic('plus')}Schedule class</button>`)+
   `<div class="grid g4" style="margin-bottom:15px">
     ${stat('Classes',rows.filter(a=>a.type==='Class').length,'in this view',{em:'📖'})}
     ${stat('Events',rows.filter(a=>a.type==='Event').length,'special programmes',{em:'✨'})}
@@ -4317,12 +4358,12 @@ function viewClasses(){
     toolbar:`<div class="chips">${['Upcoming','Past','All'].map(w=>`<button class="chip ${f.when===w?'on':''}" data-act="f" data-k="cls" data-n="when" data-v="${w}">${w}</button>`).join('')}</div>
       <select data-act="f" data-k="cls" data-n="batch"><option value="">All batches</option>${DB.batches.map(b=>`<option value="${b.id}" ${f.batch===b.id?'selected':''}>${esc(b.name)}</option>`).join('')}</select>
       <select data-act="f" data-k="cls" data-n="type"><option value="">Classes and events</option><option ${f.type==='Class'?'selected':''}>Class</option><option ${f.type==='Event'?'selected':''}>Event</option></select>`,
-    empty:emptyState('Nothing here','No classes or events match this filter.','<button class="btn pri" data-act="open-assign" data-type="Class">Schedule one</button>')})}`;
+    empty:emptyState('Nothing here','No classes or events match this filter.','<button class="btn pri" data-act="open-schedule" data-type="Class">Schedule class</button>')})}`;
 }
 function viewBatchAttendance(){
   const bid=APP.filters.attBatch||(APP.user.batch||DB.batches[0].id);
   return head('✅ BACE Preaching','Batch attendance','Tap once per devotee, then save. That is the whole workflow.',
-    `<button class="btn pri" data-act="open-assign" data-batch="${bid}" data-type="Class">${ic('plus')}Schedule class</button>`)+
+    `<button class="btn pri" data-act="open-schedule" data-batch="${bid}" data-type="Class">${ic('plus')}Schedule class</button>`)+
    batchAttendancePanel()+`<div style="height:15px"></div>`+attendanceMatrix();
 }
 /* ---------------- preaching reports & analytics ---------------- */
@@ -5972,10 +6013,16 @@ document.addEventListener('click',e=>{
   case 'snooze-fu':stop();{const f=DB.followups.find(x=>x.id===id);f.due=iso(dayOff(3));
     logAudit('Follow-up rescheduled',subjectName(f));toast('Moved to '+fmtD(f.due));render();break}
   /* ---- assign / schedule ---- */
+  case 'open-schedule':
   case 'open-assign':{stop();APP.draft.assign=null;const d=assignDraft();
-    if(t.dataset.dept)d.dept=t.dataset.dept;
-    if(t.dataset.batch){d.batch=t.dataset.batch;d.type='Class'}
-    if(t.dataset.type)d.type=t.dataset.type;
+    if(a==='open-schedule'||t.dataset.act==='open-schedule'||t.dataset.type==='Class'){
+      d.type='Class';
+      d.batch=t.dataset.batch||(activeBatches()[0]||{}).id||'';
+    } else {
+      d.type=t.dataset.type||'Seva';
+      if(t.dataset.dept)d.dept=t.dataset.dept;
+      if(t.dataset.batch){d.batch=t.dataset.batch;d.type='Class';}
+    }
     APP.fabOpen=false;APP.modal='assign';render();break}
   case 'draft':{syncAssign();const d=assignDraft();d[t.dataset.n]=t.dataset.v;
     if(t.dataset.n==='type'&&t.dataset.v==='Class'&&!d.batch)d.batch=activeBatches()[0].id;render();break}
@@ -5987,13 +6034,13 @@ document.addEventListener('click',e=>{
     const el=document.querySelector('[name=newItem]');if(el&&el.value.trim()){d.items.push(el.value.trim());render();refocus('[name=newItem]')}break}
   case 'draft-item-del':{syncAssign();const d=assignDraft();d.items.splice(+t.dataset.i,1);render();break}
   case 'save-assign':{syncAssign();const d=assignDraft();
-    if(!d.name.trim()){toast('Give the activity a name','⚠️');break}
+    if(!d.name.trim()){toast(d.type==='Class'?'Please give the class a name / topic':'Please give the seva / service a name','⚠️');break}
     const isTask=d.type==='Task'||d.type==='Responsibility';
     const mk=(date,templateId)=>{
       const a={id:uid('ac'),type:d.type,name:d.name,title:d.name,cat:d.type==='Class'?'Classes':d.type==='Event'?'Preaching':isTask?'Management':'Services',
         dept:d.type==='Class'?null:d.dept,batch:d.type==='Class'?d.batch:null,date,start:d.start,end:d.end,
         location:d.location,desc:d.desc,priority:d.priority,need:isTask?1:d.need,vols:d.need,skills:[],
-        responsible:d.volunteers[0]||APP.user.devotee,owner:APP.user.devotee,templateId,recurrence:d.recurrence,
+        responsible:d.responsible||d.volunteers[0]||APP.user.devotee,owner:APP.user.devotee,templateId,recurrence:d.recurrence,
         overridden:false,status:d.volunteers.length?'Assigned':'Scheduled',
         actionItems:d.items.map(x=>({t:x,done:false})),budget:{allocated:+d.budget||0,spent:0},report:null,proof:null,due:date,expected:0};
       DB.activities.push(a);
@@ -6012,9 +6059,19 @@ document.addEventListener('click',e=>{
       APP.filters.attClass=lastCreated.id;
       if(d.batch)APP.filters.attBatch=d.batch;
     }
-    DB.notifications.unshift({id:uid('n'),em:'🪔',title:'Seva assigned',body:`${d.volunteers.length} devotee(s) assigned to ${d.name}`,date:iso(TODAY),read:false,cat:'Management'});
-    logAudit(d.type+' created',`${d.name} — ${d.volunteers.length} assigned${created>1?', '+created+' occurrences generated':''}`);
-    toast(created>1?`${d.type} created — ${created} occurrences generated`:`${d.type} created`,'📋');
+    if(d.type==='Class'){
+      DB.notifications.unshift({id:uid('n'),em:'📖',title:'Class scheduled',body:`${d.name} for ${batch(d.batch)?.name||'batch'} on ${fmtD(d.date)}`,date:iso(TODAY),read:false,cat:'Preaching'});
+      logAudit('Class scheduled',`${d.name} (${batch(d.batch)?.name||''}) on ${d.date}`);
+      toast(created>1?`Class scheduled — ${created} sessions created`:'Class scheduled successfully','📖');
+    } else if(isTask){
+      DB.notifications.unshift({id:uid('n'),em:'🎯',title:'Action item created',body:`${d.name}`,date:iso(TODAY),read:false,cat:'Management'});
+      logAudit('Action item created',d.name);
+      toast('Action item created','🎯');
+    } else {
+      DB.notifications.unshift({id:uid('n'),em:'🪔',title:'Seva assigned',body:`${d.volunteers.length} devotee(s) assigned to ${d.name}`,date:iso(TODAY),read:false,cat:'Management'});
+      logAudit('Seva assigned',`${d.name} — ${d.volunteers.length} assigned${created>1?', '+created+' occurrences generated':''}`);
+      toast(created>1?`Seva assigned — ${created} occurrences generated`:`Seva assigned`,'📋');
+    }
     APP.draft.assign=null;APP.modal='';render();break}
   /* ---- completion & performer ---- */
   case 'complete-self':stop();{const as=DB.assignments.find(x=>x.id===id);
@@ -6344,7 +6401,7 @@ document.addEventListener('click',e=>{
 /* keep assign-modal form values when the modal re-renders */
 function syncAssign(){
   const d=APP.draft.assign;if(!d)return;
-  ['name','date','start','end','location','desc','priority','budget','dept','batch'].forEach(n=>{
+  ['name','date','start','end','location','desc','priority','budget','dept','batch','responsible'].forEach(n=>{
     const el=document.querySelector(`.modal [name=${n}]`);if(el)d[n]=el.value});
 }
 /* change events: selects and checkboxes that carry data-act */
