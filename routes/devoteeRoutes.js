@@ -10,23 +10,40 @@ const getDevoteeQuery = (id) => {
   return { customId: id };
 };
 
+const isAdminDevotee = (doc) => {
+  if (!doc) return false;
+  const email = (doc.email || '').toLowerCase().trim();
+  if (email.includes('terkadamba')) return true;
+  if (doc.appointment === 'BACE Administrator' || doc.appointment === 'System Administrator') return true;
+  if (doc.name === 'ISKCON BACE Admin') return true;
+  return false;
+};
+
 // @route   GET /api/devotees
-// @desc    Get all devotees (with optional query filters)
+// @desc    Get all devotees (with optional query filters, excluding BACE Administrator)
 router.get('/', async (req, res) => {
   try {
     const { status, level, dept, batch, search } = req.query;
-    const filter = {};
+    const filter = {
+      email: { $not: /terkadamba/i },
+      appointment: { $nin: ['BACE Administrator', 'System Administrator'] },
+      name: { $ne: 'ISKCON BACE Admin' }
+    };
 
     if (status) filter.status = status;
     if (level !== undefined) filter.level = Number(level);
     if (dept) filter.dept = dept;
     if (batch) filter.batch = batch;
     if (search) {
-      filter.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { phone: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } },
-        { org: { $regex: search, $options: 'i' } }
+      filter.$and = [
+        {
+          $or: [
+            { name: { $regex: search, $options: 'i' } },
+            { phone: { $regex: search, $options: 'i' } },
+            { email: { $regex: search, $options: 'i' } },
+            { org: { $regex: search, $options: 'i' } }
+          ]
+        }
       ];
     }
 
@@ -45,7 +62,7 @@ router.get('/', async (req, res) => {
 });
 
 // @route   GET /api/devotees/:id
-// @desc    Get single devotee by ID
+// @desc    Get single devotee by ID (excludes BACE administrator)
 router.get('/:id', async (req, res) => {
   try {
     const query = getDevoteeQuery(req.params.id);
@@ -57,7 +74,7 @@ router.get('/:id', async (req, res) => {
       .populate('mentor', 'name phone')
       .populate('friends', 'name');
 
-    if (!devotee) {
+    if (!devotee || isAdminDevotee(devotee)) {
       return res.status(404).json({ success: false, message: 'Devotee not found' });
     }
 
@@ -71,6 +88,9 @@ router.get('/:id', async (req, res) => {
 // @desc    Create a new devotee
 router.post('/', async (req, res) => {
   try {
+    if (isAdminDevotee(req.body) || req.body.role === 'admin') {
+      return res.status(400).json({ success: false, message: 'Cannot create BACE Administrator devotee profile' });
+    }
     const devotee = await Devotee.create(req.body);
     res.status(201).json({ success: true, data: devotee });
   } catch (err) {
@@ -83,15 +103,20 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const query = getDevoteeQuery(req.params.id);
+    const existing = await Devotee.findOne(query);
+    if (!existing || isAdminDevotee(existing)) {
+      return res.status(404).json({ success: false, message: 'Devotee not found' });
+    }
+
+    if (req.body.role === 'admin' || req.body.appointment === 'BACE Administrator' || req.body.appointment === 'System Administrator') {
+      return res.status(400).json({ success: false, message: 'Cannot assign BACE Administrator role to a devotee' });
+    }
+
     const devotee = await Devotee.findOneAndUpdate(
       query,
       req.body,
       { new: true, runValidators: true }
     );
-
-    if (!devotee) {
-      return res.status(404).json({ success: false, message: 'Devotee not found' });
-    }
 
     if (req.body.role) {
       await User.updateMany(
@@ -111,11 +136,12 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const query = getDevoteeQuery(req.params.id);
-    const devotee = await Devotee.findOneAndDelete(query);
-
-    if (!devotee) {
+    const existing = await Devotee.findOne(query);
+    if (!existing || isAdminDevotee(existing)) {
       return res.status(404).json({ success: false, message: 'Devotee not found' });
     }
+
+    const devotee = await Devotee.findOneAndDelete(query);
 
     // Unlink or deactivate any user account tied to this devotee
     await User.updateMany({ devotee: devotee._id }, { $set: { active: false, approvalStatus: 'rejected' } });
@@ -135,7 +161,8 @@ router.post('/bulk', async (req, res) => {
       return res.status(400).json({ success: false, message: 'devotees array required' });
     }
 
-    const result = await Devotee.insertMany(devotees, { ordered: false });
+    const filteredDevotees = devotees.filter(d => !isAdminDevotee(d) && d.role !== 'admin');
+    const result = await Devotee.insertMany(filteredDevotees, { ordered: false });
     res.status(201).json({ success: true, count: result.length, data: result });
   } catch (err) {
     res.status(400).json({ success: false, error: err.message });

@@ -8,6 +8,26 @@ const { protect, requireAdminOrAreaLeader, getAdminEmails } = require('../middle
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
+function isBaceAdminEmail(email) {
+  if (!email) return false;
+  const clean = String(email).toLowerCase().trim();
+  const [local, domain] = clean.split('@');
+  if (domain === 'gmail.com') {
+    return local.replace(/\./g, '') === 'terkadambajs';
+  }
+  return clean === 'terkadambajs@gmail.com' || clean === 'terkadamba.js@gmail.com';
+}
+
+function isSuryaEmail(email) {
+  if (!email) return false;
+  const clean = String(email).toLowerCase().trim();
+  const [local, domain] = clean.split('@');
+  if (domain === 'gmail.com') {
+    return local.replace(/\./g, '') === 'suryakiranjune2';
+  }
+  return clean === 'suryakiranjune2@gmail.com';
+}
+
 /**
  * @route   GET /api/auth/config
  * @desc    Get public OAuth configuration (Client ID)
@@ -53,7 +73,8 @@ router.post('/google', async (req, res) => {
     }
 
     const normalizedEmail = email.toLowerCase().trim();
-    const adminEmails = getAdminEmails();
+    const isBaceAdmin = isBaceAdminEmail(normalizedEmail);
+    const isSuryaAreaLeader = isSuryaEmail(normalizedEmail);
 
     // 1. Check if user already exists by googleId or email
     stage = 'find_user';
@@ -61,40 +82,47 @@ router.post('/google', async (req, res) => {
       $or: [{ googleId }, { email: normalizedEmail }]
     }).populate('devotee');
 
-    let devoteeDoc = user ? user.devotee : null;
+    let devoteeDoc = null;
 
-    // 2. If no user, check if a devotee record already exists with this email
-    stage = 'find_devotee';
-    if (!devoteeDoc) {
-      devoteeDoc = await Devotee.findOne({ email: normalizedEmail });
-    }
-
-    const totalUsers = await User.countDocuments();
-    const isFirstUser = totalUsers === 0;
-    const isEmailAdmin = adminEmails.includes(normalizedEmail);
-    const isAdmin = isEmailAdmin || isFirstUser;
-    const isBaceAdmin = normalizedEmail === 'terkadamba.js@gmail.com';
-    const isSuryaAreaLeader = normalizedEmail === 'suryakiranjune2@gmail.com';
-
-    // 3. If still no devotee record, create a new one
-    if (!devoteeDoc) {
-      stage = 'create_devotee';
-      const customId = `d_g_${Date.now()}`;
-      const defaultName = isBaceAdmin ? 'ISKCON BACE Admin' : (isSuryaAreaLeader ? 'Surya Narayana Das' : (name || 'Google Devotee'));
-      const defaultAppt = isBaceAdmin ? 'System Administrator' : (isSuryaAreaLeader ? 'Area Leader' : (isAdmin ? 'Area Leader' : 'Devotee'));
-
-      devoteeDoc = await Devotee.create({
-        customId,
-        name: defaultName,
-        email: normalizedEmail,
-        status: isAdmin ? 'Active' : 'Pending Approval',
-        appointment: defaultAppt,
-        joined: new Date(),
-        occupation: isBaceAdmin ? 'Administration' : 'Student'
+    if (isBaceAdmin) {
+      // BACE Administrator must NOT be present in devotee database
+      await Devotee.deleteMany({
+        $or: [
+          { email: { $regex: /terkadamba/i } },
+          { appointment: { $in: ['System Administrator', 'BACE Administrator'] } },
+          { name: 'ISKCON BACE Admin' }
+        ]
       });
+      devoteeDoc = null;
+    } else {
+      devoteeDoc = user ? user.devotee : null;
+
+      // 2. If no user, check if a devotee record already exists with this email
+      stage = 'find_devotee';
+      if (!devoteeDoc) {
+        devoteeDoc = await Devotee.findOne({ email: normalizedEmail });
+      }
+
+      // 3. If still no devotee record, create a new one
+      if (!devoteeDoc) {
+        stage = 'create_devotee';
+        const customId = `d_g_${Date.now()}`;
+        const defaultName = isSuryaAreaLeader ? 'Surya Narayana Das' : (name || 'Google Devotee');
+        const defaultAppt = isSuryaAreaLeader ? 'Area Leader' : 'Devotee';
+
+        devoteeDoc = await Devotee.create({
+          customId,
+          name: defaultName,
+          email: normalizedEmail,
+          status: isSuryaAreaLeader ? 'Active' : 'Pending Approval',
+          appointment: defaultAppt,
+          joined: new Date(),
+          occupation: 'Student'
+        });
+      }
     }
 
-    const determinedRole = isBaceAdmin ? 'admin' : (isSuryaAreaLeader ? 'area_leader' : (isAdmin ? 'area_leader' : 'devotee'));
+    const determinedRole = isBaceAdmin ? 'admin' : (isSuryaAreaLeader ? 'area_leader' : 'devotee');
 
     // 4. Create or update User record
     if (!user) {
@@ -107,48 +135,38 @@ router.post('/google', async (req, res) => {
         email: normalizedEmail,
         googleId,
         avatar: picture,
-        devotee: devoteeDoc._id,
+        devotee: isBaceAdmin ? null : devoteeDoc?._id,
         role: determinedRole,
-        approvalStatus: isAdmin ? 'approved' : 'pending_profile',
-        profileCompleted: isAdmin ? true : false,
+        approvalStatus: (isBaceAdmin || isSuryaAreaLeader) ? 'approved' : 'pending_profile',
+        profileCompleted: (isBaceAdmin || isSuryaAreaLeader) ? true : false,
         lastLogin: new Date()
       });
     } else {
       stage = 'update_user';
       user.googleId = googleId;
       if (picture) user.avatar = picture;
-      if (!user.devotee && devoteeDoc) user.devotee = devoteeDoc._id;
 
       if (isBaceAdmin) {
+        user.devotee = null;
         user.role = 'admin';
         user.approvalStatus = 'approved';
         user.profileCompleted = true;
-        if (devoteeDoc) {
-          devoteeDoc.name = 'ISKCON BACE Admin';
-          devoteeDoc.appointment = 'System Administrator';
-          devoteeDoc.status = 'Active';
-          await devoteeDoc.save();
+      } else {
+        if (!user.devotee && devoteeDoc) user.devotee = devoteeDoc._id;
+
+        if (isSuryaAreaLeader) {
+          user.role = 'area_leader';
+          user.approvalStatus = 'approved';
+          user.profileCompleted = true;
+          if (devoteeDoc) {
+            devoteeDoc.name = 'Surya Narayana Das';
+            devoteeDoc.appointment = 'Area Leader';
+            devoteeDoc.status = 'Active';
+            await devoteeDoc.save();
+          }
+        } else if (!user.approvalStatus) {
+          user.approvalStatus = user.profileCompleted ? 'pending_approval' : 'pending_profile';
         }
-      } else if (isSuryaAreaLeader) {
-        user.role = 'area_leader';
-        user.approvalStatus = 'approved';
-        user.profileCompleted = true;
-        if (devoteeDoc) {
-          devoteeDoc.name = 'Surya Narayana Das';
-          devoteeDoc.appointment = 'Area Leader';
-          devoteeDoc.status = 'Active';
-          await devoteeDoc.save();
-        }
-      } else if (isAdmin) {
-        user.role = 'area_leader';
-        user.approvalStatus = 'approved';
-        user.profileCompleted = true;
-        if (devoteeDoc && devoteeDoc.status !== 'Active') {
-          devoteeDoc.status = 'Active';
-          await devoteeDoc.save();
-        }
-      } else if (!user.approvalStatus) {
-        user.approvalStatus = user.profileCompleted ? 'pending_approval' : 'pending_profile';
       }
 
       user.lastLogin = new Date();
@@ -165,7 +183,7 @@ router.post('/google', async (req, res) => {
         id: user._id,
         role: user.role,
         email: user.email,
-        devoteeId: devoteeDoc ? devoteeDoc._id : null
+        devoteeId: isBaceAdmin ? null : (devoteeDoc ? devoteeDoc._id : null)
       },
       jwtSecret,
       { expiresIn: jwtExpire }
@@ -179,14 +197,14 @@ router.post('/google', async (req, res) => {
         id: user._id.toString(),
         username: user.username,
         email: user.email,
-        name: devoteeDoc?.name || name || user.username,
+        name: isBaceAdmin ? 'BACE Administrator' : (devoteeDoc?.name || name || user.username),
         role: user.role,
         avatar: user.avatar || picture || '',
         approvalStatus: user.approvalStatus,
         profileCompleted: !!user.profileCompleted,
         isApproved: user.approvalStatus === 'approved',
-        devotee: devoteeDoc?.customId || (devoteeDoc ? devoteeDoc._id.toString() : user._id.toString()),
-        devoteeDetails: devoteeDoc
+        devotee: isBaceAdmin ? null : (devoteeDoc?.customId || (devoteeDoc ? devoteeDoc._id.toString() : user._id.toString())),
+        devoteeDetails: isBaceAdmin ? null : devoteeDoc
       }
     });
   } catch (error) {
@@ -214,6 +232,43 @@ router.get('/me', protect, async (req, res) => {
     const user = await User.findById(req.user._id).populate('devotee');
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    const isBace = isBaceAdminEmail(user.email) || user.role === 'admin';
+    const isSurya = isSuryaEmail(user.email);
+
+    if (isBace) {
+      if (user.role !== 'admin' || user.devotee) {
+        user.role = 'admin';
+        user.devotee = null;
+        user.approvalStatus = 'approved';
+        user.profileCompleted = true;
+        await user.save();
+      }
+      return res.json({
+        success: true,
+        user: {
+          id: user._id.toString(),
+          username: user.username,
+          email: user.email,
+          name: 'BACE Administrator',
+          role: 'admin',
+          avatar: user.avatar || '',
+          approvalStatus: 'approved',
+          profileCompleted: true,
+          isApproved: true,
+          rejectionReason: null,
+          devotee: null,
+          devoteeDetails: null
+        }
+      });
+    }
+
+    if (isSurya && user.role !== 'area_leader') {
+      user.role = 'area_leader';
+      user.approvalStatus = 'approved';
+      user.profileCompleted = true;
+      await user.save();
     }
 
     const devoteeDoc = user.devotee;
@@ -248,6 +303,26 @@ router.get('/me', protect, async (req, res) => {
 router.post('/complete-profile', protect, async (req, res) => {
   try {
     const user = req.user;
+    if (isBaceAdminEmail(user.email) || user.role === 'admin') {
+      return res.json({
+        success: true,
+        message: 'BACE Administrator profile is managed by the system',
+        user: {
+          id: user._id.toString(),
+          username: user.username,
+          email: user.email,
+          name: 'BACE Administrator',
+          role: 'admin',
+          avatar: user.avatar || '',
+          approvalStatus: 'approved',
+          profileCompleted: true,
+          isApproved: true,
+          devotee: null,
+          devoteeDetails: null
+        }
+      });
+    }
+
     let devoteeDoc = await Devotee.findById(user.devotee);
 
     if (!devoteeDoc) {

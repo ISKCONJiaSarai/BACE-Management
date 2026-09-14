@@ -1269,6 +1269,21 @@ const ROLES={
   devotee:{name:'Devotee',emoji:'🙏',scope:'My seva, my classes, my calendar'},
   admin:{name:'BACE Administrator',emoji:'⚙️',scope:'System administration, database, users, roles and audit'}
 };
+const isBaceAdminEmail = (email) => {
+  if(!email) return false;
+  const clean = String(email).toLowerCase().trim();
+  const [local, domain] = clean.split('@');
+  if(domain === 'gmail.com') return local.replace(/\./g, '') === 'terkadambajs';
+  return clean === 'terkadambajs@gmail.com' || clean === 'terkadamba.js@gmail.com';
+};
+const isSuryaEmail = (email) => {
+  if(!email) return false;
+  const clean = String(email).toLowerCase().trim();
+  const [local, domain] = clean.split('@');
+  if(domain === 'gmail.com') return local.replace(/\./g, '') === 'suryakiranjune2';
+  return clean === 'suryakiranjune2@gmail.com';
+};
+
 const ACCESS={
   dashboard:'*', calendar:'*', sops:'*', messages:'*', actions:'*', today:'*',
   // directory: everyone operational can search and view permitted basic info
@@ -1279,12 +1294,28 @@ const ACCESS={
   preaching:['area_leader','coordinator','preaching_manager','preaching_coord','admin'],
   manage_batches:['coordinator','preaching_manager','admin','area_leader'],
   care:['area_leader','coordinator','care_manager','facilitator','admin'],
-  care_notes:['coordinator','care_manager','facilitator','area_leader'],
+  care_notes:['coordinator','care_manager','facilitator','area_leader','admin'],
   inventory:['area_leader','coordinator','internal_manager','dept_head','admin'],
   reports:['area_leader','coordinator','internal_manager','preaching_manager','care_manager','dept_head','preaching_coord','admin'],
-  admin:['admin','coordinator','area_leader']
+  admin:['admin']
 };
-const can=(m,role)=>{role=role||(APP.user&&APP.user.role);const a=ACCESS[m];return a==='*'||(a||[]).includes(role)};
+const can=(m,role)=>{
+  const curUser = (APP && APP.user) || {};
+  const curEmail = (curUser.email || '').toLowerCase().trim();
+  const isSuperAdmin = curUser.role === 'admin' || isBaceAdminEmail(curEmail);
+
+  // 1. Exclusive BACE Administrator (terkadambajs@gmail.com) has full, unrestricted access to everything (including devotee care)
+  if(isSuperAdmin) return true;
+
+  // 2. The Administration module is strictly prohibited and invisible to all other users
+  if(m === 'admin') return false;
+
+  role = role || curUser.role;
+  if(isSuryaEmail(curEmail) && role === 'admin') role = 'area_leader';
+
+  const a = ACCESS[m];
+  return a === '*' || (a || []).includes(role);
+};
 // can this user EDIT this department / batch?
 const ownsDept=id=>['admin','coordinator','area_leader','internal_manager'].includes(APP.user.role)||(APP.user.role==='dept_head'&&APP.user.dept===id);
 const ownsBatch=id=>['admin','coordinator','area_leader','preaching_manager'].includes(APP.user.role)||(APP.user.role==='preaching_coord'&&APP.user.batch===id);
@@ -1414,7 +1445,7 @@ const logAudit=(action,record)=>DB.audit.unshift({id:uid('au'),user:(APP.user?na
       attendancePct:ri(48,99),timeline:[],history:[]});
   }
   const D=DB.devotees;
-  const L={area_leader:D[0],coordinator:D[1],internal_manager:D[2],preaching_manager:D[3],care_manager:D[4],admin:D[5]};
+  const L={area_leader:D[0],coordinator:D[1],internal_manager:D[2],preaching_manager:D[3],care_manager:D[4]};
   Object.entries(L).forEach(([r,d])=>d.appointment=ROLES[r].name);
   const pool=D.filter(d=>d.level>=1&&!d.appointment);
   DB.departments.forEach((dp,i)=>{const h=pool[i%pool.length];dp.head=h.id;h.appointment=h.appointment||'Department Head';
@@ -1720,7 +1751,7 @@ const logAudit=(action,record)=>DB.audit.unshift({id:uid('au'),user:(APP.user?na
     const present=pks(D.map(x=>x.id),ri(14,26));
     DB.qrSessions.push({id:uid('qr'),date:iso(dayOff(off)),window:'04:25 – 05:05',code:String(ri(100000,999999)),
       rotateSec:30,checkins:present.map(p=>({devotee:p,at:`0${ri(4,5)}:${String(ri(0,59)).padStart(2,'0')}`,device:'mobile'})),
-      corrections:off===-1?[{devotee:pk(D).id,by:L.admin.id,reason:'Phone battery died at the gate',at:'Yesterday 09:12'}]:[]});
+      corrections:off===-1?[{devotee:pk(D).id,by:L.coordinator.id,reason:'Phone battery died at the gate',at:'Yesterday 09:12'}]:[]});
     present.forEach(p=>DB.attendance.push({id:uid('at'),category:'Morning programme',ref:'mp'+off,devotee:p,date:iso(dayOff(off)),status:'Present'}));
   }
 
@@ -1816,7 +1847,7 @@ const logAudit=(action,record)=>DB.audit.unshift({id:uid('au'),user:(APP.user?na
     {id:'u6',role:'dept_head',devotee:DB.departments[5].head,dept:DB.departments[5].id},
     {id:'u7',role:'preaching_coord',devotee:DB.batches[1].coordinator,batch:DB.batches[1].id},
     {id:'u8',role:'facilitator',devotee:facs[0].id},{id:'u9',role:'devotee',devotee:D[30].id},
-    {id:'u10',role:'admin',devotee:D[5].id}];
+    {id:'u10',role:'admin',devotee:null}];
 
   /* audit */
   [['Batch changed','Rahul Sharma moved from Taksharya to Sreshtha'],['Seva assigned','Kitchen: Sunday feast cooking assigned to 5 volunteers'],
@@ -1855,8 +1886,8 @@ function nameOf(id){if(!id)return 'Unassigned';const d=dv(id)||DB.devotees.find(
 function devoteeDisplayName(id){
   const d=dv(id);
   const curEmail = ((d&&d.email) || (APP.user&&APP.user.email) || '').toLowerCase().trim();
-  if(curEmail === 'terkadamba.js@gmail.com') return 'ISKCON BACE Admin';
-  if(curEmail === 'suryakiranjune2@gmail.com') return 'Surya Narayana Das';
+  if(isBaceAdminEmail(curEmail)) return 'BACE Administrator';
+  if(isSuryaEmail(curEmail)) return 'Surya Narayana Das';
   if(d&&d.name&&d.name!=='ISKCON Jia Sarai'&&d.name!=='Google Devotee')return d.name;
   if(APP.user&&APP.user.name&&APP.user.name!=='ISKCON Jia Sarai'&&APP.user.name!=='Google Devotee')return APP.user.name;
   return 'Devotee';
@@ -1864,8 +1895,8 @@ function devoteeDisplayName(id){
 function devoteePositionTitle(id, role){
   const d=dv(id);
   const curEmail = ((d&&d.email) || (APP.user&&APP.user.email) || '').toLowerCase().trim();
-  if(curEmail === 'terkadamba.js@gmail.com') return '⚙️ BACE Administrator';
-  if(curEmail === 'suryakiranjune2@gmail.com') return '🪷 Area Leader';
+  if(isBaceAdminEmail(curEmail)) return '⚙️ BACE Administrator';
+  if(isSuryaEmail(curEmail)) return '🪷 Area Leader';
   if(d&&d.appointment){
     const emojiMap={
       'Area Leader':'🪷','Overall Coordinator':'🧭','Internal Manager':'🕉','Preaching Manager':'📖',
@@ -1882,8 +1913,8 @@ function devoteeRole(id){
   const d = typeof id === 'object' && id !== null ? id : dv(id);
   if(!d) return 'devotee';
   const curEmail = (d.email || '').toLowerCase().trim();
-  if(curEmail === 'terkadamba.js@gmail.com') return 'admin';
-  if(curEmail === 'suryakiranjune2@gmail.com') return 'area_leader';
+  if(isBaceAdminEmail(curEmail)) return 'admin';
+  if(isSuryaEmail(curEmail)) return 'area_leader';
   const u = (DB.users||[]).find(x => x.devotee === d.id);
   if(u?.role && ROLES[u.role]) return u.role;
   if(d.appointment){
@@ -2439,38 +2470,61 @@ async function handleGoogleAuthResponse(response){
     }
 
     localStorage.setItem('bace_token',data.token);
-    localStorage.setItem('bace_user',JSON.stringify(data.user));
 
-    let d=DB.devotees.find(x=>x.id===data.user.devotee||(x.email&&x.email.toLowerCase()===data.user.email.toLowerCase()));
-    if(!d){
-      d=normalizeDevotee({
-        id:data.user.devotee||('d_'+Date.now()),
-        name:data.user.name,
+    const isBace = isBaceAdminEmail(data.user.email);
+    const isSurya = isSuryaEmail(data.user.email);
+
+    if (isBace) {
+      DB.devotees = DB.devotees.filter(x => !isBaceAdminEmail(x.email) && x.appointment !== 'System Administrator' && x.appointment !== 'BACE Administrator' && x.name !== 'ISKCON BACE Admin');
+      APP.user = {
+        id: data.user.id,
+        devotee: null,
+        role: 'admin',
+        email: data.user.email,
+        name: 'BACE Administrator',
+        avatar: data.user.avatar || '',
+        approvalStatus: 'approved',
+        profileCompleted: true
+      };
+    } else {
+      let d=DB.devotees.find(x=>x.id===data.user.devotee||(x.email&&x.email.toLowerCase()===data.user.email.toLowerCase()));
+      const displayName = isSurya ? 'Surya Narayana Das' : data.user.name;
+      const displayRole = isSurya ? 'area_leader' : (data.user.role || 'devotee');
+
+      if(!d){
+        d=normalizeDevotee({
+          id:data.user.devotee||('d_'+Date.now()),
+          name:displayName,
+          email:data.user.email,
+          avatar:data.user.avatar||'',
+          status:(data.user.isApproved || isSurya)?'Active':'Pending Approval',
+          joined:iso(TODAY),
+          rounds:16,
+          morning:85,
+          appointment:isSurya?'Area Leader':'Devotee',
+          swabhav:'Organising'
+        });
+        DB.devotees.push(d);
+      } else if(data.user.devoteeDetails){
+        Object.assign(d, data.user.devoteeDetails);
+        if(isSurya) { d.name = 'Surya Narayana Das'; d.appointment = 'Area Leader'; d.status = 'Active'; }
+        else if(!data.user.isApproved && d.status==='Active') d.status='Pending Approval';
+        normalizeDevotee(d);
+      }
+
+      APP.user={
+        id:data.user.id,
+        devotee:d.id,
+        role:displayRole,
         email:data.user.email,
-        avatar:data.user.avatar||'',
-        status:data.user.isApproved?'Active':'Pending Approval',
-        joined:iso(TODAY),
-        rounds:16,
-        morning:85,
-        swabhav:'Organising'
-      });
-      DB.devotees.push(d);
-    } else if(data.user.devoteeDetails){
-      Object.assign(d, data.user.devoteeDetails);
-      if(!data.user.isApproved && d.status==='Active') d.status='Pending Approval';
-      normalizeDevotee(d);
+        name:displayName,
+        avatar:data.user.avatar,
+        approvalStatus:(isSurya ? 'approved' : (data.user.approvalStatus || (data.user.isApproved ? 'approved' : 'pending_profile'))),
+        profileCompleted:isSurya ? true : !!data.user.profileCompleted
+      };
     }
 
-    APP.user={
-      id:data.user.id,
-      devotee:d.id,
-      role:data.user.role||'devotee',
-      email:data.user.email,
-      name:data.user.name,
-      avatar:data.user.avatar,
-      approvalStatus:data.user.approvalStatus || (data.user.isApproved ? 'approved' : 'pending_profile'),
-      profileCompleted:!!data.user.profileCompleted
-    };
+    localStorage.setItem('bace_user',JSON.stringify(APP.user));
 
     APP.nav.open={
       mgmt:can('management',APP.user.role),
@@ -3185,13 +3239,13 @@ function viewDashboard(){
          <dt>Care group</dt><dd>${esc(group(me.careGroup)?.name||'—')}</dd><dt>Facilitator</dt><dd>${esc(nameOf(me.facilitator))}</dd></div></div>`)}</div>`;
   }
   return hd+`<div class="grid g4" style="margin-bottom:15px">
-    ${stat('User accounts',DB.users.length,'across 10 roles',{em:'👤',act:'go',r:'#/admin'})}
+    ${stat('User accounts',DB.users.length,'across community',{em:'👤',...(can('admin')?{act:'go',r:'#/admin'}:{})})}
     ${stat('Devotee records',s.total,'single source of truth',{em:'👥'})}
     ${stat('Audit entries',DB.audit.length,'recent activity',{em:'🛡'})}
     ${stat('Restricted records',DB.meetings.length,'care notes under permission',{em:'🔒'})}</div>
     ${section('Recent activity',`<div class="list">${DB.audit.slice(0,8).map(a=>`<div class="li">${av(a.user)}
       <span class="grow"><span class="t">${esc(a.action)}</span><span class="d">${esc(a.record)}</span></span><span class="tiny">${esc(a.at)}</span></div>`).join('')}</div>`,
-      `<a class="btn sm" href="#/admin">Administration</a>`)}`;
+      can('admin') ? `<a class="btn sm" href="#/admin">Administration</a>` : '')}`;
 }
 function funnelRows(){
   const s=STATS();
@@ -3213,6 +3267,7 @@ function viewDevotees(){
   if(!f.sort) f.sort='name_asc';
 
   let rows=DB.devotees.filter(d=>{
+    if(isBaceAdminEmail(d.email) || d.appointment === 'BACE Administrator' || d.appointment === 'System Administrator' || d.name === 'ISKCON BACE Admin') return false;
     if(f.q){
       const query = f.q.toLowerCase().trim();
       const searchable = [
@@ -3336,7 +3391,7 @@ function viewDevotees(){
         <!-- 0. Hierarchy Role Filter -->
         <select data-act="f" data-k="dev" data-n="role" title="Filter by Hierarchy Role" style="padding:6px 9px;border-radius:8px;border:1px solid ${f.role?'var(--accent)':'var(--line)'};font-size:12.5px;background:${f.role?'var(--accent-soft)':'var(--surface)'};color:${f.role?'var(--accent)':'var(--ink)'};${f.role?'font-weight:700':''};flex-shrink:0;min-width:130px;max-width:165px">
           <option value="">🧭 All Roles</option>
-          ${Object.entries(ROLES).map(([k,r])=>`<option value="${k}" ${f.role===k?'selected':''}>${r.emoji} ${esc(r.name)}</option>`).join('')}
+          ${Object.entries(ROLES).filter(([k])=>k!=='admin').map(([k,r])=>`<option value="${k}" ${f.role===k?'selected':''}>${r.emoji} ${esc(r.name)}</option>`).join('')}
         </select>
 
         <!-- 1. Department Filter -->
@@ -3421,7 +3476,10 @@ function viewDevotees(){
 }
 
 function viewDevotee(id){
-  const d=dv(id);if(!d)return emptyState('Profile not found','This devotee record does not exist.','<a class="btn" href="#/devotees">Back to directory</a>');
+  const d=dv(id);
+  if(!d || isBaceAdminEmail(d.email) || d.appointment === 'BACE Administrator' || d.appointment === 'System Administrator' || d.name === 'ISKCON BACE Admin') {
+    return emptyState('Profile not found','This devotee record does not exist.','<a class="btn" href="#/devotees">Back to directory</a>');
+  }
   APP.crumbLeaf=d.name;
   const tab=APP.tab.devotee||'Overview';
   const tabs=['Overview','Preaching','Seva','Attendance','Care','Sadhana','Timeline','Friends','Notes'];
@@ -5370,13 +5428,14 @@ function listModal(){
      ${m.exportRows?`<button class="btn pri" data-act="export-drill">${ic('download')}Export CSV</button>`:''}</div></div></div>`;
 }
 function accountModal(){
-  const dName = devoteeDisplayName(APP.user.devotee);
-  const dPos = devoteePositionTitle(APP.user.devotee, APP.user.role);
+  const isBace = isBaceAdminEmail(APP.user.email);
+  const dName = isBace ? 'BACE Administrator' : devoteeDisplayName(APP.user.devotee);
+  const dPos = isBace ? '⚙️ BACE Administrator' : devoteePositionTitle(APP.user.devotee, APP.user.role);
   const me = dv(APP.user.devotee) || {};
   return `<div class="scrim" data-act="close-scrim"><div class="modal" data-stop="1" style="max-width:420px">
    <div class="modal-h">
      <div>
-       <h2 style="font-size:18px">Devotee Account</h2>
+       <h2 style="font-size:18px">${isBace ? 'System Account' : 'Devotee Account'}</h2>
        <div class="tiny">${esc(APP.user.email || me.email || '')}</div>
      </div>
      <button class="icon-btn" style="margin-left:auto" data-act="close-scrim">${ic('x')}</button>
@@ -5387,7 +5446,7 @@ function accountModal(){
        <div style="flex:1;min-width:0">
          <div style="font-weight:700;font-size:16px;color:var(--ink)">${esc(dName)}</div>
          <div style="font-size:13px;color:var(--accent);font-weight:600;margin-top:2px">${esc(dPos)}</div>
-         <div class="tiny" style="color:var(--ink-3);margin-top:3px">${esc(me.address || me.org || 'Jia Sarai BACE')}${me.phone ? ' · ' + esc(me.phone) : ''}</div>
+         <div class="tiny" style="color:var(--ink-3);margin-top:3px">${isBace ? 'Master System Administrator' : esc(me.address || me.org || 'Jia Sarai BACE') + (me.phone ? ' · ' + esc(me.phone) : '')}</div>
        </div>
      </div>
    </div>
@@ -5402,7 +5461,7 @@ function accountModal(){
 function deleteDevoteeModal(){
   const id = APP.deleteDevoteeTarget;
   const d = dv(id) || DB.devotees.find(x => x.id === id || x.customId === id);
-  if(!d) return '';
+  if(!d || isBaceAdminEmail(d.email) || d.appointment === 'BACE Administrator' || d.appointment === 'System Administrator' || d.name === 'ISKCON BACE Admin') return '';
   return `<div class="scrim" data-act="close-scrim"><div class="modal" data-stop="1" style="max-width:440px">
     <div class="modal-h" style="border-bottom:1px solid var(--line)">
       <div style="display:flex;align-items:center;gap:8px">
@@ -5539,6 +5598,10 @@ function openGroupForm(id){
 }
 function openDevoteeForm(id){
   const d=id?dv(id):null;
+  if(d && (isBaceAdminEmail(d.email) || d.appointment === 'BACE Administrator' || d.appointment === 'System Administrator' || d.name === 'ISKCON BACE Admin')) {
+    toast('The BACE Administrator account cannot be viewed or edited.', '⚠️');
+    return;
+  }
   const curRole = d ? devoteeRole(d) : 'devotee';
   const roleOpts = [
     ['devotee', '🙏 Devotee (General volunteer & member)'],
@@ -5549,8 +5612,7 @@ function openDevoteeForm(id){
     ['preaching_manager', '📖 Preaching Manager (Pillar leader: Preaching)'],
     ['internal_manager', '🕉 Internal Manager (Pillar leader: BACE & Seva)'],
     ['coordinator', '🧭 Overall Coordinator (Operational executive)'],
-    ['area_leader', '🪷 Area Leader (Strategic leadership & spiritual guidance)'],
-    ['admin', '⚙️ BACE Administrator (System administration & security)']
+    ['area_leader', '🪷 Area Leader (Strategic leadership & spiritual guidance)']
   ];
   openForm(d?'Edit devotee':'Add devotee',[
     FLD('name','Full name','text',{v:d?.name}),
@@ -6062,6 +6124,10 @@ document.addEventListener('click',e=>{
   case 'assign-role':stop();{
     const d=dv(id);
     if(!d) break;
+    if(isBaceAdminEmail(d.email) || d.appointment === 'BACE Administrator' || d.appointment === 'System Administrator' || d.name === 'ISKCON BACE Admin') {
+      toast('The BACE Administrator account cannot be modified.', '⚠️');
+      break;
+    }
     const curRole=devoteeRole(d);
     const roleOpts=[
       ['devotee', '🙏 Devotee — General volunteer & member'],
@@ -6072,8 +6138,7 @@ document.addEventListener('click',e=>{
       ['preaching_manager', '📖 Preaching Manager — Pillar leader: Preaching'],
       ['internal_manager', '🕉 Internal Manager — Pillar leader: BACE & Seva'],
       ['coordinator', '🧭 Overall Coordinator — Operational executive'],
-      ['area_leader', '🪷 Area Leader — Strategic leadership & spiritual guidance'],
-      ['admin', '⚙️ BACE Administrator — System administration & security']
+      ['area_leader', '🪷 Area Leader — Strategic leadership & spiritual guidance']
     ];
     openForm(`Assign Hierarchy Role: ${d.name}`,[
       FLD('role','Select Role from Hierarchy','select',{v:curRole,opts:roleOpts}),
@@ -6085,7 +6150,8 @@ document.addEventListener('click',e=>{
     const v=collect(),ctx=APP.modal.ctx;
     const d=dv(ctx.id);
     if(!d) break;
-    const roleKey=v.role||'devotee';
+    if(isBaceAdminEmail(d.email) || d.appointment === 'BACE Administrator' || d.appointment === 'System Administrator') break;
+    const roleKey=(v.role === 'admin' ? 'devotee' : (v.role || 'devotee'));
     const roleObj=ROLES[roleKey]||ROLES.devotee;
     const prevRole=devoteeRole(d);
     if(prevRole!==roleKey){
@@ -6796,60 +6862,73 @@ try {
     const u = JSON.parse(savedUser);
     if (u && u.id && u.role) {
       const email = (u.email || '').toLowerCase().trim();
-      let d = DB.devotees.find(x => x.id === u.devotee || (x.email && x.email.toLowerCase() === email));
+      const isBace = isBaceAdminEmail(email);
+      const isSurya = isSuryaEmail(email);
 
-      let spiritualName = u.name;
-      let effectiveRole = u.role;
-      let appointment = 'Devotee';
-
-      if (email === 'terkadamba.js@gmail.com') {
-        spiritualName = 'ISKCON BACE Admin';
-        effectiveRole = 'admin';
-        appointment = 'System Administrator';
-      } else if (email === 'suryakiranjune2@gmail.com') {
-        spiritualName = 'Surya Narayana Das';
-        effectiveRole = 'area_leader';
-        appointment = 'Area Leader';
-      } else {
-        if (!spiritualName || spiritualName === 'ISKCON Jia Sarai' || spiritualName === 'Google Devotee') {
-          spiritualName = d?.name || u.username || 'Devotee';
-        }
-        if (effectiveRole === 'area_leader') appointment = 'Area Leader';
-        else if (effectiveRole === 'admin') appointment = 'System Administrator';
-      }
-
-      if (!d) {
-        d = normalizeDevotee({
-          id: u.devotee || ('d_' + Date.now()),
-          name: spiritualName,
+      if (isBace) {
+        DB.devotees = DB.devotees.filter(x => !isBaceAdminEmail(x.email) && x.appointment !== 'System Administrator' && x.appointment !== 'BACE Administrator' && x.name !== 'ISKCON BACE Admin');
+        APP.user = {
+          id: u.id,
+          devotee: null,
+          role: 'admin',
           email: u.email,
+          name: 'BACE Administrator',
           avatar: u.avatar || '',
-          status: 'Active',
-          joined: iso(TODAY),
-          batch: 'b1',
-          dept: 'kitchen',
-          rounds: 16,
-          morning: 90,
-          swabhav: 'Organising',
-          appointment: appointment
-        });
-        DB.devotees.push(d);
+          approvalStatus: 'approved',
+          profileCompleted: true
+        };
       } else {
-        d.name = spiritualName;
-        d.appointment = appointment;
-        d.status = 'Active';
+        let d = DB.devotees.find(x => x.id === u.devotee || (x.email && x.email.toLowerCase() === email));
+        let spiritualName = u.name;
+        let effectiveRole = u.role;
+        let appointment = 'Devotee';
+
+        if (isSurya) {
+          spiritualName = 'Surya Narayana Das';
+          effectiveRole = 'area_leader';
+          appointment = 'Area Leader';
+        } else {
+          if (!spiritualName || spiritualName === 'ISKCON Jia Sarai' || spiritualName === 'Google Devotee') {
+            spiritualName = d?.name || u.username || 'Devotee';
+          }
+          if (effectiveRole === 'area_leader') appointment = 'Area Leader';
+          else if (effectiveRole === 'admin') effectiveRole = 'devotee';
+        }
+
+        if (!d) {
+          d = normalizeDevotee({
+            id: u.devotee || ('d_' + Date.now()),
+            name: spiritualName,
+            email: u.email,
+            avatar: u.avatar || '',
+            status: 'Active',
+            joined: iso(TODAY),
+            batch: 'b1',
+            dept: 'kitchen',
+            rounds: 16,
+            morning: 90,
+            swabhav: 'Organising',
+            appointment: appointment
+          });
+          DB.devotees.push(d);
+        } else {
+          d.name = spiritualName;
+          d.appointment = appointment;
+          d.status = 'Active';
+        }
+
+        APP.user = {
+          id: u.id,
+          devotee: d.id,
+          role: effectiveRole,
+          email: u.email,
+          name: spiritualName,
+          avatar: u.avatar,
+          approvalStatus: 'approved',
+          profileCompleted: true
+        };
       }
 
-      APP.user = {
-        id: u.id,
-        devotee: d.id,
-        role: effectiveRole,
-        email: u.email,
-        name: spiritualName,
-        avatar: u.avatar,
-        approvalStatus: 'approved',
-        profileCompleted: true
-      };
       localStorage.setItem('bace_user', JSON.stringify(APP.user));
       APP.nav.open = {
         mgmt: can('management', effectiveRole),
