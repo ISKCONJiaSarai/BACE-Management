@@ -1850,7 +1850,7 @@ const logAudit=(action,record)=>DB.audit.unshift({id:uid('au'),user:(APP.user?na
 
 /* ---------------- lookups ---------------- */
 function dv(id){return DB.devotees.find(d=>d.id===id||d.customId===id)||null}
-function nameOf(id){const d=dv(id);return d?d.name:'Unassigned'}
+function nameOf(id){if(!id)return 'Unassigned';const d=dv(id)||DB.devotees.find(x=>x.name===id);return d?d.name:id}
 function devoteeDisplayName(id){
   const d=dv(id);
   const curEmail = ((d&&d.email) || (APP.user&&APP.user.email) || '').toLowerCase().trim();
@@ -3759,7 +3759,7 @@ function assignModal(){
         <div class="field"><label>End time</label><input type="time" name="end" value="${d.end}"></div></div>
       <div class="form-row"><div class="field"><label>Location</label><input name="location" value="${esc(d.location)}" placeholder="e.g. Temple Hall / BACE / Online (Zoom)"></div>
         <div class="field"><label>Teacher / Speaker</label>
-        <select name="responsible"><option value="">Select teacher / speaker</option>${DB.devotees.filter(x=>x.status!=='Inactive').map(x=>`<option value="${x.id}" ${d.responsible===x.id?'selected':''}>${esc(x.name)} (${esc(x.org||'Devotee')})</option>`).join('')}</select></div></div>
+        <input type="text" name="responsible" value="${esc(dv(d.responsible)?.name || d.responsible || '')}" placeholder="e.g. HG Sundar Gopal Das"></div></div>
       <div class="field"><label>Description / Notes (optional)</label><textarea name="desc" placeholder="Topic details, verses to read, or preparation notes">${esc(d.desc)}</textarea></div>
       <div class="field"><label>🔁 Repeats</label>
         <div class="chips">${['One time','Weekly','Daily','Monthly'].map(r=>`<button class="chip ${d.recurrence===r?'on':''}" data-act="draft" data-n="recurrence" data-v="${r}">${r}</button>`).join('')}</div>
