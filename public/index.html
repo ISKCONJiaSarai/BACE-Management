@@ -1236,12 +1236,13 @@ const pks=(a,n)=>{const c=[...a],o=[];while(o.length<n&&c.length)o.push(c.splice
 const chance=p=>rnd()<p;
 const TODAY=(()=>{const d=new Date();d.setHours(0,0,0,0);return d})();
 const dayOff=n=>new Date(TODAY.getTime()+n*864e5);
-const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const parseDate=v=>{if(!v)return null;if(v instanceof Date)return isNaN(v.getTime())?null:v;if(typeof v==='string'){if(/^\d{4}-\d{2}-\d{2}$/.test(v))return new Date(v+'T00:00:00');const d=new Date(v);return isNaN(d.getTime())?null:d}const d=new Date(v);return isNaN(d.getTime())?null:d};
+const iso=d=>{if(!d)return'';if(typeof d==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(d))return d;const dt=parseDate(d);if(!dt)return typeof d==='string'?d.split('T')[0]:'';return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`};
 const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
-const fmtD=s=>{if(!s)return'—';const d=new Date(s+'T00:00:00');return `${d.getDate()} ${MON[d.getMonth()]} ${String(d.getFullYear()).slice(2)}`};
-const fmtLong=s=>{if(!s)return'—';const d=new Date(s+'T00:00:00');return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`};
-const relD=s=>{if(!s)return'—';const n=Math.round((new Date(s+'T00:00:00')-TODAY)/864e5);
+const fmtD=s=>{if(!s)return'—';const d=parseDate(s);if(!d)return String(s);return `${d.getDate()} ${MON[d.getMonth()]} ${String(d.getFullYear()).slice(2)}`};
+const fmtLong=s=>{if(!s)return'—';const d=parseDate(s);if(!d)return String(s);return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`};
+const relD=s=>{if(!s)return'—';const d=parseDate(s);if(!d)return'—';const n=Math.round((d-TODAY)/864e5);
   if(n===0)return'Today';if(n===1)return'Tomorrow';if(n===-1)return'Yesterday';
   return n<0?`${-n} days ago`:`In ${n} days`};
 const uid=p=>p+'_'+Math.random().toString(36).slice(2,8);
@@ -2876,7 +2877,7 @@ async function checkApprovalStatus(){
 let lastPendingFetch = 0;
 async function fetchServerPendingApprovals(){
   const token = localStorage.getItem('bace_token');
-  if(!token || Date.now() - lastPendingFetch < 8000) return;
+  if(!token || Date.now() - lastPendingFetch < 6000) return;
   lastPendingFetch = Date.now();
   try{
     const res = await fetch('/api/auth/pending-approvals',{
@@ -2886,27 +2887,48 @@ async function fetchServerPendingApprovals(){
     const json = await res.json();
     if(json.success && Array.isArray(json.data)){
       let addedAny = false;
+      const pendingServerIds = new Set();
+      const pendingServerEmails = new Set();
       json.data.forEach(item => {
         if(item.devotee){
-          const targetId = item.devotee.customId || item.devotee._id || item.devotee.id;
-          let d = DB.devotees.find(x => x.id === targetId || (x.email && x.email.toLowerCase() === (item.email || '').toLowerCase()));
+          const targetId = String(item.devotee.customId || item.devotee._id || item.devotee.id || '');
+          const devEmail = (item.email || item.devotee.email || '').toLowerCase().trim();
+          if(targetId) pendingServerIds.add(targetId);
+          if(devEmail) pendingServerEmails.add(devEmail);
+          let d = DB.devotees.find(x => (targetId && (String(x.id) === targetId || String(x.customId) === targetId)) || (devEmail && x.email && x.email.toLowerCase().trim() === devEmail));
           if(!d){
             d = normalizeDevotee({
               ...item.devotee,
-              id: targetId,
+              id: targetId || ('d_' + Date.now()),
               status: 'Pending Approval'
             });
             DB.devotees.unshift(d);
             addedAny = true;
-          } else if(d.status !== 'Pending Approval') {
-            d.status = 'Pending Approval';
+          } else {
+            Object.assign(d, normalizeDevotee({ ...d, ...item.devotee }));
+            if(targetId) d.id = targetId;
+            if(d.status !== 'Pending Approval') {
+              d.status = 'Pending Approval';
+              addedAny = true;
+            }
+          }
+        }
+      });
+      // Synchronize: mark any devotee as Active if they are no longer in server pending list
+      DB.devotees.forEach(d => {
+        if(d.status === 'Pending Approval') {
+          const isPending = (d.id && pendingServerIds.has(String(d.id))) || (d.customId && pendingServerIds.has(String(d.customId))) || (d.email && pendingServerEmails.has(d.email.toLowerCase().trim()));
+          if(!isPending) {
+            d.status = 'Active';
             addedAny = true;
           }
         }
       });
       if(addedAny) render();
     }
-  }catch(e){}
+  }catch(e){
+    console.warn('Pending approvals sync error:', e);
+  }
 }
 
 /* =========================================================================
@@ -5140,7 +5162,7 @@ function viewAdmin(){
              <div class="list" style="border:1px solid var(--line);border-radius:10px;font-size:12.5px;margin-bottom:14px">
                <div class="li" style="padding:6px 10px"><span class="grow" style="color:var(--ink-3)">Highest Education</span><b>${esc(d.highestEducation || d.org || 'Not specified')}</b></div>
                 <div class="li" style="padding:6px 10px"><span class="grow" style="color:var(--ink-3)">Present Studies / Job</span><b>${esc(d.presentStudiesOrJob || d.occupation || 'Not specified')}</b></div>
-                <div class="li" style="padding:6px 10px"><span class="grow" style="color:var(--ink-3)">Date of Birth</span><b>${d.dob ? fmtD(iso(d.dob)) : 'Not specified'}</b></div>
+                <div class="li" style="padding:6px 10px"><span class="grow" style="color:var(--ink-3)">Date of Birth</span><b>${d.dob ? fmtD(d.dob) : 'Not specified'}</b></div>
                 <div class="li" style="padding:6px 10px"><span class="grow" style="color:var(--ink-3)">Current Address</span><b>${esc(d.address || 'Not specified')}</b></div>
                <div class="li" style="padding:6px 10px"><span class="grow" style="color:var(--ink-3)">Sadhana Rounds</span><b>${d.sadhana?.rounds || 0} rounds daily</b></div>
                <div class="li" style="padding:6px 10px"><span class="grow" style="color:var(--ink-3)">Swabhav / Nature</span><b>${esc(d.swabhav?.nature || 'Not assessed')}</b></div>
@@ -5163,9 +5185,9 @@ function viewAdmin(){
    ` : emptyState('No pending applications', 'All devotee registrations have been reviewed and approved.', '', 'calm')),
    Users:section('User accounts',`<div class="tbl-wrap"><table class="tbl"><thead><tr><th>User</th><th>Role</th><th>Scope</th><th>Area</th><th>Status</th><th></th></tr></thead><tbody>
      ${DB.users.map(u=>`<tr><td data-l="User"><div class="who">${av(nameOf(u.devotee),'m')}<div><b>${esc(nameOf(u.devotee))}</b><span>${esc(dv(u.devotee)?.email||'')}</span></div></div></td>
-      <td data-l="Role">${badge(ROLES[u.role].emoji+' '+ROLES[u.role].name,'saffron')}</td>
-      <td data-l="Scope"><span class="tiny">${esc(ROLES[u.role].scope)}</span></td>
-      <td data-l="Area">${esc(u.dept?dept(u.dept).name:u.batch?batch(u.batch).name:'Community-wide')}</td>
+      <td data-l="Role">${badge((ROLES[u.role]?.emoji||'👤')+' '+(ROLES[u.role]?.name||u.role||'User'),'saffron')}</td>
+      <td data-l="Scope"><span class="tiny">${esc(ROLES[u.role]?.scope||'Community access')}</span></td>
+      <td data-l="Area">${esc(u.dept?(dept(u.dept)?.name||u.dept):u.batch?(batch(u.batch)?.name||u.batch):'Community-wide')}</td>
       <td data-l="Status">${badge(u.approvalStatus==='pending_approval'?'Pending':'Active',u.approvalStatus==='pending_approval'?'amber':'green')}</td>
       <td><button class="btn sm" data-act="edit-user" data-id="${u.id}">${ic('edit')}Edit</button></td></tr>`).join('')}</tbody></table></div>`,
      `<button class="btn sm pri" data-act="add-user">${ic('plus')}Add user</button>`),
@@ -5200,7 +5222,7 @@ function viewAdmin(){
        <div class="li"><span class="grow"><span class="t">Historical records</span><span class="d">Departments and batches are archived, never deleted</span></span>${badge('Permanent','grey')}</div>
        <div class="li"><span class="grow"><span class="t">Attendance corrections</span><span class="d">Administrator only, written to the audit log</span></span>${badge('Audited','sky')}</div></div>
        <div class="note" style="margin-top:12px">This demo stores everything in memory. In production, swap the data layer for an authenticated API with row-level permissions.</div></div>`)}</div>`
-  }[tab];
+  }[tab] || section('Administration', emptyState('Select a tab', 'Choose an administration section from above.'));
   const adminTabs = [
     { k: 'Approvals', l: `Approvals ${pendingDevs.length ? `<span class="cnt hot" style="margin-left:4px">${pendingDevs.length}</span>` : ''}` },
     { k: 'Users', l: 'Users' },
@@ -5545,54 +5567,59 @@ function drillList(title,acts,sub){
    ROUTER
    ========================================================================= */
 function routeView(){
-  const r=APP.route.replace(/^#\//,'');
-  const [seg,arg]=r.split('/');
-  APP.crumbLeaf=null;
-  const guard=(mod,fn)=>can(mod)?fn():denied();
-  switch(seg){
-    case '':return viewDashboard();
-    case 'today':return viewToday();
-    case 'devotees':return guard('directory',viewDevotees);
-    case 'devotee':return viewDevotee(arg);
-    case 'org':return viewOrg();
-    case 'mgmt':return guard('management',viewMgmt);
-    case 'depts':return guard('management',viewDepts);
-    case 'dept':return guard('management',()=>viewDept(arg));
-    case 'assign':return guard('assign',viewAssign);
-    case 'attendance':return guard('management',viewAttendance);
-    case 'dept-reports':return guard('reports',viewDeptReports);
-    case 'inventory':return guard('inventory',viewInventory);
-    case 'sops':return viewSops();
-    case 'actions':return viewActions();
-    case 'preaching':return guard('preaching',viewPreaching);
-    case 'batches':return guard('preaching',viewBatches);
-    case 'batch':return guard('preaching',()=>viewBatch(arg));
-    case 'contacts':return guard('preaching',viewContacts);
-    case 'followups':return guard('preaching',viewFollowups);
-    case 'classes':return guard('preaching',viewClasses);
-    case 'batch-attendance':return guard('preaching',viewBatchAttendance);
-    case 'preaching-reports':return guard('reports',viewPreachingReports);
-    case 'care':return guard('care',viewCare);
-    case 'friends':return guard('care',viewFriends);
-    case 'groups':return guard('care',viewGroups);
-    case 'group':return guard('care',()=>viewGroup(arg));
-    case 'swabhav':return guard('care',viewSwabhav);
-    case 'sadhana':return guard('care',viewSadhana);
-    case 'facilitators':return guard('care',viewFacilitators);
-    case 'spiritual-classes':return guard('care',viewSpiritualClasses);
-    case 'camps':return guard('care',viewCamps);
-    case 'temple-visits':return guard('care',viewTempleVisits);
-    case 'meetings':return viewMeetings();
-    case 'care-followups':return guard('care',viewCareFollowups);
-    case 'care-reports':return guard('care',viewCareReports);
-    case 'reports':return guard('reports',viewReports);
-    case 'calendar':return viewCalendar();
-    case 'messages':return viewMessages();
-    case 'notifications':return viewNotifications();
-    case 'admin':return guard('admin',viewAdmin);
-    case 'more':return viewMore();
-    case 'activity':{const a=act(arg);if(a){APP.modal={kind:'activity',id:arg};}return viewAssign()}
-    default:return emptyState('Page not found','That route does not exist in this application.','<a class="btn pri" href="#/">Back to dashboard</a>');
+  try {
+    const r=APP.route.replace(/^#\//,'');
+    const [seg,arg]=r.split('/');
+    APP.crumbLeaf=null;
+    const guard=(mod,fn)=>can(mod)?fn():denied();
+    switch(seg){
+      case '':return viewDashboard();
+      case 'today':return viewToday();
+      case 'devotees':return guard('directory',viewDevotees);
+      case 'devotee':return viewDevotee(arg);
+      case 'org':return viewOrg();
+      case 'mgmt':return guard('management',viewMgmt);
+      case 'depts':return guard('management',viewDepts);
+      case 'dept':return guard('management',()=>viewDept(arg));
+      case 'assign':return guard('assign',viewAssign);
+      case 'attendance':return guard('management',viewAttendance);
+      case 'dept-reports':return guard('reports',viewDeptReports);
+      case 'inventory':return guard('inventory',viewInventory);
+      case 'sops':return viewSops();
+      case 'actions':return viewActions();
+      case 'preaching':return guard('preaching',viewPreaching);
+      case 'batches':return guard('preaching',viewBatches);
+      case 'batch':return guard('preaching',()=>viewBatch(arg));
+      case 'contacts':return guard('preaching',viewContacts);
+      case 'followups':return guard('preaching',viewFollowups);
+      case 'classes':return guard('preaching',viewClasses);
+      case 'batch-attendance':return guard('preaching',viewBatchAttendance);
+      case 'preaching-reports':return guard('reports',viewPreachingReports);
+      case 'care':return guard('care',viewCare);
+      case 'friends':return guard('care',viewFriends);
+      case 'groups':return guard('care',viewGroups);
+      case 'group':return guard('care',()=>viewGroup(arg));
+      case 'swabhav':return guard('care',viewSwabhav);
+      case 'sadhana':return guard('care',viewSadhana);
+      case 'facilitators':return guard('care',viewFacilitators);
+      case 'spiritual-classes':return guard('care',viewSpiritualClasses);
+      case 'camps':return guard('care',viewCamps);
+      case 'temple-visits':return guard('care',viewTempleVisits);
+      case 'meetings':return viewMeetings();
+      case 'care-followups':return guard('care',viewCareFollowups);
+      case 'care-reports':return guard('care',viewCareReports);
+      case 'reports':return guard('reports',viewReports);
+      case 'calendar':return viewCalendar();
+      case 'messages':return viewMessages();
+      case 'notifications':return viewNotifications();
+      case 'admin':return guard('admin',viewAdmin);
+      case 'more':return viewMore();
+      case 'activity':{const a=act(arg);if(a){APP.modal={kind:'activity',id:arg};}return viewAssign()}
+      default:return emptyState('Page not found','That route does not exist in this application.','<a class="btn pri" href="#/">Back to dashboard</a>');
+    }
+  } catch(err) {
+    console.error('Route render error:', err);
+    return emptyState('View error', 'Unable to display this view: ' + (err.message || 'Unexpected error'), '<a class="btn pri" href="#/">Back to dashboard</a>');
   }
 }
 function render(){

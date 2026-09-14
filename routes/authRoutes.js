@@ -438,7 +438,8 @@ router.post('/approve-devotee/:id', protect, requireAdminOrAreaLeader, async (re
     let user = await User.findOne({
       $or: [
         { _id: targetId.match(/^[0-9a-fA-F]{24}$/) ? targetId : null },
-        { devotee: devotee?._id }
+        { devotee: devotee?._id },
+        ...(devotee?.email ? [{ email: devotee.email }] : [])
       ].filter(x => Object.values(x)[0] !== null)
     });
 
@@ -497,7 +498,8 @@ router.post('/reject-devotee/:id', protect, requireAdminOrAreaLeader, async (req
     let user = await User.findOne({
       $or: [
         { _id: targetId.match(/^[0-9a-fA-F]{24}$/) ? targetId : null },
-        { devotee: devotee?._id }
+        { devotee: devotee?._id },
+        ...(devotee?.email ? [{ email: devotee.email }] : [])
       ].filter(x => Object.values(x)[0] !== null)
     });
 
