@@ -33,6 +33,11 @@ const DEPT_DATA = [
 
 const BATCH_DATA = [
   ['Taksharya', 1, 'First-step batch for newcomers from campus outreach', 'Tuesday', '6:30 pm', 40000, 'b1'],
+  ['Sreshtha', 1, 'Regular weekly class for committed newcomers', 'Thursday', '7:00 pm', 50000, 'b2'],
+  ['IITD Faculty & Staff Preaching', 1, 'Study circle for faculty and campus staff', 'Saturday', '5:30 pm', 30000, 'b3'],
+  ['Siksharthakam', 1, 'Foundational online course for new people', 'Sunday', '8:00 pm', 25000, 'b4'],
+  ['Arjun Sabha', 2, 'Deeper study and sadhana commitment', 'Wednesday', '6:30 pm', 45000, 'b5'],
+  ['Alumni Preaching', 2, 'Alumni and working professionals group', 'Saturday', '8:00 pm', 60000, 'b6'],
   ['Narad Sabha', 3, 'Preachers in training with service responsibility', 'Monday', '6:00 pm', 55000, 'b7'],
   ['Gaurvani Sabha', 3, 'Senior sadhakas leading classes and outreach', 'Friday', '6:30 pm', 35000, 'b8']
 ];
@@ -305,7 +310,7 @@ const seedCompleteData = async () => {
     console.log(`   - Total Devotees in MongoDB: ${insertedDevotees.length} (18 Gaurvani + 19 Narad + 1 sample)`);
     console.log(`   - Gaurvani Sabha Devotees: 18`);
     console.log(`   - Narad Sabha Devotees: 19`);
-    console.log(`   - Batches: 3 (Narad Sabha, Gaurvani Sabha, 1 sample Taksharya)`);
+    console.log(`   - Batches: ${insertedBatches.length} (Level 1, Level 2, Level 3)`);
     console.log(`   - Care Groups: 1 (Group 1 · Gaura)\n`);
 
     process.exit(0);

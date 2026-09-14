@@ -1399,6 +1399,11 @@ const DEPT_SEED=[
 ];
 const BATCH_SEED=[
  ['Taksharya',1,'First-step batch for newcomers from campus outreach','Tue','6:30 pm',40000,'b1'],
+ ['Sreshtha',1,'Regular weekly class for committed newcomers','Thu','7:00 pm',50000,'b2'],
+ ['IITD Faculty & Staff Preaching',1,'Study circle for faculty and campus staff','Sat','5:30 pm',30000,'b3'],
+ ['Siksharthakam',1,'Foundational online course for new people','Sun','8:00 pm',25000,'b4'],
+ ['Arjun Sabha',2,'Deeper study and sadhana commitment','Wed','6:30 pm',45000,'b5'],
+ ['Alumni Preaching',2,'Alumni and working professionals group','Sat','8:00 pm',60000,'b6'],
  ['Narad Sabha',3,'Preachers in training with service responsibility','Mon','6:00 pm',55000,'b7'],
  ['Gaurvani Sabha',3,'Senior sadhakas leading classes and outreach','Fri','6:30 pm',35000,'b8']
 ];
@@ -1662,6 +1667,12 @@ const logAudit=(action,record)=>DB.audit.unshift({id:uid('au'),user:(APP.user?na
   if (bN && dhirendraId) { bN.coordinator = dhirendraId; bN.facilitators = [dhirendraId, 'd1']; }
   const bT = DB.batches.find(b => b.id === 'b1');
   if (bT && audaryaId) { bT.coordinator = audaryaId; bT.facilitators = [audaryaId]; }
+  DB.batches.forEach(b => {
+    if (!b.coordinator) {
+      b.coordinator = (b.level === 3 ? dhirendraId : audaryaId) || 'd1';
+      b.facilitators = [b.coordinator];
+    }
+  });
 
   // Assign department heads
   DB.departments.forEach((dp) => {
@@ -2529,9 +2540,15 @@ const PILLARS=[
    {t:'Action items',em:'🎯',r:'#/actions',m:'actions',badge:'actionsOverdue'}]},
  {key:'preach',t:'BACE Preaching',em:'📖',pill:'var(--indigo)',m:'preaching',items:[
    {t:'Preaching dashboard',em:'📊',r:'#/preaching',m:'preaching'},
-   {sub:'Level 1'},
+   {sub:'Level 1 (Foundation)'},
    {t:'Taksharya',em:'•',r:'#/batch/b1',m:'preaching',indent:1},
-   {sub:'Level 3'},
+   {t:'Sreshtha',em:'•',r:'#/batch/b2',m:'preaching',indent:1},
+   {t:'IITD Faculty & Staff',em:'•',r:'#/batch/b3',m:'preaching',indent:1},
+   {t:'Siksharthakam',em:'•',r:'#/batch/b4',m:'preaching',indent:1},
+   {sub:'Level 2 (Development)'},
+   {t:'Arjun Sabha',em:'•',r:'#/batch/b5',m:'preaching',indent:1},
+   {t:'Alumni Preaching',em:'•',r:'#/batch/b6',m:'preaching',indent:1},
+   {sub:'Level 3 (Advanced)'},
    {t:'Narad Sabha',em:'•',r:'#/batch/b7',m:'preaching',indent:1},
    {t:'Gaurvani Sabha',em:'•',r:'#/batch/b8',m:'preaching',indent:1},
    {sub:'All batches'},
