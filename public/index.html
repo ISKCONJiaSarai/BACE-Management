@@ -213,11 +213,37 @@ input,select,textarea{font-family:inherit;font-size:14px;color:var(--ink)}
 .icon-btn svg{width:17px;height:17px}
 .dot{position:absolute;top:4px;right:4px;min-width:15px;height:15px;padding:0 3px;border-radius:9px;background:var(--danger);color:#fff;font-size:9.5px;line-height:15px;text-align:center;border:1.5px solid var(--surface)}
 .view{padding:22px 24px 110px;max-width:1460px;width:100%}
+/* ---------- mobile drawer, scrim & shell ---------- */
+.mobile-close-btn{display:none!important}
+.mobile-scrim{
+  position:fixed;
+  inset:0;
+  background:rgba(15,18,25,0.65);
+  backdrop-filter:blur(4px);
+  -webkit-backdrop-filter:blur(4px);
+  z-index:92;
+  animation:fadeIn .18s ease-out;
+}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+
 @media(max-width:1080px){
-  .shell{grid-template-columns:1fr}
-  .sidebar{display:none}
-  .shell.mobile-sb-open .sidebar{display:flex;position:fixed;top:0;left:0;bottom:0;width:280px;z-index:90;box-shadow:0 0 40px rgba(0,0,0,0.5)}
-  .view{padding:16px 14px 128px}.topbar{padding:9px 14px}.searchbox{width:auto;flex:1}
+  .shell{grid-template-columns:1fr;min-height:100vh}
+  .shell.sb-closed{grid-template-columns:1fr}
+  .sidebar{
+    display:flex!important;
+    position:fixed;
+    top:0;left:0;bottom:0;
+    width:min(320px,86vw);
+    z-index:95;
+    transform:translateX(-100%);
+    transition:transform .26s cubic-bezier(0.16,1,0.3,1);
+    box-shadow:0 0 50px rgba(0,0,0,0.6);
+  }
+  .shell.mobile-drawer-open .sidebar{
+    transform:translateX(0);
+  }
+  .mobile-close-btn{display:inline-flex!important}
+  .view{padding:16px 14px calc(96px + env(safe-area-inset-bottom))}
 }
 
 /* ---------- hero ---------- */
@@ -492,16 +518,112 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13.5px}
 .fab-menu button:hover{background:var(--surface-2)}
 .botnav{display:none}
 @media(max-width:1080px){
-  .botnav{display:grid;grid-template-columns:repeat(6,1fr);position:fixed;bottom:0;left:0;right:0;z-index:45;background:rgba(255,255,255,.97);backdrop-filter:blur(8px);border-top:1px solid var(--line);padding:5px 2px calc(5px + env(safe-area-inset-bottom))}
-  .botnav button{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10px;color:var(--ink-3);padding:5px 0;position:relative}
-  .botnav button.on{color:var(--accent)}
-  .botnav .em{font-size:17px;line-height:1}
-  .botnav .bdot{position:absolute;top:2px;right:22%;width:7px;height:7px;border-radius:50%;background:var(--danger)}
-  .fab{bottom:76px;right:14px;width:50px;height:50px}
-  .fab-menu{bottom:134px;right:14px}
+  .botnav{
+    display:flex;
+    position:fixed;
+    bottom:0;left:0;right:0;
+    z-index:80;
+    background:rgba(253,251,247,0.96);
+    backdrop-filter:blur(16px);
+    -webkit-backdrop-filter:blur(16px);
+    border-top:1px solid var(--line);
+    padding:6px 6px calc(8px + env(safe-area-inset-bottom));
+    height:calc(60px + env(safe-area-inset-bottom));
+    box-shadow:0 -4px 20px rgba(35,25,12,0.06);
+    align-items:center;
+    justify-content:space-around;
+  }
+  .botnav button{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:3px;
+    font-size:10.5px;
+    font-weight:500;
+    color:var(--ink-3);
+    padding:4px 0;
+    position:relative;
+    border-radius:10px;
+    transition:color .15s, transform .1s;
+    min-height:44px;
+    touch-action:manipulation;
+  }
+  .botnav button:active{transform:scale(0.92)}
+  .botnav button.on{
+    color:var(--accent);
+    font-weight:600;
+  }
+  .botnav button.on .em{
+    transform:scale(1.12);
+  }
+  .botnav .em{
+    font-size:18px;
+    line-height:1;
+    transition:transform .15s ease;
+  }
+  .botnav .bdot{
+    position:absolute;
+    top:2px;
+    right:calc(50% - 15px);
+    min-width:16px;
+    height:16px;
+    padding:0 3px;
+    border-radius:8px;
+    background:var(--danger);
+    color:#fff;
+    font-size:9.5px;
+    font-weight:700;
+    line-height:16px;
+    text-align:center;
+    box-shadow:0 1px 4px rgba(220,38,38,0.4);
+  }
+  .fab{
+    bottom:calc(76px + env(safe-area-inset-bottom));
+    right:16px;
+    width:50px;
+    height:50px;
+  }
+  .fab-menu{
+    bottom:calc(134px + env(safe-area-inset-bottom));
+    right:16px;
+  }
+  .toast{
+    bottom:calc(80px + env(safe-area-inset-bottom));
+  }
+}
+
+@media(max-width:768px){
+  .topbar{padding:8px 12px;gap:8px}
+  .topbar .crumbs{display:none}
+  .topbar .topbar-title-mobile{display:flex!important}
+  .topbar .searchbox{display:none}
+  .topbar .mobile-search-btn{display:inline-flex!important}
+  .topbar .logout-btn-topbar{display:none!important}
+  .topbar .icon-btn{width:35px;height:35px}
+  .toolbar{
+    flex-wrap:nowrap;
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+    padding:10px 12px;
+    gap:6px;
+  }
+  .toolbar::-webkit-scrollbar{display:none}
+  .toolbar input[type=search],.toolbar input[type=text],.toolbar input[type=date]{min-width:140px;flex:none}
+  .toolbar select{min-width:130px;flex:none}
+}
+
+@media(max-width:620px){
+  input[type="text"],input[type="search"],input[type="date"],input[type="email"],input[type="password"],select,textarea{
+    font-size:16px!important;
+  }
+  .page-head h1{font-size:22px}
+  .modal{border-radius:22px 22px 0 0;max-height:92vh;width:100%}
+  .scrim{padding:0;place-items:end center}
 }
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:26px;z-index:80;background:var(--ink);color:#FBF3E6;padding:11px 18px;border-radius:12px;box-shadow:var(--sh-3);font-size:13.5px;display:flex;gap:9px;align-items:center;animation:pop .2s ease-out;max-width:90vw}
-@media(max-width:1080px){.toast{bottom:84px}}
 .demo-flag{font-size:11px;color:var(--ink-3);border:1px dashed var(--line);border-radius:20px;padding:3px 9px}
 </style>
 </head>
@@ -1256,6 +1378,7 @@ const STATS=()=>({
    ========================================================================= */
 const APP={user:null,route:'#/',search:'',fabOpen:false,modal:'',tab:{},filters:{},page:{},perPage:{},
   sbClosed:localStorage.getItem('bace_sb_closed')==='1',
+  mobileDrawerOpen:false,mobileSearchOpen:false,
   nav:{open:{mgmt:true,preach:false,care:false}},sbScroll:0,chat:{thread:null},
   range:{from:iso(dayOff(-30)),to:iso(dayOff(30))},crumbLeaf:null,draft:{}};
 
@@ -1512,11 +1635,14 @@ function navItem(i,pill){
 }
 function sidebar(){
   return `<aside class="sidebar">
-   <div class="sb-head" style="display:flex;align-items:center;gap:11px">
+   <div class="sb-head" style="display:flex;align-items:center;justify-content:space-between;gap:10px">
      <div class="brandmark" style="display:flex;align-items:center;gap:12px;min-width:0">
-       <img src="/logo.png?v=2" alt="ISKCON BACE Jia Sarai" style="height:42px;width:42px;object-fit:contain;flex:none;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.4))">
+       <img src="/logo.png?v=2" alt="ISKCON BACE Jia Sarai" style="height:40px;width:40px;object-fit:contain;flex:none;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.4))">
        <div style="min-width:0;overflow:hidden"><div class="t" style="white-space:nowrap;text-overflow:ellipsis;overflow:hidden">ISKCON BACE</div><div class="s" style="white-space:nowrap;text-overflow:ellipsis;overflow:hidden">Jia Sarai · Community OS</div></div>
      </div>
+     <button class="icon-btn sm mobile-close-btn" data-act="close-mobile-drawer" title="Close drawer" aria-label="Close drawer" style="width:32px;height:32px;border-radius:9px;border:1px solid rgba(255,255,255,0.22);background:rgba(255,255,255,0.09);color:#FFF;align-items:center;justify-content:center;flex:none">
+       ${ic('x')}
+     </button>
    </div>
    <div class="sb-scroll" id="sbscroll">
      ${NAV_TOP.map(i=>navItem(i)).join('')}
@@ -1554,25 +1680,48 @@ const CRUMBS={'':'Dashboard',today:'Today',devotees:'Devotees',devotee:'Devotee'
 function topbar(){
   const parts=APP.route.split('/').filter(Boolean);
   const unread=DB.notifications.filter(n=>!n.read).length;
+  const pageTitle=CRUMBS[parts[0]]||parts[0]||'Dashboard';
   return `<header class="topbar">
-    <button class="icon-btn" data-act="toggle-sidebar" title="${APP.sbClosed ? 'Open sidebar' : 'Close sidebar'}" style="margin-right:2px;flex:none;display:inline-flex;align-items:center;justify-content:center" aria-label="Toggle sidebar">
+    <button class="icon-btn" data-act="toggle-sidebar" title="${APP.sbClosed ? 'Open menu' : 'Close menu'}" style="margin-right:2px;flex:none;display:inline-flex;align-items:center;justify-content:center" aria-label="Toggle navigation">
       ${ic('menu')}
     </button>
+    <div class="topbar-title-mobile" style="display:none;align-items:center;gap:8px;min-width:0;flex:1">
+      <span style="font-family:var(--f-head);font-size:15.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink)">${esc(pageTitle)}</span>
+    </div>
     <nav class="crumbs"><a href="#/">Community</a>${parts[0]?` / <b>${esc(CRUMBS[parts[0]]||parts[0])}</b>`:''}${APP.crumbLeaf?` / <b>${esc(APP.crumbLeaf)}</b>`:''}</nav>
     <div class="searchbox">${ic('search')}<input type="search" placeholder="Search devotees, seva, batches, SOPs…" value="${esc(APP.search)}" data-act="global-search" aria-label="Global search"></div>
+    <button class="icon-btn mobile-search-btn" data-act="toggle-mobile-search" title="Search" aria-label="Search" style="display:none">${ic('search')}</button>
     <button class="icon-btn" data-act="go" data-r="#/messages" title="Messages">${ic('chat')}${unreadMsgs()?`<i class="dot">${unreadMsgs()}</i>`:''}</button>
     <button class="icon-btn" data-act="notifications" title="Notifications">${ic('bell')}${unread?`<i class="dot">${unread}</i>`:''}</button>
     <button class="icon-btn" data-act="account" title="Devotee Account">${av(nameOf(APP.user.devotee),'s')}</button>
-    <button class="btn sm" data-act="logout" title="Sign out" style="color:var(--danger);border:1px solid var(--danger-soft);background:var(--surface);display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:10px;font-weight:600;font-size:12.5px;margin-left:4px">
+    <button class="btn sm logout-btn-topbar" data-act="logout" title="Sign out" style="color:var(--danger);border:1px solid var(--danger-soft);background:var(--surface);display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:10px;font-weight:600;font-size:12.5px;margin-left:4px">
       ${ic('logout')}<span>Sign out</span>
     </button>
-  </header>`;
+  </header>
+  ${APP.mobileSearchOpen ? `
+  <div class="mobile-search-bar" style="background:var(--surface);padding:8px 14px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px;animation:drop .15s ease-out">
+    <span style="color:var(--ink-3);display:flex;align-items:center">${ic('search')}</span>
+    <input id="mobile-search-input" type="search" placeholder="Search devotees, seva, batches…" value="${esc(APP.search)}" data-act="global-search" style="flex:1;border:none;background:transparent;outline:none;font-size:15px;color:var(--ink)">
+    <button class="icon-btn sm" data-act="toggle-mobile-search" title="Close search" style="width:28px;height:28px;border-radius:7px;border:none;background:transparent">${ic('x')}</button>
+  </div>`:''}`;
 }
 function botnav(){
-  const items=[['Home','🏠','#/'],['People','👥',can('directory')?'#/devotees':'#/devotee/'+APP.user.devotee],
-    ['Assign','📋','#/assign'],['Calendar','📅','#/calendar'],['Chat','💬','#/messages'],['More','☰','#/more']];
-  return `<nav class="botnav">${items.map(([t,em,r])=>`<button class="${APP.route===r?'on':''}" data-act="go" data-r="${r}">
-    <span class="em">${em}</span><span>${t}</span>${t==='Chat'&&unreadMsgs()?'<i class="bdot"></i>':''}</button>`).join('')}</nav>`;
+  const items=[
+    ['Home', '🏠', '#/'],
+    ['Devotees', '👥', can('directory') ? '#/devotees' : '#/devotee/'+APP.user.devotee],
+    ['Seva', '📋', '#/assign'],
+    ['Chat', '💬', '#/messages', unreadMsgs()],
+    ['Menu', '☰', 'toggle-mobile-drawer']
+  ];
+  return `<nav class="botnav">${items.map(([t, em, target, badge])=>{
+    const isAct = target === 'toggle-mobile-drawer';
+    const on = isAct ? APP.mobileDrawerOpen : (!APP.mobileDrawerOpen && (APP.route===target || (target!=='#/' && APP.route.startsWith(target))));
+    const attr = isAct ? `data-act="toggle-mobile-drawer"` : `data-act="go" data-r="${target}"`;
+    return `<button class="${on?'on':''}" ${attr} title="${t}" aria-label="${t}">
+      <span class="em">${em}</span>
+      <span>${t}</span>${badge ? `<i class="bdot">${badge > 9 ? '9+' : badge}</i>` : ''}
+    </button>`;
+  }).join('')}</nav>`;
 }
 function fab(){
   const acts=[['Assign / schedule','📋','open-assign','assign'],['Add devotee','👥','add-devotee','directory'],
@@ -4622,15 +4771,24 @@ function render(){
 
   applyAccent(APP.route);
   const body=routeView();
-  const shellClass=`shell ${APP.sbClosed?'sb-closed':''}`;
+  const shellClass=`shell ${APP.sbClosed?'sb-closed':''} ${APP.mobileDrawerOpen?'mobile-drawer-open':''}`;
   const sbToggleBtn=`<button class="sb-edge-toggle ${APP.sbClosed?'closed':'open'}" data-act="toggle-sidebar" title="${APP.sbClosed?'Open side panel':'Close side panel'}" aria-label="${APP.sbClosed?'Open side panel':'Close side panel'}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>`;
-  app.innerHTML=`<div class="${shellClass}">${APP.sbClosed?'':sidebar()}<div class="main">${topbar()}<div class="view">${body}</div></div></div>
-    ${sbToggleBtn}${botnav()}${fab()}${modalHTML()}`;
+  const mobileScrim = APP.mobileDrawerOpen ? `<div class="mobile-scrim" data-act="close-mobile-drawer" aria-label="Close menu"></div>` : '';
+  app.innerHTML=`<div class="${shellClass}">${sidebar()}<div class="main">${topbar()}<div class="view">${body}</div></div></div>
+    ${mobileScrim}${sbToggleBtn}${botnav()}${fab()}${modalHTML()}`;
   const sb=document.getElementById('sbscroll');
   if(sb){sb.scrollTop=APP.sbScroll;sb.addEventListener('scroll',()=>{APP.sbScroll=sb.scrollTop},{passive:true})}
   const cb=document.getElementById('chatbody');if(cb)cb.scrollTop=cb.scrollHeight;
 }
-function go(r){APP.route=r;APP.modal='';if(location.hash!==r)location.hash=r;else render();window.scrollTo(0,0)}
+function go(r){
+  APP.route=r;
+  APP.modal='';
+  APP.mobileDrawerOpen=false;
+  APP.mobileSearchOpen=false;
+  if(location.hash!==r)location.hash=r;
+  else render();
+  window.scrollTo(0,0);
+}
 async function deleteDevoteeAction(id){
   const token = localStorage.getItem('bace_token');
   const d = dv(id) || DB.devotees.find(x => x.id === id || x.customId === id);
@@ -4780,7 +4938,22 @@ document.addEventListener('click',e=>{
   case 'set-dev-sort':{stop();APP.filters.dev=APP.filters.dev||{};APP.filters.dev.sort=t.dataset.v;APP.page.dev=1;render();break}
   case 'toggle-dev-sort':{stop();APP.filters.dev=APP.filters.dev||{};APP.filters.dev.sort=APP.filters.dev.sort==='name_asc'?'name_desc':'name_asc';APP.page.dev=1;render();break}
   case 'set-per-page':{stop();const tId=t.dataset.t;const n=parseInt(t.dataset.n,10)||10;APP.perPage=APP.perPage||{};APP.perPage[tId]=n;APP.page[tId]=1;render();break}
-  case 'toggle-sidebar':{stop();APP.sbClosed=!APP.sbClosed;localStorage.setItem('bace_sb_closed',APP.sbClosed?'1':'0');render();break}
+  case 'open-mobile-drawer':{stop();APP.mobileDrawerOpen=true;render();break}
+  case 'close-mobile-drawer':{stop();APP.mobileDrawerOpen=false;render();break}
+  case 'toggle-mobile-drawer':{stop();APP.mobileDrawerOpen=!APP.mobileDrawerOpen;render();break}
+  case 'toggle-mobile-search':{stop();APP.mobileSearchOpen=!APP.mobileSearchOpen;render();
+    if(APP.mobileSearchOpen){
+      setTimeout(()=>{const el=document.getElementById('mobile-search-input');if(el)el.focus()},50);
+    }
+    break}
+  case 'toggle-sidebar':{stop();
+    if(window.innerWidth<=1080){
+      APP.mobileDrawerOpen=!APP.mobileDrawerOpen;
+    }else{
+      APP.sbClosed=!APP.sbClosed;
+      localStorage.setItem('bace_sb_closed',APP.sbClosed?'1':'0');
+    }
+    render();break}
   case 'open-dept':stop();go('#/dept/'+id);break;
   case 'open-batch':stop();go('#/batch/'+id);break;
   case 'open-group':stop();go('#/group/'+id);break;
