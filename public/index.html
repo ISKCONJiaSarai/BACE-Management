@@ -226,7 +226,8 @@ input,select,textarea{font-family:inherit;font-size:14px;color:var(--ink)}
 .hero h1{font-size:30px;color:#FFF;font-weight:700;letter-spacing:-.02em}
 .hero p{color:#E0E7FF;margin:7px 0 0;font-size:14px;max-width:62ch;line-height:1.55}
 .hero .quote{font-family:var(--f-head);font-style:italic;color:#FDE68A;margin-top:14px;font-size:15px;text-shadow:0 1px 4px rgba(0,0,0,0.2)}
-.hero .art{position:absolute;right:-70px;top:-70px;width:330px;opacity:.16;pointer-events:none}
+.hero .art{position:absolute;right:-25px;top:-30px;width:270px;height:270px;object-fit:contain;opacity:.15;pointer-events:none;filter:drop-shadow(0 4px 16px rgba(0,0,0,0.25))}
+@media(max-width:720px){.hero .art{width:190px;height:190px;right:-20px;top:-20px;opacity:.12}}
 .hero .hstats{display:flex;gap:12px;flex-wrap:wrap;margin-top:20px;position:relative;z-index:2}
 .hero .hstat{background:rgba(255,255,255,.14);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.24);border-radius:14px;padding:10px 16px;min-width:110px}
 .hero .hstat b{display:block;font-family:var(--f-head);font-size:24px;color:#FFF;line-height:1.2}
@@ -2172,9 +2173,7 @@ async function fetchServerPendingApprovals(){
 /* =========================================================================
    SHARED DASHBOARD BLOCKS
    ========================================================================= */
-const HERO_ART=`<svg class="art" viewBox="0 0 200 200" fill="none" stroke="#E8C88A" stroke-width=".9">
-  ${Array.from({length:14},(_,i)=>`<ellipse cx="100" cy="100" rx="86" ry="28" transform="rotate(${i*12.85} 100 100)"/>`).join('')}
-  <circle cx="100" cy="100" r="28"/></svg>`;
+const HERO_ART=`<img src="/logo.png?v=2" class="art" alt="ISKCON Logo">`;
 function hero(){
   const s=STATS(),me=dv(APP.user.devotee);
   const mine=myToday();
