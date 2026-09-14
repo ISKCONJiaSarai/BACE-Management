@@ -502,10 +502,16 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13.5px}
 @media(max-width:720px){.cal .day{min-height:62px;padding:3px}.cal .ev{font-size:0;padding:0;height:5px;margin-bottom:2px;border-radius:3px;border-left:0}}
 
 /* calendar toolbar & view switcher */
-.cal-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px}
-.cal-view-switch{display:grid;grid-template-columns:repeat(3,1fr);width:240px;background:var(--surface-2);padding:3px;border-radius:var(--r-s);border:1px solid var(--line-2);gap:3px;box-sizing:border-box}
-.cal-view-switch .chip{padding:5px 8px;border-radius:calc(var(--r-s) - 2px);font-size:12px;font-weight:500;border:none;background:transparent;color:var(--ink-2);cursor:pointer;transition:background .15s,color .15s;text-align:center;justify-content:center;min-width:0;box-sizing:border-box}
+.cal-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 18px;flex-wrap:wrap}
+.cal-view-switch{display:grid;grid-template-columns:repeat(3,1fr);width:230px;height:34px;background:var(--surface-2);padding:2.5px;border-radius:8px;border:1px solid var(--line-2);gap:3px;box-sizing:border-box;align-items:center}
+.cal-view-switch .chip{height:27px;padding:0 8px;border-radius:6px;font-size:12px;font-weight:500;border:none;background:transparent;color:var(--ink-2);cursor:pointer;transition:background .15s,color .15s;text-align:center;display:flex;align-items:center;justify-content:center;min-width:0;box-sizing:border-box}
 .cal-view-switch .chip.on{background:var(--surface);color:var(--ink);font-weight:600;box-shadow:var(--sh-1)}
+.cal-nav-group{display:inline-flex;align-items:center;justify-content:center;gap:10px}
+.cal-nav-arrows{display:inline-flex;align-items:center;gap:4px}
+.cal-nav-arrows .btn.sm{width:34px;height:34px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:8px;box-sizing:border-box}
+.cal-today-btn{height:34px;padding:0 14px;font-size:12.5px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;border-radius:8px;box-sizing:border-box}
+.cal-period-title{font-family:var(--f-head);font-size:16px;font-weight:600;min-width:140px;text-align:center;white-space:nowrap;color:var(--ink);display:inline-block;padding:0 6px}
+.cal-cat-select{height:34px;padding:0 12px;border-radius:8px;border:1px solid var(--line);background:var(--surface);font-size:13px;min-width:140px;cursor:pointer;box-sizing:border-box}
 
 /* calendar week view (desktop) */
 .cal-week-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border-left:1px solid var(--line-2);border-top:1px solid var(--line-2);background:var(--surface)}
@@ -726,11 +732,19 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13.5px}
     align-items:center!important;
     gap:6px!important;
   }
-  .cal-nav-group b{
+  .cal-nav-arrows{
+    display:inline-flex!important;
+    align-items:center!important;
+    gap:4px!important;
+    min-width:0!important;
+  }
+  .cal-period-title, .cal-nav-group b{
     font-size:13.5px!important;
     white-space:nowrap!important;
     overflow:hidden!important;
     text-overflow:ellipsis!important;
+    min-width:0!important;
+    max-width:160px!important;
   }
   .cal-cat-select{
     width:100%!important;
@@ -5117,14 +5131,14 @@ function viewCalendar(){
         <button class="chip ${view==='day'?'on':''}" data-act="cal-view" data-v="day">Day</button>
       </div>
       <div class="cal-nav-group">
-        <div style="display:flex;align-items:center;gap:6px">
-          <button class="btn sm" data-act="cal-nav" data-v="-1" title="Previous" aria-label="Previous" style="padding:5px 8px">${ic('back')}</button>
-          <b style="font-family:var(--f-head);font-size:15px;text-align:center;white-space:nowrap">${periodTitle}</b>
-          <button class="btn sm" data-act="cal-nav" data-v="1" title="Next" aria-label="Next" style="padding:5px 8px">${ic('chev')}</button>
+        <div class="cal-nav-arrows">
+          <button class="btn sm" data-act="cal-nav" data-v="-1" title="Previous" aria-label="Previous">${ic('back')}</button>
+          <b class="cal-period-title">${periodTitle}</b>
+          <button class="btn sm" data-act="cal-nav" data-v="1" title="Next" aria-label="Next">${ic('chev')}</button>
         </div>
-        <button class="btn sm" data-act="cal-nav" data-v="0" style="padding:5px 10px">Today</button>
+        <button class="btn sm cal-today-btn" data-act="cal-nav" data-v="0">Today</button>
       </div>
-      <select class="cal-cat-select" data-act="cal-cat" style="min-width:130px"><option value="">All categories</option>${cats.map(c=>`<option ${cat===c?'selected':''}>${c}</option>`).join('')}</select>
+      <select class="cal-cat-select" data-act="cal-cat"><option value="">All categories</option>${cats.map(c=>`<option ${cat===c?'selected':''}>${c}</option>`).join('')}</select>
     </div>
     <div class="card-b flush">${viewHtml}</div>
     <div class="card-b"><div class="legend">${cats.map(c=>`<span><i style="background:${colors[c]}"></i>${c}</span>`).join('')}</div></div>
