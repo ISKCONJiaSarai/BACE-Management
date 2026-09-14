@@ -3863,13 +3863,17 @@ function activityModal(id){
   const asg=assignsFor(a.id);const f=filled(a);
   const mine=asg.find(x=>x.devotee===APP.user.devotee);
   const manager=ownsDept(a.dept)||ownsBatch(a.batch)||['coordinator','admin','area_leader'].includes(APP.user.role);
-  const cands=DB.devotees.filter(x=>x.status!=='Inactive'&&!asg.some(s=>s.devotee===x.id))
-    .map(x=>{
-      let s = (x.attendancePct || 0) / 3;
-      if(a.batch && x.batch === a.batch) s += 60;
-      if(a.dept && x.dept === a.dept) s += 50;
-      return {x, s};
-    }).sort((p,q)=>q.s-p.s).slice(0,6).map(o=>o.x);
+  const scopeDevs = a.batch ? DB.devotees.filter(x=>x.status!=='Inactive'&&x.batch===a.batch&&!asg.some(s=>s.devotee===x.id))
+    : a.dept ? DB.devotees.filter(x=>x.status!=='Inactive'&&x.dept===a.dept&&!asg.some(s=>s.devotee===x.id))
+    : DB.devotees.filter(x=>x.status!=='Inactive'&&!asg.some(s=>s.devotee===x.id));
+  const cands = scopeDevs.length ? scopeDevs.slice().sort((p,q)=>q.attendancePct-p.attendancePct)
+    : DB.devotees.filter(x=>x.status!=='Inactive'&&!asg.some(s=>s.devotee===x.id))
+        .map(x=>{
+          let s=(x.attendancePct||0)/3;
+          if(a.batch&&x.batch===a.batch)s+=60;
+          if(a.dept&&x.dept===a.dept)s+=50;
+          return {x,s};
+        }).sort((p,q)=>q.s-p.s).slice(0,6).map(o=>o.x);
   return `<div class="drawer-wrap" data-act="close-scrim"><div class="drawer" data-stop="1">
    <div class="modal-h"><div><h2 style="font-size:18px">${typeEmoji(a.type)} ${esc(a.name)}</h2>
      <div class="tiny">${esc(scopeName(a))} · ${fmtD(a.date)}${a.start?` · ${a.start}–${a.end}`:''}</div></div>
@@ -3878,9 +3882,22 @@ function activityModal(id){
     <div class="chips" style="margin-bottom:13px">${sbadge(a.status)}${sbadge(a.priority)}${a.location?badge(a.location,'grey'):''}
       ${a.recurrence!=='One time'?badge('🔁 '+a.recurrence,'sky'):''}${a.overridden?badge('Exception','amber'):''}</div>
     <p class="muted" style="margin-top:0">${esc(a.desc||'')}</p>
-    ${a.type!=='Task'?`<div class="fill-meter" style="margin:14px 0">
-      <span>Required <b>${a.need}</b></span><span>Assigned <b>${f}</b></span>
-      ${f<a.need?`<span class="badge b-red">⚠️ ${a.need-f} MORE REQUIRED</span>`:`<span class="badge b-green">✓ FILLED</span>`}</div>`:''}
+    ${a.type!=='Task'?`<div class="fill-meter" style="margin:14px 0;display:flex;align-items:center;flex-wrap:wrap;gap:8px">
+      ${APP.editNeedAct===a.id ? `
+        <div style="display:inline-flex;align-items:center;gap:6px">
+          <span>Required:</span>
+          <button class="btn sm" data-act="act-need-step" data-v="-1" style="padding:2px 7px;font-size:12px">−</button>
+          <input type="number" id="act-need-input" value="${a.need}" min="0" max="99" style="width:48px;padding:3px 6px;text-align:center;font-size:13px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--ink)" onkeydown="if(event.key==='Enter'){document.getElementById('save-need-btn').click();event.preventDefault();}">
+          <button class="btn sm" data-act="act-need-step" data-v="1" style="padding:2px 7px;font-size:12px">+</button>
+          <button class="btn sm pri" id="save-need-btn" data-act="save-act-need" data-id="${a.id}" style="padding:3px 9px;font-size:11px">Save</button>
+          <button class="btn sm" data-act="toggle-edit-need" data-id="${a.id}" style="padding:3px 7px;font-size:11px">✕</button>
+        </div>
+      ` : `
+        <span>Required <b>${a.need}</b>${manager?`<button class="btn sm" data-act="toggle-edit-need" data-id="${a.id}" style="padding:2px 8px;font-size:11px;margin-left:6px;border-radius:6px">✏️ Edit</button>`:''}</span>
+      `}
+      <span style="margin-left:auto">Assigned <b>${f}</b></span>
+      ${f<a.need?`<span class="badge b-red">⚠️ ${a.need-f} MORE REQUIRED</span>`:`<span class="badge b-green">✓ FILLED</span>`}
+    </div>`:''}
     ${mine?`<div class="note" style="margin-bottom:14px"><b>Your assignment:</b> ${mine.state}
       ${['Completed','Completed by Another'].includes(mine.state)?`<br>Performed by ${esc(nameOf(mine.actualPerformer||mine.devotee))} at ${esc(mine.completedAt||'—')}`:`
       <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
@@ -3896,18 +3913,27 @@ function activityModal(id){
         ${sbadge(x.state)}${manager?`<button class="btn sm" data-act="unassign" data-id="${x.id}">Remove</button>`:''}</div>`).join('')
       :'<div class="li tiny">Nobody assigned yet.</div>'}</div>
     ${manager&&a.type!=='Task'?`<div style="display:flex;align-items:center;justify-content:space-between;margin:16px 0 8px">
-      <h3 style="margin:0">Suggested devotees</h3>
+      <h3 style="margin:0">Suggested devotees (${esc(scopeName(a))})</h3>
       <button class="btn sm" data-act="toggle-custom-devotee" data-a="${a.id}">+ Custom devotee</button>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
+      <select id="scope-devotee-sel" style="flex:1;padding:8px 10px;border:1px solid var(--line);border-radius:9px;font-size:13px;background:var(--card);color:var(--ink)">
+        <option value="">Select devotee from ${esc(scopeName(a))} (${scopeDevs.length})...</option>
+        ${scopeDevs.map(d=>`<option value="${d.id}">${esc(d.name)} · ${d.attendancePct}% attendance</option>`).join('')}
+      </select>
+      <button class="btn sm pri" data-act="assign-from-sel" data-a="${a.id}">Assign</button>
     </div>
     ${APP.customDevoteeAct===a.id?`<div style="display:flex;gap:8px;margin-bottom:10px">
       <input type="text" id="custom-devotee-input" placeholder="Type devotee name..." style="flex:1;padding:7px 11px;border:1px solid var(--line);border-radius:9px" onkeydown="if(event.key==='Enter'){document.getElementById('assign-custom-btn').click();event.preventDefault();}">
       <button class="btn sm pri" id="assign-custom-btn" data-act="assign-custom-devotee" data-a="${a.id}">Assign</button>
       <button class="btn sm" data-act="toggle-custom-devotee" data-a="${a.id}">✕</button>
     </div>`:''}
-    <div class="list" style="border:1px solid var(--line);border-radius:12px">
-      ${cands.map(x=>`<div class="li">${av(x.name)}<span class="grow"><span class="t">${esc(x.name)}</span>
+    <div class="list" style="border:1px solid var(--line);border-radius:12px;max-height:220px;overflow-y:auto">
+      ${cands.length?cands.map(x=>`<div class="li">${av(x.name)}<span class="grow"><span class="t">${esc(x.name)}</span>
         <span class="d">${esc(batch(x.batch)?.name||dept(x.dept)?.name||'Devotee')} · ${x.attendancePct}% attendance</span></span>
-        <button class="btn sm pri" data-act="assign-one" data-a="${a.id}" data-d="${x.id}">Assign</button></div>`).join('')}</div>`:''}
+        <button class="btn sm pri" data-act="assign-one" data-a="${a.id}" data-d="${x.id}">Assign</button></div>`).join('')
+      :`<div class="li tiny">All devotees in ${esc(scopeName(a))} are already assigned.</div>`}
+    </div>`:''}
     <h3 style="margin:16px 0 8px">Action items</h3>${checklistBlock(a)}
     ${a.budget&&a.budget.allocated?`<h3 style="margin:16px 0 8px">Budget</h3>${budgetBlock(a.budget)}
       ${manager?`<button class="btn sm" style="margin-top:10px" data-act="edit-budget" data-kind="activity" data-id="${a.id}">Update budget</button>`:''}`:''}
@@ -6153,6 +6179,46 @@ document.addEventListener('click',e=>{
     logAudit('Devotee assigned',`${name} → ${a?.name||''}`);
     toast(name+' assigned');
     render();
+    break}
+  case 'assign-from-sel':stop();{
+    const aId=t.dataset.a;
+    const sel=document.getElementById('scope-devotee-sel');
+    const dId=sel?sel.value:'';
+    if(!dId){toast('Please select a devotee from the dropdown','⚠️');break}
+    DB.assignments.push({id:uid('as'),activity:aId,devotee:dId,state:'Assigned',actualPerformer:null,completedAt:null});
+    const a=act(aId);if(a&&a.status==='Scheduled')a.status='Assigned';
+    DB.notifications.unshift({id:uid('n'),em:'🪔',title:'Seva assigned',body:`${nameOf(dId)} assigned to ${a?.name||''}`,date:iso(TODAY),read:false,cat:'Management'});
+    logAudit('Seva assigned',`${nameOf(dId)} → ${a?.name||''}`);
+    toast(nameOf(dId)+' assigned');
+    render();
+    break}
+  case 'toggle-edit-need':stop();{
+    const aId=t.dataset.id;
+    APP.editNeedAct=APP.editNeedAct===aId?null:aId;
+    render();
+    if(APP.editNeedAct){
+      setTimeout(()=>{const el=document.getElementById('act-need-input');if(el){el.focus();el.select()}},60);
+    }
+    break}
+  case 'act-need-step':stop();{
+    const inp=document.getElementById('act-need-input');
+    if(inp){
+      inp.value=Math.max(0, (+inp.value||0) + (+t.dataset.v));
+    }
+    break}
+  case 'save-act-need':stop();{
+    const aId=t.dataset.id;
+    const a=act(aId);
+    const inp=document.getElementById('act-need-input');
+    if(a&&inp){
+      const val=Math.max(0, parseInt(inp.value,10)||0);
+      a.need=val;
+      a.vols=val;
+      APP.editNeedAct=null;
+      logAudit('Required volunteers updated',`${a.name}: ${val}`);
+      toast('Required volunteers set to '+val);
+      render();
+    }
     break}
   case 'complete-activity':stop();{const a=act(id);a.status='Completed';
     assignsFor(a.id).forEach(x=>{if(!x.state.startsWith('Completed')){x.state='Completed';x.actualPerformer=x.devotee;x.completedAt=`${iso(TODAY)} ${nowTime()}`}});
