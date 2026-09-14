@@ -3823,7 +3823,16 @@ function assignModal(){
           <span>Required <b>${d.need}</b></span><span>Assigned <b>${d.volunteers.length}</b></span>
           ${rem?`<span style="color:var(--danger)">Remaining <b>${rem}</b></span><span class="badge b-red">⚠️ ${rem} MORE REQUIRED</span>`
              :`<span class="badge b-green">✓ FILLED</span>`}</div></div></div>
-    <div class="field"><label>Select volunteers</label>
+    <div class="field">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <label style="margin:0">Select volunteers</label>
+        <button class="btn sm" data-act="vol-toggle-custom" type="button" style="padding:3px 10px;font-size:12px">+ Custom devotee</button>
+      </div>
+      ${d.showCustom?`<div style="display:flex;gap:8px;margin-bottom:9px">
+        <input id="vol-custom-inp" placeholder="Type devotee name..." style="flex:1;padding:7px 11px;border:1px solid var(--line);border-radius:9px" onkeydown="if(event.key==='Enter'){document.getElementById('vol-custom-btn').click();event.preventDefault();}">
+        <button class="btn sm pri" id="vol-custom-btn" data-act="vol-add-custom" type="button">Add</button>
+        <button class="btn sm" data-act="vol-toggle-custom" type="button">✕</button>
+      </div>`:''}
       <div class="chips" style="margin-bottom:9px">${d.volunteers.map(v=>`<span class="vchip">${av(nameOf(v))}${esc(nameOf(v))}<button data-act="vol-remove" data-id="${v}" aria-label="Remove">×</button></span>`).join('')||'<span class="tiny">Nobody selected yet</span>'}</div>
       <div class="toolbar" style="border:1px solid var(--line);border-radius:12px 12px 0 0;border-bottom:0">
         <input type="search" placeholder="Search by name, college or skill" value="${esc(d.q)}" data-act="vol-q">
@@ -3855,7 +3864,12 @@ function activityModal(id){
   const mine=asg.find(x=>x.devotee===APP.user.devotee);
   const manager=ownsDept(a.dept)||ownsBatch(a.batch)||['coordinator','admin','area_leader'].includes(APP.user.role);
   const cands=DB.devotees.filter(x=>x.status!=='Inactive'&&!asg.some(s=>s.devotee===x.id))
-    .map(x=>({x,s:(x.dept===a.dept?50:0)+x.attendancePct/3})).sort((p,q)=>q.s-p.s).slice(0,6).map(o=>o.x);
+    .map(x=>{
+      let s = (x.attendancePct || 0) / 3;
+      if(a.batch && x.batch === a.batch) s += 60;
+      if(a.dept && x.dept === a.dept) s += 50;
+      return {x, s};
+    }).sort((p,q)=>q.s-p.s).slice(0,6).map(o=>o.x);
   return `<div class="drawer-wrap" data-act="close-scrim"><div class="drawer" data-stop="1">
    <div class="modal-h"><div><h2 style="font-size:18px">${typeEmoji(a.type)} ${esc(a.name)}</h2>
      <div class="tiny">${esc(scopeName(a))} · ${fmtD(a.date)}${a.start?` · ${a.start}–${a.end}`:''}</div></div>
@@ -3881,10 +3895,18 @@ function activityModal(id){
         <span class="d">${x.actualPerformer&&x.actualPerformer!==x.devotee?'Performed by '+esc(nameOf(x.actualPerformer)):(x.completedAt?'Completed '+esc(x.completedAt):esc(dv(x.devotee)?.service||''))}</span></span>
         ${sbadge(x.state)}${manager?`<button class="btn sm" data-act="unassign" data-id="${x.id}">Remove</button>`:''}</div>`).join('')
       :'<div class="li tiny">Nobody assigned yet.</div>'}</div>
-    ${manager&&a.type!=='Task'?`<h3 style="margin:16px 0 8px">Suggested devotees</h3>
+    ${manager&&a.type!=='Task'?`<div style="display:flex;align-items:center;justify-content:space-between;margin:16px 0 8px">
+      <h3 style="margin:0">Suggested devotees</h3>
+      <button class="btn sm" data-act="toggle-custom-devotee" data-a="${a.id}">+ Custom devotee</button>
+    </div>
+    ${APP.customDevoteeAct===a.id?`<div style="display:flex;gap:8px;margin-bottom:10px">
+      <input type="text" id="custom-devotee-input" placeholder="Type devotee name..." style="flex:1;padding:7px 11px;border:1px solid var(--line);border-radius:9px" onkeydown="if(event.key==='Enter'){document.getElementById('assign-custom-btn').click();event.preventDefault();}">
+      <button class="btn sm pri" id="assign-custom-btn" data-act="assign-custom-devotee" data-a="${a.id}">Assign</button>
+      <button class="btn sm" data-act="toggle-custom-devotee" data-a="${a.id}">✕</button>
+    </div>`:''}
     <div class="list" style="border:1px solid var(--line);border-radius:12px">
       ${cands.map(x=>`<div class="li">${av(x.name)}<span class="grow"><span class="t">${esc(x.name)}</span>
-        <span class="d">${esc(dept(x.dept)?.name||'No department')} · ${x.attendancePct}% attendance</span></span>
+        <span class="d">${esc(batch(x.batch)?.name||dept(x.dept)?.name||'Devotee')} · ${x.attendancePct}% attendance</span></span>
         <button class="btn sm pri" data-act="assign-one" data-a="${a.id}" data-d="${x.id}">Assign</button></div>`).join('')}</div>`:''}
     <h3 style="margin:16px 0 8px">Action items</h3>${checklistBlock(a)}
     ${a.budget&&a.budget.allocated?`<h3 style="margin:16px 0 8px">Budget</h3>${budgetBlock(a.budget)}
@@ -6030,6 +6052,15 @@ document.addEventListener('click',e=>{
   case 'vol-toggle':{syncAssign();const d=assignDraft();
     d.volunteers=d.volunteers.includes(id)?d.volunteers.filter(x=>x!==id):[...d.volunteers,id];render();break}
   case 'vol-remove':{syncAssign();const d=assignDraft();d.volunteers=d.volunteers.filter(x=>x!==id);render();break}
+  case 'vol-toggle-custom':{syncAssign();const d=assignDraft();d.showCustom=!d.showCustom;render();
+    if(d.showCustom)setTimeout(()=>{const el=document.getElementById('vol-custom-inp');if(el)el.focus()},60);break}
+  case 'vol-add-custom':{syncAssign();const d=assignDraft();
+    const el=document.getElementById('vol-custom-inp');const name=el?el.value.trim():'';
+    if(!name){toast('Please enter a name','⚠️');break}
+    const match=DB.devotees.find(x=>x.name.toLowerCase()===name.toLowerCase());
+    const val=match?match.id:name;
+    if(!d.volunteers.includes(val))d.volunteers.push(val);
+    d.showCustom=false;render();break}
   case 'draft-item-add':{syncAssign();const d=assignDraft();
     const el=document.querySelector('[name=newItem]');if(el&&el.value.trim()){d.items.push(el.value.trim());render();refocus('[name=newItem]')}break}
   case 'draft-item-del':{syncAssign();const d=assignDraft();d.items.splice(+t.dataset.i,1);render();break}
@@ -6101,6 +6132,28 @@ document.addEventListener('click',e=>{
     const a=act(aId);if(a.status==='Scheduled')a.status='Assigned';
     DB.notifications.unshift({id:uid('n'),em:'🪔',title:'Seva assigned',body:`${nameOf(dId)} assigned to ${a.name}`,date:iso(TODAY),read:false,cat:'Management'});
     logAudit('Seva assigned',`${nameOf(dId)} → ${a.name}`);toast(nameOf(dId)+' assigned');render();break}
+  case 'toggle-custom-devotee':stop();{
+    const aId=t.dataset.a;
+    APP.customDevoteeAct=APP.customDevoteeAct===aId?null:aId;
+    render();
+    if(APP.customDevoteeAct){
+      setTimeout(()=>{const el=document.getElementById('custom-devotee-input');if(el)el.focus()},60);
+    }
+    break}
+  case 'assign-custom-devotee':stop();{
+    const aId=t.dataset.a;
+    const inp=document.getElementById('custom-devotee-input');
+    const name=inp?inp.value.trim():'';
+    if(!name){toast('Please enter a devotee name','⚠️');break}
+    const match=DB.devotees.find(d=>d.name.toLowerCase()===name.toLowerCase());
+    const dId=match?match.id:name;
+    DB.assignments.push({id:uid('as'),activity:aId,devotee:dId,state:'Assigned',actualPerformer:null,completedAt:null});
+    const a=act(aId);if(a&&a.status==='Scheduled')a.status='Assigned';
+    APP.customDevoteeAct=null;
+    logAudit('Devotee assigned',`${name} → ${a?.name||''}`);
+    toast(name+' assigned');
+    render();
+    break}
   case 'complete-activity':stop();{const a=act(id);a.status='Completed';
     assignsFor(a.id).forEach(x=>{if(!x.state.startsWith('Completed')){x.state='Completed';x.actualPerformer=x.devotee;x.completedAt=`${iso(TODAY)} ${nowTime()}`}});
     logAudit('Activity completed',a.name);toast('Marked completed','✅');render();break}
