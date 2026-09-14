@@ -40,8 +40,9 @@
   --f-ui:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
 }
 *{box-sizing:border-box}
-html,body{margin:0;padding:0}
-body{background:var(--paper);color:var(--ink);font-family:var(--f-ui);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+html,body{margin:0;padding:0;overflow-x:hidden;max-width:100vw;width:100%}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-ui);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;overflow-x:hidden;max-width:100%}
+.shell,.main,.view{max-width:100%;width:100%;overflow-x:hidden}
 h1,h2,h3,h4{font-family:var(--f-head);font-weight:600;letter-spacing:-.01em;margin:0}
 h1{font-size:26px;line-height:1.2}
 h2{font-size:19px}
@@ -602,17 +603,84 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13.5px}
   .topbar .mobile-search-btn{display:inline-flex!important}
   .topbar .logout-btn-topbar{display:none!important}
   .topbar .icon-btn{width:35px;height:35px}
+
+  /* Toolbars wrap cleanly in single view without horizontal scroll */
   .toolbar{
-    flex-wrap:nowrap;
-    overflow-x:auto;
-    -webkit-overflow-scrolling:touch;
-    scrollbar-width:none;
+    flex-wrap:wrap!important;
+    overflow-x:hidden!important;
     padding:10px 12px;
-    gap:6px;
+    gap:8px;
+    width:100%!important;
+    max-width:100%!important;
   }
-  .toolbar::-webkit-scrollbar{display:none}
-  .toolbar input[type=search],.toolbar input[type=text],.toolbar input[type=date]{min-width:140px;flex:none}
-  .toolbar select{min-width:130px;flex:none}
+  .toolbar > *{max-width:100%}
+  .toolbar input[type=search],.toolbar input[type=text],.toolbar input[type=date]{
+    width:100%;
+    min-width:0;
+    max-width:100%;
+    flex:1 1 100%;
+  }
+  .toolbar select{
+    width:100%;
+    min-width:0;
+    max-width:100%;
+    flex:1 1 100%;
+  }
+
+  /* Calendar header on mobile: 2 neat rows, fits 100% without horizontal scroll */
+  .cal-toolbar{
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:stretch!important;
+    gap:10px!important;
+  }
+  .cal-nav-group{
+    width:100%!important;
+    display:flex!important;
+    justify-content:space-between!important;
+    align-items:center!important;
+  }
+  .cal-cat-select{
+    width:100%!important;
+    max-width:100%!important;
+    margin:0!important;
+    padding:8px 12px!important;
+  }
+
+  /* Devotee directory filter grid on mobile */
+  .dev-col-filters{
+    display:grid!important;
+    grid-template-columns:1fr 1fr!important;
+    gap:8px!important;
+    width:100%!important;
+    overflow-x:hidden!important;
+    flex-wrap:wrap!important;
+  }
+  .dev-col-filters > span{
+    grid-column:1 / -1;
+  }
+  .dev-col-filters select{
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+  }
+
+  /* Table cards and footers on mobile */
+  .tbl-foot{
+    flex-direction:column!important;
+    align-items:stretch!important;
+    gap:10px!important;
+  }
+  .tbl-foot .pg{
+    width:100%!important;
+    align-items:center!important;
+    justify-content:space-between!important;
+    flex-direction:row!important;
+  }
+  .cal{
+    width:100%!important;
+    max-width:100%!important;
+  }
 }
 
 @media(max-width:620px){
@@ -2691,8 +2759,8 @@ function viewDevotees(){
         ${can('directory')?`<button class="btn sm" data-act="export-devotees" style="margin-left:auto">${ic('download')}Export CSV</button>`:''}
       </div>
 
-      <!-- Column Filters Row (Single line, scrollable if needed) -->
-      <div style="display:flex;gap:8px;align-items:center;background:var(--surface-2);padding:9px 12px;border-radius:10px;border:1px solid var(--line-2);overflow-x:auto;flex-wrap:nowrap;scrollbar-width:thin">
+      <!-- Column Filters Row (Responsive wrap, no horizontal scroll) -->
+      <div class="dev-col-filters" style="display:flex;gap:8px;align-items:center;background:var(--surface-2);padding:9px 12px;border-radius:10px;border:1px solid var(--line-2);flex-wrap:wrap">
         <span class="tiny" style="font-weight:700;color:var(--ink);margin-right:2px;display:flex;align-items:center;gap:4px;flex-shrink:0;white-space:nowrap">
           ${ic('filter')} Filter by:
         </span>
@@ -4148,12 +4216,18 @@ function viewCalendar(){
   const upcoming=DB.activities.filter(a=>a.date>=iso(TODAY)).sort((a,b)=>a.date<b.date?-1:1).slice(0,8);
   return head('📅 Community','Community calendar','Seva, classes, events, festivals and camps in one place',
     `<button class="btn pri" data-act="open-assign">${ic('plus')}Add to calendar</button>`)+
-  `<div class="card" style="margin-bottom:15px"><div class="toolbar">
-     <button class="btn sm" data-act="cal-nav" data-v="-1">${ic('back')}</button>
-     <b style="font-family:var(--f-head);font-size:16px;min-width:150px;text-align:center">${MONTHS[m]} ${y}</b>
-     <button class="btn sm" data-act="cal-nav" data-v="1">${ic('chev')}</button>
-     <button class="btn sm" data-act="cal-nav" data-v="0">Today</button>
-     <select data-act="cal-cat" style="margin-left:auto"><option value="">All categories</option>${cats.map(c=>`<option ${cat===c?'selected':''}>${c}</option>`).join('')}</select></div>
+  `<div class="card" style="margin-bottom:15px">
+    <div class="toolbar cal-toolbar">
+      <div class="cal-nav-group">
+        <div style="display:flex;align-items:center;gap:6px">
+          <button class="btn sm" data-act="cal-nav" data-v="-1" title="Previous month" aria-label="Previous month" style="padding:5px 8px">${ic('back')}</button>
+          <b style="font-family:var(--f-head);font-size:15.5px;text-align:center;white-space:nowrap">${MONTHS[m]} ${y}</b>
+          <button class="btn sm" data-act="cal-nav" data-v="1" title="Next month" aria-label="Next month" style="padding:5px 8px">${ic('chev')}</button>
+        </div>
+        <button class="btn sm" data-act="cal-nav" data-v="0" style="padding:5px 10px">Today</button>
+      </div>
+      <select class="cal-cat-select" data-act="cal-cat" style="min-width:130px"><option value="">All categories</option>${cats.map(c=>`<option ${cat===c?'selected':''}>${c}</option>`).join('')}</select>
+    </div>
    <div class="card-b flush"><div class="cal">
      ${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d=>`<div class="hd">${d}</div>`).join('')}${cells.join('')}</div></div>
    <div class="card-b"><div class="legend">${cats.map(c=>`<span><i style="background:${colors[c]}"></i>${c}</span>`).join('')}</div></div></div>
