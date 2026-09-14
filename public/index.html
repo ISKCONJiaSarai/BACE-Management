@@ -276,7 +276,8 @@ input,select,textarea{font-family:inherit;font-size:14px;color:var(--ink)}
 .hero .art{position:absolute;right:-25px;top:-30px;width:270px;height:270px;object-fit:contain;opacity:.15;pointer-events:none;filter:drop-shadow(0 4px 16px rgba(0,0,0,0.25))}
 @media(max-width:720px){.hero .art{width:190px;height:190px;right:-20px;top:-20px;opacity:.12}}
 .hero .hstats{display:flex;gap:12px;flex-wrap:wrap;margin-top:20px;position:relative;z-index:2}
-.hero .hstat{background:rgba(255,255,255,.14);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.24);border-radius:14px;padding:10px 16px;min-width:110px}
+.hero .hstat{background:rgba(255,255,255,.14);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.24);border-radius:14px;padding:10px 16px;min-width:110px;cursor:pointer;transition:transform .14s,background .14s,box-shadow .14s}
+.hero .hstat:hover{transform:translateY(-2px);background:rgba(255,255,255,.24);box-shadow:0 4px 12px rgba(0,0,0,0.15)}
 .hero .hstat b{display:block;font-family:var(--f-head);font-size:24px;color:#FFF;line-height:1.2}
 .hero .hstat span{font-size:11.5px;color:#FEF08A;font-weight:500}
 @media(max-width:720px){.hero{padding:20px}.hero h1{font-size:23px}}
@@ -2414,8 +2415,18 @@ function head(eyebrow,title,sub,actions=''){
 function section(title,body,right=''){
   return `<div class="card"><div class="card-h"><h3>${esc(title)}</h3><div class="r">${right}</div></div>${body}</div>`;
 }
-const stat=(lbl,val,foot='',o={})=>`<div class="stat ${o.tint?'tint':''} ${o.act?'click':''}" ${o.act?`data-act="${o.act}"${o.arg!==undefined?` data-arg="${esc(o.arg)}"`:''}${o.r?` data-r="${o.r}"`:''}`:''}>
+const stat=(lbl,val,foot='',o={})=>{
+  const act = o.act || (o.r ? 'go' : '');
+  const attrs = [];
+  if (act) attrs.push(`data-act="${act}"`);
+  if (o.arg !== undefined) attrs.push(`data-arg="${esc(o.arg)}"`);
+  if (o.r) attrs.push(`data-r="${o.r}"`);
+  if (o.k) attrs.push(`data-k="${esc(o.k)}"`);
+  if (o.n) attrs.push(`data-n="${esc(o.n)}"`);
+  if (o.v !== undefined) attrs.push(`data-v="${esc(o.v)}"`);
+  return `<div class="stat ${o.tint?'tint':''} ${act?'click':''}" ${attrs.join(' ')}>
   <div class="lbl">${o.em?`<span>${o.em}</span>`:''}${esc(lbl)}</div><div class="val">${val}</div>${foot?`<div class="foot">${foot}</div>`:''}</div>`;
+};
 
 /* ---------- interactive charts (hover tooltips + click drill-down) ---------- */
 const tipAttr=t=>`data-tip="${esc(t)}"`;
@@ -3347,16 +3358,18 @@ const HERO_ART=`<img src="/logo.png?v=2" class="art" alt="ISKCON Logo">`;
 function hero(){
   const s=STATS(),me=dv(APP.user.devotee);
   const mine=myToday();
+  const displayName = me ? me.name.split(' ')[0] : (APP.user && APP.user.name ? APP.user.name.split(' ')[0] : 'Devotee');
   return `<div class="hero">${HERO_ART}
-   <h1>Hare Krishna, ${esc(me.name.split(' ')[0])} 🙏</h1>
+   <h1>Hare Krishna, ${esc(displayName)} 🙏</h1>
+
    <p>${esc(ROLES[APP.user.role].name)} · ${fmtLong(iso(TODAY))}</p>
    <div class="quote">“Serving together. Growing together. Caring together.”</div>
    <div class="hstats">
-    <div class="hstat"><b>${mine.acts.length}</b><span>My seva today</span></div>
-    <div class="hstat"><b>${DB.activities.filter(a=>a.date===iso(TODAY)&&a.type==='Class').length}</b><span>Classes today</span></div>
-    <div class="hstat"><b>${s.fuToday+s.careToday}</b><span>Follow-ups due</span></div>
-    <div class="hstat"><b>${DB.activities.filter(a=>a.date===iso(TODAY)&&a.type==='Event').length}</b><span>Events today</span></div>
-    <div class="hstat"><b>${s.svcAtt}%</b><span>Seva attendance</span></div>
+    <div class="hstat" data-act="go" data-r="#/today"><b>${mine.acts.length}</b><span>My seva today</span></div>
+    <div class="hstat" data-act="go" data-r="#/classes"><b>${DB.activities.filter(a=>a.date===iso(TODAY)&&a.type==='Class').length}</b><span>Classes today</span></div>
+    <div class="hstat" data-act="go" data-r="#/followups"><b>${s.fuToday+s.careToday}</b><span>Follow-ups due</span></div>
+    <div class="hstat" data-act="go" data-r="#/calendar"><b>${DB.activities.filter(a=>a.date===iso(TODAY)&&a.type==='Event').length}</b><span>Events today</span></div>
+    <div class="hstat" data-act="go" data-r="#/attendance"><b>${s.svcAtt}%</b><span>Seva attendance</span></div>
    </div></div>`;
 }
 function myToday(){
@@ -3464,9 +3477,9 @@ function viewDashboard(){
     `<span class="demo-flag">Sample data</span><button class="btn" data-act="go" data-r="#/today">⚡ Today</button><button class="btn pri" data-act="go" data-r="#/reports">📊 Reports</button>`);
   const common=`<div class="grid g5" style="margin-bottom:15px">
     ${stat('Total devotees',s.total,`${s.active} active · ${s.inactive} inactive`,{em:'👥',act:'go',r:'#/devotees'})}
-    ${stat('New this month',s.neu,'joined in the last 30 days',{em:'🌱'})}
-    ${stat('Active volunteers',s.volunteers,`across ${s.depts} departments`,{em:'🛠'})}
-    ${stat('Seva attendance',s.svcAtt+'%','last 30 days',{em:'✅'})}
+    ${stat('New this month',s.neu,'joined in the last 30 days',{em:'🌱',r:'#/devotees'})}
+    ${stat('Active volunteers',s.volunteers,`across ${s.depts} departments`,{em:'🛠',r:'#/assign'})}
+    ${stat('Seva attendance',s.svcAtt+'%','last 30 days',{em:'✅',r:'#/attendance'})}
     ${stat('Preaching contacts',s.contacts,`${s.newContacts} new this month`,{em:'📖',tint:1,act:'go',r:'#/contacts'})}</div>`;
 
   if(r==='area_leader')return hd+common+`<div class="grid g-2-1" style="margin-bottom:15px">
@@ -3495,10 +3508,10 @@ function viewDashboard(){
     const tot=activeDepts().reduce((a,d)=>{const m=deptMetrics(d.id);a.done+=m.done;a.missed+=m.missed;a.pend+=m.pending;return a},{done:0,missed:0,pend:0});
     return hd+`<div class="grid g6" style="margin-bottom:15px">
      ${stat('Departments',s.depts,'all with a named head',{em:'🏛',act:'go',r:'#/depts'})}
-     ${stat('Active volunteers',s.volunteers,'engaged in seva',{em:'🛠'})}
+     ${stat('Active volunteers',s.volunteers,'engaged in seva',{em:'🛠',r:'#/assign'})}
      ${stat('Scheduled',s.scheduled,'activities ahead',{em:'📋',act:'go',r:'#/assign'})}
-     ${stat('Completed',tot.done,`${tot.missed} missed`,{em:'✅'})}
-     ${stat('Completion',pct(tot.done,tot.done+tot.missed)+'%','this period',{em:'📈'})}
+     ${stat('Completed',tot.done,`${tot.missed} missed`,{em:'✅',r:'#/dept-reports'})}
+     ${stat('Completion',pct(tot.done,tot.done+tot.missed)+'%','this period',{em:'📈',r:'#/reports'})}
      ${stat('Unfilled',s.unfilled,'need volunteers',{em:'⚠️',tint:s.unfilled>0,act:'go',r:'#/assign'})}</div>
      <div class="grid g-2-1" style="margin-bottom:15px">
       ${section('Department performance',`<div class="card-b">${barChart(activeDepts().slice(0,10).map(d=>{const m=deptMetrics(d.id);
@@ -3512,7 +3525,7 @@ function viewDashboard(){
      ${stat('New contacts',s.newContacts,'last 30 days',{em:'🌱',act:'go',r:'#/contacts'})}
      ${stat('Due today',s.fuToday,'follow-ups',{em:'⏰',act:'go',r:'#/followups'})}
      ${stat('Overdue',s.fuOverdue,'need attention now',{em:'⚠️',tint:1,act:'go',r:'#/followups'})}
-     ${stat('Regular participants',s.regulars,'attending consistently',{em:'📖'})}
+     ${stat('Regular participants',s.regulars,'attending consistently',{em:'📖',r:'#/classes'})}
      ${stat('In batches',s.lvl.reduce((a,b)=>a+b,0),`${s.lvl.join(' / ')} at L1/L2/L3`,{em:'🎓',act:'go',r:'#/batches'})}</div>
      <div class="grid g-2-1" style="margin-bottom:15px">
       ${section('Preaching funnel',`<div class="card-b">${funnelRows()}<div class="tiny" style="margin-top:10px">Click any stage to open that list</div></div>`,`<a class="btn sm" href="#/preaching-reports">Analytics</a>`)}
@@ -3522,11 +3535,11 @@ function viewDashboard(){
      ${section('Batches',`<div class="tbl-wrap">${batchTable()}</div>`,`<a class="btn sm" href="#/batches">Batch management</a>`)}`;
 
   if(r==='care_manager')return hd+`<div class="grid g5" style="margin-bottom:15px">
-     ${stat('Devotees covered',s.covered,`of ${s.total} in the community`,{em:'❤️'})}
+     ${stat('Devotees covered',s.covered,`of ${s.total} in the community`,{em:'❤️',r:'#/facilitators'})}
      ${stat('Facilitators',s.facilitators,'active',{em:'🤝',act:'go',r:'#/facilitators'})}
      ${stat('Care groups',s.groups,'meeting weekly',{em:'👥',act:'go',r:'#/groups'})}
      ${stat('Follow-ups this week',s.careWeek,'scheduled',{em:'⏰',act:'go',r:'#/care-followups'})}
-     ${stat('Needs attention',s.attention,'flagged by facilitators',{em:'⚠️',tint:1})}</div>
+     ${stat('Needs attention',s.attention,'flagged by facilitators',{em:'⚠️',tint:1,r:'#/care-followups'})}</div>
      <div class="grid g-2-1" style="margin-bottom:15px">
       ${section('Care group attendance',`<div class="card-b">${barChart(DB.careGroups.filter(g=>g.status==='Active').map(g=>({l:g.name.split('·')[1].trim(),v:g.attendance,
         tip:`${g.name}\nMembers: ${g.members.length}\nAttendance: ${g.attendance}%\nNext meeting: ${fmtD(g.next)}`,r:'#/group/'+g.id})),{horizontal:true,color:'var(--green)',unit:'%'})}</div>`,`<a class="btn sm" href="#/groups">Groups</a>`)}
@@ -3543,9 +3556,9 @@ function viewDashboard(){
   if(r==='facilitator'){
     const mine=DB.devotees.filter(d=>d.facilitator===APP.user.devotee);
     return hd+`<div class="grid g4" style="margin-bottom:15px">
-      ${stat('My devotees',mine.length,'assigned to me',{em:'🤝'})}
-      ${stat('Doing well',mine.filter(d=>d.careStatus.emotional==='Doing well').length,'steady sadhana and seva',{em:'🌸'})}
-      ${stat('Needs attention',mine.filter(d=>d.careStatus.emotional==='Needs attention').length,'check in this week',{em:'⚠️',tint:1})}
+      ${stat('My devotees',mine.length,'assigned to me',{em:'🤝',r:'#/friends'})}
+      ${stat('Doing well',mine.filter(d=>d.careStatus.emotional==='Doing well').length,'steady sadhana and seva',{em:'🌸',r:'#/care'})}
+      ${stat('Needs attention',mine.filter(d=>d.careStatus.emotional==='Needs attention').length,'check in this week',{em:'⚠️',tint:1,r:'#/care-followups'})}
       ${stat('Follow-up required',mine.filter(d=>d.careStatus.emotional==='Follow-up required').length,'overdue conversations',{em:'⏰',act:'go',r:'#/care-followups'})}</div>
       ${section('❤️ My devotees',mine.length?`<div class="list">${mine.map(d=>`<a class="li click" href="#/devotee/${d.id}">${av(d.name,'m')}
         <span class="grow"><span class="t">${esc(d.name)}</span><span class="d">${esc(d.org)} · ${d.sadhana.rounds} rounds · last interaction ${relD(iso(dayOff(-ri(1,14))))}</span></span>
@@ -3558,9 +3571,9 @@ function viewDashboard(){
     const mine=DB.assignments.filter(a=>a.devotee===me.id).map(a=>({a,x:act(a.activity)})).filter(o=>o.x);
     const up=mine.filter(o=>o.x.date>=iso(TODAY)).sort((a,b)=>a.x.date<b.x.date?-1:1);
     return hd+`<div class="grid g4" style="margin-bottom:15px">
-      ${stat('My attendance',attFor(me.id)+'%','across all categories',{em:'✅'})}
-      ${stat('My upcoming seva',up.length,'assignments ahead',{em:'🪔'})}
-      ${stat('My rounds',me.sadhana.rounds,'daily commitment',{em:'📿'})}
+      ${stat('My attendance',attFor(me.id)+'%','across all categories',{em:'✅',r:'#/attendance'})}
+      ${stat('My upcoming seva',up.length,'assignments ahead',{em:'🪔',r:'#/today'})}
+      ${stat('My rounds',me.sadhana.rounds,'daily commitment',{em:'📿',r:'#/sadhana'})}
       ${stat('My action items',DB.tasks.filter(t=>t.responsible===me.id&&t.status!=='Completed').length,'open',{em:'🎯',act:'go',r:'#/actions'})}</div>
       <div class="grid g-2-1">
        ${section('🙏 My upcoming seva',up.length?`<div class="list">${up.slice(0,7).map(({a,x})=>`
@@ -3574,9 +3587,9 @@ function viewDashboard(){
   }
   return hd+`<div class="grid g4" style="margin-bottom:15px">
     ${stat('User accounts',DB.users.length,'across community',{em:'👤',...(can('admin')?{act:'go',r:'#/admin'}:{})})}
-    ${stat('Devotee records',s.total,'single source of truth',{em:'👥'})}
-    ${stat('Audit entries',DB.audit.length,'recent activity',{em:'🛡'})}
-    ${stat('Restricted records',DB.meetings.length,'care notes under permission',{em:'🔒'})}</div>
+    ${stat('Devotee records',s.total,'single source of truth',{em:'👥',r:'#/devotees'})}
+    ${stat('Audit entries',DB.audit.length,'recent activity',{em:'🛡',r:'#/admin'})}
+    ${stat('Restricted records',DB.meetings.length,'care notes under permission',{em:'🔒',r:'#/meetings'})}</div>
     ${section('Recent activity',`<div class="list">${DB.audit.slice(0,8).map(a=>`<div class="li">${av(a.user)}
       <span class="grow"><span class="t">${esc(a.action)}</span><span class="d">${esc(a.record)}</span></span><span class="tiny">${esc(a.at)}</span></div>`).join('')}</div>`,
       can('admin') ? `<a class="btn sm" href="#/admin">Administration</a>` : '')}`;
@@ -3862,10 +3875,10 @@ function viewDevotee(id){
      :emptyState('No seva yet','This devotee has not been allocated any seva. Assign one from the Assign / Schedule page.','<a class="btn pri" href="#/assign">Assign seva</a>')),
    Attendance:(()=>{const rec=DB.attendance.filter(a=>a.devotee===d.id);const cats=[...new Set(rec.map(a=>a.category))];
      return `<div class="grid g4" style="margin-bottom:15px">
-       ${stat('Overall',attFor(d.id)+'%','present vs recorded',{em:'✅'})}
-       ${stat('Records',rec.length,'attendance entries')}
-       ${stat('Absences',rec.filter(a=>a.status==='Absent').length,'marked absent')}
-       ${stat('Late',rec.filter(a=>a.status==='Late').length,'arrived late')}</div>`+
+       ${stat('Overall',attFor(d.id)+'%','present vs recorded',{em:'✅',r:'#/attendance'})}
+       ${stat('Records',rec.length,'attendance entries',{em:'📋',r:'#/attendance'})}
+       ${stat('Absences',rec.filter(a=>a.status==='Absent').length,'marked absent',{em:'⚠️',r:'#/attendance'})}
+       ${stat('Late',rec.filter(a=>a.status==='Late').length,'arrived late',{em:'⏱',r:'#/attendance'})}</div>`+
        section('By category',`<div class="card-b">${cats.length?barChart(cats.map(c=>({l:c,v:attFor(d.id,c),
          tip:`${c}\nPresent: ${rec.filter(a=>a.category===c&&a.status==='Present').length} of ${rec.filter(a=>a.category===c).length}`})),{horizontal:true,unit:'%'}):'<p class="tiny">No records yet.</p>'}</div>`)+
        `<div style="height:15px"></div>`+
@@ -3885,8 +3898,8 @@ function viewDevotee(id){
         ||emptyState('No meetings recorded','Record a personal meeting to start the care history.','<button class="btn pri" data-act="add-meeting" data-id="'+d.id+'">Record meeting</button>')}</div>`)}</div>`
      :denied("Care notes are visible only to the Devotee Care Manager, the Overall Coordinator, the Area Leader and this devotee's own facilitator."),
    Sadhana:section('Sadhana',`<div class="card-b"><div class="grid g3" style="margin-bottom:15px">
-      ${stat('Daily rounds',d.sadhana.rounds,'committed',{em:'📿'})}${stat('Morning programme',d.sadhana.morningProgram+'%','attendance this month',{em:'🌅'})}
-      ${stat('Last reported',relD(d.sadhana.lastReported),'sadhana card')}</div>
+      ${stat('Daily rounds',d.sadhana.rounds,'committed',{em:'📿',r:'#/sadhana'})}${stat('Morning programme',d.sadhana.morningProgram+'%','attendance this month',{em:'🌅',r:'#/sadhana'})}
+      ${stat('Last reported',relD(d.sadhana.lastReported),'sadhana card',{em:'📅',r:'#/sadhana'})}</div>
       <div class="note">Reported through the Sadhana Reporting department. These are the devotee's own submitted numbers, not an assessment.</div>
       <div style="height:14px"></div>${barChart([16,14,16,12,16,15].map((v,i)=>({l:'Week '+(i+1),v,tip:`Week ${i+1}\nRounds: ${v}\nTarget: ${d.sadhana.rounds}`})),{color:'var(--green)'})}</div>`),
    Timeline:section('Devotee journey',`<div class="card-b"><div class="tl">${d.timeline.map(t=>`
@@ -3967,9 +3980,9 @@ function viewMgmt(){
     `<button class="btn" data-act="go" data-r="#/depts">🏛 Departments</button><button class="btn pri" data-act="open-assign" data-type="Seva">📋 Assign seva</button>`)+
   `<div class="grid g6" style="margin-bottom:15px">
     ${stat('Departments',s.depts,'active',{em:'🏛',act:'go',r:'#/depts'})}
-    ${stat('Active volunteers',s.volunteers,'engaged in seva',{em:'🛠'})}
+    ${stat('Active volunteers',s.volunteers,'engaged in seva',{em:'🛠',r:'#/assign'})}
     ${stat('Scheduled',s.scheduled,'activities ahead',{em:'📋',act:'go',r:'#/assign'})}
-    ${stat('Completed',tot.done,`${tot.missed} missed`,{em:'✅'})}
+    ${stat('Completed',tot.done,`${tot.missed} missed`,{em:'✅',r:'#/dept-reports'})}
     ${stat('Completion',pct(tot.done,tot.done+tot.missed)+'%','this period',{em:'📈',act:'go',r:'#/reports'})}
     ${stat('Unfilled',s.unfilled,'need volunteers',{em:'⚠️',tint:s.unfilled>0,act:'go',r:'#/assign'})}</div>
    <div class="grid g-2-1" style="margin-bottom:15px">
@@ -4033,12 +4046,12 @@ function deptDashboardBody(dp){
   const trend=monthsBack(6).map((x,i)=>({label:x.label,v:Math.max(35,Math.min(100,m.completion-ri(0,18)+i*3)),
     tip:`${x.label} ${x.y}\nCompletion: ${Math.max(35,Math.min(100,m.completion-ri(0,18)+i*3))}%\nDepartment: ${dp.name}`}));
   return `<div class="grid g6" style="margin-bottom:15px">
-    ${stat('Volunteers',m.volunteers,`${DB.devotees.filter(d=>d.dept===dp.id&&d.status==='Active').length} active`,{em:'🛠'})}
+    ${stat('Volunteers',m.volunteers,`${DB.devotees.filter(d=>d.dept===dp.id&&d.status==='Active').length} active`,{em:'🛠',r:'#/assign'})}
     ${stat('Completion',m.completion+'%','completed vs missed',{em:'📈',act:'drill-dept',arg:dp.id})}
-    ${stat('Attendance',m.attendance+'%',`${m.attRecords} records`,{em:'✅'})}
-    ${stat('Today',today.length,'activities scheduled',{em:'📅'})}
-    ${stat('Pending actions',actions.length,actions.filter(a=>a.due<iso(TODAY)).length+' overdue',{em:'🎯',tint:actions.length>3})}
-    ${stat('Budget used',m.util+'%',money(dp.budget.spent)+' of '+money(dp.budget.allocated),{em:'🧾'})}</div>
+    ${stat('Attendance',m.attendance+'%',`${m.attRecords} records`,{em:'✅',r:'#/attendance'})}
+    ${stat('Today',today.length,'activities scheduled',{em:'📅',r:'#/today'})}
+    ${stat('Pending actions',actions.length,actions.filter(a=>a.due<iso(TODAY)).length+' overdue',{em:'🎯',tint:actions.length>3,r:'#/actions'})}
+    ${stat('Budget used',m.util+'%',money(dp.budget.spent)+' of '+money(dp.budget.allocated),{em:'🧾',r:'#/dept-reports'})}</div>
    <div class="grid g-2-1" style="margin-bottom:15px">
     ${section("📅 Today's activities",today.length?`<div class="tbl-wrap">${actTable(today)}</div>`
       :emptyState('Nothing scheduled today','No activities on the roster for today in this department.',ownsDept(dp.id)?`<button class="btn pri" data-act="open-assign" data-type="Seva" data-dept="${dp.id}">Assign seva</button>`:''),
@@ -4173,10 +4186,10 @@ function viewAssign(){
     'Assign devotees, coordinate department duties, track roster requirements and generate recurring templates',
     `<button class="btn" data-act="go" data-r="#/actions">🎯 Action items</button><button class="btn pri" data-act="open-assign" data-type="Seva">${ic('plus')}Assign seva</button>`)+
   `<div class="grid g4" style="margin-bottom:15px">
-    ${stat('In this range',rows.length,`${fmtD(f.from)} → ${fmtD(f.to)}`,{em:'📋'})}
-    ${stat('Short of volunteers',unf.length,'need allocation now',{em:'⚠️',tint:unf.length>0})}
-    ${stat('Recurring templates',DB.templates.length,'generating automatically',{em:'🔁'})}
-    ${stat('Declined',DB.assignments.filter(a=>a.state==='Declined').length,'need reassignment',{em:'↩️'})}</div>
+    ${stat('In this range',rows.length,`${fmtD(f.from)} → ${fmtD(f.to)}`,{em:'📋',r:'#/assign'})}
+    ${stat('Short of volunteers',unf.length,'need allocation now',{em:'⚠️',tint:unf.length>0,r:'#/assign'})}
+    ${stat('Recurring templates',DB.templates.length,'generating automatically',{em:'🔁',r:'#/sops'})}
+    ${stat('Declined',DB.assignments.filter(a=>a.state==='Declined').length,'need reassignment',{em:'↩️',r:'#/actions'})}</div>
    ${unf.length?section('⚠️ Waiting for volunteers',`<div class="tbl-wrap">${actTable(unf)}</div>`,`<span class="tiny">Open any activity to pick volunteers</span>`)+'<div style="height:15px"></div>':''}
    ${dataTable({id:'assign',exportName:'activities',cols:[
      {h:'Activity',c:a=>`<b>${typeEmoji(a.type)} ${esc(a.name)}</b><div class="tiny">${esc(a.type)}${a.recurrence!=='One time'?' · '+a.recurrence:''}</div>`},
@@ -4419,9 +4432,9 @@ function qrPanel(){
     </div>
     <div class="card-b">
       <div class="grid g3" style="margin-bottom:13px">
-        ${stat('Checked in today',s.checkins.length,'unique devotees',{em:'✅'})}
-        ${stat('Window',s.window,'server-validated',{em:'⏱'})}
-        ${stat('Duplicates blocked',ri(2,7),'same-device repeats',{em:'🛡'})}</div>
+        ${stat('Checked in today',s.checkins.length,'unique devotees',{em:'✅',r:'#/attendance'})}
+        ${stat('Window',s.window,'server-validated',{em:'⏱',r:'#/attendance'})}
+        ${stat('Duplicates blocked',ri(2,7),'same-device repeats',{em:'🛡',r:'#/attendance'})}</div>
       <div class="note">Each scan is validated server-side for freshness and against duplicates. Only an administrator can correct a record, and every correction is written to the audit log.</div>
       <h3 style="margin:14px 0 8px">Recent check-ins</h3>
       <div class="list" style="border:1px solid var(--line);border-radius:12px;max-height:190px;overflow:auto">
@@ -4566,10 +4579,10 @@ function viewInventory(){
   return head('📦 BACE Management','Inventory & BBT books','Request → approve → issue → return, with overdue tracking',
     `<button class="btn pri" data-act="add-inv-request">${ic('plus')}New request</button>`)+
   `<div class="grid g4" style="margin-bottom:15px">
-    ${stat('Awaiting approval',s.invPending,'requests',{em:'⏳',tint:s.invPending>0})}
-    ${stat('Currently issued',DB.invRequests.filter(r=>r.status==='Issued').length,'items out',{em:'📤'})}
-    ${stat('Overdue',s.invOverdue,'past return date',{em:'⚠️'})}
-    ${stat('Catalogue',DB.inventory.length,`${DB.inventory.filter(i=>i.type==='Book').length} book titles`,{em:'📚'})}</div>
+    ${stat('Awaiting approval',s.invPending,'requests',{em:'⏳',tint:s.invPending>0,act:'tab',k:'inv',v:'Requests'})}
+    ${stat('Currently issued',DB.invRequests.filter(r=>r.status==='Issued').length,'items out',{em:'📤',act:'tab',k:'inv',v:'Requests'})}
+    ${stat('Overdue',s.invOverdue,'past return date',{em:'⚠️',tint:s.invOverdue>0,act:'tab',k:'inv',v:'Overdue'})}
+    ${stat('Catalogue',DB.inventory.length,`${DB.inventory.filter(i=>i.type==='Book').length} book titles`,{em:'📚',act:'tab',k:'inv',v:'Stock'})}</div>
    <div class="tabs">${['Requests','Stock','Overdue'].map(t=>`<button class="${t===tab?'on':''}" data-act="tab" data-k="inv" data-v="${t}">${t}</button>`).join('')}</div>${body}`;
 }
 
@@ -4582,10 +4595,10 @@ function viewDeptReports(){
   return head('📄 BACE Management','Department reports','Daily, weekly, monthly, annual or custom — reviewed and approved by the Internal Manager',
     `<button class="btn" data-act="export-reports">${ic('download')}Export</button><button class="btn pri" data-act="add-report">${ic('doc')}Submit report</button>`)+
   `<div class="grid g4" style="margin-bottom:15px">
-    ${stat('Pending',rows.filter(r=>r.status==='Pending').length,'not yet submitted',{em:'⏳',tint:1})}
-    ${stat('Submitted',rows.filter(r=>r.status==='Submitted').length,'awaiting approval',{em:'📤'})}
-    ${stat('Approved',rows.filter(r=>r.status==='Approved').length,'signed off',{em:'✅'})}
-    ${stat('Average attendance',avg+'%','reported across departments',{em:'📊'})}</div>
+    ${stat('Pending',rows.filter(r=>r.status==='Pending').length,'not yet submitted',{em:'⏳',tint:1,r:'#/dept-reports'})}
+    ${stat('Submitted',rows.filter(r=>r.status==='Submitted').length,'awaiting approval',{em:'📤',r:'#/dept-reports'})}
+    ${stat('Approved',rows.filter(r=>r.status==='Approved').length,'signed off',{em:'✅',r:'#/dept-reports'})}
+    ${stat('Average attendance',avg+'%','reported across departments',{em:'📊',r:'#/attendance'})}</div>
    ${dataTable({id:'rep',exportName:'department-reports',cols:[
     {h:'Department',c:r=>`<b>${esc(dept(r.dept)?.name||'—')}</b><div class="tiny">${esc(r.period)}</div>`},
     {h:'Submitted by',c:r=>esc(nameOf(r.by))},
@@ -4619,11 +4632,11 @@ function viewPreaching(){
     `<button class="btn" data-act="go" data-r="#/batches">🗂 Batch management</button><button class="btn pri" data-act="add-contact">${ic('plus')}Add contact</button>`)+
   `<div class="grid g6" style="margin-bottom:15px">
     ${stat('New contacts',s.newContacts,'last 30 days',{em:'🌱',act:'go',r:'#/contacts'})}
-    ${stat('Total contacts',s.contacts,'in the pipeline',{em:'📖'})}
+    ${stat('Total contacts',s.contacts,'in the pipeline',{em:'📖',r:'#/contacts'})}
     ${stat('Follow-ups due',s.fuToday,`${s.fuOverdue} overdue`,{em:'⏰',act:'go',r:'#/followups',tint:s.fuOverdue>0})}
     ${stat('Classes this month',DB.activities.filter(a=>a.type==='Class'&&a.date>=iso(dayOff(-30))).length,'held or scheduled',{em:'🎓',act:'go',r:'#/classes'})}
-    ${stat('Regular participants',s.regulars,'attending consistently',{em:'✅'})}
-    ${stat('Inactive',DB.devotees.filter(d=>d.status==='Inactive').length,'need re-engagement',{em:'💤'})}</div>
+    ${stat('Regular participants',s.regulars,'attending consistently',{em:'✅',r:'#/batches'})}
+    ${stat('Inactive',DB.devotees.filter(d=>d.status==='Inactive').length,'need re-engagement',{em:'💤',r:'#/devotees'})}</div>
    <div class="grid g-2-1" style="margin-bottom:15px">
     ${section('Preaching funnel — click any stage',`<div class="card-b">${funnelRows()}
       <div class="tiny" style="margin-top:10px">Percentages show conversion from the stage above. Hover for exact numbers.</div></div>`,
@@ -4679,12 +4692,12 @@ function batchDashboardBody(b){
   const trend=m.perClass.slice(-6).map(p=>({label:fmtD(p.c.date).slice(0,6),v:p.pctv,
     tip:`${p.c.name}\n${fmtLong(p.c.date)}\nAttendance: ${p.pctv}%\nPresent: ${p.present}\nAbsent: ${p.total-p.present}\nTotal: ${p.total}`}));
   return `<div class="grid g6" style="margin-bottom:15px">
-    ${stat('Members',m.members.length,`${m.neu} new this month`,{em:'👥'})}
-    ${stat('Attendance',m.attendance+'%',`best ${m.best}% · lowest ${m.low}%`,{em:'✅'})}
-    ${stat('Classes',m.classes.length,'in the record',{em:'📖'})}
-    ${stat('Events',m.events.length,'special programmes',{em:'✨'})}
+    ${stat('Members',m.members.length,`${m.neu} new this month`,{em:'👥',r:'#/devotees'})}
+    ${stat('Attendance',m.attendance+'%',`best ${m.best}% · lowest ${m.low}%`,{em:'✅',r:'#/batch-attendance'})}
+    ${stat('Classes',m.classes.length,'in the record',{em:'📖',r:'#/classes'})}
+    ${stat('Events',m.events.length,'special programmes',{em:'✨',r:'#/classes'})}
     ${stat('Follow-ups',m.fus.pending,`${m.fus.overdue} overdue`,{em:'⏰',tint:m.fus.overdue>0,act:'go',r:'#/followups'})}
-    ${stat('Budget used',m.util+'%',money(b.budget.spent)+' of '+money(b.budget.allocated),{em:'🧾'})}</div>
+    ${stat('Budget used',m.util+'%',money(b.budget.spent)+' of '+money(b.budget.allocated),{em:'🧾',r:'#/preaching-reports'})}</div>
    <div class="grid g-2-1" style="margin-bottom:15px">
     <div style="display:flex;flex-direction:column;gap:15px">
       ${section('📅 Today & next class',today.length||nextClass?`<div class="list">
@@ -4839,10 +4852,10 @@ function viewClasses(){
   return head('✨ BACE Preaching','Classes & events','Classes, seminars, discussions, special programmes and camps — all with attendance and budget',
     `<button class="btn pri" data-act="open-schedule" data-type="Class">${ic('plus')}Schedule class</button>`)+
   `<div class="grid g4" style="margin-bottom:15px">
-    ${stat('Classes',rows.filter(a=>a.type==='Class').length,'in this view',{em:'📖'})}
-    ${stat('Events',rows.filter(a=>a.type==='Event').length,'special programmes',{em:'✨'})}
-    ${stat('Expected attendance',rows.reduce((n,a)=>n+(a.expected||0),0),'across these programmes',{em:'👥'})}
-    ${stat('Budget',money(budget.sp),`of ${money(budget.al)} allocated`,{em:'🧾'})}</div>
+    ${stat('Classes',rows.filter(a=>a.type==='Class').length,'in this view',{em:'📖',act:'f',k:'cls',n:'type',v:'Class'})}
+    ${stat('Events',rows.filter(a=>a.type==='Event').length,'special programmes',{em:'✨',act:'f',k:'cls',n:'type',v:'Event'})}
+    ${stat('Expected attendance',rows.reduce((n,a)=>n+(a.expected||0),0),'across these programmes',{em:'👥',r:'#/batch-attendance'})}
+    ${stat('Budget',money(budget.sp),`of ${money(budget.al)} allocated`,{em:'🧾',r:'#/preaching-reports'})}</div>
    ${dataTable({id:'cls',exportName:'classes-events',cols:[
      {h:'Programme',c:a=>`<b>${typeEmoji(a.type)} ${esc(a.name)}</b><div class="tiny">${esc(a.location)}</div>`},
      {h:'Batch',c:a=>esc(a.batch?batch(a.batch).name:scopeName(a))},
@@ -4882,11 +4895,11 @@ function viewPreachingReports(){
    <div class="grid g-2-1" style="margin-bottom:15px">
     <div style="display:flex;flex-direction:column;gap:15px">
       ${section('👥 Members',`<div class="grid g4" style="padding:16px 18px">
-        ${stat('Total members',m.members.length,'in the batch')}${stat('Active',m.active,'attending')}
-        ${stat('New',m.neu,'joined this month')}${stat('Inactive',m.inactive,'not attending')}</div>`)}
+        ${stat('Total members',m.members.length,'in the batch',{r:'#/devotees'})}${stat('Active',m.active,'attending',{r:'#/devotees'})}
+        ${stat('New',m.neu,'joined this month',{r:'#/devotees'})}${stat('Inactive',m.inactive,'not attending',{r:'#/devotees'})}</div>`)}
       ${section('📖 Classes & events',`<div class="grid g4" style="padding:16px 18px">
-        ${stat('Classes',m.classes.length,'held or scheduled')}${stat('Events',m.events.length,'special programmes')}
-        ${stat('Average attendance',m.attendance+'%','across classes')}${stat('Total attendance',m.totalAtt,'present marks recorded')}</div>`)}
+        ${stat('Classes',m.classes.length,'held or scheduled',{r:'#/classes'})}${stat('Events',m.events.length,'special programmes',{r:'#/classes'})}
+        ${stat('Average attendance',m.attendance+'%','across classes',{r:'#/batch-attendance'})}${stat('Total attendance',m.totalAtt,'present marks recorded',{r:'#/batch-attendance'})}</div>`)}
       ${section('📊 Attendance per class',m.perClass.length?`<div class="card-b">${barChart(m.perClass.slice(-6).map(p=>({l:fmtD(p.c.date).slice(0,6),v:p.pctv,color:'var(--indigo)',
         tip:`${p.c.name}\n${fmtLong(p.c.date)}\nAttendance: ${p.pctv}%\nPresent: ${p.present}\nAbsent: ${p.total-p.present}\nTotal: ${p.total}`})),{unit:'%'})}
         <div class="tiny" style="margin-top:8px">Best ${m.best}% · lowest ${m.low}%</div></div>`:emptyState('No completed classes','','',''))}
@@ -4895,8 +4908,8 @@ function viewPreachingReports(){
     <div style="display:flex;flex-direction:column;gap:15px">
       ${section('🧾 Budget',`<div class="card-b">${budgetBlock(b.budget)}</div>`)}
       ${section('⏰ Follow-ups',`<div class="grid g2" style="padding:16px 18px;gap:9px">
-        ${stat('Total',m.fus.total,'')}${stat('Completed',m.fus.done,'')}
-        ${stat('Pending',m.fus.pending,'')}${stat('Overdue',m.fus.overdue,'',{tint:m.fus.overdue>0})}</div>`)}
+        ${stat('Total',m.fus.total,'',{r:'#/followups'})}${stat('Completed',m.fus.done,'',{r:'#/followups'})}
+        ${stat('Pending',m.fus.pending,'',{r:'#/followups'})}${stat('Overdue',m.fus.overdue,'',{tint:m.fus.overdue>0,r:'#/followups'})}</div>`)}
       ${section('📝 Narrative',`<div class="card-b">
         <div class="field"><label>Challenges</label><textarea name="ch">${esc((DB.reports.find(r=>r.batch===bid)||{}).challenges||'')}</textarea></div>
         <div class="field"><label>Successes</label><textarea name="su">${esc((DB.reports.find(r=>r.batch===bid)||{}).story||'')}</textarea></div>
@@ -4951,10 +4964,10 @@ function viewFriends(){
   return head('🫂 Devotee Care','Friends','Every devotee should have at least one person who notices when they stop coming',
     `<button class="btn pri" data-act="add-friend">${ic('plus')}Pair friends</button>`)+
   `<div class="grid g4" style="margin-bottom:15px">
-    ${stat('Paired',DB.devotees.length-unpaired.length,'have a friend',{em:'🤝'})}
-    ${stat('Not yet paired',unpaired.length,'nobody assigned',{em:'⚠️',tint:unpaired.length>0})}
-    ${stat('Average friends',(DB.devotees.reduce((n,d)=>n+d.friends.length,0)/DB.devotees.length).toFixed(1),'per devotee',{em:'📊'})}
-    ${stat('Coverage',pct(DB.devotees.length-unpaired.length,DB.devotees.length)+'%','of the community',{em:'✅'})}</div>
+    ${stat('Paired',DB.devotees.length-unpaired.length,'have a friend',{em:'🤝',r:'#/friends'})}
+    ${stat('Not yet paired',unpaired.length,'nobody assigned',{em:'⚠️',tint:unpaired.length>0,r:'#/friends'})}
+    ${stat('Average friends',(DB.devotees.reduce((n,d)=>n+d.friends.length,0)/DB.devotees.length).toFixed(1),'per devotee',{em:'📊',r:'#/friends'})}
+    ${stat('Coverage',pct(DB.devotees.length-unpaired.length,DB.devotees.length)+'%','of the community',{em:'✅',r:'#/care-reports'})}</div>
    ${unpaired.length?section('⚠️ Waiting to be paired',`<div class="list">${unpaired.slice(0,6).map(d=>`<div class="li">${av(d.name)}
      <span class="grow"><span class="t">${esc(d.name)}</span><span class="d">${esc(d.org)} · joined ${fmtD(d.joined)}</span></span>
      <button class="btn sm pri" data-act="add-friend" data-id="${d.id}">Pair a friend</button></div>`).join('')}</div>`)+'<div style="height:15px"></div>':''}
@@ -4993,10 +5006,10 @@ function viewGroup(id){
     can('care')?`<button class="btn" data-act="edit-group" data-id="${g.id}">${ic('edit')}Edit group</button>
      <button class="btn pri" data-act="group-add-member" data-id="${g.id}">${ic('plus')}Add member</button>`:'')+
   `<div class="grid g4" style="margin-bottom:15px">
-    ${stat('Members',g.members.length,'in this group',{em:'👥'})}
-    ${stat('Attendance',g.attendance+'%','average at meetings',{em:'✅'})}
-    ${stat('Last meeting',fmtD(g.last),relD(g.last),{em:'📅'})}
-    ${stat('Next meeting',fmtD(g.next),relD(g.next),{em:'🗓',tint:1})}</div>
+    ${stat('Members',g.members.length,'in this group',{em:'👥',r:'#/devotees'})}
+    ${stat('Attendance',g.attendance+'%','average at meetings',{em:'✅',r:'#/care-reports'})}
+    ${stat('Last meeting',fmtD(g.last),relD(g.last),{em:'📅',r:'#/meetings'})}
+    ${stat('Next meeting',fmtD(g.next),relD(g.next),{em:'🗓',tint:1,r:'#/meetings'})}</div>
    <div class="grid g-2-1">
     ${section('Members',g.members.length?`<div class="list">${g.members.map(mid=>{const d=dv(mid);if(!d)return'';
       return `<div class="li"><a href="#/devotee/${d.id}" style="display:flex;align-items:center;gap:11px;flex:1;min-width:0">${av(d.name,'m')}
@@ -5025,10 +5038,10 @@ function viewSwabhav(){
   return head('🌿 Devotee Care','Swabhav engagement','Engage people according to their nature, not just where the gap is',
     `<button class="btn pri" data-act="open-assign">${ic('plus')}Assign matching seva</button>`)+
   `<div class="grid g4" style="margin-bottom:15px">
-    ${stat('Engaged by nature',DB.devotees.filter(d=>d.swabhav.engaged).length,'matched to suitable seva',{em:'✅'})}
-    ${stat('Not yet engaged',DB.devotees.filter(d=>!d.swabhav.engaged).length,'no matching service',{em:'⚠️',tint:1})}
-    ${stat('Natures represented',natures.length,'distinct inclinations',{em:'🌿'})}
-    ${stat('No seva at all',DB.devotees.filter(d=>!d.dept&&d.status!=='Inactive').length,'unallocated',{em:'🎯'})}</div>
+    ${stat('Engaged by nature',DB.devotees.filter(d=>d.swabhav.engaged).length,'matched to suitable seva',{em:'✅',r:'#/swabhav'})}
+    ${stat('Not yet engaged',DB.devotees.filter(d=>!d.swabhav.engaged).length,'no matching service',{em:'⚠️',tint:1,r:'#/swabhav'})}
+    ${stat('Natures represented',natures.length,'distinct inclinations',{em:'🌿',r:'#/swabhav'})}
+    ${stat('No seva at all',DB.devotees.filter(d=>!d.dept&&d.status!=='Inactive').length,'unallocated',{em:'🎯',r:'#/assign'})}</div>
    ${section('Nature distribution',`<div class="card-b">${barChart(natures.map(n=>({l:n,v:DB.devotees.filter(d=>d.swabhav.nature===n).length,color:'var(--green)',
      tip:`${n}\nDevotees: ${DB.devotees.filter(d=>d.swabhav.nature===n).length}\nEngaged: ${DB.devotees.filter(d=>d.swabhav.nature===n&&d.swabhav.engaged).length}`})),{horizontal:true})}</div>`)}
    <div style="height:15px"></div>
@@ -5045,10 +5058,10 @@ function viewSadhana(){
   const rows=DB.sadhana.map(s=>({...s,id:s.id,d:dv(s.devotee)})).filter(s=>s.d);
   return head('📿 Devotee Care','Sadhana','Self-reported rounds, rising time and reading — encouragement, not surveillance')+
   `<div class="grid g4" style="margin-bottom:15px">
-    ${stat('Reports this week',rows.length,'submitted',{em:'📿'})}
-    ${stat('Chanting 16 rounds',rows.filter(r=>r.rounds>=16).length,'devotees',{em:'🌸'})}
-    ${stat('Average rounds',(rows.reduce((n,r)=>n+r.rounds,0)/(rows.length||1)).toFixed(1),'across reports',{em:'📊'})}
-    ${stat('Morning programme',Math.round(rows.reduce((n,r)=>n+r.program,0)/(rows.length||1))+'%','average attendance',{em:'🌅'})}</div>
+    ${stat('Reports this week',rows.length,'submitted',{em:'📿',r:'#/sadhana'})}
+    ${stat('Chanting 16 rounds',rows.filter(r=>r.rounds>=16).length,'devotees',{em:'🌸',r:'#/sadhana'})}
+    ${stat('Average rounds',(rows.reduce((n,r)=>n+r.rounds,0)/(rows.length||1)).toFixed(1),'across reports',{em:'📊',r:'#/sadhana'})}
+    ${stat('Morning programme',Math.round(rows.reduce((n,r)=>n+r.program,0)/(rows.length||1))+'%','average attendance',{em:'🌅',r:'#/sadhana'})}</div>
    ${dataTable({id:'sadhana',exportName:'sadhana',cols:[
      {h:'Devotee',c:r=>`<div class="who">${av(r.d.name,'m')}<div><b>${esc(r.d.name)}</b><span>${esc(r.d.org)}</span></div></div>`},
      {h:'Rounds',c:r=>`<b>${r.rounds}</b>`},{h:'Average rising',c:r=>esc(r.avgWake)},
@@ -5062,10 +5075,10 @@ function viewFacilitators(){
   return head('🤝 Devotee Care','Facilitators','Who is responsible for whom — and whether the load is fair',
     can('care')?`<button class="btn pri" data-act="assign-facilitator">${ic('plus')}Assign facilitator</button>`:'')+
   `<div class="grid g4" style="margin-bottom:15px">
-    ${stat('Facilitators',facs.length,'active',{em:'🤝'})}
-    ${stat('Devotees covered',DB.devotees.filter(d=>d.facilitator).length,'have a named facilitator',{em:'✅'})}
-    ${stat('Without a facilitator',DB.devotees.filter(d=>!d.facilitator).length,'need assignment',{em:'⚠️',tint:1})}
-    ${stat('Average load',Math.round(DB.devotees.filter(d=>d.facilitator).length/(facs.length||1)),'devotees each',{em:'📊'})}</div>
+    ${stat('Facilitators',facs.length,'active',{em:'🤝',r:'#/facilitators'})}
+    ${stat('Devotees covered',DB.devotees.filter(d=>d.facilitator).length,'have a named facilitator',{em:'✅',r:'#/facilitators'})}
+    ${stat('Without a facilitator',DB.devotees.filter(d=>!d.facilitator).length,'need assignment',{em:'⚠️',tint:1,r:'#/devotees'})}
+    ${stat('Average load',Math.round(DB.devotees.filter(d=>d.facilitator).length/(facs.length||1)),'devotees each',{em:'📊',r:'#/care-reports'})}</div>
    <div class="grid g2">${facs.map(f=>{const mine=DB.devotees.filter(d=>d.facilitator===f.id);
     return section(f.name,`<div class="card-b">
       <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px">${av(f.name,'m')}
@@ -5093,10 +5106,10 @@ function viewCamps(){
   return head('⛺ Devotee Care','Camps & yatras','Who went, when, and who has never been on one',
     `<button class="btn pri" data-act="add-camp">${ic('plus')}Record participation</button>`)+
   `<div class="grid g4" style="margin-bottom:15px">
-    ${stat('Participations',rows.length,'recorded',{em:'⛺'})}
-    ${stat('Distinct camps',names.length,'programmes',{em:'🏕'})}
-    ${stat('Devotees who went',new Set(rows.map(r=>r.devotee)).size,'at least once',{em:'👥'})}
-    ${stat('Never attended',DB.devotees.length-new Set(rows.map(r=>r.devotee)).size,'consider inviting',{em:'💡',tint:1})}</div>
+    ${stat('Participations',rows.length,'recorded',{em:'⛺',r:'#/camps'})}
+    ${stat('Distinct camps',names.length,'programmes',{em:'🏕',r:'#/camps'})}
+    ${stat('Devotees who went',new Set(rows.map(r=>r.devotee)).size,'at least once',{em:'👥',r:'#/camps'})}
+    ${stat('Never attended',DB.devotees.length-new Set(rows.map(r=>r.devotee)).size,'consider inviting',{em:'💡',tint:1,r:'#/devotees'})}</div>
    ${dataTable({id:'camps',exportName:'camps',cols:[
      {h:'Devotee',c:r=>`<div class="who">${av(r.d.name,'m')}<b>${esc(r.d.name)}</b></div>`},
      {h:'Camp / yatra',c:r=>esc(r.name)},{h:'Date',c:r=>fmtD(r.date)},
@@ -5130,10 +5143,10 @@ function viewCareFollowups(){
   return head('⏰ Devotee Care','Care follow-ups','Check-ins that were promised, tracked until they happen',
     `<button class="btn pri" data-act="add-followup" data-kind="Care">${ic('plus')}New follow-up</button>`)+
   `<div class="grid g4" style="margin-bottom:15px">
-    ${stat('Overdue',s.careOverdue,'past due date',{em:'⚠️',tint:s.careOverdue>0})}
-    ${stat('Due today',s.careToday,'check in today',{em:'📞'})}
-    ${stat('This week',s.careWeek,'scheduled',{em:'📅'})}
-    ${stat('Completed',DB.followups.filter(f=>f.kind==='Care'&&f.status==='Completed').length,'closed out',{em:'✅'})}</div>`+fuList('Care');
+    ${stat('Overdue',s.careOverdue,'past due date',{em:'⚠️',tint:s.careOverdue>0,act:'f-bucket',arg:'Overdue'})}
+    ${stat('Due today',s.careToday,'check in today',{em:'📞',act:'f-bucket',arg:'Today'})}
+    ${stat('This week',s.careWeek,'scheduled',{em:'📅',act:'f-bucket',arg:'Upcoming'})}
+    ${stat('Completed',DB.followups.filter(f=>f.kind==='Care'&&f.status==='Completed').length,'closed out',{em:'✅',act:'f-bucket',arg:'Completed'})}</div>`+fuList('Care');
 }
 function viewCareReports(){
   const g=DB.careGroups.filter(x=>x.status==='Active');
@@ -5141,10 +5154,10 @@ function viewCareReports(){
   return head('📄 Devotee Care','Care reports','Coverage, group health and follow-up discipline — without exposing private notes',
     `<button class="btn" data-act="export-care">${ic('download')}Export CSV</button>`)+
   `<div class="grid g4" style="margin-bottom:15px">
-    ${stat('Coverage',pct(s.covered,s.total)+'%','have a facilitator',{em:'✅'})}
-    ${stat('Group membership',pct(DB.devotees.filter(d=>d.careGroup).length,s.total)+'%','are in a care group',{em:'👥'})}
-    ${stat('Friend pairing',pct(DB.devotees.filter(d=>d.friends.length).length,s.total)+'%','have a friend',{em:'🫂'})}
-    ${stat('Follow-up completion',pct(DB.followups.filter(f=>f.kind==='Care'&&f.status==='Completed').length,DB.followups.filter(f=>f.kind==='Care').length)+'%','of care follow-ups',{em:'⏰'})}</div>
+    ${stat('Coverage',pct(s.covered,s.total)+'%','have a facilitator',{em:'✅',r:'#/facilitators'})}
+    ${stat('Group membership',pct(DB.devotees.filter(d=>d.careGroup).length,s.total)+'%','are in a care group',{em:'👥',r:'#/groups'})}
+    ${stat('Friend pairing',pct(DB.devotees.filter(d=>d.friends.length).length,s.total)+'%','have a friend',{em:'🫂',r:'#/friends'})}
+    ${stat('Follow-up completion',pct(DB.followups.filter(f=>f.kind==='Care'&&f.status==='Completed').length,DB.followups.filter(f=>f.kind==='Care').length)+'%','of care follow-ups',{em:'⏰',r:'#/care-followups'})}</div>
    <div class="grid g-2-1" style="margin-bottom:15px">
     ${section('Group attendance',`<div class="card-b">${barChart(g.map(x=>({l:x.name.split('·')[1].trim(),v:x.attendance,color:'var(--green)',
       tip:`${x.name}\nMembers: ${x.members.length}\nAttendance: ${x.attendance}%`,r:'#/group/'+x.id})),{horizontal:true,unit:'%'})}</div>`)}
@@ -5233,10 +5246,10 @@ function viewReports(){
     <select data-act="f" data-k="an" data-n="status"><option value="">All statuses</option>${ACT_STATUS.map(s=>`<option ${f.status===s?'selected':''}>${s}</option>`).join('')}</select>
     <button class="btn sm" data-act="export-analytics" style="margin-left:auto">${ic('download')}Export CSV</button></div></div>`;
   const overview=`<div class="grid g6" style="margin-bottom:15px">
-     ${stat('Activities',acts.length,'in this range',{em:'📋'})}
+     ${stat('Activities',acts.length,'in this range',{em:'📋',r:'#/assign'})}
      ${stat('Completed',done,`${pct(done,done+missed)}% completion`,{em:'✅',act:'drill-list',arg:'Completed'})}
      ${stat('Missed',missed,'click to see which',{em:'⚠️',act:'drill-list',arg:'Missed',tint:missed>0})}
-     ${stat('Attendance',attPct+'%',`${att.length} records`,{em:'📊'})}
+     ${stat('Attendance',attPct+'%',`${att.length} records`,{em:'📊',r:'#/attendance'})}
      ${stat('New contacts',contacts.length,'first met in range',{em:'🌱',act:'go',r:'#/contacts'})}
      ${stat('Devotees',STATS().total,`${STATS().neu} new`,{em:'👥',act:'go',r:'#/devotees'})}</div>
     <div class="grid g-2-1" style="margin-bottom:15px">
@@ -5531,10 +5544,10 @@ function viewActions(){
   return head('🎯 Action items','Action items','Sub-tasks that sit underneath an activity — plus standalone tasks raised in meetings',
     `<button class="btn pri" data-act="open-assign" data-type="Task">${ic('plus')}New action item</button>`)+
   `<div class="grid g4" style="margin-bottom:15px">
-    ${stat('Open',DB.tasks.filter(t=>t.status!=='Completed').length,'not yet completed',{em:'📋'})}
-    ${stat('Overdue',STATS().actionsOverdue,'past their date',{em:'⚠️',tint:STATS().actionsOverdue>0})}
-    ${stat('Mine',DB.tasks.filter(t=>t.responsible===APP.user.devotee&&t.status!=='Completed').length,'assigned to me',{em:'🙋'})}
-    ${stat('Completed',DB.tasks.filter(t=>t.status==='Completed').length,'closed out',{em:'✅'})}</div>
+    ${stat('Open',DB.tasks.filter(t=>t.status!=='Completed').length,'not yet completed',{em:'📋',act:'f',k:'act',n:'bucket',v:'Open'})}
+    ${stat('Overdue',STATS().actionsOverdue,'past their date',{em:'⚠️',tint:STATS().actionsOverdue>0,act:'f',k:'act',n:'bucket',v:'Overdue'})}
+    ${stat('Mine',DB.tasks.filter(t=>t.responsible===APP.user.devotee&&t.status!=='Completed').length,'assigned to me',{em:'🙋',act:'f',k:'act',n:'bucket',v:'Mine'})}
+    ${stat('Completed',DB.tasks.filter(t=>t.status==='Completed').length,'closed out',{em:'✅',act:'f',k:'act',n:'bucket',v:'Completed'})}</div>
    <div class="card" style="margin-bottom:15px"><div class="toolbar">
      <div class="chips">${Object.keys(buckets).map(b=>`<button class="chip ${f.bucket===b?'on':''}" data-act="f" data-k="act" data-n="bucket" data-v="${b}">${b}</button>`).join('')}</div>
      <input type="search" placeholder="Search action items" value="${esc(f.q)}" data-act="f" data-k="act" data-n="q" style="margin-left:auto"></div>
