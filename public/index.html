@@ -232,7 +232,7 @@ input,select,textarea{font-family:inherit;font-size:14px;color:var(--ink)}
 .icon-btn:hover{background:var(--surface-2)}
 .icon-btn svg{width:17px;height:17px}
 .dot{position:absolute;top:4px;right:4px;min-width:15px;height:15px;padding:0 3px;border-radius:9px;background:var(--danger);color:#fff;font-size:9.5px;line-height:15px;text-align:center;border:1.5px solid var(--surface)}
-.view{padding:22px 24px 110px;max-width:1460px;width:100%}
+.view{padding:22px 24px 110px;max-width:1460px;width:100%;box-sizing:border-box}
 /* ---------- mobile drawer, scrim & shell ---------- */
 .mobile-close-btn{display:none!important}
 .mobile-scrim{
@@ -247,8 +247,8 @@ input,select,textarea{font-family:inherit;font-size:14px;color:var(--ink)}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 
 @media(max-width:1080px){
-  .main{margin-left:0!important}
-  .shell{min-height:100vh}
+  .main{margin-left:0!important;max-width:100%!important;box-sizing:border-box!important}
+  .shell{min-height:100vh;max-width:100%!important;overflow-x:hidden!important}
   .sidebar{
     display:flex!important;
     position:fixed;
@@ -257,13 +257,14 @@ input,select,textarea{font-family:inherit;font-size:14px;color:var(--ink)}
     z-index:95;
     transform:translateX(-100%);
     transition:transform .26s cubic-bezier(0.16,1,0.3,1);
-    box-shadow:0 0 50px rgba(0,0,0,0.6);
+    box-shadow:none;
   }
   .shell.mobile-drawer-open .sidebar{
     transform:translateX(0);
+    box-shadow:0 0 50px rgba(0,0,0,0.6);
   }
   .mobile-close-btn{display:inline-flex!important}
-  .view{padding:16px 14px calc(96px + env(safe-area-inset-bottom))}
+  .view{padding:16px 14px calc(96px + env(safe-area-inset-bottom));box-sizing:border-box!important;max-width:100%!important}
 }
 
 /* ---------- hero ---------- */
@@ -314,7 +315,7 @@ input,select,textarea{font-family:inherit;font-size:14px;color:var(--ink)}
 @media(max-width:1180px){.g5,.g4{grid-template-columns:repeat(2,minmax(0,1fr))}.g-2-1,.g-1-2,.g3{grid-template-columns:1fr}}
 @media(max-width:720px){.g2,.g3,.g4,.g5,.g6{grid-template-columns:repeat(2,minmax(0,1fr))}.grid{gap:11px}}
 @media(max-width:480px){.g2{grid-template-columns:1fr}}
-.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-l);box-shadow:var(--sh-1)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-l);box-shadow:var(--sh-1);max-width:100%;box-sizing:border-box}
 a.card,button.card{display:block;transition:box-shadow .16s,transform .16s,border-color .16s;text-align:left;width:100%}
 a.card:hover,button.card:hover{box-shadow:var(--sh-2);transform:translateY(-2px);border-color:#DCCFB6}
 .card.pad{padding:18px 20px}
@@ -489,12 +490,51 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13.5px}
 /* calendar */
 .cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border-left:1px solid var(--line-2);border-top:1px solid var(--line-2)}
 .cal .hd{padding:8px;font-size:11.5px;color:var(--ink-3);text-align:center;border-right:1px solid var(--line-2);border-bottom:1px solid var(--line-2);background:var(--surface-2)}
-.cal .day{min-height:100px;border-right:1px solid var(--line-2);border-bottom:1px solid var(--line-2);padding:5px;font-size:12px;position:relative}
-.cal .day.out{background:var(--surface-2);color:var(--ink-3)}
+.cal .day{min-height:100px;border-right:1px solid var(--line-2);border-bottom:1px solid var(--line-2);padding:5px;font-size:12px;position:relative;cursor:pointer;transition:background .15s}
+.cal .day:hover{background:var(--paper-2)}
+.cal .day.out{background:var(--surface-2);color:var(--ink-3);cursor:default}
 .cal .day.today{background:var(--saffron-soft)}
-.cal .day .dn{font-weight:600;font-size:12px;margin-bottom:4px}
+.cal .day.today:hover{background:rgba(245,130,32,0.18)}
+.cal .day .dn{font-weight:600;font-size:12px;margin-bottom:4px;display:flex;justify-content:space-between;align-items:center}
+.cal-day-count{font-size:9.5px;background:var(--surface-2);color:var(--ink-3);padding:1px 5px;border-radius:10px;border:1px solid var(--line-2);font-weight:600}
+.cal .day.today .cal-day-count{background:var(--saffron);color:#fff;border-color:transparent}
 .cal .ev{display:block;width:100%;text-align:left;font-size:11px;padding:2.5px 6px;border-radius:6px;margin-bottom:3px;background:var(--paper-2);border-left:2.5px solid var(--ink-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 @media(max-width:720px){.cal .day{min-height:62px;padding:3px}.cal .ev{font-size:0;padding:0;height:5px;margin-bottom:2px;border-radius:3px;border-left:0}}
+
+/* calendar toolbar & view switcher */
+.cal-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.cal-view-switch{display:grid;grid-template-columns:repeat(3,1fr);width:240px;background:var(--surface-2);padding:3px;border-radius:var(--r-s);border:1px solid var(--line-2);gap:3px;box-sizing:border-box}
+.cal-view-switch .chip{padding:5px 8px;border-radius:calc(var(--r-s) - 2px);font-size:12px;font-weight:500;border:none;background:transparent;color:var(--ink-2);cursor:pointer;transition:background .15s,color .15s;text-align:center;justify-content:center;min-width:0;box-sizing:border-box}
+.cal-view-switch .chip.on{background:var(--surface);color:var(--ink);font-weight:600;box-shadow:var(--sh-1)}
+
+/* calendar week view (desktop) */
+.cal-week-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border-left:1px solid var(--line-2);border-top:1px solid var(--line-2);background:var(--surface)}
+.cal-week-col{border-right:1px solid var(--line-2);border-bottom:1px solid var(--line-2);display:flex;flex-direction:column;min-height:420px;background:var(--surface)}
+.cal-week-col.today{background:rgba(245,130,32,0.03)}
+.cal-week-head{padding:10px 8px;text-align:center;border-bottom:1px solid var(--line-2);background:var(--surface-2);cursor:pointer;transition:background .15s;display:flex;flex-direction:column;align-items:center;gap:2px}
+.cal-week-head:hover{background:var(--paper-2)}
+.cal-week-head .dn-name{font-size:11px;text-transform:uppercase;color:var(--ink-3);font-weight:600;letter-spacing:0.5px}
+.cal-week-head .dn-num{font-size:16px;font-family:var(--f-head);font-weight:700;color:var(--ink)}
+.cal-week-col.today .cal-week-head .dn-num{color:var(--saffron)}
+.cal-week-body{padding:8px 6px;display:flex;flex-direction:column;gap:6px;flex:1}
+.cal-week-card{display:flex;flex-direction:column;gap:3px;padding:7px 8px;border-radius:6px;background:var(--surface);border:1px solid var(--line-2);border-left-width:3.5px;text-align:left;cursor:pointer;transition:transform .15s,box-shadow .15s;box-shadow:0 1px 2px rgba(0,0,0,0.04)}
+.cal-week-card:hover{transform:translateY(-1px);box-shadow:var(--sh-1)}
+.cal-week-card .c-time{font-size:10.5px;font-weight:600;color:var(--ink-2)}
+.cal-week-card .c-title{font-size:12px;font-weight:600;color:var(--ink);line-height:1.3;word-break:break-word}
+.cal-week-card .c-sub{font-size:10.5px;color:var(--ink-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* calendar day view */
+.cal-day-wrap{padding:16px;display:flex;flex-direction:column;gap:14px}
+.cal-day-summary{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:var(--surface-2);border-radius:var(--r-m);border:1px solid var(--line-2);flex-wrap:wrap;gap:10px}
+.cal-day-list{display:flex;flex-direction:column;gap:10px}
+.cal-day-item{display:flex;gap:16px;align-items:stretch;padding:14px 16px;background:var(--surface);border:1px solid var(--line);border-left-width:4px;border-radius:var(--r-m);cursor:pointer;transition:transform .15s,box-shadow .15s}
+.cal-day-item:hover{transform:translateY(-1px);box-shadow:var(--sh-1)}
+.cal-day-time{min-width:105px;display:flex;flex-direction:column;justify-content:center;font-size:13px;font-weight:600;color:var(--ink-2)}
+.cal-day-time .slot{color:var(--ink-3);font-size:11px;font-weight:normal}
+.cal-day-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
+.cal-day-main .t{font-size:15px;font-weight:600;color:var(--ink);line-height:1.3}
+.cal-day-meta{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:12px;color:var(--ink-3)}
+.cal-day-devotees{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-2);margin-top:2px}
 
 /* org chart */
 .org{display:flex;flex-direction:column;align-items:center;overflow-x:auto;padding:10px 0}
@@ -614,7 +654,7 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13.5px}
   }
 }
 
-@media(max-width:768px){
+@media(max-width:1080px){
   .topbar{padding:8px 12px;gap:8px}
   .topbar .crumbs{display:none}
   .topbar .topbar-title-mobile{display:flex!important}
@@ -646,24 +686,181 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13.5px}
     flex:1 1 100%;
   }
 
-  /* Calendar header on mobile: 2 neat rows, fits 100% without horizontal scroll */
+  /* Calendar header on mobile: neat stacked rows, fits 100% without horizontal scroll */
   .cal-toolbar{
     display:flex!important;
     flex-direction:column!important;
     align-items:stretch!important;
     gap:10px!important;
+    width:100%!important;
+    max-width:100%!important;
+    box-sizing:border-box!important;
+    padding:10px 12px!important;
+  }
+  .cal-view-switch{
+    display:grid!important;
+    grid-template-columns:1fr 1fr 1fr!important;
+    width:100%!important;
+    box-sizing:border-box!important;
+    margin:0!important;
+    padding:3px!important;
+    gap:3px!important;
+  }
+  .cal-view-switch .chip{
+    width:100%!important;
+    min-width:0!important;
+    box-sizing:border-box!important;
+    text-align:center!important;
+    justify-content:center!important;
+    padding:6px 2px!important;
+    font-size:12px!important;
+    border-radius:calc(var(--r-s) - 2px)!important;
+    display:flex!important;
+    align-items:center!important;
   }
   .cal-nav-group{
     width:100%!important;
+    box-sizing:border-box!important;
     display:flex!important;
     justify-content:space-between!important;
     align-items:center!important;
+    gap:6px!important;
+  }
+  .cal-nav-group b{
+    font-size:13.5px!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
   }
   .cal-cat-select{
     width:100%!important;
     max-width:100%!important;
+    box-sizing:border-box!important;
     margin:0!important;
     padding:8px 12px!important;
+  }
+
+  /* Month view on mobile: tight cell padding, no horizontal blowout */
+  .cal{
+    width:100%!important;
+    max-width:100%!important;
+    box-sizing:border-box!important;
+  }
+  .cal .hd{
+    padding:4px 1px!important;
+    font-size:10px!important;
+  }
+  .cal .day{
+    min-height:50px!important;
+    padding:2px 1px!important;
+    box-sizing:border-box!important;
+  }
+  .cal .day .dn{
+    font-size:10px!important;
+    margin-bottom:2px!important;
+    padding:0 2px!important;
+    display:flex!important;
+    justify-content:space-between!important;
+    align-items:center!important;
+  }
+  .cal-day-count{
+    font-size:7.5px!important;
+    padding:0 2.5px!important;
+    border-radius:6px!important;
+    line-height:11px!important;
+    height:11px!important;
+  }
+
+  /* Week view on mobile: agenda-style stacked days without horizontal scroll */
+  .cal-week-grid{
+    display:flex!important;
+    flex-direction:column!important;
+    border-left:none!important;
+    border-top:none!important;
+    gap:10px!important;
+    padding:8px!important;
+    background:transparent!important;
+    width:100%!important;
+    box-sizing:border-box!important;
+  }
+  .cal-week-col{
+    border:1px solid var(--line)!important;
+    border-radius:var(--r-m)!important;
+    min-height:auto!important;
+    background:var(--surface)!important;
+    overflow:hidden!important;
+    width:100%!important;
+    box-sizing:border-box!important;
+  }
+  .cal-week-head{
+    flex-direction:row!important;
+    justify-content:space-between!important;
+    align-items:center!important;
+    padding:8px 12px!important;
+    text-align:left!important;
+    box-sizing:border-box!important;
+  }
+  .cal-week-head .dn-group{
+    display:flex!important;
+    align-items:baseline!important;
+    gap:6px!important;
+  }
+  .cal-week-head .dn-name{
+    font-size:12.5px!important;
+    color:var(--ink-2)!important;
+  }
+  .cal-week-head .dn-num{
+    font-size:15px!important;
+  }
+  .cal-week-body{
+    padding:8px 10px!important;
+    gap:8px!important;
+    box-sizing:border-box!important;
+  }
+  .cal-week-card{
+    padding:9px 11px!important;
+    border-radius:8px!important;
+    width:100%!important;
+    box-sizing:border-box!important;
+  }
+  .cal-week-card .c-title{
+    font-size:13px!important;
+  }
+  .cal-week-card .c-sub{
+    font-size:11px!important;
+  }
+
+  /* Day view on mobile */
+  .cal-day-wrap{
+    padding:8px!important;
+    gap:10px!important;
+    width:100%!important;
+    box-sizing:border-box!important;
+  }
+  .cal-day-summary{
+    flex-direction:column!important;
+    align-items:stretch!important;
+    gap:8px!important;
+    padding:10px 12px!important;
+    box-sizing:border-box!important;
+  }
+  .cal-day-summary button{
+    width:100%!important;
+  }
+  .cal-day-item{
+    flex-direction:column!important;
+    gap:8px!important;
+    padding:12px!important;
+    width:100%!important;
+    box-sizing:border-box!important;
+  }
+  .cal-day-time{
+    min-width:auto!important;
+    flex-direction:row!important;
+    justify-content:space-between!important;
+    align-items:center!important;
+    border-bottom:1px solid var(--line-2)!important;
+    padding-bottom:6px!important;
   }
 
   /* Devotee directory filter grid on mobile */
@@ -696,9 +893,38 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13.5px}
     justify-content:space-between!important;
     flex-direction:row!important;
   }
+  .card{
+    max-width:100%!important;
+    box-sizing:border-box!important;
+    overflow:hidden!important;
+  }
   .cal{
     width:100%!important;
     max-width:100%!important;
+    box-sizing:border-box!important;
+    display:grid!important;
+    grid-template-columns:repeat(7,minmax(0,1fr))!important;
+  }
+  .cal .day{
+    min-height:48px!important;
+    padding:2px 1px!important;
+    box-sizing:border-box!important;
+    overflow:hidden!important;
+  }
+  .cal .day .tiny{
+    display:none!important;
+  }
+  .cal-day-item{
+    word-break:break-word!important;
+    box-sizing:border-box!important;
+  }
+  .cal-day-main{
+    min-width:0!important;
+    overflow:hidden!important;
+  }
+  .cal-day-devotees{
+    flex-wrap:wrap!important;
+    word-break:break-word!important;
   }
 }
 
@@ -4213,44 +4439,179 @@ function viewReports(){
    📅 CALENDAR
    ========================================================================= */
 function viewCalendar(){
+  const view=APP.filters.calView||'month';
   const off=APP.filters.calOff||0;
-  const base=new Date(TODAY.getFullYear(),TODAY.getMonth()+off,1);
-  const y=base.getFullYear(),m=base.getMonth();
-  const first=new Date(y,m,1).getDay(),days=new Date(y,m+1,0).getDate();
+  const selDateStr=APP.filters.calSelectedDate||iso(TODAY);
+  let selD=new Date(selDateStr+'T00:00:00');
+  if(isNaN(selD.getTime()))selD=new Date(TODAY.getTime());
+
   const cat=APP.filters.calCat||'';
   const cats=['Services','Classes','Preaching','Festivals','Devotee Care','Meetings','Management','Camps','Outreach','Temple Visits'];
   const evs=DB.activities.filter(a=>!cat||a.cat===cat);
   const colors={Services:'var(--saffron)',Classes:'var(--indigo)',Preaching:'var(--indigo)',Festivals:'var(--mustard)',
     'Devotee Care':'var(--green)',Meetings:'var(--sky)',Management:'var(--brown)',Camps:'var(--teal)',Outreach:'var(--mustard)','Temple Visits':'var(--teal)'};
-  const cells=[];
-  for(let i=0;i<first;i++)cells.push(`<div class="day out"></div>`);
-  for(let d=1;d<=days;d++){
-    const date=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    const list=evs.filter(e=>e.date===date);
-    cells.push(`<div class="day ${date===iso(TODAY)?'today':''}"><div class="dn">${d}</div>
-      ${list.slice(0,3).map(e=>`<button class="ev solid" style="border-left-color:${colors[e.cat]||'var(--ink-3)'};background:${date===iso(TODAY)?'#fff':'var(--paper-2)'}"
-        data-act="open-activity" data-id="${e.id}" ${tipAttr(`${e.name}\n${scopeName(e)}\n${e.start?e.start+'–'+e.end:''}\n${e.status}`)}>${esc(e.name)}</button>`).join('')}
-      ${list.length>3?`<div class="tiny">+${list.length-3} more</div>`:''}</div>`);
+
+  let periodTitle='';
+  let viewHtml='';
+
+  if(view==='month'){
+    const base=new Date(selD.getFullYear(),selD.getMonth()+off,1);
+    const y=base.getFullYear(),m=base.getMonth();
+    const first=new Date(y,m,1).getDay(),days=new Date(y,m+1,0).getDate();
+    periodTitle=`${MONTHS[m]} ${y}`;
+
+    const cells=[];
+    for(let i=0;i<first;i++)cells.push(`<div class="day out"></div>`);
+    for(let d=1;d<=days;d++){
+      const date=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const list=evs.filter(e=>e.date===date);
+      const isToday=date===iso(TODAY);
+      const isSel=date===selDateStr;
+      cells.push(`<div class="day ${isToday?'today':''} ${isSel?'selected':''}" data-act="cal-jump-day" data-date="${date}" title="View ${d} ${MON[m]} agenda">
+        <div class="dn"><span>${d}</span>${list.length?`<span class="cal-day-count">${list.length}</span>`:''}</div>
+        ${list.slice(0,3).map(e=>`<button class="ev solid" style="border-left-color:${colors[e.cat]||'var(--ink-3)'};background:${isToday?'#fff':'var(--paper-2)'}"
+          data-act="open-activity" data-id="${e.id}" ${tipAttr(`${e.name}\n${scopeName(e)}\n${e.start?e.start+'–'+e.end:''}\n${e.status}`)}>${esc(e.name)}</button>`).join('')}
+        ${list.length>3?`<div class="tiny" style="color:var(--saffron);font-weight:600">+${list.length-3} more</div>`:''}</div>`);
+    }
+
+    viewHtml=`<div class="cal">
+      ${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d=>`<div class="hd">${d}</div>`).join('')}${cells.join('')}</div>`;
   }
+  else if(view==='week'){
+    const anchor=new Date(selD.getFullYear(),selD.getMonth(),selD.getDate()+off*7);
+    const sun=new Date(anchor.getFullYear(),anchor.getMonth(),anchor.getDate()-anchor.getDay());
+    const sat=new Date(sun.getFullYear(),sun.getMonth(),sun.getDate()+6);
+
+    periodTitle=`${sun.getDate()} ${MON[sun.getMonth()]} – ${sat.getDate()} ${MON[sat.getMonth()]} ${sat.getFullYear()}`;
+
+    const weekDays=[];
+    for(let i=0;i<7;i++){
+      const dObj=new Date(sun.getFullYear(),sun.getMonth(),sun.getDate()+i);
+      const date=iso(dObj);
+      const dayShort=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][i];
+      const dayFull=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][i];
+      const dayActs=evs.filter(e=>e.date===date).sort((a,b)=>(a.start||'00:00').localeCompare(b.start||'00:00'));
+      const isToday=date===iso(TODAY);
+      weekDays.push({date,dayShort,dayFull,dNum:dObj.getDate(),dayActs,isToday});
+    }
+
+    viewHtml=`<div class="cal-week-grid">
+      ${weekDays.map(w=>`
+        <div class="cal-week-col ${w.isToday?'today':''}">
+          <div class="cal-week-head" data-act="cal-jump-day" data-date="${w.date}" title="Click to view day agenda for ${w.dayFull}">
+            <div class="dn-group">
+              <span class="dn-name">${w.dayShort}</span>
+              <span class="dn-num">${w.dNum}</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:4px">
+              ${w.isToday?`<span class="badge b-orange" style="font-size:10px;padding:1px 6px">Today</span>`:''}
+              ${w.dayActs.length?`<span class="badge b-grey" style="font-size:10px;padding:1px 6px">${w.dayActs.length}</span>`:''}
+            </div>
+          </div>
+          <div class="cal-week-body">
+            ${w.dayActs.length===0?`<div class="tiny" style="color:var(--ink-3);padding:14px 4px;text-align:center">No seva scheduled</div>`:
+              w.dayActs.map(e=>`
+                <div class="cal-week-card" style="border-left-color:${colors[e.cat]||'var(--saffron)'}" data-act="open-activity" data-id="${e.id}">
+                  <div style="display:flex;justify-content:space-between;align-items:center;gap:4px">
+                    <span class="c-time">${e.start?`${e.start}${e.end?'–'+e.end:''}`:'All day'}</span>
+                    ${sbadge(e.status)}
+                  </div>
+                  <div class="c-title">${esc(e.name)}</div>
+                  <div class="c-sub">${typeEmoji(e.type)} ${esc(scopeName(e))}</div>
+                </div>
+              `).join('')}
+          </div>
+        </div>
+      `).join('')}
+    </div>`;
+  }
+  else if(view==='day'){
+    const currDay=new Date(selD.getFullYear(),selD.getMonth(),selD.getDate()+off);
+    const date=iso(currDay);
+    const isToday=date===iso(TODAY);
+    const dayFull=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][currDay.getDay()];
+    periodTitle=`${dayFull}, ${currDay.getDate()} ${MON[currDay.getMonth()]} ${currDay.getFullYear()}`;
+
+    const dayActs=evs.filter(e=>e.date===date).sort((a,b)=>(a.start||'00:00').localeCompare(b.start||'00:00'));
+    const completed=dayActs.filter(a=>a.status.startsWith('Completed')).length;
+    const pending=dayActs.length-completed;
+
+    viewHtml=`<div class="cal-day-wrap">
+      <div class="cal-day-summary">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span style="font-size:15px;font-weight:700;font-family:var(--f-head)">${dayFull} Schedule</span>
+          ${isToday?`<span class="badge b-orange">Today</span>`:''}
+          <span class="badge b-grey">${dayActs.length} ${dayActs.length===1?'activity':'activities'}</span>
+          ${completed?`<span class="badge b-green">${completed} done</span>`:''}
+          ${pending?`<span class="badge b-blue">${pending} pending</span>`:''}
+        </div>
+        <button class="btn sm pri" data-act="open-assign">${ic('plus')}Add activity</button>
+      </div>
+      ${dayActs.length===0?
+        emptyState('No activities scheduled for this day','The schedule is clear. You can schedule seva, classes, or temple programs.','<button class="btn sm pri" data-act="open-assign">Schedule Seva</button>')
+        :`<div class="cal-day-list">
+          ${dayActs.map(e=>{
+            const asgs=assignsFor(e.id);
+            const devNames=asgs.map(a=>{const d=dv(a.devotee);return d?d.name:'Devotee'}).slice(0,3);
+            return `
+              <div class="cal-day-item" style="border-left-color:${colors[e.cat]||'var(--saffron)'}" data-act="open-activity" data-id="${e.id}">
+                <div class="cal-day-time">
+                  <span style="color:var(--ink);font-weight:700;font-size:13.5px">${e.start||'All day'}</span>
+                  ${e.end?`<span class="slot">until ${e.end}</span>`:''}
+                </div>
+                <div class="cal-day-main">
+                  <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+                    <div class="t">${esc(e.name)}</div>
+                    ${sbadge(e.status)}
+                  </div>
+                  <div class="cal-day-meta">
+                    <span class="badge b-grey" style="font-size:11px">${typeEmoji(e.type)} ${esc(e.type)}</span>
+                    <span style="display:inline-flex;align-items:center;gap:4px">
+                      <i style="width:8px;height:8px;border-radius:2px;background:${colors[e.cat]||'var(--saffron)'};display:inline-block"></i>
+                      ${esc(e.cat)}
+                    </span>
+                    <span>·</span>
+                    <span>${esc(scopeName(e))}</span>
+                  </div>
+                  ${devNames.length?`
+                    <div class="cal-day-devotees">
+                      <span>👥 Assigned:</span>
+                      <b>${esc(devNames.join(', '))}${asgs.length>3?` +${asgs.length-3} more`:''}</b>
+                    </div>
+                  `:''}
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>`
+      }
+    </div>`;
+  }
+
   const upcoming=DB.activities.filter(a=>a.date>=iso(TODAY)).sort((a,b)=>a.date<b.date?-1:1).slice(0,8);
   return head('📅 Community','Community calendar','Seva, classes, events, festivals and camps in one place',
     `<button class="btn pri" data-act="open-assign">${ic('plus')}Add to calendar</button>`)+
   `<div class="card" style="margin-bottom:15px">
     <div class="toolbar cal-toolbar">
+      <div class="cal-view-switch">
+        <button class="chip ${view==='month'?'on':''}" data-act="cal-view" data-v="month">Month</button>
+        <button class="chip ${view==='week'?'on':''}" data-act="cal-view" data-v="week">Week</button>
+        <button class="chip ${view==='day'?'on':''}" data-act="cal-view" data-v="day">Day</button>
+      </div>
       <div class="cal-nav-group">
         <div style="display:flex;align-items:center;gap:6px">
-          <button class="btn sm" data-act="cal-nav" data-v="-1" title="Previous month" aria-label="Previous month" style="padding:5px 8px">${ic('back')}</button>
-          <b style="font-family:var(--f-head);font-size:15.5px;text-align:center;white-space:nowrap">${MONTHS[m]} ${y}</b>
-          <button class="btn sm" data-act="cal-nav" data-v="1" title="Next month" aria-label="Next month" style="padding:5px 8px">${ic('chev')}</button>
+          <button class="btn sm" data-act="cal-nav" data-v="-1" title="Previous" aria-label="Previous" style="padding:5px 8px">${ic('back')}</button>
+          <b style="font-family:var(--f-head);font-size:15px;text-align:center;white-space:nowrap">${periodTitle}</b>
+          <button class="btn sm" data-act="cal-nav" data-v="1" title="Next" aria-label="Next" style="padding:5px 8px">${ic('chev')}</button>
         </div>
         <button class="btn sm" data-act="cal-nav" data-v="0" style="padding:5px 10px">Today</button>
       </div>
       <select class="cal-cat-select" data-act="cal-cat" style="min-width:130px"><option value="">All categories</option>${cats.map(c=>`<option ${cat===c?'selected':''}>${c}</option>`).join('')}</select>
     </div>
-   <div class="card-b flush"><div class="cal">
-     ${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d=>`<div class="hd">${d}</div>`).join('')}${cells.join('')}</div></div>
-   <div class="card-b"><div class="legend">${cats.map(c=>`<span><i style="background:${colors[c]}"></i>${c}</span>`).join('')}</div></div></div>
-   ${section('Next up',`<div class="list">${upcoming.map(e=>`<div class="li click" data-act="open-activity" data-id="${e.id}">
+    <div class="card-b flush">${viewHtml}</div>
+    <div class="card-b"><div class="legend">${cats.map(c=>`<span><i style="background:${colors[c]}"></i>${c}</span>`).join('')}</div></div>
+  </div>
+  ${section('Next up',`<div class="list">${upcoming.map(e=>`<div class="li click" data-act="open-activity" data-id="${e.id}">
      <span class="badge b-grey">${typeEmoji(e.type)}</span><span class="grow"><span class="t">${esc(e.name)}</span>
      <span class="d">${fmtD(e.date)} · ${relD(e.date)} · ${esc(scopeName(e))}</span></span>${sbadge(e.status)}</div>`).join('')}</div>`)}`;
 }
@@ -5066,7 +5427,48 @@ document.addEventListener('click',e=>{
     APP.range.from=v==='Last 7 days'?iso(dayOff(-7)):v==='Last 30 days'?iso(dayOff(-30)):
       v==='This quarter'?iso(dayOff(-90)):iso(new Date(TODAY.getFullYear(),0,1));
     render();break}
-  case 'cal-nav':{const v=+t.dataset.v;APP.filters.calOff=v===0?0:(APP.filters.calOff||0)+v;render();break}
+  case 'cal-view':{
+    const newView=t.dataset.v;
+    const curView=APP.filters.calView||'month';
+    const off=APP.filters.calOff||0;
+    const selDateStr=APP.filters.calSelectedDate||iso(TODAY);
+    let selD=new Date(selDateStr+'T00:00:00');
+    if(isNaN(selD.getTime()))selD=new Date(TODAY.getTime());
+    if(curView==='month'&&off!==0){
+      const curr=new Date(selD.getFullYear(),selD.getMonth()+off,1);
+      APP.filters.calSelectedDate=iso(curr);
+    }else if(curView==='week'&&off!==0){
+      const curr=new Date(selD.getFullYear(),selD.getMonth(),selD.getDate()+off*7);
+      APP.filters.calSelectedDate=iso(curr);
+    }else if(curView==='day'&&off!==0){
+      const curr=new Date(selD.getFullYear(),selD.getMonth(),selD.getDate()+off);
+      APP.filters.calSelectedDate=iso(curr);
+    }
+    APP.filters.calOff=0;
+    APP.filters.calView=newView;
+    render();
+    break;
+  }
+  case 'cal-jump-day':{
+    if(t.dataset.date){
+      APP.filters.calSelectedDate=t.dataset.date;
+      APP.filters.calView='day';
+      APP.filters.calOff=0;
+      render();
+    }
+    break;
+  }
+  case 'cal-nav':{
+    const v=+t.dataset.v;
+    if(v===0){
+      APP.filters.calOff=0;
+      APP.filters.calSelectedDate=iso(TODAY);
+    }else{
+      APP.filters.calOff=(APP.filters.calOff||0)+v;
+    }
+    render();
+    break;
+  }
   case 'inv-kind':APP.filters.invKind=t.dataset.arg;render();break;
   case 'drill-list':{const kind=t.dataset.arg;
     const acts=DB.activities.filter(x=>inRange(x.date,APP.range.from,APP.range.to)&&
@@ -5772,6 +6174,19 @@ try {
 } catch (e) {
   console.warn('Session restore error:', e);
 }
+if ((location.search.includes('mock=1') || location.hash.includes('mock=1')) && !APP.user) {
+  APP.user = {
+    id: 'u_admin',
+    devotee: DB.devotees[0]?.id || 'd1',
+    role: 'admin',
+    name: 'Surya Narayana Das',
+    approvalStatus: 'approved',
+    profileCompleted: true
+  };
+  APP.nav.open = { mgmt: true, preach: true, care: true };
+}
+const bootParams = new URLSearchParams(location.search);
+if (bootParams.get('calView')) APP.filters.calView = bootParams.get('calView');
 APP.route=location.hash||'#/';
 render();
 
