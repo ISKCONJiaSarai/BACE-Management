@@ -499,7 +499,6 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13.5px}
 .cal-day-count{font-size:9.5px;background:var(--surface-2);color:var(--ink-3);padding:1px 5px;border-radius:10px;border:1px solid var(--line-2);font-weight:600}
 .cal .day.today .cal-day-count{background:var(--saffron);color:#fff;border-color:transparent}
 .cal .ev{display:block;width:100%;text-align:left;font-size:11px;padding:2.5px 6px;border-radius:6px;margin-bottom:3px;background:var(--paper-2);border-left:2.5px solid var(--ink-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-@media(max-width:720px){.cal .day{min-height:62px;padding:3px}.cal .ev{font-size:0;padding:0;height:5px;margin-bottom:2px;border-radius:3px;border-left:0}}
 
 /* calendar toolbar & view switcher */
 .cal-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 18px;flex-wrap:wrap}
@@ -765,24 +764,63 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13.5px}
     font-size:10px!important;
   }
   .cal .day{
-    min-height:50px!important;
-    padding:2px 1px!important;
+    min-height:96px!important;
+    padding:3px 2px!important;
     box-sizing:border-box!important;
+    display:flex!important;
+    flex-direction:column!important;
+    overflow:hidden!important;
+    transition:background .15s!important;
   }
   .cal .day .dn{
-    font-size:10px!important;
-    margin-bottom:2px!important;
+    font-size:11px!important;
+    font-weight:700!important;
+    margin-bottom:3px!important;
     padding:0 2px!important;
     display:flex!important;
     justify-content:space-between!important;
     align-items:center!important;
+    line-height:1.1!important;
   }
   .cal-day-count{
-    font-size:7.5px!important;
-    padding:0 2.5px!important;
-    border-radius:6px!important;
-    line-height:11px!important;
-    height:11px!important;
+    font-size:8px!important;
+    padding:0 3px!important;
+    border-radius:8px!important;
+    line-height:12px!important;
+    height:12px!important;
+    font-weight:600!important;
+  }
+  .cal .ev{
+    display:block!important;
+    width:100%!important;
+    box-sizing:border-box!important;
+    font-size:8.5px!important;
+    line-height:1.25!important;
+    height:auto!important;
+    min-height:16px!important;
+    padding:2px 3px 2px 4px!important;
+    margin-bottom:2.5px!important;
+    border-radius:3.5px!important;
+    border-left-width:3px!important;
+    border-left-style:solid!important;
+    white-space:nowrap!important;
+    text-overflow:ellipsis!important;
+    overflow:hidden!important;
+    font-weight:550!important;
+    color:var(--ink)!important;
+    text-align:left!important;
+    cursor:pointer!important;
+  }
+  .cal .day .tiny{
+    font-size:8px!important;
+    line-height:1.1!important;
+    color:var(--saffron)!important;
+    font-weight:700!important;
+    padding:0 2px!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+    margin-top:auto!important;
   }
 
   /* Week view on mobile: agenda-style stacked days without horizontal scroll */
@@ -5077,10 +5115,10 @@ function viewCalendar(){
           ${completed?`<span class="badge b-green">${completed} done</span>`:''}
           ${pending?`<span class="badge b-blue">${pending} pending</span>`:''}
         </div>
-        <button class="btn sm pri" data-act="open-assign">${ic('plus')}Add activity</button>
+        <button class="btn sm pri" data-act="open-calendar-program" data-date="${selDateStr}">${ic('plus')}Add program</button>
       </div>
       ${dayActs.length===0?
-        emptyState('No activities scheduled for this day','The schedule is clear. You can schedule seva, classes, or temple programs.','<button class="btn sm pri" data-act="open-assign">Schedule Seva</button>')
+        emptyState('No programs scheduled for this day','The schedule is clear. You can schedule classes, festivals, camps, meetings, or temple visits.',`<button class="btn sm pri" data-act="open-calendar-program" data-date="${selDateStr}">Schedule Program</button>`)
         :`<div class="cal-day-list">
           ${dayActs.map(e=>{
             const asgs=assignsFor(e.id);
@@ -5122,7 +5160,7 @@ function viewCalendar(){
 
   const upcoming=DB.activities.filter(a=>a.date>=iso(TODAY)).sort((a,b)=>a.date<b.date?-1:1).slice(0,8);
   return head('📅 Community','Community calendar','Seva, classes, events, festivals and camps in one place',
-    `<button class="btn pri" data-act="open-assign">${ic('plus')}Add to calendar</button>`)+
+    `<button class="btn pri" data-act="open-calendar-program">${ic('plus')}Add to calendar</button>`)+
   `<div class="card" style="margin-bottom:15px">
     <div class="toolbar cal-toolbar">
       <div class="cal-view-switch">
@@ -5545,9 +5583,142 @@ function searchModal(){
      :emptyState('No matches','Nothing in the devotee database, pipeline, activities or SOPs matches that search.','')}</div>
    <div class="modal-f"><button class="btn" data-act="close-scrim">Close</button></div></div></div>`;
 }
+const CAL_PROGRAM_CATS=[
+  {key:'Classes',label:'Classes',em:'📚',hex:'#4F46E5',color:'var(--indigo)',desc:'Scripture study, Bhagavad Gita sessions, youth training & discourses'},
+  {key:'Festivals',label:'Festivals',em:'🎉',hex:'#D97706',color:'var(--mustard)',desc:'Vaishnava festivals, Janmashtami, Radhastami & major feasts'},
+  {key:'Camps',label:'Camps',em:'⛺',hex:'#0D9488',color:'var(--teal)',desc:'Spiritual retreats, yatra camps, youth retreats & outbound intensives'},
+  {key:'Meetings',label:'Meetings',em:'🤝',hex:'#0284C7',color:'var(--sky)',desc:'Core committee, departmental sync & coordination meetings'},
+  {key:'Temple Visits',label:'Temple Visits',em:'🛕',hex:'#059669',color:'var(--teal)',desc:'Temple darshan, morning Mangal Aarti yatras & temple programs'}
+];
+
+function calProgramDraft(){
+  if(!APP.draft.calProgram){
+    APP.draft.calProgram = {
+      cat: 'Classes',
+      name: '',
+      date: APP.filters.calSelectedDate || iso(TODAY),
+      start: '07:00 am',
+      end: '08:30 am',
+      location: 'Temple Hall',
+      responsible: APP.user.devotee || (DB.devotees[0] ? DB.devotees[0].id : ''),
+      expected: 25,
+      desc: ''
+    };
+  }
+  return APP.draft.calProgram;
+}
+
+function calendarProgramModal(){
+  const d = calProgramDraft();
+  const activeCat = CAL_PROGRAM_CATS.find(c => c.key === d.cat) || CAL_PROGRAM_CATS[0];
+  
+  return `<div class="scrim" data-act="close-scrim"><div class="modal" data-stop="1" style="max-width:580px">
+    <div class="modal-h" style="border-bottom:1px solid var(--line)">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:22px">📅</span>
+        <div>
+          <h2 style="font-size:18px">Add Program to Calendar</h2>
+          <div class="tiny">Schedule classes, festivals, camps, meetings, and temple visits</div>
+        </div>
+      </div>
+      <button class="icon-btn" style="margin-left:auto" data-act="close-scrim">${ic('x')}</button>
+    </div>
+
+    <form class="modal-b" id="calprogform" onsubmit="return false" style="padding:18px 20px;display:flex;flex-direction:column;gap:14px">
+      <!-- Category selector with color coding -->
+      <div>
+        <label style="display:block;font-size:12.5px;color:var(--ink-2);margin-bottom:7px;font-weight:600">
+          Program Category <span style="color:var(--danger)">*</span>
+          <span class="tiny" style="font-weight:normal;color:var(--ink-3);margin-left:6px">(Select category)</span>
+        </label>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(105px, 1fr));gap:7px">
+          ${CAL_PROGRAM_CATS.map(c => {
+            const isSel = c.key === d.cat;
+            return `<button type="button" class="btn sm" data-act="set-cal-program-cat" data-k="${c.key}"
+              style="padding:7px 8px;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;text-align:center;
+              border:${isSel ? `2px solid ${c.hex}` : '1px solid var(--line)'};
+              background:${isSel ? 'var(--surface)' : 'var(--surface-2)'};
+              box-shadow:${isSel ? `0 2px 8px ${c.hex}33` : 'none'};
+              cursor:pointer;transition:all .15s">
+              <div style="display:flex;align-items:center;gap:5px">
+                <span style="font-size:15px">${c.em}</span>
+                <i style="width:8px;height:8px;border-radius:50%;background:${c.hex};display:inline-block;flex:none"></i>
+              </div>
+              <span style="font-size:11.5px;font-weight:${isSel?'700':'500'};color:${isSel?c.hex:'var(--ink)'};line-height:1.2">${c.label}</span>
+            </button>`;
+          }).join('')}
+        </div>
+        <div class="note" style="margin-top:8px;padding:6px 10px;font-size:11.5px;border-left:3.5px solid ${activeCat.hex};background:var(--surface-2);border-radius:0 8px 8px 0;display:flex;align-items:center;gap:6px">
+          <i style="width:7px;height:7px;border-radius:50%;background:${activeCat.hex};flex:none"></i>
+          <span><b>${activeCat.label}</b>: ${activeCat.desc}</span>
+        </div>
+      </div>
+
+      <!-- Program Name -->
+      <div class="field" style="margin:0">
+        <label style="display:block;font-size:12.5px;color:var(--ink-2);margin-bottom:5px;font-weight:600">Program Name <span style="color:var(--danger)">*</span></label>
+        <input type="text" name="cal_prog_name" value="${esc(d.name)}" placeholder="e.g. Sri Krishna Janmashtami / Gita Chapter 7 Discussion" required style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-size:13.5px">
+      </div>
+
+      <!-- Date & Venue -->
+      <div class="form-row" style="margin:0">
+        <div class="field" style="margin:0">
+          <label style="display:block;font-size:12.5px;color:var(--ink-2);margin-bottom:5px;font-weight:500">Date <span style="color:var(--danger)">*</span></label>
+          <input type="date" name="cal_prog_date" value="${esc(d.date)}" required style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-size:13px">
+        </div>
+        <div class="field" style="margin:0">
+          <label style="display:block;font-size:12.5px;color:var(--ink-2);margin-bottom:5px;font-weight:500">Location / Venue</label>
+          <input type="text" name="cal_prog_loc" value="${esc(d.location)}" placeholder="e.g. Temple Hall / BACE / IIT Delhi" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-size:13px">
+        </div>
+      </div>
+
+      <!-- Times -->
+      <div class="form-row" style="margin:0">
+        <div class="field" style="margin:0">
+          <label style="display:block;font-size:12.5px;color:var(--ink-2);margin-bottom:5px;font-weight:500">Start Time</label>
+          <input type="text" name="cal_prog_start" value="${esc(d.start)}" placeholder="e.g. 07:00 am" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-size:13px">
+        </div>
+        <div class="field" style="margin:0">
+          <label style="display:block;font-size:12.5px;color:var(--ink-2);margin-bottom:5px;font-weight:500">End Time</label>
+          <input type="text" name="cal_prog_end" value="${esc(d.end)}" placeholder="e.g. 08:30 am" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-size:13px">
+        </div>
+      </div>
+
+      <!-- Lead Devotee & Expected count -->
+      <div class="form-row" style="margin:0">
+        <div class="field" style="margin:0">
+          <label style="display:block;font-size:12.5px;color:var(--ink-2);margin-bottom:5px;font-weight:500">Program Lead / Speaker</label>
+          <select name="cal_prog_resp" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-size:13px">
+            <option value="">-- Select devotee in charge --</option>
+            ${DB.devotees.map(x=>`<option value="${x.id}" ${d.responsible===x.id?'selected':''}>${esc(x.name)}</option>`).join('')}
+          </select>
+        </div>
+        <div class="field" style="margin:0">
+          <label style="display:block;font-size:12.5px;color:var(--ink-2);margin-bottom:5px;font-weight:500">Expected Attendees</label>
+          <input type="number" name="cal_prog_exp" value="${esc(d.expected)}" min="0" max="5000" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-size:13px">
+        </div>
+      </div>
+
+      <!-- Details / Notes -->
+      <div class="field" style="margin:0">
+        <label style="display:block;font-size:12.5px;color:var(--ink-2);margin-bottom:5px;font-weight:500">Program Details & Agenda</label>
+        <textarea name="cal_prog_desc" placeholder="Schedule rundown, speaker topic, prasadam arrangements, or guidelines for devotees…" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-size:13px;min-height:68px;resize:vertical">${esc(d.desc)}</textarea>
+      </div>
+    </form>
+
+    <div class="modal-f" style="padding:13px 20px;display:flex;justify-content:space-between;align-items:center;background:var(--surface-2);border-top:1px solid var(--line-2)">
+      <button class="btn" data-act="close-scrim">Cancel</button>
+      <button class="btn pri" data-act="save-calendar-program" style="background:${activeCat.hex};border-color:${activeCat.hex};display:inline-flex;align-items:center;gap:6px">
+        ${ic('plus')} Add to Calendar
+      </button>
+    </div>
+  </div></div>`;
+}
+
 function modalHTML(){
   const m=APP.modal;if(!m)return'';
   if(m==='assign')return assignModal();
+  if(m==='calendar-program')return calendarProgramModal();
   if(m==='account'||m==='switch')return accountModal();
   if(m==='notif')return notifDrawer();
   if(m==='search')return searchModal();
@@ -6332,6 +6503,104 @@ document.addEventListener('click',e=>{
     logAudit('Follow-up completed',subjectName(f));toast('Follow-up marked done');render();break}
   case 'snooze-fu':stop();{const f=DB.followups.find(x=>x.id===id);f.due=iso(dayOff(3));
     logAudit('Follow-up rescheduled',subjectName(f));toast('Moved to '+fmtD(f.due));render();break}
+  /* ---- calendar program ---- */
+  case 'open-calendar-program':{stop();
+    APP.draft.calProgram = {
+      cat: t.dataset.cat || 'Classes',
+      name: '',
+      date: t.dataset.date || APP.filters.calSelectedDate || iso(TODAY),
+      start: '07:00 am',
+      end: '08:30 am',
+      location: 'Temple Hall',
+      responsible: APP.user.devotee || (DB.devotees[0] ? DB.devotees[0].id : ''),
+      expected: 25,
+      desc: ''
+    };
+    APP.fabOpen = false;
+    APP.modal = 'calendar-program';
+    render();
+    break;
+  }
+  case 'set-cal-program-cat':{stop();
+    const d = calProgramDraft();
+    d.cat = t.dataset.k;
+    const f = document.getElementById('calprogform');
+    if (f) {
+      if (f.cal_prog_name) d.name = f.cal_prog_name.value;
+      if (f.cal_prog_date) d.date = f.cal_prog_date.value;
+      if (f.cal_prog_loc) d.location = f.cal_prog_loc.value;
+      if (f.cal_prog_start) d.start = f.cal_prog_start.value;
+      if (f.cal_prog_end) d.end = f.cal_prog_end.value;
+      if (f.cal_prog_resp) d.responsible = f.cal_prog_resp.value;
+      if (f.cal_prog_exp) d.expected = +f.cal_prog_exp.value || 0;
+      if (f.cal_prog_desc) d.desc = f.cal_prog_desc.value;
+    }
+    render();
+    break;
+  }
+  case 'save-calendar-program':{stop();
+    const d = calProgramDraft();
+    const f = document.getElementById('calprogform');
+    const name = f?.cal_prog_name ? f.cal_prog_name.value.trim() : d.name.trim();
+    if (!name) { toast('Please give the program a name', '⚠️'); break; }
+    
+    const date = f?.cal_prog_date ? f.cal_prog_date.value : (d.date || iso(TODAY));
+    const start = f?.cal_prog_start ? f.cal_prog_start.value.trim() : d.start;
+    const end = f?.cal_prog_end ? f.cal_prog_end.value.trim() : d.end;
+    const location = f?.cal_prog_loc ? f.cal_prog_loc.value.trim() : d.location;
+    const responsible = f?.cal_prog_resp ? f.cal_prog_resp.value : d.responsible;
+    const expected = f?.cal_prog_exp ? +f.cal_prog_exp.value || 0 : d.expected;
+    const desc = f?.cal_prog_desc ? f.cal_prog_desc.value.trim() : d.desc;
+
+    const actType = d.cat === 'Classes' ? 'Class' : 'Event';
+    const newAct = {
+      id: uid('ac'),
+      type: actType,
+      name,
+      title: name,
+      cat: d.cat,
+      dept: null,
+      batch: null,
+      date,
+      start,
+      end,
+      location,
+      desc,
+      priority: 'Medium',
+      need: 0,
+      vols: 0,
+      skills: [],
+      responsible: responsible || APP.user.devotee,
+      owner: APP.user.devotee,
+      templateId: null,
+      recurrence: 'One time',
+      overridden: false,
+      status: 'Scheduled',
+      actionItems: [],
+      budget: { allocated: 0, spent: 0 },
+      report: null,
+      proof: null,
+      due: date,
+      expected
+    };
+    DB.activities.push(newAct);
+    if (responsible) {
+      DB.assignments.push({
+        id: uid('as'),
+        activity: newAct.id,
+        devotee: responsible,
+        state: 'Assigned',
+        actualPerformer: null,
+        completedAt: null
+      });
+    }
+    logAudit('Calendar program scheduled', `${newAct.name} (${newAct.cat}) on ${newAct.date}`);
+    toast('Program added to calendar!', '📅');
+    APP.modal = '';
+    APP.draft.calProgram = null;
+    render();
+    break;
+  }
   /* ---- assign / schedule ---- */
   case 'open-schedule':
   case 'open-assign':{stop();APP.draft.assign=null;const d=assignDraft();
