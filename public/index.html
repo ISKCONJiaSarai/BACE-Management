@@ -3863,17 +3863,10 @@ function activityModal(id){
   const asg=assignsFor(a.id);const f=filled(a);
   const mine=asg.find(x=>x.devotee===APP.user.devotee);
   const manager=ownsDept(a.dept)||ownsBatch(a.batch)||['coordinator','admin','area_leader'].includes(APP.user.role);
-  const scopeDevs = a.batch ? DB.devotees.filter(x=>x.status!=='Inactive'&&x.batch===a.batch&&!asg.some(s=>s.devotee===x.id))
+  const scopeDevs = (a.batch ? DB.devotees.filter(x=>x.status!=='Inactive'&&x.batch===a.batch&&!asg.some(s=>s.devotee===x.id))
     : a.dept ? DB.devotees.filter(x=>x.status!=='Inactive'&&x.dept===a.dept&&!asg.some(s=>s.devotee===x.id))
-    : DB.devotees.filter(x=>x.status!=='Inactive'&&!asg.some(s=>s.devotee===x.id));
-  const cands = scopeDevs.length ? scopeDevs.slice().sort((p,q)=>q.attendancePct-p.attendancePct)
-    : DB.devotees.filter(x=>x.status!=='Inactive'&&!asg.some(s=>s.devotee===x.id))
-        .map(x=>{
-          let s=(x.attendancePct||0)/3;
-          if(a.batch&&x.batch===a.batch)s+=60;
-          if(a.dept&&x.dept===a.dept)s+=50;
-          return {x,s};
-        }).sort((p,q)=>q.s-p.s).slice(0,6).map(o=>o.x);
+    : DB.devotees.filter(x=>x.status!=='Inactive'&&!asg.some(s=>s.devotee===x.id)))
+    .sort((p,q)=>q.attendancePct-p.attendancePct);
   return `<div class="drawer-wrap" data-act="close-scrim"><div class="drawer" data-stop="1">
    <div class="modal-h"><div><h2 style="font-size:18px">${typeEmoji(a.type)} ${esc(a.name)}</h2>
      <div class="tiny">${esc(scopeName(a))} · ${fmtD(a.date)}${a.start?` · ${a.start}–${a.end}`:''}</div></div>
@@ -3927,13 +3920,7 @@ function activityModal(id){
       <input type="text" id="custom-devotee-input" placeholder="Type devotee name..." style="flex:1;padding:7px 11px;border:1px solid var(--line);border-radius:9px" onkeydown="if(event.key==='Enter'){document.getElementById('assign-custom-btn').click();event.preventDefault();}">
       <button class="btn sm pri" id="assign-custom-btn" data-act="assign-custom-devotee" data-a="${a.id}">Assign</button>
       <button class="btn sm" data-act="toggle-custom-devotee" data-a="${a.id}">✕</button>
-    </div>`:''}
-    <div class="list" style="border:1px solid var(--line);border-radius:12px;max-height:220px;overflow-y:auto">
-      ${cands.length?cands.map(x=>`<div class="li">${av(x.name)}<span class="grow"><span class="t">${esc(x.name)}</span>
-        <span class="d">${esc(batch(x.batch)?.name||dept(x.dept)?.name||'Devotee')} · ${x.attendancePct}% attendance</span></span>
-        <button class="btn sm pri" data-act="assign-one" data-a="${a.id}" data-d="${x.id}">Assign</button></div>`).join('')
-      :`<div class="li tiny">All devotees in ${esc(scopeName(a))} are already assigned.</div>`}
-    </div>`:''}
+    </div>`:''}`:''}
     <h3 style="margin:16px 0 8px">Action items</h3>${checklistBlock(a)}
     ${a.budget&&a.budget.allocated?`<h3 style="margin:16px 0 8px">Budget</h3>${budgetBlock(a.budget)}
       ${manager?`<button class="btn sm" style="margin-top:10px" data-act="edit-budget" data-kind="activity" data-id="${a.id}">Update budget</button>`:''}`:''}
