@@ -41,6 +41,9 @@ const UserSchema = new mongoose.Schema({
       'internal_manager',
       'preaching_manager',
       'care_manager',
+      'dept_head',
+      'preaching_coord',
+      'facilitator',
       'admin',
       'devotee'
     ],

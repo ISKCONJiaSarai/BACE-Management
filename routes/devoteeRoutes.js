@@ -93,6 +93,13 @@ router.put('/:id', async (req, res) => {
       return res.status(404).json({ success: false, message: 'Devotee not found' });
     }
 
+    if (req.body.role) {
+      await User.updateMany(
+        { $or: [{ devotee: devotee._id }, ...(devotee.email ? [{ email: devotee.email }] : [])] },
+        { $set: { role: req.body.role } }
+      );
+    }
+
     res.json({ success: true, data: devotee });
   } catch (err) {
     res.status(400).json({ success: false, error: err.message });

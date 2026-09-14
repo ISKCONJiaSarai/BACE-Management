@@ -1878,6 +1878,27 @@ function devoteePositionTitle(id, role){
   const r=ROLES[rKey]||ROLES.devotee;
   return `${r.emoji} ${r.name}`;
 }
+function devoteeRole(id){
+  const d = typeof id === 'object' && id !== null ? id : dv(id);
+  if(!d) return 'devotee';
+  const curEmail = (d.email || '').toLowerCase().trim();
+  if(curEmail === 'terkadamba.js@gmail.com') return 'admin';
+  if(curEmail === 'suryakiranjune2@gmail.com') return 'area_leader';
+  const u = (DB.users||[]).find(x => x.devotee === d.id);
+  if(u?.role && ROLES[u.role]) return u.role;
+  if(d.appointment){
+    const match = Object.entries(ROLES).find(([k, r]) => r.name.toLowerCase() === d.appointment.toLowerCase());
+    if(match) return match[0];
+  }
+  if(d.isFacilitator) return 'facilitator';
+  if((DB.departments||[]).some(dp => dp.head === d.id)) return 'dept_head';
+  if((DB.batches||[]).some(b => b.coordinator === d.id)) return 'preaching_coord';
+  return 'devotee';
+}
+function devoteeRoleObj(id){
+  const r = devoteeRole(id);
+  return ROLES[r] || ROLES.devotee;
+}
 function dept(id){return DB.departments.find(d=>d.id===id)||null}
 function batch(id){return DB.batches.find(b=>b.id===id)||null}
 function contact(id){return DB.contacts.find(c=>c.id===id)||null}
@@ -3205,6 +3226,7 @@ function viewDevotees(){
         d.org,
         d.occupation,
         d.appointment,
+        devoteeRoleObj(d).name,
         (d.skills||[]).join(' '),
         (d.swabhav?.nature||''),
         (d.swabhav?.interests||[]).join(' '),
@@ -3214,6 +3236,7 @@ function viewDevotees(){
       ].filter(Boolean).join(' ').toLowerCase();
       if(!searchable.includes(query)) return false;
     }
+    if(f.role&&devoteeRole(d)!==f.role)return false;
     if(f.status&&d.status!==f.status)return false;
     if(f.level){
       if(f.level==='0'&&(d.level||0)>0)return false;
@@ -3262,6 +3285,7 @@ function viewDevotees(){
   const scoped=['dept_head','preaching_coord','facilitator'].includes(APP.user.role);
   let activeFilterCount = 0;
   if(f.q) activeFilterCount++;
+  if(f.role) activeFilterCount++;
   if(f.status) activeFilterCount++;
   if(f.batch) activeFilterCount++;
   if(f.dept) activeFilterCount++;
@@ -3308,6 +3332,12 @@ function viewDevotees(){
         <span class="tiny" style="font-weight:700;color:var(--ink);margin-right:2px;display:flex;align-items:center;gap:4px;flex-shrink:0;white-space:nowrap">
           ${ic('filter')} Filter by:
         </span>
+
+        <!-- 0. Hierarchy Role Filter -->
+        <select data-act="f" data-k="dev" data-n="role" title="Filter by Hierarchy Role" style="padding:6px 9px;border-radius:8px;border:1px solid ${f.role?'var(--accent)':'var(--line)'};font-size:12.5px;background:${f.role?'var(--accent-soft)':'var(--surface)'};color:${f.role?'var(--accent)':'var(--ink)'};${f.role?'font-weight:700':''};flex-shrink:0;min-width:130px;max-width:165px">
+          <option value="">🧭 All Roles</option>
+          ${Object.entries(ROLES).map(([k,r])=>`<option value="${k}" ${f.role===k?'selected':''}>${r.emoji} ${esc(r.name)}</option>`).join('')}
+        </select>
 
         <!-- 1. Department Filter -->
         <select data-act="f" data-k="dev" data-n="dept" title="Filter by Department / Seva" style="padding:6px 9px;border-radius:8px;border:1px solid ${f.dept?'var(--accent)':'var(--line)'};font-size:12.5px;background:${f.dept?'var(--accent-soft)':'var(--surface)'};color:${f.dept?'var(--accent)':'var(--ink)'};${f.dept?'font-weight:700':''};flex-shrink:0;min-width:130px;max-width:165px">
@@ -3363,7 +3393,12 @@ function viewDevotees(){
        <span style="display:inline-flex;align-items:center;padding:1px 6px;border-radius:5px;font-size:11px;font-weight:700;background:${f.sort==='name_asc'||f.sort==='name_desc'?'var(--accent-soft)':'var(--surface-2)'};color:${f.sort==='name_asc'||f.sort==='name_desc'?'var(--accent)':'var(--ink-3)'};border:1px solid ${f.sort==='name_asc'||f.sort==='name_desc'?'var(--accent)':'var(--line)'}">
          ${f.sort==='name_asc'?'A → Z ▲':f.sort==='name_desc'?'Z → A ▼':'↕ A–Z'}
        </span>
-     </div>`,label:'Devotee',c:d=>`<div class="who">${av(d.name,'m')}<div><b>${esc(d.name)}</b><span>${esc(d.org || d.highestEducation || 'BACE')} · joined ${fmtD(d.joined)}</span></div></div>`},
+     </div>`,label:'Devotee',c:d=>{
+       const rKey=devoteeRole(d);
+       const rObj=ROLES[rKey]||ROLES.devotee;
+       const isLeader=rKey!=='devotee';
+       return `<div class="who">${av(d.name,'m')}<div><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"><b>${esc(d.name)}</b>${isLeader?`<span class="badge ${rKey==='area_leader'?'b-gold':rKey==='admin'?'b-ink':'b-saffron'}" style="font-size:10.5px;padding:1px 6px" title="${esc(rObj.scope)}">${rObj.emoji} ${esc(rObj.name)}</span>`:''}</div><span>${esc(d.org || d.highestEducation || 'BACE')} · joined ${fmtD(d.joined)}</span></div></div>`;
+     }},
      {h:`Status ${f.status?`<span class="badge b-grey" style="padding:1px 5px;font-size:10px">Filtered</span>`:''}`,label:'Status',c:d=>sbadge(d.status)},
      {h:`Level / batch ${f.batch?`<span class="badge b-indigo" style="padding:1px 5px;font-size:10px">Filtered</span>`:''}`,label:'Level / batch',c:d=>d.batch?`${badge('L'+d.level,'indigo')} ${esc(batch(d.batch)?.name||'')}`:'<span class="tiny">Not in a batch</span>'},
      {h:`Department ${f.dept?`<span class="badge b-saffron" style="padding:1px 5px;font-size:10px">Filtered</span>`:''}`,label:'Department',c:d=>d.dept?esc(dept(d.dept)?.name||''):'<span class="tiny">No seva</span>'},
@@ -3371,6 +3406,9 @@ function viewDevotees(){
      {h:`Skills ${f.skill?`<span class="badge b-grey" style="padding:1px 5px;font-size:10px">Filtered</span>`:''}`,label:'Skills',c:d=>d.skills.map(s=>badge(s,'grey')).join(' ')},
      {h:`Attendance ${f.attendance?`<span class="badge b-teal" style="padding:1px 5px;font-size:10px">Filtered</span>`:''}`,label:'Attendance',c:d=>`<div style="min-width:90px">${prog(d.attendancePct)}<span class="tiny">${d.attendancePct}%</span></div>`},
      {h:'Actions',label:'Actions',c:d=>`<div style="display:flex;gap:6px;align-items:center;justify-content:flex-end">
+       <button class="btn sm" data-act="assign-role" data-id="${d.id}" title="Assign hierarchy role" style="padding:4px 8px;font-size:12px;display:inline-flex;align-items:center;gap:3px">
+         🧭 Role
+       </button>
        <a class="btn sm" href="#/devotee/${d.id}" data-act="open-devotee" data-id="${d.id}" title="View profile" style="padding:4px 10px;text-decoration:none;display:inline-flex;align-items:center;gap:4px;font-weight:600">
          ${ic('user')} View
        </a>
@@ -3389,6 +3427,9 @@ function viewDevotee(id){
   const tabs=['Overview','Preaching','Seva','Attendance','Care','Sadhana','Timeline','Friends','Notes'];
   const careOK=can('care_notes')&&(APP.user.role!=='facilitator'||d.facilitator===APP.user.devotee||d.id===APP.user.devotee);
   const mine=DB.assignments.filter(a=>a.devotee===d.id).map(a=>({a,x:act(a.activity)})).filter(o=>o.x);
+  const rKey=devoteeRole(d);
+  const rObj=ROLES[rKey]||ROLES.devotee;
+  const roleBadge=`<span class="badge ${rKey==='area_leader'?'b-gold':rKey==='admin'?'b-ink':rKey==='devotee'?'b-grey':'b-saffron'}" style="font-weight:600" title="${esc(rObj.scope)}">${rObj.emoji} ${esc(rObj.name)}</span>`;
   const body={
    Overview:`<div class="grid g-2-1">
      <div class="card"><div class="card-h"><h3>Basic information</h3></div><div class="card-b">
@@ -3399,6 +3440,7 @@ function viewDevotee(id){
       <dt>Availability</dt><dd>${esc(d.availability)}</dd></dl></div>
       <div class="card-h" style="border-top:1px solid var(--line-2)"><h3>Community information</h3></div><div class="card-b">
       <dl class="kv"><dt>Joining date</dt><dd>${fmtD(d.joined)}</dd><dt>Status</dt><dd>${sbadge(d.status)}</dd>
+      <dt>Hierarchy role</dt><dd><span style="font-weight:700;color:var(--ink)">${rObj.emoji} ${esc(rObj.name)}</span> <span class="tiny muted">· ${esc(rObj.scope)}</span></dd>
       <dt>Current level</dt><dd>${d.level?'Level '+d.level:'Not yet levelled'}</dd><dt>Batch</dt><dd>${esc(batch(d.batch)?.name||'—')}</dd>
       <dt>Care group</dt><dd>${esc(group(d.careGroup)?.name||'—')}</dd><dt>Facilitator</dt><dd>${esc(nameOf(d.facilitator))}</dd>
       <dt>Mentor</dt><dd>${esc(nameOf(d.mentor))}</dd></dl></div></div>
@@ -3473,10 +3515,11 @@ function viewDevotee(id){
     ${av(d.name,'l')}
     <div style="min-width:190px"><h1 style="font-size:23px">${esc(d.name)}</h1>
       <div class="tiny" style="margin-top:4px">${esc(d.occupation)} · ${esc(d.org)} · joined ${fmtD(d.joined)}</div>
-      <div class="chips" style="margin-top:10px">${sbadge(d.status)}${d.batch?badge('📖 '+batch(d.batch).name,'indigo'):''}${d.dept?badge('🕉 '+dept(d.dept).name,'saffron'):''}${d.careGroup?badge('❤️ '+group(d.careGroup).name,'green'):''}</div></div>
+      <div class="chips" style="margin-top:10px">${roleBadge}${sbadge(d.status)}${d.batch?badge('📖 '+batch(d.batch).name,'indigo'):''}${d.dept?badge('🕉 '+dept(d.dept).name,'saffron'):''}${d.careGroup?badge('❤️ '+group(d.careGroup).name,'green'):''}</div></div>
     <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn" data-act="dm" data-id="${d.id}">${ic('chat')}Message</button>
       <button class="btn" data-act="add-followup">${ic('clock')}Follow-up</button>
+      <button class="btn" data-act="assign-role" data-id="${d.id}" title="Assign role from hierarchy">🧭 Assign role</button>
       <button class="btn pri" data-act="edit-devotee" data-id="${d.id}">${ic('edit')}Edit profile</button>
       <button class="btn danger" data-act="delete-devotee" data-id="${d.id}" style="color:var(--danger);border-color:rgba(220,53,69,0.3);background:rgba(220,53,69,0.05)">🗑 Delete Devotee Data</button></div>
    </div>
@@ -3486,7 +3529,12 @@ function viewDevotee(id){
 
 /* ---- organisation ---- */
 function viewOrg(){
-  const find=r=>nameOf((DB.users.find(x=>x.role===r)||{}).devotee);
+  const find=r=>{
+    const u = (DB.users||[]).find(x=>x.role===r);
+    if(u && u.devotee) return nameOf(u.devotee);
+    const d = (DB.devotees||[]).find(x => x.appointment === ROLES[r]?.name || devoteeRole(x) === r);
+    return d ? d.name : '—';
+  };
   const node=(n,r,tone)=>`<div class="org-node" style="border-top:3px solid ${tone}"><div class="nm">${esc(n)}</div><div class="rl">${esc(r)}</div></div>`;
   return head('🧭 Who answers to whom','Organisation hierarchy','Area Leader down to every volunteer, with the three pillars in the middle')+
   `<div class="card pad"><div class="org">
@@ -3500,7 +3548,7 @@ function viewOrg(){
   <div class="grid g3" style="margin-top:4px">
     ${section('Department heads',`<div class="list" style="max-height:320px;overflow:auto">${activeDepts().map(d=>`<a class="li click" href="#/dept/${d.id}">${av(nameOf(d.head))}<span class="grow"><span class="t">${esc(nameOf(d.head))}</span><span class="d">${d.icon} ${esc(d.name)}</span></span></a>`).join('')}</div>`)}
     ${section('Preaching coordinators',`<div class="list" style="max-height:320px;overflow:auto">${DB.batches.map(b=>`<a class="li click" href="#/batch/${b.id}">${av(nameOf(b.coordinator))}<span class="grow"><span class="t">${esc(nameOf(b.coordinator))}</span><span class="d">${esc(b.name)} · Level ${b.level}</span></span></a>`).join('')}</div>`)}
-    ${section('Facilitators',`<div class="list" style="max-height:320px;overflow:auto">${DB.devotees.filter(d=>d.isFacilitator).map(f=>`<a class="li click" href="#/devotee/${f.id}">${av(f.name)}<span class="grow"><span class="t">${esc(f.name)}</span><span class="d">${DB.devotees.filter(x=>x.facilitator===f.id).length} devotees</span></span></a>`).join('')}</div>`)}
+    ${section('Facilitators',`<div class="list" style="max-height:320px;overflow:auto">${DB.devotees.filter(d=>d.isFacilitator||devoteeRole(d)==='facilitator').map(f=>`<a class="li click" href="#/devotee/${f.id}">${av(f.name)}<span class="grow"><span class="t">${esc(f.name)}</span><span class="d">${DB.devotees.filter(x=>x.facilitator===f.id).length} devotees</span></span></a>`).join('')}</div>`)}
   </div></div>`;
 }
 /* =========================================================================
@@ -5491,6 +5539,19 @@ function openGroupForm(id){
 }
 function openDevoteeForm(id){
   const d=id?dv(id):null;
+  const curRole = d ? devoteeRole(d) : 'devotee';
+  const roleOpts = [
+    ['devotee', '🙏 Devotee (General volunteer & member)'],
+    ['facilitator', '🤝 Facilitator (Mentoring & personal care)'],
+    ['dept_head', '🛠 Department Head (Managing seva & department)'],
+    ['preaching_coord', '🎓 Preaching Coordinator (Batch leadership)'],
+    ['care_manager', '❤️ Devotee Care Manager (Pillar leader: Care)'],
+    ['preaching_manager', '📖 Preaching Manager (Pillar leader: Preaching)'],
+    ['internal_manager', '🕉 Internal Manager (Pillar leader: BACE & Seva)'],
+    ['coordinator', '🧭 Overall Coordinator (Operational executive)'],
+    ['area_leader', '🪷 Area Leader (Strategic leadership & spiritual guidance)'],
+    ['admin', '⚙️ BACE Administrator (System administration & security)']
+  ];
   openForm(d?'Edit devotee':'Add devotee',[
     FLD('name','Full name','text',{v:d?.name}),
     FLD('phone','Phone','text',{v:d?.phone,half:1}),FLD('email','Email','text',{v:d?.email,half:1}),
@@ -5498,12 +5559,13 @@ function openDevoteeForm(id){
     FLD('org','College / organisation','select',{v:d?.org,opts:ORGS,half:1}),
     FLD('occupation','Occupation','select',{v:d?.occupation,opts:OCC,half:1}),
     FLD('address','Address','text',{v:d?.address,half:1}),FLD('emergency','Emergency contact','text',{v:d?.emergency,half:1}),
+    FLD('role','Hierarchy Role','select',{v:curRole,opts:roleOpts,half:1}),
+    FLD('status','Status','select',{v:d?.status||'New',opts:['Active','New','Inactive'],half:1}),
     FLD('dept','Department','select',{v:d?.dept||'',opts:[['','No department'],...activeDepts().map(x=>[x.id,x.name])],half:1}),
     FLD('batch','Batch','select',{v:d?.batch||'',opts:[['','No batch'],...DB.batches.map(x=>[x.id,x.name])],half:1}),
     FLD('careGroup','Care group','select',{v:d?.careGroup||'',opts:[['','No group'],...DB.careGroups.map(x=>[x.id,x.name])],half:1}),
     FLD('facilitator','Facilitator','select',{v:d?.facilitator||'',opts:[['','Not assigned'],...DB.devotees.filter(x=>x.isFacilitator).map(x=>[x.id,x.name])],half:1}),
     FLD('availability','Availability','select',{v:d?.availability||'Weekends',opts:['Weekday mornings','Weekday evenings','Weekends','Anytime'],half:1}),
-    FLD('status','Status','select',{v:d?.status||'New',opts:['Active','New','Inactive'],half:1}),
     FLD('source','How they were first contacted','select',{v:d?.source,opts:SOURCES})
   ],'save-devotee',{id},'One record — every pillar links to it rather than copying it.');
 }
@@ -5660,6 +5722,42 @@ function go(r){
   if(location.hash!==r)location.hash=r;
   else render();
   window.scrollTo(0,0);
+}
+async function syncDevoteeToBackend(d, roleKey){
+  const token = localStorage.getItem('bace_token');
+  if(!token) return;
+  try{
+    const rKey = roleKey || devoteeRole(d);
+    const rObj = ROLES[rKey] || ROLES.devotee;
+    const payload = {
+      name: d.name,
+      phone: d.phone,
+      email: d.email,
+      dob: d.dob,
+      joined: d.joined,
+      org: d.org,
+      occupation: d.occupation,
+      address: d.address,
+      emergency: d.emergency,
+      dept: d.dept || null,
+      batch: d.batch || null,
+      careGroup: d.careGroup || null,
+      facilitator: d.facilitator || null,
+      availability: d.availability,
+      status: d.status,
+      source: d.source,
+      appointment: rObj.name,
+      isFacilitator: (rKey === 'facilitator'),
+      role: rKey
+    };
+    await fetch(`/api/devotees/${d.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify(payload)
+    });
+  }catch(e){
+    console.warn('Backend devotee sync notice:', e);
+  }
 }
 async function deleteDevoteeAction(id){
   const token = localStorage.getItem('bace_token');
@@ -5961,28 +6059,109 @@ document.addEventListener('click',e=>{
   /* ---- devotees ---- */
   case 'add-devotee':openDevoteeForm(null);break;
   case 'edit-devotee':stop();openDevoteeForm(id);break;
+  case 'assign-role':stop();{
+    const d=dv(id);
+    if(!d) break;
+    const curRole=devoteeRole(d);
+    const roleOpts=[
+      ['devotee', '🙏 Devotee — General volunteer & member'],
+      ['facilitator', '🤝 Facilitator — Mentoring & personal care'],
+      ['dept_head', '🛠 Department Head — Managing seva & department'],
+      ['preaching_coord', '🎓 Preaching Coordinator — Batch leadership'],
+      ['care_manager', '❤️ Devotee Care Manager — Pillar leader: Care'],
+      ['preaching_manager', '📖 Preaching Manager — Pillar leader: Preaching'],
+      ['internal_manager', '🕉 Internal Manager — Pillar leader: BACE & Seva'],
+      ['coordinator', '🧭 Overall Coordinator — Operational executive'],
+      ['area_leader', '🪷 Area Leader — Strategic leadership & spiritual guidance'],
+      ['admin', '⚙️ BACE Administrator — System administration & security']
+    ];
+    openForm(`Assign Hierarchy Role: ${d.name}`,[
+      FLD('role','Select Role from Hierarchy','select',{v:curRole,opts:roleOpts}),
+      FLD('reason','Appointment Note (optional)','text',{ph:'e.g. Appointed as Preaching Coordinator for Batch 2'})
+    ],'save-devotee-role',{id:d.id},'Assigning a role updates the devotee profile, organization hierarchy, and user privileges.');
+    break;
+  }
+  case 'save-devotee-role':{
+    const v=collect(),ctx=APP.modal.ctx;
+    const d=dv(ctx.id);
+    if(!d) break;
+    const roleKey=v.role||'devotee';
+    const roleObj=ROLES[roleKey]||ROLES.devotee;
+    const prevRole=devoteeRole(d);
+    if(prevRole!==roleKey){
+      d.history.push({type:'Role',from:ROLES[prevRole]?.name||prevRole,to:roleObj.name,date:iso(TODAY)});
+    }
+    d.appointment=roleObj.name;
+    d.isFacilitator=(roleKey==='facilitator');
+    if(roleKey==='dept_head'&&d.dept){const dp=dept(d.dept);if(dp)dp.head=d.id;}
+    if(roleKey==='preaching_coord'&&d.batch){const b=batch(d.batch);if(b)b.coordinator=d.id;}
+
+    let u=DB.users.find(x=>x.devotee===d.id);
+    if(u){
+      u.role=roleKey;
+      if(roleKey==='dept_head')u.dept=d.dept||undefined;
+      if(roleKey==='preaching_coord')u.batch=d.batch||undefined;
+    } else {
+      DB.users.push({id:uid('u'),role:roleKey,devotee:d.id,dept:roleKey==='dept_head'?d.dept:undefined,batch:roleKey==='preaching_coord'?d.batch:undefined});
+    }
+    if(APP.user&&APP.user.devotee===d.id){
+      APP.user.role=roleKey;
+      APP.user.appointment=roleObj.name;
+    }
+    syncDevoteeToBackend(d, roleKey);
+    logAudit('Role assigned',`${d.name} assigned to ${roleObj.name}${v.reason?' ('+v.reason+')':''}`);
+    toast(`${d.name} is now ${roleObj.emoji} ${roleObj.name}!`, '🪷');
+    APP.modal='';render();break;
+  }
   case 'save-devotee':{const v=collect(),ctx=APP.modal.ctx;
     if(!v.name.trim()){toast('A devotee needs a name','⚠️');break}
+    const roleKey=v.role||'devotee';
+    const roleObj=ROLES[roleKey]||ROLES.devotee;
     if(ctx.id){const d=dv(ctx.id);
+      const prevRole=devoteeRole(d);
       if(d.dept!==v.dept&&v.dept)d.history.push({type:'Department',from:dept(d.dept)?.name||'—',to:dept(v.dept).name,date:iso(TODAY)});
       if(d.batch!==v.batch&&v.batch)d.history.push({type:'Batch',from:batch(d.batch)?.name||'—',to:batch(v.batch).name,date:iso(TODAY)});
+      if(prevRole!==roleKey)d.history.push({type:'Role',from:ROLES[prevRole]?.name||prevRole,to:roleObj.name,date:iso(TODAY)});
       Object.assign(d,{name:v.name,phone:v.phone,email:v.email,dob:v.dob,joined:v.joined,org:v.org,occupation:v.occupation,
         address:v.address,emergency:v.emergency,dept:v.dept||null,batch:v.batch||null,careGroup:v.careGroup||null,
-        facilitator:v.facilitator||null,availability:v.availability,status:v.status,source:v.source});
+        facilitator:v.facilitator||null,availability:v.availability,status:v.status,source:v.source,
+        appointment:roleObj.name,isFacilitator:(roleKey==='facilitator')});
       if(v.careGroup){const g=group(v.careGroup);if(!g.members.includes(d.id))g.members.push(d.id)}
-      logAudit('Devotee updated',d.name);toast('Profile updated')}
+      if(roleKey==='dept_head'&&d.dept){const dp=dept(d.dept);if(dp)dp.head=d.id;}
+      if(roleKey==='preaching_coord'&&d.batch){const b=batch(d.batch);if(b)b.coordinator=d.id;}
+      let u=DB.users.find(x=>x.devotee===d.id);
+      if(u){
+        u.role=roleKey;
+        if(roleKey==='dept_head')u.dept=d.dept||undefined;
+        if(roleKey==='preaching_coord')u.batch=d.batch||undefined;
+      } else if(roleKey!=='devotee'||d.email){
+        DB.users.push({id:uid('u'),role:roleKey,devotee:d.id,dept:roleKey==='dept_head'?d.dept:undefined,batch:roleKey==='preaching_coord'?d.batch:undefined});
+      }
+      if(APP.user&&APP.user.devotee===d.id){
+        APP.user.role=roleKey;
+        APP.user.appointment=roleObj.name;
+      }
+      syncDevoteeToBackend(d, roleKey);
+      logAudit('Devotee updated',`${d.name} (${roleObj.name})`);toast('Profile updated')}
     else{const d={id:uid('d'),name:v.name,gender:'M',dob:v.dob,phone:v.phone,email:v.email,address:v.address,
       occupation:v.occupation,org:v.org,emergency:v.emergency,joined:v.joined,status:v.status,level:0,
       batch:v.batch||null,careGroup:v.careGroup||null,friends:[],facilitator:v.facilitator||null,mentor:null,
       dept:v.dept||null,service:null,serviceRole:null,serviceStart:null,skills:[],availability:v.availability,
+      appointment:roleObj.name,isFacilitator:(roleKey==='facilitator'),
       sadhana:{rounds:4,morningProgram:0,lastReported:iso(TODAY)},
       swabhav:{nature:'Organising',suggested:'Festival and event management',interests:[],engaged:false},
       careStatus:{emotional:'Doing well',spiritual:'Steady'},firstContact:iso(TODAY),source:v.source,
-      attendancePct:0,timeline:[{date:iso(TODAY),title:'Joined the community',desc:'Profile created in the devotee database.',tone:'green'}],history:[]};
+      attendancePct:0,timeline:[{date:iso(TODAY),title:'Joined the community',desc:`Profile created with role ${roleObj.name}.`,tone:'green'}],history:[]};
       DB.devotees.push(d);
       if(v.dept)DB.deptMembers.push({id:uid('dm'),dept:v.dept,devotee:d.id,role:'Volunteer',since:iso(TODAY),status:'Active'});
       if(v.careGroup)group(v.careGroup).members.push(d.id);
-      logAudit('Devotee created',d.name);toast('Devotee added to the directory','👥')}
+      if(roleKey==='dept_head'&&d.dept){const dp=dept(d.dept);if(dp)dp.head=d.id;}
+      if(roleKey==='preaching_coord'&&d.batch){const b=batch(d.batch);if(b)b.coordinator=d.id;}
+      if(roleKey!=='devotee'||d.email){
+        DB.users.push({id:uid('u'),role:roleKey,devotee:d.id,dept:roleKey==='dept_head'?d.dept:undefined,batch:roleKey==='preaching_coord'?d.batch:undefined});
+      }
+      syncDevoteeToBackend(d, roleKey);
+      logAudit('Devotee created',`${d.name} (${roleObj.name})`);toast('Devotee added to the directory','👥')}
     APP.modal='';render();break}
   case 'set-care':stop();{const d=dv(id);
     openForm('Update care status',[FLD('emotional','Emotional care','select',{v:d.careStatus.emotional,opts:['Doing well','Needs attention','Follow-up required']}),
