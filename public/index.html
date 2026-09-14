@@ -159,7 +159,7 @@ input,select,textarea{font-family:inherit;font-size:14px;color:var(--ink)}
 
 /* ---------- shell ---------- */
 .shell{display:grid;grid-template-columns:var(--sidebar) 1fr;min-height:100vh;transition:grid-template-columns .2s ease}
-.shell.sb-closed{grid-template-columns:0px 1fr}
+.shell.sb-closed{grid-template-columns:1fr}
 .shell.sb-closed .sidebar{display:none}
 .sidebar{background:linear-gradient(180deg,#1E2230 0%,#161922 100%);color:#E2E8F0;border-right:1px solid rgba(255,255,255,0.06);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow:hidden}
 /* ---------- side panel edge toggle ---------- */
@@ -4625,8 +4625,8 @@ function render(){
   const body=routeView();
   const shellClass=`shell ${APP.sbClosed?'sb-closed':''}`;
   const sbToggleBtn=`<button class="sb-edge-toggle ${APP.sbClosed?'closed':'open'}" data-act="toggle-sidebar" title="${APP.sbClosed?'Open side panel':'Close side panel'}" aria-label="${APP.sbClosed?'Open side panel':'Close side panel'}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>`;
-  app.innerHTML=`<div class="${shellClass}">${APP.sbClosed?'':sidebar()}${sbToggleBtn}<div class="main">${topbar()}<div class="view">${body}</div></div></div>
-    ${botnav()}${fab()}${modalHTML()}`;
+  app.innerHTML=`<div class="${shellClass}">${APP.sbClosed?'':sidebar()}<div class="main">${topbar()}<div class="view">${body}</div></div></div>
+    ${sbToggleBtn}${botnav()}${fab()}${modalHTML()}`;
   const sb=document.getElementById('sbscroll');
   if(sb){sb.scrollTop=APP.sbScroll;sb.addEventListener('scroll',()=>{APP.sbScroll=sb.scrollTop},{passive:true})}
   const cb=document.getElementById('chatbody');if(cb)cb.scrollTop=cb.scrollHeight;
