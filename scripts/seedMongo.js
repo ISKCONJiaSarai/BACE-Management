@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const connectDB = require('../config/db');
 const loadAppConfig = require('../config/env');
-const { Devotee, Department, Batch, CareGroup } = require('../models');
+const { Devotee, Department, Batch, CareGroup, User } = require('../models');
 
 dotenv.config();
 loadAppConfig();
@@ -32,91 +32,53 @@ const DEPT_DATA = [
 ];
 
 const BATCH_DATA = [
-  ['Taksharya', 1, 'First-step batch for newcomers from campus outreach', 'Tuesday', '6:30 pm', 40000],
-  ['Sreshtha', 1, 'Regular weekly class for committed newcomers', 'Thursday', '7:00 pm', 50000],
-  ['IITD Faculty & Staff Preaching', 1, 'Study circle for faculty and campus staff', 'Saturday', '5:30 pm', 30000],
-  ['Siksharthakam', 1, 'Foundational online course for new people', 'Sunday', '8:00 pm', 25000],
-  ['Arjun Sabha', 2, 'Deeper study and sadhana commitment', 'Wednesday', '6:30 pm', 45000],
-  ['Alumni Preaching', 2, 'Alumni and working professionals group', 'Saturday', '8:00 pm', 60000],
-  ['Narad Sabha', 3, 'Preachers in training with service responsibility', 'Monday', '6:00 pm', 55000],
-  ['Gaurvani Sabha', 3, 'Senior sadhakas leading classes and outreach', 'Friday', '6:30 pm', 35000]
+  ['Taksharya', 1, 'First-step batch for newcomers from campus outreach', 'Tuesday', '6:30 pm', 40000, 'b1'],
+  ['Narad Sabha', 3, 'Preachers in training with service responsibility', 'Monday', '6:00 pm', 55000, 'b7'],
+  ['Gaurvani Sabha', 3, 'Senior sadhakas leading classes and outreach', 'Friday', '6:30 pm', 35000, 'b8']
 ];
 
 const GAURAVANI_LIST = [
-  { sn: 1, name: 'Purushottam Chandra pr', phone: '9599406925', residence: 'Nilachal Dham BACE', mode: 'Offline at BACE' },
+  { sn: 1, name: 'Purushottam Chandra pr', phone: '9599406925', residence: 'Nilachal Dham BACE', mode: 'Offline at BACE', role: 'Member' },
   { sn: 2, name: 'Audarya Gaur pr', phone: '9971932510', residence: 'Jia Sarai BACE', mode: 'Offline at BACE', role: 'Coordinator' },
-  { sn: 3, name: 'Sakshi Paramatma pr', phone: '7292046236', residence: 'Jia Sarai BACE', mode: 'Offline at BACE' },
-  { sn: 4, name: 'Daksha Chaitanya pr', phone: '9599507579', residence: 'Home at Delhi', mode: 'Offline at BACE' },
-  { sn: 5, name: 'Ravindra Gaur pr', phone: '7669011901', residence: 'Chattarpur flat', mode: 'Offline at BACE' },
-  { sn: 6, name: 'Yogeswara Priya pr', phone: '8376864606', residence: 'Home at Dwaraka', mode: 'Offline at BACE' },
-  { sn: 7, name: 'Subal Krsnacharan pr', phone: '8287020058', residence: 'Chattarpur flat', mode: 'Offline at BACE' },
-  { sn: 8, name: 'Ekachakra Nitai pr', phone: '7417705296', residence: 'Jia Sarai BACE', mode: 'Offline at BACE' },
-  { sn: 9, name: 'Surya Narayana Das', phone: '7907737187', residence: 'Jia Sarai BACE', mode: 'Offline at BACE' },
-  { sn: 10, name: 'Achyuta Deenabandu pr', phone: '9651539936', residence: 'Chattarpur flat', mode: 'Offline at BACE' },
+  { sn: 3, name: 'Sakshi Paramatma pr', phone: '7292046236', residence: 'Jia Sarai BACE', mode: 'Offline at BACE', role: 'Member' },
+  { sn: 4, name: 'Daksha Chaitanya pr', phone: '9599507579', residence: 'Home at Delhi', mode: 'Offline at BACE', role: 'Member' },
+  { sn: 5, name: 'Ravindra Gaur pr', phone: '7669011901', residence: 'Chattarpur flat', mode: 'Offline at BACE', role: 'Member' },
+  { sn: 6, name: 'Yogeswara Priya pr', phone: '8376864606', residence: 'Home at Dwaraka', mode: 'Offline at BACE', role: 'Member' },
+  { sn: 7, name: 'Subal Krsnacharan pr', phone: '8287020058', residence: 'Chattarpur flat', mode: 'Offline at BACE', role: 'Member' },
+  { sn: 8, name: 'Ekachakra Nitai pr', phone: '7417705296', residence: 'Jia Sarai BACE', mode: 'Offline at BACE', role: 'Member' },
+  { sn: 9, name: 'Surya Narayana Das', phone: '7907737187', residence: 'Jia Sarai BACE', mode: 'Offline at BACE', role: 'Member', isLeader: true },
+  { sn: 10, name: 'Achyuta Deenabandu pr', phone: '9651539936', residence: 'Chattarpur flat', mode: 'Offline at BACE', role: 'Member' },
   { sn: 11, name: 'Prashant pr', phone: '7355756316', residence: 'Jia Sarai BACE', mode: 'Offline at BACE', role: 'Secretary' },
-  { sn: 12, name: 'Hemant pr', phone: '7357480250', residence: 'Jia Sarai BACE', mode: 'Offline at BACE' },
-  { sn: 13, name: 'Adbut Gaur pr', phone: '9999624233', residence: 'Home at Baddarpur', mode: 'Online' },
-  { sn: 14, name: 'Priya Brajesh pr', phone: '9718147152', residence: 'Post Doc. at US', mode: 'Online' },
-  { sn: 15, name: 'Rupa Chaitanya pr', phone: '7827836164', residence: 'Flat at Ayodhya', mode: 'Online' },
-  { sn: 16, name: 'Gaura Charan pr', phone: '7840086429', residence: 'Home at Delhi', mode: 'Online' },
-  { sn: 17, name: 'Dhruva Murari pr', phone: '9536999390', residence: 'Job Hyderabad', mode: 'Online' },
-  { sn: 18, name: 'Gaurav Singh pr', phone: '8130994369', residence: 'Personal Home', mode: 'Online' }
+  { sn: 12, name: 'Hemant pr', phone: '7357480250', residence: 'Jia Sarai BACE', mode: 'Offline at BACE', role: 'Member' },
+  { sn: 13, name: 'Adbut Gaur pr', phone: '9999624233', residence: 'Home at Baddarpur', mode: 'Online', role: 'Member' },
+  { sn: 14, name: 'Priya Brajesh pr', phone: '9718147152', residence: 'Post Doc. at US', mode: 'Online', role: 'Member' },
+  { sn: 15, name: 'Rupa Chaitanya pr', phone: '7827836164', residence: 'Flat at Ayodhya', mode: 'Online', role: 'Member' },
+  { sn: 16, name: 'Gaura Charan pr', phone: '7840086429', residence: 'Home at Delhi', mode: 'Online', role: 'Member' },
+  { sn: 17, name: 'Dhruva Murari pr', phone: '9536999390', residence: 'Job Hyderabad', mode: 'Online', role: 'Member' },
+  { sn: 18, name: 'Gaurav Singh pr', phone: '8130994369', residence: 'Personal Home', mode: 'Online', role: 'Member' }
 ];
 
 const NARADA_LIST = [
-  { sn: 1, name: 'Janardhan Shyam pr', phone: '7054117460', residence: 'Jia Sarai BACE', mode: 'Offline at BACE' },
-  { sn: 2, name: 'Swayam Bhagavan pr', phone: '8540892209', residence: 'Jia Sarai BACE', mode: 'Offline at BACE' },
+  { sn: 1, name: 'Janardhan Shyam pr', phone: '7054117460', residence: 'Jia Sarai BACE', mode: 'Offline at BACE', role: 'Member' },
+  { sn: 2, name: 'Swayam Bhagavan pr', phone: '8540892209', residence: 'Jia Sarai BACE', mode: 'Offline at BACE', role: 'Member' },
   { sn: 3, name: 'Dhirendra pr', phone: '8094976774', residence: 'Jia Sarai BACE', mode: 'Offline at BACE', role: 'Coordinator' },
-  { sn: 4, name: 'Harsh pr', phone: '7067628467', residence: 'Flat at Jia Sara', mode: 'Offline at BACE' },
-  { sn: 5, name: 'Tryambakesh pr', phone: '8434614166', residence: 'Flat at Delhi', mode: 'Offline at BACE' },
-  { sn: 6, name: 'Neteesh pr', phone: '7302700640', residence: 'Jia Sarai BACE', mode: 'Offline at BACE' },
-  { sn: 7, name: 'Suraj pr', phone: '8400922410', residence: 'Jia Sarai BACE', mode: 'Offline at BACE' },
-  { sn: 8, name: 'Vineet pr', phone: '7838282673', residence: 'Jia Sarai BACE', mode: 'Offline at BACE' },
-  { sn: 9, name: 'Mohit pr', phone: '9896157854', residence: 'Home at Chattarpur', mode: 'Offline at BACE' },
-  { sn: 10, name: 'Aman Raj pr', phone: '9508314944', residence: 'BACE Extn.', mode: 'Offline at BACE' },
-  { sn: 11, name: 'Raj pr', phone: '8955121393', residence: 'Nilgiri Hostel', mode: 'Offline at BACE' },
-  { sn: 12, name: 'Arpit pr', phone: '8439383371', residence: 'BACE Extn.', mode: 'Offline at BACE' },
-  { sn: 13, name: 'Himanshu pr', phone: '8307673689', residence: 'BACE Extn.', mode: 'Offline at BACE' },
-  { sn: 14, name: 'Sameer pr', phone: '7781998528', residence: 'BACE Extn.', mode: 'Offline at BACE' },
+  { sn: 4, name: 'Harsh pr', phone: '7067628467', residence: 'Flat at Jia Sara', mode: 'Offline at BACE', role: 'Member' },
+  { sn: 5, name: 'Tryambakesh pr', phone: '8434614166', residence: 'Flat at Delhi', mode: 'Offline at BACE', role: 'Member' },
+  { sn: 6, name: 'Neteesh pr', phone: '7302700640', residence: 'Jia Sarai BACE', mode: 'Offline at BACE', role: 'Member', email: 'sharmaneetesh1910@gmail.com' },
+  { sn: 7, name: 'Suraj pr', phone: '8400922410', residence: 'Jia Sarai BACE', mode: 'Offline at BACE', role: 'Member' },
+  { sn: 8, name: 'Vineet pr', phone: '7838282673', residence: 'Jia Sarai BACE', mode: 'Offline at BACE', role: 'Member' },
+  { sn: 9, name: 'Mohit pr', phone: '9896157854', residence: 'Home at Chattarpur', mode: 'Offline at BACE', role: 'Member' },
+  { sn: 10, name: 'Aman Raj pr', phone: '9508314944', residence: 'BACE Extn.', mode: 'Offline at BACE', role: 'Member', email: 'amanraj101012@gmail.com' },
+  { sn: 11, name: 'Raj pr', phone: '8955121393', residence: 'Nilgiri Hostel', mode: 'Offline at BACE', role: 'Member' },
+  { sn: 12, name: 'Arpit pr', phone: '8439383371', residence: 'BACE Extn.', mode: 'Offline at BACE', role: 'Member' },
+  { sn: 13, name: 'Himanshu pr', phone: '8307673689', residence: 'BACE Extn.', mode: 'Offline at BACE', role: 'Member' },
+  { sn: 14, name: 'Sameer pr', phone: '7781998528', residence: 'BACE Extn.', mode: 'Offline at BACE', role: 'Member' },
   { sn: 15, name: 'Suresh pr', phone: '8890057274', residence: 'Job at Nagpur', mode: 'Online', role: 'Secretary' },
-  { sn: 16, name: 'Bharat pr', phone: '7060868649', residence: 'Rudrapur Gurukul', mode: 'Online' },
-  { sn: 17, name: 'Yash pr', phone: '8699427745', residence: 'Job at Mumbai', mode: 'Online' },
-  { sn: 18, name: 'Rachit pr', phone: '6261254227', residence: 'Home at Gwalior', mode: 'Online' },
-  { sn: 19, name: 'Shivam pr', phone: '8433125397', residence: 'Home at Agra', mode: 'Online' }
+  { sn: 16, name: 'Bharat pr', phone: '7060868649', residence: 'Rudrapur Gurukul', mode: 'Online', role: 'Member' },
+  { sn: 17, name: 'Yash pr', phone: '8699427745', residence: 'Job at Mumbai', mode: 'Online', role: 'Member', email: 'yash9704.iitd@gmail.com' },
+  { sn: 18, name: 'Rachit pr', phone: '6261254227', residence: 'Home at Gwalior', mode: 'Online', role: 'Member' },
+  { sn: 19, name: 'Shivam pr', phone: '8433125397', residence: 'Home at Agra', mode: 'Online', role: 'Member' }
 ];
-
-const SENIOR = [
-  'Surya Narayana Das',
-  'Nitai Charan Das',
-  'Madhava Priya Das',
-  'Acyuta Gauranga Das',
-  'Radha Ramana Das',
-  'Jagannath Vallabh Das'
-];
-
-const SENIOR_ROLES = [
-  'Area Leader',
-  'Coordinator',
-  'Internal Manager',
-  'Preaching Manager',
-  'Care Manager',
-  'Admin'
-];
-
-const FIRST_NAMES = [
-  'Rahul', 'Amit', 'Rohan', 'Vivek', 'Karan', 'Nikhil', 'Aditya', 'Siddharth', 'Manish',
-  'Harsh', 'Anirudh', 'Gaurav', 'Pranav', 'Tarun', 'Yash', 'Kunal', 'Abhishek', 'Devansh',
-  'Sameer', 'Ritesh', 'Varun', 'Ankit', 'Saurabh', 'Naveen', 'Mohit', 'Rakesh', 'Sanjay',
-  'Deepak', 'Arjun', 'Kartik', 'Ishaan', 'Raghav', 'Vikram', 'Shubham', 'Nishant', 'Akash'
-];
-
-const LAST_NAMES = [
-  'Sharma', 'Verma', 'Gupta', 'Mehta', 'Iyer', 'Nair', 'Reddy', 'Rao', 'Joshi',
-  'Kulkarni', 'Desai', 'Bansal', 'Chauhan', 'Pandey', 'Tiwari', 'Mishra', 'Agarwal', 'Sinha'
-];
-
-const COLLEGES = ['IIT Delhi', 'DTU', 'NSUT', 'IIIT Delhi', 'Jamia Millia Islamia', 'DU North Campus'];
-const OCCUPATIONS = ['B.Tech 1st year', 'B.Tech 2nd year', 'B.Tech 3rd year', 'B.Tech 4th year', 'M.Tech', 'PhD scholar', 'Software engineer'];
 
 const seedCompleteData = async () => {
   try {
@@ -139,66 +101,61 @@ const seedCompleteData = async () => {
         category: d[4],
         reportFreq: d[5],
         status: 'Active',
-        perf: Math.floor(Math.random() * 25) + 75,
-        budget: { allocated: 30000, spent: 15000 }
+        perf: Math.floor(Math.random() * 20) + 80,
+        budget: { allocated: 30000, spent: 14000 }
       }))
     );
 
     console.log('📚 Seeding Batches...');
     const insertedBatches = await Batch.insertMany(
-      BATCH_DATA.map((b, i) => ({
-        customId: `b${i + 1}`,
+      BATCH_DATA.map(b => ({
+        customId: b[6],
         name: b[0],
         level: b[1],
         desc: b[2],
         day: b[3],
         time: b[4],
         status: 'Active',
-        budget: { allocated: b[5], spent: Math.round(b[5] * 0.6) }
+        budget: { allocated: b[5], spent: Math.round(b[5] * 0.45) }
       }))
     );
 
     const gauravaniBatch = insertedBatches.find(b => b.name.includes('Gaurvani'));
     const naradaBatch = insertedBatches.find(b => b.name.includes('Narad'));
+    const taksharyaBatch = insertedBatches.find(b => b.name.includes('Taksharya'));
     const preachingDept = insertedDepts.find(d => d.category === 'Preaching');
 
-    console.log('👥 Seeding Devotees...');
+    console.log('👥 Seeding Devotees (Surya Narayana Das, Gaurvani, Narad, 1 sample)...');
     const devoteesToInsert = [];
 
-    // 1. Seed Senior leadership (6)
-    for (let i = 0; i < SENIOR.length; i++) {
-      const name = SENIOR[i];
-      const isSurya = name.includes('Surya Narayana');
-      devoteesToInsert.push({
-        customId: `d_senior_${i + 1}`,
-        name,
-        gender: 'M',
-        phone: isSurya ? '+91 7907737187' : `+91 981100223${i}`,
-        email: name.toLowerCase().replace(/[^a-z0-9]/g, '.') + '@iskcon.in',
-        address: 'Jia Sarai BACE',
-        residence: 'Jia Sarai BACE',
-        attendanceMode: 'Offline at BACE',
-        occupation: 'Full-time devotee',
-        org: 'IIT Delhi',
-        status: 'Active',
-        level: 3,
-        appointment: SENIOR_ROLES[i],
-        isFacilitator: true,
-        dept: insertedDepts[i % insertedDepts.length]._id,
-        batch: isSurya ? gauravaniBatch._id : null,
-        batchRole: isSurya ? 'Member' : null,
-        sadhana: { rounds: 16, morningProgram: 96, lastReported: new Date() },
-        swabhav: { nature: 'Teaching', suggested: 'Preaching & facilitation', engaged: true },
-        careStatus: { emotional: 'Doing well', spiritual: 'Steady' },
-        attendancePct: 98
-      });
-    }
+    // 1. Surya Narayana Das
+    devoteesToInsert.push({
+      customId: 'd1',
+      name: 'Surya Narayana Das',
+      gender: 'M',
+      phone: '+91 7907737187',
+      email: 'suryakiranjune2@gmail.com',
+      address: 'Jia Sarai BACE',
+      residence: 'Jia Sarai BACE',
+      attendanceMode: 'Offline at BACE',
+      occupation: 'Full-time devotee / PhD scholar',
+      org: 'IIT Delhi',
+      status: 'Active',
+      level: 3,
+      appointment: 'Area Leader',
+      isFacilitator: true,
+      batch: gauravaniBatch ? gauravaniBatch._id : null,
+      batchRole: 'Member',
+      dept: preachingDept ? preachingDept._id : null,
+      sadhana: { rounds: 16, morningProgram: 98, lastReported: new Date() },
+      swabhav: { nature: 'Teaching', suggested: 'Preaching & facilitation', engaged: true },
+      careStatus: { emotional: 'Doing well', spiritual: 'Steady' },
+      attendancePct: 98
+    });
 
-    // 2. Seed Gauravani Sabha Devotees (excluding Surya Narayana who is added as senior lead)
-    let gauravaniCoordId = null;
-    let gauravaniSecId = null;
+    // 2. Gaurvani Sabha Devotees (excluding Surya Narayana Das)
     for (const g of GAURAVANI_LIST) {
-      if (g.name.includes('Surya Narayana')) continue; // Already added above
+      if (g.name.includes('Surya Narayana')) continue;
       devoteesToInsert.push({
         name: g.name,
         gender: 'M',
@@ -209,12 +166,12 @@ const seedCompleteData = async () => {
         attendanceMode: g.mode,
         batchRole: g.role || 'Member',
         org: 'IIT Delhi & Associates',
-        occupation: g.residence.includes('BACE') ? 'Full-time devotee / Student' : 'Working professional / Student',
+        occupation: g.residence.includes('BACE') ? 'Full-time devotee' : 'Working professional / Student',
         status: 'Active',
         level: 3,
-        batch: gauravaniBatch._id,
+        batch: gauravaniBatch ? gauravaniBatch._id : null,
         dept: preachingDept ? preachingDept._id : null,
-        appointment: g.role ? `Gaurvani Sabha ${g.role}` : null,
+        appointment: g.role && g.role !== 'Member' ? `Gaurvani Sabha ${g.role}` : null,
         isFacilitator: g.role === 'Coordinator',
         sadhana: { rounds: 16, morningProgram: g.mode === 'Online' ? 85 : 92, lastReported: new Date() },
         swabhav: { nature: 'Teaching', suggested: 'Outreach & class support', engaged: true },
@@ -223,24 +180,24 @@ const seedCompleteData = async () => {
       });
     }
 
-    // 3. Seed Narada Sabha Devotees
+    // 3. Narad Sabha Devotees
     for (const n of NARADA_LIST) {
       devoteesToInsert.push({
         name: n.name,
         gender: 'M',
         phone: `+91 ${n.phone}`,
-        email: n.name.toLowerCase().replace(/[^a-z0-9]/g, '.') + '@iskcon.in',
+        email: n.email || (n.name.toLowerCase().replace(/[^a-z0-9]/g, '.') + '@iskcon.in'),
         address: n.residence,
         residence: n.residence,
         attendanceMode: n.mode,
         batchRole: n.role || 'Member',
         org: 'IIT Delhi & Associates',
-        occupation: n.residence.includes('BACE') ? 'Full-time devotee / Student' : 'Working professional / Student',
+        occupation: n.residence.includes('BACE') ? 'Full-time devotee' : 'Working professional / Student',
         status: 'Active',
         level: 3,
-        batch: naradaBatch._id,
+        batch: naradaBatch ? naradaBatch._id : null,
         dept: preachingDept ? preachingDept._id : null,
-        appointment: n.role ? `Narad Sabha ${n.role}` : null,
+        appointment: n.role && n.role !== 'Member' ? `Narad Sabha ${n.role}` : null,
         isFacilitator: n.role === 'Coordinator',
         sadhana: { rounds: 16, morningProgram: n.mode === 'Online' ? 85 : 92, lastReported: new Date() },
         swabhav: { nature: 'Teaching', suggested: 'Outreach & study circle', engaged: true },
@@ -249,36 +206,28 @@ const seedCompleteData = async () => {
       });
     }
 
-    // 4. Seed other campus students (Level 1 & 2)
-    for (let i = 0; i < 40; i++) {
-      const fn = FIRST_NAMES[i % FIRST_NAMES.length];
-      const ln = LAST_NAMES[i % LAST_NAMES.length];
-      const name = `${fn} ${ln}`;
-      const level = (i % 2) + 1; // 1 or 2
-      const candidateBatches = insertedBatches.filter(b => b.level === level);
-      const batch = candidateBatches[i % candidateBatches.length];
-
-      devoteesToInsert.push({
-        name,
-        gender: 'M',
-        phone: `+91 98${String(20000000 + i).slice(0, 8)}`,
-        email: `${fn.toLowerCase()}.${ln.toLowerCase()}@example.in`,
-        address: 'Katwaria Sarai / Ber Sarai, New Delhi',
-        residence: 'Hostel / Flat',
-        attendanceMode: 'Offline at BACE',
-        batchRole: 'Member',
-        org: COLLEGES[i % COLLEGES.length],
-        occupation: OCCUPATIONS[i % OCCUPATIONS.length],
-        status: 'Active',
-        level,
-        batch: batch ? batch._id : null,
-        dept: insertedDepts[(i + 2) % insertedDepts.length]._id,
-        sadhana: { rounds: level === 2 ? 16 : 8, morningProgram: 75, lastReported: new Date() },
-        swabhav: { nature: 'Organising', suggested: 'Seva volunteer', engaged: true },
-        careStatus: { emotional: 'Doing well', spiritual: 'Growing' },
-        attendancePct: 82
-      });
-    }
+    // 4. Exactly 1 Sample Dummy Devotee
+    devoteesToInsert.push({
+      customId: 'd_sample',
+      name: 'Rahul Sharma',
+      gender: 'M',
+      phone: '+91 9876543210',
+      email: 'rahul.sharma@example.in',
+      address: 'Hostel, IIT Delhi',
+      residence: 'Hostel',
+      attendanceMode: 'Offline at BACE',
+      batchRole: 'Member',
+      org: 'IIT Delhi',
+      occupation: 'B.Tech 2nd year',
+      status: 'Active',
+      level: 1,
+      batch: taksharyaBatch ? taksharyaBatch._id : null,
+      dept: insertedDepts[5]._id,
+      sadhana: { rounds: 4, morningProgram: 75, lastReported: new Date() },
+      swabhav: { nature: 'Organising', suggested: 'Seva volunteer', engaged: true },
+      careStatus: { emotional: 'Doing well', spiritual: 'Growing' },
+      attendancePct: 80
+    });
 
     const insertedDevotees = await Devotee.insertMany(devoteesToInsert);
 
@@ -302,38 +251,62 @@ const seedCompleteData = async () => {
       });
     }
 
-    // Seed Care Groups
-    console.log('🪷 Seeding Care Groups...');
-    const careGroupsData = [
-      ['Group 1 · Gaura', 'Monday', '7:30 pm', 'Temple Hall'],
-      ['Group 2 · Nitai', 'Tuesday', '8:00 pm', 'Ashram Room 2'],
-      ['Group 3 · Tulsi', 'Wednesday', '7:00 pm', 'Hostel Common Room'],
-      ['Group 4 · Govardhan', 'Thursday', '8:30 pm', 'Temple Hall'],
-      ['Group 5 · Yamuna', 'Saturday', '6:00 pm', 'Terrace'],
-      ['Group 6 · Vrinda', 'Sunday', '11:00 am', 'Prasadam Hall']
-    ];
+    if (taksharyaBatch) {
+      await Batch.findByIdAndUpdate(taksharyaBatch._id, {
+        coordinator: audarya ? audarya._id : null
+      });
+    }
 
-    const facilitators = insertedDevotees.filter(d => d.isFacilitator);
-    const careGroups = await CareGroup.insertMany(
-      careGroupsData.map((cg, i) => ({
-        customId: `cg${i + 1}`,
-        name: cg[0],
-        day: cg[1],
-        time: cg[2],
-        place: cg[3],
-        leader: facilitators.length > 0 ? facilitators[i % facilitators.length]._id : insertedDevotees[0]._id,
-        status: 'Active',
-        attendance: 88
-      }))
-    );
+    // Seed 1 Sample Care Group
+    console.log('🪷 Seeding 1 Sample Care Group...');
+    const careGroup = await CareGroup.create({
+      customId: 'cg1',
+      name: 'Group 1 · Gaura',
+      day: 'Monday',
+      time: '7:30 pm',
+      place: 'Temple Hall',
+      leader: audarya ? audarya._id : insertedDevotees[0]._id,
+      status: 'Active',
+      attendance: 85
+    });
+
+    // Relink user accounts
+    console.log('🔗 Relinking real users...');
+    const suryaDev = insertedDevotees.find(d => d.name === 'Surya Narayana Das');
+    if (suryaDev) {
+      await User.findOneAndUpdate(
+        { email: 'suryakiranjune2@gmail.com' },
+        { devotee: suryaDev._id, role: 'area_leader', approvalStatus: 'approved', profileCompleted: true }
+      );
+    }
+    const amanDev = insertedDevotees.find(d => d.email === 'amanraj101012@gmail.com');
+    if (amanDev) {
+      await User.findOneAndUpdate(
+        { email: 'amanraj101012@gmail.com' },
+        { devotee: amanDev._id, approvalStatus: 'approved' }
+      );
+    }
+    const yashDev = insertedDevotees.find(d => d.email === 'yash9704.iitd@gmail.com');
+    if (yashDev) {
+      await User.findOneAndUpdate(
+        { email: 'yash9704.iitd@gmail.com' },
+        { devotee: yashDev._id, approvalStatus: 'approved' }
+      );
+    }
+    const neteeshDev = insertedDevotees.find(d => d.email === 'sharmaneetesh1910@gmail.com');
+    if (neteeshDev) {
+      await User.findOneAndUpdate(
+        { email: 'sharmaneetesh1910@gmail.com' },
+        { devotee: neteeshDev._id, approvalStatus: 'approved' }
+      );
+    }
 
     console.log(`\n🎉 Data seeding completed successfully!`);
-    console.log(`   - Total Devotees in MongoDB: ${insertedDevotees.length}`);
+    console.log(`   - Total Devotees in MongoDB: ${insertedDevotees.length} (18 Gaurvani + 19 Narad + 1 sample)`);
     console.log(`   - Gaurvani Sabha Devotees: 18`);
     console.log(`   - Narad Sabha Devotees: 19`);
-    console.log(`   - Departments: ${insertedDepts.length}`);
-    console.log(`   - Batches: ${insertedBatches.length}`);
-    console.log(`   - Care Groups: ${careGroups.length}\n`);
+    console.log(`   - Batches: 3 (Narad Sabha, Gaurvani Sabha, 1 sample Taksharya)`);
+    console.log(`   - Care Groups: 1 (Group 1 · Gaura)\n`);
 
     process.exit(0);
   } catch (err) {

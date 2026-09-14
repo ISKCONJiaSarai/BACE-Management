@@ -1398,14 +1398,9 @@ const DEPT_SEED=[
  ['Area Leader Office','Strategic oversight and community direction','🪷','ink','Administration','Monthly']
 ];
 const BATCH_SEED=[
- ['Taksharya',1,'First-step batch for newcomers from campus outreach','Tue','6:30 pm',40000],
- ['Sreshtha',1,'Regular weekly class for committed newcomers','Thu','7:00 pm',50000],
- ['IITD Faculty & Staff Preaching',1,'Study circle for faculty and campus staff','Sat','5:30 pm',30000],
- ['Siksharthakam',1,'Foundational online course for new people','Sun','8:00 pm',25000],
- ['Arjun Sabha',2,'Deeper study and sadhana commitment','Wed','6:30 pm',45000],
- ['Alumni Preaching',2,'Alumni and working professionals group','Sat','8:00 pm',60000],
- ['Narad Sabha',3,'Preachers in training with service responsibility','Mon','6:00 pm',55000],
- ['Gaurvani Sabha',3,'Senior sadhakas leading classes and outreach','Fri','6:30 pm',35000]
+ ['Taksharya',1,'First-step batch for newcomers from campus outreach','Tue','6:30 pm',40000,'b1'],
+ ['Narad Sabha',3,'Preachers in training with service responsibility','Mon','6:00 pm',55000,'b7'],
+ ['Gaurvani Sabha',3,'Senior sadhakas leading classes and outreach','Fri','6:30 pm',35000,'b8']
 ];
 const STAGES=['New contact','First interaction','Interested','Follow-up','Attending class','Regular participant','Batch assigned','Level 1','Level 2','Level 3','Active devotee'];
 const SOURCES=['Book distribution','Friend referral','Campus stall','Instagram','Class visit','Prasadam distribution','Festival','Hostel outreach','Alumni network'];
@@ -1461,79 +1456,17 @@ const logAudit=(action,record)=>DB.audit.unshift({id:uid('au'),user:(APP.user?na
   /* departments */
   DEPT_SEED.forEach(([name,desc,icon,color,category,freq,module],i)=>DB.departments.push({
     id:'dp'+(i+1),name,desc,icon,color,category,reportFreq:freq,module:module||null,
-    head:null,assistants:[],status:'Active',perf:ri(64,97),
+    head:null,assistants:[],status:'Active',perf:ri(75,95),
     budget:{allocated:ri(10,60)*1000,spent:0},created:iso(dayOff(-ri(200,700)))}));
-  DB.departments.forEach(d=>d.budget.spent=Math.round(d.budget.allocated*(ri(35,95)/100)));
+  DB.departments.forEach(d=>d.budget.spent=Math.round(d.budget.allocated*(ri(35,75)/100)));
 
-  /* batches */
-  BATCH_SEED.forEach(([name,level,desc,day,time,budget],i)=>DB.batches.push({
-    id:'b'+(i+1),name,level,desc,day,time,freq:'Weekly',status:'Active',
-    coordinator:null,facilitators:[],start:iso(dayOff(-ri(200,900))),
-    budget:{allocated:budget,spent:Math.round(budget*(ri(40,90)/100))}}));
+  /* batches: Taksharya (sample Level 1), Narad Sabha (Level 3), Gaurvani Sabha (Level 3) */
+  BATCH_SEED.forEach(([name,level,desc,day,time,budget,bid])=>DB.batches.push({
+    id:bid,name,level,desc,day,time,freq:'Weekly',status:'Active',
+    coordinator:null,facilitators:[],start:iso(dayOff(-360)),
+    budget:{allocated:budget,spent:Math.round(budget*0.45)}}));
 
-  /* devotees */
-  const used=new Set();
-  const mkName=()=>{let n;do{n=`${pk(FN)} ${pk(LN)}`}while(used.has(n));used.add(n);return n};
-  for(let i=0;i<58;i++){
-    const senior=i<6, name=senior?SENIOR[i]:mkName();
-    const joinAgo=senior?ri(900,1800):(chance(.18)?ri(4,42):ri(46,760));
-    const status=senior?'Active':(joinAgo<45?'New':(chance(.1)?'Inactive':'Active'));
-    const sw=pk(SWABHAV);
-    DB.devotees.push({
-      id:'d'+(i+1),name,gender:'M',dob:`${ri(1988,2006)}-${String(ri(1,12)).padStart(2,'0')}-${String(ri(1,28)).padStart(2,'0')}`,
-      phone:`+91 9${ri(10000000,99999999)}`,email:name.toLowerCase().replace(/[^a-z]/g,'.')+'@example.in',
-      address:pk(['Jia Sarai, Hauz Khas','IIT Delhi Hostel','Ber Sarai','Katwaria Sarai','Munirka','Hauz Khas Village']),
-      occupation:senior?'Full-time devotee':pk(OCC),org:senior?'IIT Delhi':pk(ORGS),
-      emergency:`+91 9${ri(10000000,99999999)}`,joined:iso(dayOff(-joinAgo)),status,
-      level:senior?3:(joinAgo>700?3:joinAgo>400?2:joinAgo>90?1:0),
-      batch:null,careGroup:null,friends:[],facilitator:null,mentor:null,dept:null,service:null,
-      serviceRole:null,serviceStart:null,skills:pks(SKILLS,ri(1,3)),
-      availability:pks(['Weekday mornings','Weekday evenings','Weekends','Anytime'],1)[0],
-      sadhana:{rounds:senior?16:pk([4,8,12,16,16]),morningProgram:ri(40,100),lastReported:iso(dayOff(-ri(0,6)))},
-      swabhav:{nature:sw[0],suggested:sw[1],interests:pks(['Kirtan','Reading','Sports','Photography','Cooking','Teaching','Coding','Writing','Trekking','Debate'],ri(2,3)),engaged:chance(.7)},
-      careStatus:{emotional:pk(['Doing well','Doing well','Doing well','Doing well','Doing well','Doing well','Needs attention','Follow-up required']),
-        spiritual:pk(['Steady','Steady','Steady','Growing','Irregular'])},
-      firstContact:iso(dayOff(-joinAgo-ri(5,40))),source:pk(SOURCES),
-      attendancePct:ri(48,99),timeline:[],history:[]});
-  }
-  const D=DB.devotees;
-  const L={area_leader:D[0],coordinator:D[1],internal_manager:D[2],preaching_manager:D[3],care_manager:D[4]};
-  Object.entries(L).forEach(([r,d])=>d.appointment=ROLES[r].name);
-  const pool=D.filter(d=>d.level>=1&&!d.appointment);
-  DB.departments.forEach((dp,i)=>{const h=pool[i%pool.length];dp.head=h.id;h.appointment=h.appointment||'Department Head';
-    dp.assistants=pks(pool.filter(x=>x.id!==h.id),1).map(x=>x.id)});
-  const pool2=D.filter(d=>d.level>=2&&!d.appointment);
-  const facs=D.filter(d=>d.level>=2).slice(0,7);facs.forEach(f=>f.isFacilitator=true);
-  DB.batches.forEach((b,i)=>{const c=pool2[i%pool2.length];b.coordinator=c.id;c.appointment=c.appointment||'Preaching Coordinator';
-    b.facilitators=pks(facs,2).map(f=>f.id)});
-
-  /* care groups */
-  [['Group 1 · Gaura','Mon','7:30 pm','Temple Hall'],['Group 2 · Nitai','Tue','8:00 pm','Ashram Room 2'],
-   ['Group 3 · Tulsi','Wed','7:00 pm','Hostel Common Room'],['Group 4 · Govardhan','Thu','8:30 pm','Temple Hall'],
-   ['Group 5 · Yamuna','Sat','6:00 pm','Terrace'],['Group 6 · Vrinda','Sun','11:00 am','Prasadam Hall']]
-   .forEach(([name,day,time,place],i)=>DB.careGroups.push({id:'cg'+(i+1),name,leader:facs[i%facs.length].id,
-     facilitator:facs[(i+1)%facs.length].id,freq:'Weekly',day,time,place,status:'Active',
-     desc:'Weekly gathering with japa, reading and prasadam.',
-     last:iso(dayOff(-ri(2,12))),next:iso(dayOff(ri(1,9))),members:[],attendance:ri(58,96),
-     meetings:[...Array(4)].map((_,k)=>({date:iso(dayOff(-(k+1)*7)),present:ri(5,12),note:pk(['Good discussion on Chapter 2.','Two members absent for exams.','New member introduced.','Kirtan and prasadam.'])}))}));
-
-  /* relationships */
-  D.forEach((d,i)=>{
-    if(d.status!=='Inactive'&&chance(.86)){const dp=DB.departments[(i+2)%DB.departments.length];d.dept=dp.id;
-      d.service=pk(['Cooking','Prasadam serving','Altar assistance','Book stock','Reel editing','Poster design','Purchasing run','Deep cleaning','Accounts entry','Guest reception','Tulsi watering','Sadhana calls','Setup crew','Photography','Study support']);
-      d.serviceRole=chance(.2)?'Coordinator':'Volunteer';d.serviceStart=iso(dayOff(-ri(20,400)));
-      DB.deptMembers.push({id:uid('dm'),dept:dp.id,devotee:d.id,role:d.serviceRole,since:d.serviceStart,status:'Active'});}
-    if(d.level>0)d.batch=pk(DB.batches.filter(b=>b.level===d.level)).id;
-    if(chance(.8)){const g=DB.careGroups[i%DB.careGroups.length];d.careGroup=g.id;g.members.push(d.id);}
-    const f=facs[i%facs.length];if(d.id!==f.id)d.facilitator=f.id;
-    d.friends=pks(D.filter(x=>x.id!==d.id),ri(1,3)).map(x=>x.id);
-    d.mentor=pk(facs).id;
-  });
-
-  // Update Narad Sabha (b7) and Gaurvani Sabha (b8) with CSV data
-  D.forEach(d=>{ if(d.batch==='b7'||d.batch==='b8') d.batch='b5'; });
-  D[0].batch='b8'; D[0].phone='+91 7907737187'; D[0].address='Jia Sarai BACE'; D[0].residence='Jia Sarai BACE'; D[0].mode='Offline at BACE'; D[0].batchRole='Member';
-
+  /* devotees: Real CSV devotees (Surya Narayana Das + Gaurvani Sabha + Narad Sabha) + 1 sample devotee */
   const GAUR_DATA=[
     ['Purushottam Chandra pr','9599406925','Nilachal Dham BACE','Offline at BACE','Member'],
     ['Audarya Gaur pr','9971932510','Jia Sarai BACE','Offline at BACE','Coordinator'],
@@ -1564,7 +1497,7 @@ const logAudit=(action,record)=>DB.audit.unshift({id:uid('au'),user:(APP.user?na
     ['Suraj pr','8400922410','Jia Sarai BACE','Offline at BACE','Member'],
     ['Vineet pr','7838282673','Jia Sarai BACE','Offline at BACE','Member'],
     ['Mohit pr','9896157854','Home at Chattarpur','Offline at BACE','Member'],
-    ['Aman Raj pr','9508314944','BACE Extn.','Offline at BACE','Member'],
+    ['Aman Raj pr','9508314944','BACE Extn.', 'Offline at BACE','Member'],
     ['Raj pr','8955121393','Nilgiri Hostel','Offline at BACE','Member'],
     ['Arpit pr','8439383371','BACE Extn.','Offline at BACE','Member'],
     ['Himanshu pr','8307673689','BACE Extn.','Offline at BACE','Member'],
@@ -1576,360 +1509,699 @@ const logAudit=(action,record)=>DB.audit.unshift({id:uid('au'),user:(APP.user?na
     ['Shivam pr','8433125397','Home at Agra','Online','Member']
   ];
 
-  let audaryaId=null, dhirendraId=null;
-  GAUR_DATA.forEach(([name,ph,res,mode,role])=>{
-    const dev={
-      id:uid('d'),name,gender:'M',dob:'1998-05-15',phone:'+91 '+ph,email:name.toLowerCase().replace(/[^a-z0-9]/g,'.')+'@iskcon.in',
-      address:res,residence:res,mode,batchRole:role,occupation:res.includes('BACE')?'Full-time devotee':'Working professional / Student',
-      org:'IIT Delhi & Associates',emergency:'+91 '+ph,joined:iso(dayOff(-750)),status:'Active',level:3,
-      batch:'b8',careGroup:null,friends:[],facilitator:null,mentor:null,dept:null,service:null,serviceRole:null,
-      serviceStart:null,skills:['Preaching','Teaching'],availability:'Anytime',appointment:role!=='Member'?`Gaurvani Sabha ${role}`:null,
-      isFacilitator:role==='Coordinator',sadhana:{rounds:16,morningProgram:mode==='Online'?85:92,lastReported:iso(dayOff(0))},
-      swabhav:{nature:'Teaching',suggested:'Outreach & classes',interests:['Reading','Kirtan'],engaged:true},
-      careStatus:{emotional:'Doing well',spiritual:'Steady'},firstContact:iso(dayOff(-800)),source:'Book distribution',
-      attendancePct:mode==='Online'?88:95,timeline:[],history:[]
-    };
-    if(role==='Coordinator')audaryaId=dev.id;
-    DB.devotees.push(dev);
-  });
-
-  NARAD_DATA.forEach(([name,ph,res,mode,role])=>{
-    const dev={
-      id:uid('d'),name,gender:'M',dob:'1999-08-20',phone:'+91 '+ph,email:name.toLowerCase().replace(/[^a-z0-9]/g,'.')+'@iskcon.in',
-      address:res,residence:res,mode,batchRole:role,occupation:res.includes('BACE')?'Full-time devotee':'Working professional / Student',
-      org:'IIT Delhi & Associates',emergency:'+91 '+ph,joined:iso(dayOff(-600)),status:'Active',level:3,
-      batch:'b7',careGroup:null,friends:[],facilitator:null,mentor:null,dept:null,service:null,serviceRole:null,
-      serviceStart:null,skills:['Preaching','Teaching'],availability:'Anytime',appointment:role!=='Member'?`Narad Sabha ${role}`:null,
-      isFacilitator:role==='Coordinator',sadhana:{rounds:16,morningProgram:mode==='Online'?85:92,lastReported:iso(dayOff(0))},
-      swabhav:{nature:'Teaching',suggested:'Outreach & classes',interests:['Reading','Kirtan'],engaged:true},
-      careStatus:{emotional:'Doing well',spiritual:'Steady'},firstContact:iso(dayOff(-650)),source:'Book distribution',
-      attendancePct:mode==='Online'?88:95,timeline:[],history:[]
-    };
-    if(role==='Coordinator')dhirendraId=dev.id;
-    DB.devotees.push(dev);
-  });
-
-  const bG=DB.batches.find(b=>b.id==='b8'||b.name==='Gaurvani Sabha');
-  if(bG&&audaryaId) bG.coordinator=audaryaId;
-  const bN=DB.batches.find(b=>b.id==='b7'||b.name==='Narad Sabha');
-  if(bN&&dhirendraId) bN.coordinator=dhirendraId;
-
-  D.slice(6,22).forEach(d=>{d.history=[
-    {type:'Batch',from:'Taksharya',to:'Sreshtha',date:iso(dayOff(-ri(120,300)))},
-    {type:'Department',from:'Cleaning',to:(DB.departments.find(x=>x.id===d.dept)||{}).name||'Kitchen Department',date:iso(dayOff(-ri(40,120)))},
-    {type:'Facilitator',from:'Rohan Mehta',to:nameOf(d.facilitator),date:iso(dayOff(-ri(30,200)))}]});
-
-  /* ---- activities: recurring templates + generated occurrences ---- */
-  const SEVA={
-   'Deity Department':[['Deity wake-up','04:15','05:00','Daily'],['Mangal Aarti singing','04:30','05:15','Daily'],['Deity worship & dressing','05:15','06:30','Daily'],['Bhoga offering','11:00','12:00','Daily'],['Narasimha Aarti singing','19:00','19:30','Daily']],
-   'Kitchen Department':[['Breakfast preparation','05:30','08:00','Daily'],['Evening prasadam','16:30','19:30','Daily'],['Sunday feast cooking','08:00','13:00','Weekly']],
-   'Cleaning':[['Temple hall cleaning','06:30','07:30','Daily'],['Ashram floor cleaning','07:30','08:30','Daily'],['Store room deep clean','10:00','12:00','Weekly']],
-   'Morning Program':[['Mangala aarti attendance','04:30','05:15','Daily'],['Japa session','05:15','06:15','Daily'],['Bhagavatam class','06:30','07:30','Daily']],
-   'Sankirtan Dept. & Inventory':[['Campus book distribution','16:00','19:00','Weekly'],['Inventory stock count','11:00','13:00','Weekly']],
-   'Social Media':[['Reel shoot','17:00','19:00','Weekly'],['Weekly post scheduling','20:00','21:00','Weekly']],
-   'Tulsi Maharani Care':[['Tulsi watering','06:00','06:30','Daily']],
-   'Maintenance':[['Facility round','17:00','18:00','Weekly']],
-   'Purchasing':[['Weekly grocery run','09:00','12:00','Weekly']],
-   'Accounts':[['Donation entry','18:00','19:00','Weekly']],
-   'Birthday & Festival':[['Festival setup crew','15:00','19:00','Monthly']],
-   'BBT Department':[['Book table at gate','17:00','19:00','Weekly']],
-   'Saturday Bhagavatam Class':[['Class setup and recording','17:30','19:30','Weekly']]
+  // 1. Surya Narayana Das (Area Leader & Gaurvani Sabha)
+  const surya = {
+    id: 'd1',
+    name: 'Surya Narayana Das',
+    gender: 'M',
+    dob: '1995-06-02',
+    phone: '+91 7907737187',
+    email: 'suryakiranjune2@gmail.com',
+    address: 'Jia Sarai BACE',
+    residence: 'Jia Sarai BACE',
+    mode: 'Offline at BACE',
+    batchRole: 'Member',
+    occupation: 'Full-time devotee / PhD scholar',
+    org: 'IIT Delhi',
+    emergency: '+91 7907737187',
+    joined: iso(dayOff(-1200)),
+    status: 'Active',
+    level: 3,
+    batch: 'b8',
+    careGroup: null,
+    friends: [],
+    facilitator: null,
+    mentor: null,
+    dept: 'dp3',
+    service: 'Morning Program',
+    serviceRole: 'Coordinator',
+    serviceStart: iso(dayOff(-600)),
+    skills: ['Preaching', 'Teaching', 'Kirtan'],
+    availability: 'Anytime',
+    appointment: 'Area Leader',
+    isFacilitator: true,
+    sadhana: { rounds: 16, morningProgram: 98, lastReported: iso(TODAY) },
+    swabhav: { nature: 'Teaching', suggested: 'Outreach & classes', interests: ['Reading', 'Kirtan'], engaged: true },
+    careStatus: { emotional: 'Doing well', spiritual: 'Steady' },
+    firstContact: iso(dayOff(-1300)),
+    source: 'Book distribution',
+    attendancePct: 98,
+    timeline: [
+      { date: iso(dayOff(-1200)), title: 'Joined community', desc: 'Active at ISKCON Jia Sarai BACE.', tone: 'green' },
+      { date: iso(dayOff(-600)), title: 'Appointed Area Leader', desc: 'Overall leadership and spiritual guidance.', tone: 'saffron' }
+    ],
+    history: []
   };
-  const dpBy=n=>DB.departments.find(d=>d.name===n);
-  Object.entries(SEVA).forEach(([dname,list])=>{
-    const dp=dpBy(dname);if(!dp)return;
-    list.forEach(([name,start,end,freq])=>{
-      const tpl={id:uid('tpl'),name,type:'Seva',dept:dp.id,batch:null,freq,start,end,
-        location:pk(['Temple Hall','BACE Kitchen','Ashram','Altar Room','Store Room','Campus Gate']),
-        need:freq==='Daily'?ri(1,3):ri(2,5),skills:pks(SKILLS,1),priority:pk(['High','Medium','Medium','Low']),
-        desc:`${name} for ${dp.name}.`,status:'Active',created:iso(dayOff(-90))};
-      DB.templates.push(tpl);
-      const step=freq==='Daily'?1:freq==='Weekly'?7:30;
-      for(let off=-step*4;off<=step*3;off+=step){
-        const d=iso(dayOff(off));
-        const own=DB.deptMembers.filter(m=>m.dept===dp.id).map(m=>m.devotee);
-        const spare=D.filter(x=>x.status!=='Inactive'&&!own.includes(x.id)).map(x=>x.id);
-        const cands=[...own,...pks(spare,6)];
-        const assigned=pks(cands,Math.min(cands.length,chance(.15)?Math.max(1,tpl.need-1):tpl.need));
-        const past=off<0;
-        const act={id:uid('ac'),type:'Seva',name,title:name,cat:'Services',dept:dp.id,batch:null,date:d,
-          start:tpl.start,end:tpl.end,location:tpl.location,desc:tpl.desc,priority:tpl.priority,
-          need:tpl.need,vols:tpl.need,skills:tpl.skills,responsible:dp.head,owner:dp.head,
-          templateId:tpl.id,recurrence:freq,overridden:false,
-          status:past?(chance(.9)?'Completed':chance(.5)?'Missed':'Cancelled'):off===0?'In Progress':'Assigned',
-          actionItems:[],budget:{allocated:0,spent:0},report:null,
-          proof:(dp.module==='cleaning'&&past&&chance(.7))?{at:d,by:pk(assigned)||null,retainUntil:iso(dayOff(off+30))}:null};
-        DB.activities.push(act);
-        assigned.forEach(dvid=>{
-          const byOther=past&&chance(.14);
-          const performer=byOther?pk(D.filter(x=>x.id!==dvid)).id:dvid;
-          DB.assignments.push({id:uid('as'),activity:act.id,devotee:dvid,
-            state:past?(act.status==='Completed'?(byOther?'Completed by Another':'Completed'):'Missed'):pk(['Accepted','Accepted','Accepted','Assigned','Assigned','Declined']),
-            actualPerformer:past&&act.status==='Completed'?performer:null,
-            completedAt:past&&act.status==='Completed'?`${d} ${tpl.end}`:null});
-          if(past)DB.attendance.push({id:uid('at'),category:'Seva',ref:act.id,devotee:dvid,date:d,
-            status:pk(['Present','Present','Present','Present','Present','Present','Present','Late','Absent','Excused'])});
-        });
-        if(act.status==='Completed')act.report=pk(['Completed smoothly. Good turnout.','Done, two volunteers arrived late.','Completed; extra help needed next time.']);
-      }
-    });
+  DB.devotees.push(surya);
+
+  // 2. Gaurvani Sabha Members (17 members)
+  let audaryaId = null, dhirendraId = null, prashantId = null, sureshId = null;
+  GAUR_DATA.forEach(([name,ph,res,mode,role], idx)=>{
+    const did = 'd_g' + (idx + 1);
+    const isCoord = role === 'Coordinator';
+    const isSec = role === 'Secretary';
+    if(isCoord) audaryaId = did;
+    if(isSec) prashantId = did;
+    const dev = {
+      id: did, name, gender: 'M', dob: '1998-05-15', phone: '+91 ' + ph, email: name.toLowerCase().replace(/[^a-z0-9]/g,'.') + '@iskcon.in',
+      address: res, residence: res, mode, batchRole: role,
+      occupation: res.includes('BACE') ? 'Full-time devotee' : 'Working professional / Student',
+      org: 'IIT Delhi & Associates', emergency: '+91 ' + ph, joined: iso(dayOff(-750)), status: 'Active', level: 3,
+      batch: 'b8', careGroup: null, friends: ['d1'], facilitator: null, mentor: 'd1', dept: null, service: null, serviceRole: null,
+      serviceStart: null, skills: ['Preaching', 'Teaching'], availability: 'Anytime',
+      appointment: role !== 'Member' ? `Gaurvani Sabha ${role}` : null,
+      isFacilitator: isCoord,
+      sadhana: { rounds: 16, morningProgram: mode === 'Online' ? 85 : 92, lastReported: iso(TODAY) },
+      swabhav: { nature: 'Teaching', suggested: 'Outreach & classes', interests: ['Reading', 'Kirtan'], engaged: true },
+      careStatus: { emotional: 'Doing well', spiritual: 'Steady' },
+      firstContact: iso(dayOff(-800)), source: 'Book distribution',
+      attendancePct: mode === 'Online' ? 88 : 95,
+      timeline: [{ date: iso(dayOff(-750)), title: 'Joined Gaurvani Sabha', desc: 'Active member.', tone: 'green' }],
+      history: []
+    };
+    DB.devotees.push(dev);
   });
-  /* classes per batch (past + upcoming) */
-  const CLASS_T=['Bhagavad-gita Chapter 2','Bhagavad-gita Chapter 3','Nectar of Instruction','Science of Self-realisation','Japa workshop','Open question & answer'];
-  DB.batches.forEach(b=>{
-    for(let w=-6;w<=2;w++){
-      const d=iso(dayOff(w*7+ri(0,1)));const past=w<0;
-      const act={id:uid('ac'),type:'Class',name:pk(CLASS_T),title:'',cat:'Classes',dept:null,batch:b.id,date:d,
-        start:'18:30',end:'20:00',location:pk(['Temple Hall','Seminar Room','Online (Zoom)']),
-        desc:'Weekly class with kirtan, discussion and prasadam.',priority:'High',need:2,vols:2,skills:['Teaching'],
-        responsible:b.coordinator,owner:b.coordinator,templateId:null,recurrence:'Weekly',
-        status:past?'Completed':'Scheduled',actionItems:[],
-        budget:{allocated:ri(1,4)*1000,spent:past?ri(500,3500):0},report:null,expected:ri(10,26)};
-      act.title=act.name;
-      DB.activities.push(act);
-      if(past)DB.devotees.filter(x=>x.batch===b.id).forEach(x=>DB.attendance.push({id:uid('at'),category:'Preaching batch',
-        ref:act.id,devotee:x.id,date:d,status:pk(['Present','Present','Present','Present','Present','Absent','Late','Excused'])}));
+
+  // 3. Narad Sabha Members (19 members)
+  NARAD_DATA.forEach(([name,ph,res,mode,role], idx)=>{
+    const did = 'd_n' + (idx + 1);
+    const isCoord = role === 'Coordinator';
+    const isSec = role === 'Secretary';
+    if(isCoord) dhirendraId = did;
+    if(isSec) sureshId = did;
+    const dev = {
+      id: did, name, gender: 'M', dob: '1999-08-20', phone: '+91 ' + ph, email: name.toLowerCase().replace(/[^a-z0-9]/g,'.') + '@iskcon.in',
+      address: res, residence: res, mode, batchRole: role,
+      occupation: res.includes('BACE') ? 'Full-time devotee' : 'Working professional / Student',
+      org: 'IIT Delhi & Associates', emergency: '+91 ' + ph, joined: iso(dayOff(-600)), status: 'Active', level: 3,
+      batch: 'b7', careGroup: null, friends: ['d1'], facilitator: null, mentor: 'd1', dept: null, service: null, serviceRole: null,
+      serviceStart: null, skills: ['Preaching', 'Teaching'], availability: 'Anytime',
+      appointment: role !== 'Member' ? `Narad Sabha ${role}` : null,
+      isFacilitator: isCoord,
+      sadhana: { rounds: 16, morningProgram: mode === 'Online' ? 85 : 92, lastReported: iso(TODAY) },
+      swabhav: { nature: 'Teaching', suggested: 'Outreach & classes', interests: ['Reading', 'Kirtan'], engaged: true },
+      careStatus: { emotional: 'Doing well', spiritual: 'Steady' },
+      firstContact: iso(dayOff(-650)), source: 'Book distribution',
+      attendancePct: mode === 'Online' ? 88 : 95,
+      timeline: [{ date: iso(dayOff(-600)), title: 'Joined Narad Sabha', desc: 'Active member.', tone: 'green' }],
+      history: []
+    };
+    DB.devotees.push(dev);
+  });
+
+  // 4. 1 Sample Dummy Devotee (Rahul Sharma)
+  const sampleDev = {
+    id: 'd_sample',
+    name: 'Rahul Sharma',
+    gender: 'M',
+    dob: '2004-03-20',
+    phone: '+91 9876543210',
+    email: 'rahul.sharma@example.in',
+    address: 'Hostel, IIT Delhi',
+    residence: 'Hostel',
+    mode: 'Offline at BACE',
+    batchRole: 'Member',
+    occupation: 'B.Tech 2nd year',
+    org: 'IIT Delhi',
+    emergency: '+91 9876543210',
+    joined: iso(dayOff(-90)),
+    status: 'Active',
+    level: 1,
+    batch: 'b1',
+    careGroup: 'cg1',
+    friends: [audaryaId || 'd1'],
+    facilitator: audaryaId || 'd1',
+    mentor: audaryaId || 'd1',
+    dept: 'dp6',
+    service: 'Prasadam serving',
+    serviceRole: 'Volunteer',
+    serviceStart: iso(dayOff(-60)),
+    skills: ['Cooking', 'Kirtan'],
+    availability: 'Weekends',
+    appointment: null,
+    isFacilitator: false,
+    sadhana: { rounds: 4, morningProgram: 75, lastReported: iso(TODAY) },
+    swabhav: { nature: 'Organising', suggested: 'Festival and event management', interests: ['Kirtan', 'Reading'], engaged: true },
+    careStatus: { emotional: 'Doing well', spiritual: 'Growing' },
+    firstContact: iso(dayOff(-120)),
+    source: 'Campus stall',
+    attendancePct: 80,
+    timeline: [
+      { date: iso(dayOff(-120)), title: 'First contact', desc: 'Met through campus book stall.', tone: 'saffron' },
+      { date: iso(dayOff(-90)), title: 'Joined community', desc: 'Profile created in devotee database.', tone: 'green' },
+      { date: iso(dayOff(-60)), title: 'Joined Taksharya', desc: 'Level 1 batch.', tone: 'indigo' }
+    ],
+    history: []
+  };
+  DB.devotees.push(sampleDev);
+
+  // Link batch coordinators & facilitators
+  const bG = DB.batches.find(b => b.id === 'b8');
+  if (bG && audaryaId) { bG.coordinator = audaryaId; bG.facilitators = [audaryaId, 'd1']; }
+  const bN = DB.batches.find(b => b.id === 'b7');
+  if (bN && dhirendraId) { bN.coordinator = dhirendraId; bN.facilitators = [dhirendraId, 'd1']; }
+  const bT = DB.batches.find(b => b.id === 'b1');
+  if (bT && audaryaId) { bT.coordinator = audaryaId; bT.facilitators = [audaryaId]; }
+
+  // Assign department heads
+  DB.departments.forEach((dp) => {
+    if (dp.name.includes('Morning') || dp.name.includes('Area Leader') || dp.name.includes('Deity') || dp.name.includes('OC')) {
+      dp.head = 'd1';
+    } else if (dp.name.includes('Preaching') || dp.name.includes('Sankirtan')) {
+      dp.head = audaryaId || 'd1';
+    } else {
+      dp.head = 'd1';
     }
-    // one event per batch
-    const ev={id:uid('ac'),type:'Event',name:pk(['Kirtan evening','Vaishnava seminar','Prasadam fest','Alumni meetup','Film and discussion']),
-      cat:'Preaching',dept:null,batch:b.id,date:iso(dayOff(ri(2,24))),start:'17:00',end:'20:00',
-      location:'Temple Hall',desc:'Special programme open to contacts and friends.',priority:'High',
-      need:ri(4,8),vols:6,skills:['Hospitality'],responsible:b.coordinator,owner:b.coordinator,
-      status:'Scheduled',actionItems:[{t:'Confirm venue',done:true},{t:'Arrange volunteers',done:true},{t:'Prepare decoration',done:false},{t:'Coordinate prasadam',done:false},{t:'Publish announcement',done:false}],
-      budget:{allocated:ri(5,15)*1000,spent:0},recurrence:'One time',templateId:null,expected:ri(25,60)};
-    ev.title=ev.name;DB.activities.push(ev);
-  });
-  /* festivals + meetings + tasks */
-  [['Sunday Feast',0,'Festivals',60],['Janmashtami planning meeting',3,'Meetings',0],['Radhastami celebration',6,'Festivals',80],
-   ['Facilitators meeting',2,'Devotee Care',0],['Book distribution marathon',9,'Outreach',30],['Monthly review meeting',11,'Meetings',0],
-   ['Vrindavan yatra departure',15,'Camps',24],['New contacts welcome evening',4,'Preaching',12],['Care group leaders sync',5,'Devotee Care',0],
-   ['Gaura Purnima planning',20,'Festivals',0],['Temple visit — Punjabi Bagh',8,'Temple Visits',18]]
-   .forEach(([name,off,cat,exp])=>{
-     const a={id:uid('ac'),type:'Event',name,title:name,cat,dept:pk(DB.departments).id,batch:null,date:iso(dayOff(off)),
-      start:'16:00',end:'20:00',location:'Temple Hall',desc:'Community programme.',priority:'Medium',
-      need:exp?ri(3,10):2,vols:exp?ri(3,10):2,skills:[],responsible:pk(D).id,owner:pk(D).id,status:off<0?'Completed':'Scheduled',
-      actionItems:[{t:'Confirm venue',done:chance(.8)},{t:'Arrange volunteers',done:chance(.6)},{t:'Publicity',done:chance(.4)},{t:'Prasadam plan',done:chance(.5)}],
-      budget:{allocated:ri(3,40)*1000,spent:off<0?ri(2000,30000):0},recurrence:'One time',templateId:null,expected:exp};
-     DB.activities.push(a);
-   });
-  const taskT=['Submit weekly department report','Fix the hostel-side water cooler','Call three inactive devotees','Design Janmashtami poster','Update book stock register','Prepare class notes for Chapter 3','Collect sadhana cards','Order groceries for the feast','Book tempo for the yatra','Review new contact list','Prepare volunteer rota','Photograph the festival','Follow up on pending donations','Set up projector for class','Send monthly newsletter','Onboard two new volunteers','Reconcile last month accounts','Repot three Tulsi plants','Publish reel from Sunday feast','Draft SOP for guest handling','Schedule facilitator meeting','Print class handouts'];
-  taskT.forEach(t=>{const off=ri(-8,18);const dp=pk(DB.departments);
-    const a={id:uid('ac'),type:'Task',name:t,title:t,cat:'Management',dept:dp.id,batch:null,date:iso(dayOff(off)),
-      start:'',end:'',location:'',desc:'Raised during the weekly coordination meeting.',priority:pk(['High','Medium','Medium','Low']),
-      need:1,vols:1,skills:[],responsible:pk(D).id,owner:pk(D).id,
-      status:off<-2?pk(['Completed','Completed','In Progress','Missed']):off<1?pk(['In Progress','Assigned']):'Assigned',
-      actionItems:[],budget:{allocated:0,spent:0},recurrence:'One time',templateId:null,due:iso(dayOff(off))};
-    DB.activities.push(a);
-    DB.assignments.push({id:uid('as'),activity:a.id,devotee:a.responsible,state:a.status==='Completed'?'Completed':'Accepted',actualPerformer:null,completedAt:null});
-  });
-  DB.activities.forEach(a=>{if(!a.due)a.due=a.date;if(!a.title)a.title=a.name});
-
-  /* contacts */
-  const stageWeights=[7,6,6,5,6,5,4,3,2,1,2];let c=0;
-  stageWeights.forEach((n,si)=>{for(let k=0;k<n;k++){
-    c++;const name=mkName();const fc=si<=2?ri(1,26):si<=5?ri(10,75):ri(60,300);
-    DB.contacts.push({id:'c'+c,name,phone:`+91 9${ri(10000000,99999999)}`,email:name.toLowerCase().replace(/[^a-z]/g,'.')+'@example.in',
-      org:pk(ORGS),year:pk(['1st','2nd','3rd','4th','—']),profession:pk(OCC),source:pk(SOURCES),
-      firstContact:iso(dayOff(-fc)),firstInteraction:pk(['Took a book at the stall','Came for Sunday feast','A friend brought him to class','Replied to an Instagram post','Met at the campus fest']),
-      interests:pks(['Philosophy','Kirtan','Yoga','Meditation','Sanskrit','Community service','Prasadam'],2).join(', '),
-      stage:STAGES[si],batch:si>=6?pk(DB.batches).id:null,preacher:pk(DB.batches).coordinator,
-      facilitator:si>=6?pk(facs).id:null,last:iso(dayOff(-ri(1,25))),classes:ri(0,14),events:ri(0,6),
-      notes:pk(['Interested in the philosophy behind karma.','Wants to start chanting but worried about time.','Exams coming up, will return next month.','Very regular, brings friends along.','Asked about the Sunday feast timing.']),timeline:[]});
-  }});
-
-  /* follow-ups */
-  const mkFU=(kind,subject,assigned,off,status)=>DB.followups.push({id:uid('fu'),kind,subject,assigned,
-    purpose:pk(kind==='Preaching'?['Invite to Sunday class','Check after first class','Share reading material','Confirm batch attendance','Personal chat over prasadam']
-      :['Weekly check-in','Missed three classes','Support during exams','Sadhana encouragement','Group meeting reminder']),
-    last:iso(dayOff(-ri(5,20))),due:iso(dayOff(off)),status,priority:pk(['High','Medium','Medium','Low']),
-    notes:pk(['Call in the evening, he is in class till 6.','Prefers WhatsApp.','Has been travelling, try next week.','Asked to be invited again for the feast.',''])});
-  const cs=DB.contacts;
-  for(let i=0;i<8;i++)mkFU('Preaching',pk(cs).id,pk(DB.batches).coordinator,-ri(1,9),'Pending');
-  for(let i=0;i<12;i++)mkFU('Preaching',pk(cs).id,pk(DB.batches).coordinator,0,'Pending');
-  for(let i=0;i<7;i++)mkFU('Preaching',pk(cs).id,pk(DB.batches).coordinator,1,'Pending');
-  for(let i=0;i<23;i++)mkFU('Preaching',pk(cs).id,pk(DB.batches).coordinator,ri(2,16),'Pending');
-  for(let i=0;i<16;i++)mkFU('Preaching',pk(cs).id,pk(DB.batches).coordinator,-ri(3,30),'Completed');
-  for(let i=0;i<5;i++)mkFU('Care',pk(D).id,pk(facs).id,-ri(1,6),'Pending');
-  for(let i=0;i<14;i++)mkFU('Care',pk(D).id,pk(facs).id,ri(0,6),'Pending');
-  for(let i=0;i<9;i++)mkFU('Care',pk(D).id,pk(facs).id,-ri(4,25),'Completed');
-
-  /* care records */
-  D.slice(0,42).forEach(d=>{
-    if(chance(.5))DB.meetings.push({id:uid('mt'),devotee:d.id,date:iso(dayOff(-ri(1,60))),senior:pk(facs).id,
-      type:pk(['Personal meeting','Sadhana review','Career guidance','Family matter']),area:pk(['Sadhana','Studies','Family','Service','Relationships']),
-      points:pk(['Struggling to wake up for mangala aarti; agreed to sleep by 10:30 pm.','Feels disconnected from the group after a hostel change.','Wants more responsibility in service.','Exam pressure is affecting chanting.']),
-      actions:pk(['Pair with a morning japa partner.','Introduce to Group 3 members.','Assign a small coordination role.','Reduce service load for two weeks.']),
-      next:iso(dayOff(ri(3,30))),confidential:true});
-    if(chance(.35))DB.templeVisits.push({id:uid('tv'),devotee:d.id,date:iso(dayOff(-ri(5,120))),
-      temple:pk(['ISKCON Punjabi Bagh','ISKCON East of Kailash','ISKCON Rohini','Vrindavan']),
-      notes:pk(['First temple visit.','Attended Sunday feast.','Stayed for the evening aarti.'])});
-    if(chance(.25))DB.camps.push({id:uid('cp'),devotee:d.id,name:pk(['Vrindavan Yatra','Winter Sadhana Camp','Govardhan Parikrama','Jagannath Puri Yatra']),date:iso(dayOff(-ri(20,300)))});
-    DB.sadhana.push({id:uid('sd'),devotee:d.id,week:'This week',rounds:d.sadhana.rounds,
-      avgWake:pk(['4:20 am','4:45 am','5:10 am','5:40 am','6:15 am']),reading:pk(['Daily','4 days','2 days','Irregular']),program:d.sadhana.morningProgram});
   });
 
-  /* inventory + BBT books */
-  [['Kartals (pair)','Sankirtan',24],['Mridanga','Sankirtan',6],['Book bag','Sankirtan',30],['Folding table','Sankirtan',8],
-   ['Banner stand','Sankirtan',5],['Projector','General',2],['Extension board','General',12],['Cooking vessel (large)','Kitchen',10]]
-   .forEach(([name,cat,total])=>DB.inventory.push({id:uid('inv'),name,cat,total,issued:0,type:'Item'}));
-  [['Bhagavad-gita As It Is','Book',120],['Srimad Bhagavatam Canto 1','Book',40],['Nectar of Devotion','Book',35],
-   ['Science of Self-realisation','Book',60],['Chant and Be Happy','Book',80],['Beyond Birth and Death','Book',50],
-   ['Perfect Questions Perfect Answers','Book',45]].forEach(([name,cat,total])=>DB.inventory.push({id:uid('inv'),name,cat,total,issued:0,type:'Book'}));
-  for(let i=0;i<22;i++){
-    const it=pk(DB.inventory);const qty=ri(1,5);const off=ri(-30,2);
-    const st=off>0?'Pending':pk(['Issued','Issued','Returned','Pending','Approved']);
-    const due=iso(dayOff(off+14));
-    DB.invRequests.push({id:uid('ir'),item:it.id,devotee:pk(D).id,qty,purpose:pk(['Campus book distribution','Hostel programme','Sunday feast','Festival stall','Personal study']),
-      requested:iso(dayOff(off)),status:st,approvedBy:['Issued','Returned','Approved'].includes(st)?dpBy('Sankirtan Dept. & Inventory').head:null,
-      due,returned:st==='Returned'?iso(dayOff(off+ri(3,12))):null});
-    if(st==='Issued')it.issued+=qty;
-  }
-
-  /* kitchen menus, rebates, feedback */
-  for(let off=-2;off<=3;off++)DB.menus.push({id:uid('mn'),date:iso(dayOff(off)),
-    breakfast:pk(['Upma & fruit','Poha & milk','Sheera & banana','Idli & chutney']),
-    lunch:pk(['Rice, dal, sabji, salad','Khichdi, papad, chutney','Puri, chana, halwa','Rajma chawal, raita']),
-    dinner:pk(['Roti, sabji, dal','Pasta bake, soup','Dosa & sambar','Pulao & kadhi']),
-    announcement:off===1?'Tomorrow is Ekadashi — anukalpa menu will be served.':'',by:dpBy('Kitchen Department').head});
-  for(let i=0;i<6;i++){const off=ri(-10,6);
-    DB.rebates.push({id:uid('rb'),devotee:pk(D).id,from:iso(dayOff(off)),to:iso(dayOff(off+ri(1,6))),
-      reason:pk(['Travelling home','Exams — eating at hostel mess','Family visit','Yatra']),
-      status:off<0?pk(['Approved','Approved','Rejected']):'Pending',days:ri(1,6)})}
-  for(let i=0;i<8;i++)DB.feedback.push({id:uid('fb'),devotee:pk(D).id,date:iso(dayOff(-ri(0,10))),
-    meal:pk(['Breakfast','Lunch','Dinner']),rating:ri(3,5),note:pk(['Prasadam was excellent today.','A little less salt would help.','Loved the halwa.','Served slightly late.',''])});
-
-  /* morning programme QR sessions */
-  for(let off=-4;off<=0;off++){
-    const present=pks(D.map(x=>x.id),ri(14,26));
-    DB.qrSessions.push({id:uid('qr'),date:iso(dayOff(off)),window:'04:25 – 05:05',code:String(ri(100000,999999)),
-      rotateSec:30,checkins:present.map(p=>({devotee:p,at:`0${ri(4,5)}:${String(ri(0,59)).padStart(2,'0')}`,device:'mobile'})),
-      corrections:off===-1?[{devotee:pk(D).id,by:L.coordinator.id,reason:'Phone battery died at the gate',at:'Yesterday 09:12'}]:[]});
-    present.forEach(p=>DB.attendance.push({id:uid('at'),category:'Morning programme',ref:'mp'+off,devotee:p,date:iso(dayOff(off)),status:'Present'}));
-  }
-
-  /* SOPs */
-  const SOPD=[['Deity worship SOP','BACE Management','Deity Department','Daily'],['Kitchen hygiene & cooking SOP','BACE Management','Kitchen Department','Daily'],
-    ['Cleaning roster SOP','BACE Management','Cleaning','Daily'],['Purchasing & vendor SOP','BACE Management','Purchasing','Weekly'],
-    ['Maintenance request SOP','BACE Management','Maintenance','As required'],['Festival execution SOP','BACE Management','Birthday & Festival','Per festival'],
-    ['Inventory issue & return SOP','BACE Management','Sankirtan Dept. & Inventory','Per request'],['BBT book request SOP','BACE Management','BBT Department','Per request'],
-    ['Morning programme attendance SOP','BACE Management','Morning Program','Daily'],
-    ['New contact handling SOP','BACE Preaching','Preaching','Per contact'],['Follow-up discipline SOP','BACE Preaching','Preaching','Weekly'],
-    ['Batch management SOP','BACE Preaching','Preaching','Weekly'],['Class conduct SOP','BACE Preaching','Preaching','Per class'],
-    ['Progression review SOP','BACE Preaching','Preaching','Monthly'],['Emotional care SOP','Devotee Care','Care','Ongoing'],
-    ['Facilitator conduct SOP','Devotee Care','Care','Ongoing'],['Personal meeting SOP','Devotee Care','Care','Per meeting'],
-    ['Sadhana follow-up SOP','Devotee Care','Care','Weekly'],['Care escalation SOP','Devotee Care','Care','As required']];
-  SOPD.forEach(([name,cat,owner,freq],i)=>DB.sops.push({id:'sop'+(i+1),name,cat,owner,freq,status:'Active',
-    version:`v${ri(1,3)}.${ri(0,9)}`,updated:iso(dayOff(-ri(5,200))),responsible:pk(D).id,
-    purpose:`Keep ${name.replace(' SOP','').toLowerCase()} consistent, so quality does not depend on who is on duty.`,
-    scope:`Applies to everyone serving in ${owner}.`,
-    procedure:['Check the board before starting.','Confirm materials and people are ready.','Carry out the service to the written standard.','Record what happened in the system.','Hand over with a short note.'],
-    checklist:pk([['Venue confirmed','Volunteers assigned','Decoration completed','Publicity completed','Prasadam planned','Guest coordination done','Photography assigned','Post-event report submitted'],
-      ['Contact details recorded','First interaction noted','Preacher assigned','Follow-up scheduled','Invited to class','Added to batch list'],
-      ['Area swept','Surfaces wiped','Waste removed','Supplies restocked','Register signed','Proof photo uploaded']]).map(t=>({t,done:chance(.55)})),
-    standards:'Nothing is considered done until it is recorded in the system.',
-    escalation:'Unresolved in 24 hours → department head → Internal Manager → Overall Coordinator.',
-    versions:[{v:'v1.0',at:iso(dayOff(-ri(220,400))),by:'Overall Coordinator'}]}));
-
-  /* reports */
-  DB.departments.forEach(dp=>{for(let w=1;w<=2;w++){const submitted=w===2||chance(.72);
-    DB.reports.push({id:uid('rp'),kind:'Department weekly',dept:dp.id,batch:null,
-      period:'Week ending '+fmtD(iso(dayOff(w===1?-2:-9))),submitted:submitted?iso(dayOff(w===1?-1:-8)):null,
-      status:submitted?(w===2?'Approved':pk(['Submitted','Approved'])):'Pending',by:dp.head,
-      activities:'Daily services ran as scheduled.',attendance:ri(62,98),volunteers:ri(3,14),pending:ri(0,5),
-      challenges:pk(['Volunteer shortage on weekdays.','Two volunteers had exams.','Equipment needs repair.','None this week.']),
-      needs:pk(['One more volunteer for mornings.','Budget for replacement utensils.','Nothing pending.']),
-      next:'Continue the current rota and train one new volunteer.'})}});
-  DB.batches.forEach(b=>{const submitted=chance(.8);
-    DB.reports.push({id:uid('rp'),kind:'Preaching weekly',batch:b.id,dept:null,period:'Week ending '+fmtD(iso(dayOff(-2))),
-      submitted:submitted?iso(dayOff(-1)):null,status:submitted?'Submitted':'Pending',by:b.coordinator,
-      newContacts:ri(0,9),firstMeetings:ri(0,6),followups:ri(3,18),classes:ri(1,3),attendanceTotal:ri(8,42),
-      newParticipants:ri(0,6),regular:ri(4,22),inactive:ri(0,5),attendance:ri(55,95),volunteers:ri(2,8),
-      story:pk(['A first-year student who came only for prasadam has started chanting four rounds.','Two contacts from the book stall attended their first class.','An alumnus offered to host the next professionals meetup.']),
-      challenges:pk(['Mid-semester exams reduced attendance.','Follow-ups slipped because of the festival.','Venue clash on Thursday.']),
-      next:'Confirm the venue early and split the follow-up list between two preachers.'})});
-
-  /* notifications */
-  [['🪔','Seva assigned','You are assigned to Sunday feast cooking',0,'Management'],
-   ['⚠️','Follow-up overdue','8 preaching follow-ups crossed their due date',-1,'Preaching'],
-   ['📄','Report pending','Kitchen weekly report has not been submitted',-1,'Management'],
-   ['✅','Attendance reminder','Mark attendance for yesterday\u2019s class',-1,'Preaching'],
-   ['📋','Action item due today','Design Janmashtami poster',0,'Tasks'],
-   ['👍','Report approved','Social Media weekly report approved',-2,'Management'],
-   ['💬','New message','Sreshtha batch chat: 3 new messages',0,'Messages'],
-   ['📖','Class scheduled','Arjun Sabha class moved to 7:00 pm',-1,'Preaching'],
-   ['📦','Inventory request','2 book requests awaiting your approval',0,'Management'],
-   ['❤️','Care follow-up due','Weekly check-in with 2 devotees',0,'Care'],
-   ['🎂','Birthday today','Wish a devotee from your group',0,'Community'],
-   ['✨','Event reminder','Radhastami celebration in 6 days',-2,'Community']]
-   .forEach(([em,title,body,off,cat],i)=>DB.notifications.push({id:'n'+i,em,title,body,date:iso(dayOff(off)),read:i>6,cat}));
-  DB.notifPrefs={'Seva & assignments':true,'Attendance reminders':true,'Follow-ups':true,'Reports & approvals':true,
-    'Messages & chat':true,'Events & festivals':true,'Inventory approvals':false};
-
-  /* messaging threads */
-  const thread=(type,name,members,msgs,ref)=>DB.threads.push({id:uid('th'),type,name,members,ref,
-    messages:msgs.map((m,i)=>({id:uid('m'),from:m[0],text:m[1],at:`${ri(8,21)}:${String(ri(0,59)).padStart(2,'0')}`,
-      date:iso(dayOff(m[2]!==undefined?m[2]:0)),pinned:!!m[3]})),pinnedNote:null});
-  DB.batches.forEach(b=>{
-    const mem=D.filter(x=>x.batch===b.id).map(x=>x.id);
-    thread('batch',b.name+' chat',[b.coordinator,...mem],[
-      [b.coordinator,`Hare Krishna Prabhus 🙏 Tomorrow's class starts at ${b.time} sharp.`,-1,true],
-      [mem[0]||b.coordinator,'Hare Krishna Prabhuji, I will be there.',-1],
-      [mem[1]||b.coordinator,'Can we get the reading list for Chapter 3?',0],
-      [b.coordinator,'Yes, sharing it in the group tonight.',0]],b.id);
+  /* 1 Sample Care Group (Group 1 · Gaura) */
+  DB.careGroups.push({
+    id: 'cg1',
+    name: 'Group 1 · Gaura',
+    leader: audaryaId || 'd1',
+    facilitator: audaryaId || 'd1',
+    freq: 'Weekly',
+    day: 'Mon',
+    time: '7:30 pm',
+    place: 'Temple Hall',
+    status: 'Active',
+    desc: 'Weekly gathering with japa, reading and prasadam.',
+    last: iso(dayOff(-7)),
+    next: iso(dayOff(1)),
+    members: ['d_sample'],
+    attendance: 85,
+    meetings: [
+      { date: iso(dayOff(-7)), present: 6, note: 'Inspiring discussion on Bhagavad-gita Chapter 2.' }
+    ]
   });
-  DB.departments.slice(0,6).forEach(dp=>{
-    const mem=DB.deptMembers.filter(m=>m.dept===dp.id).map(m=>m.devotee);
-    thread('dept',dp.name+' team',[dp.head,...mem],[
-      [dp.head,'Rota for this week is published in the app. Please accept your seva.',-1],
-      [mem[0]||dp.head,'Accepted 🙏',-1]],dp.id);
+
+  /* 1 Sample Contact (Amit Verma) */
+  DB.contacts.push({
+    id: 'c1',
+    name: 'Amit Verma',
+    phone: '+91 9876543210',
+    email: 'amit.verma@example.in',
+    org: 'IIT Delhi',
+    year: '2nd',
+    profession: 'B.Tech 2nd year',
+    source: 'Campus stall',
+    firstContact: iso(dayOff(-15)),
+    firstInteraction: 'Took a Bhagavad-gita at the campus stall',
+    interests: 'Philosophy, Meditation, Prasadam',
+    stage: 'Interested',
+    batch: 'b1',
+    preacher: dhirendraId || 'd1',
+    facilitator: audaryaId || 'd1',
+    last: iso(dayOff(-2)),
+    classes: 1,
+    events: 1,
+    notes: 'Interested in the philosophy behind karma and yoga.',
+    timeline: [
+      { date: iso(dayOff(-15)), title: 'First contact', desc: 'Met through campus stall.', tone: 'saffron' },
+      { date: iso(dayOff(-2)), title: 'Attended introductory session', desc: 'Joined Sunday youth gathering.', tone: 'teal' }
+    ]
   });
-  thread('community','Community announcements',D.map(x=>x.id),[
-    [L.coordinator.id,'Radhastami celebration this Saturday. Volunteers needed from 3 pm.',-2,true],
-    [L.internal_manager.id,'Kitchen needs two more helpers for the feast.',-1]],null);
-  thread('dm','Direct message',[L.coordinator.id,D[30].id],[
-    [L.coordinator.id,'Hare Krishna! Could you take the Sunday reception seva?',-1],
-    [D[30].id,'Hare Krishna Prabhuji, yes I can. What time should I reach?',-1],
-    [L.coordinator.id,'3:30 pm at the gate. Thank you 🙏',0]],null);
 
-  /* users */
-  DB.users=[
-    {id:'u1',role:'area_leader',devotee:D[0].id},{id:'u2',role:'coordinator',devotee:D[1].id},
-    {id:'u3',role:'internal_manager',devotee:D[2].id},{id:'u4',role:'preaching_manager',devotee:D[3].id},
-    {id:'u5',role:'care_manager',devotee:D[4].id},
-    {id:'u6',role:'dept_head',devotee:DB.departments[5].head,dept:DB.departments[5].id},
-    {id:'u7',role:'preaching_coord',devotee:DB.batches[1].coordinator,batch:DB.batches[1].id},
-    {id:'u8',role:'facilitator',devotee:facs[0].id},{id:'u9',role:'devotee',devotee:D[30].id},
-    {id:'u10',role:'admin',devotee:null}];
-
-  /* audit */
-  [['Batch changed','Rahul Sharma moved from Taksharya to Sreshtha'],['Seva assigned','Kitchen: Sunday feast cooking assigned to 5 volunteers'],
-   ['Care note updated','Facilitator note updated for a devotee (restricted)'],['Report approved','Deity Department weekly report approved'],
-   ['Role granted','Department Head access granted for Social Media'],['Contact created','New contact added from campus stall'],
-   ['Attendance marked','Preaching batch attendance recorded for Sreshtha'],['SOP published','Care escalation SOP v1.3 published'],
-   ['Template changed','Cleaning roster changed from this occurrence onward'],['Completion recorded','Seva completed by another devotee — performer recorded'],
-   ['Inventory issued','4 Bhagavad-gitas issued for campus distribution'],['QR correction','Morning programme attendance corrected by admin'],
-   ['Department created','Saturday Bhagavatam Class department created'],['Budget updated','Alumni Preaching budget increased'],
-   ['Group created','Group 6 · Vrinda created with 8 members'],['Devotee created','New devotee profile created']]
-   .forEach(([a,r],i)=>DB.audit.push({id:'au'+i,user:pk(D).name,action:a,record:r,
-     at:`${fmtD(iso(dayOff(-ri(0,14))))}, ${ri(7,21)}:${String(ri(0,59)).padStart(2,'0')}`,ts:Date.now()-i*36e5}));
-
-  /* timelines */
-  D.forEach(d=>{
-    const t=[];const push=(date,title,desc,tone)=>{if(date)t.push({date,title,desc,tone})};
-    push(d.firstContact,'First contact',`Met through ${d.source.toLowerCase()}.`,'saffron');
-    push(d.joined,'Joined the community','Profile created in the devotee database.','green');
-    if(d.batch)push(iso(dayOff(-ri(60,300))),'Joined '+batch(d.batch).name,'Level '+d.level+' batch.','indigo');
-    if(d.facilitator)push(iso(dayOff(-ri(40,250))),'Facilitator assigned',nameOf(d.facilitator)+' became the facilitator.','green');
-    if(d.careGroup)push(iso(dayOff(-ri(30,200))),'Joined '+group(d.careGroup).name,'Weekly care group.','green');
-    if(d.dept)push(d.serviceStart,'Started '+d.service,dept(d.dept).name+' department.','saffron');
-    (d.history||[]).forEach(h=>push(h.date,`${h.type}: ${h.from} → ${h.to}`,'Previous record retained in history.','mustard'));
-    const tv=DB.templeVisits.find(v=>v.devotee===d.id);if(tv)push(tv.date,'Temple visit',tv.temple+'.','sky');
-    const mt=DB.meetings.find(m=>m.devotee===d.id);if(mt)push(mt.date,'Personal meeting','With '+nameOf(mt.senior)+'.','green');
-    d.timeline=t.sort((a,b)=>a.date<b.date?1:-1);
+  /* 1 Sample Preaching follow-up + 1 Sample Care follow-up */
+  DB.followups.push({
+    id: 'fu1',
+    kind: 'Preaching',
+    subject: 'c1',
+    assigned: dhirendraId || 'd1',
+    purpose: 'Invite to Sunday class',
+    last: iso(dayOff(-2)),
+    due: iso(dayOff(1)),
+    status: 'Pending',
+    priority: 'High',
+    notes: 'Call in the evening after classes.'
   });
-  DB.contacts.forEach(c=>{c.timeline=[{date:c.firstContact,title:'First contact',desc:c.firstInteraction+'.',tone:'saffron'},
-    {date:iso(dayOff(-ri(10,60))),title:'First class attended',desc:'Came for the weekly class.',tone:'indigo'},
-    {date:c.last,title:'Last interaction',desc:'Spoke with the assigned preacher.',tone:'teal'}].sort((a,b)=>a.date<b.date?1:-1)});
+  DB.followups.push({
+    id: 'fu2',
+    kind: 'Care',
+    subject: 'd_sample',
+    assigned: audaryaId || 'd1',
+    purpose: 'Weekly check-in',
+    last: iso(dayOff(-7)),
+    due: iso(dayOff(2)),
+    status: 'Pending',
+    priority: 'Medium',
+    notes: 'Check on exam preparations.'
+  });
+
+  /* 1 Sample Seva Template & Activity + Narad & Gaurvani weekly classes + 1 Event + 1 Task */
+  const kitchenDept = DB.departments.find(d => d.name.includes('Kitchen')) || DB.departments[0];
+  const tplKitchen = {
+    id: 'tpl1',
+    name: 'Sunday Feast Prasadam Cooking',
+    type: 'Seva',
+    dept: kitchenDept.id,
+    batch: null,
+    freq: 'Weekly',
+    start: '08:00',
+    end: '13:00',
+    location: 'BACE Kitchen',
+    need: 2,
+    skills: ['Cooking'],
+    priority: 'High',
+    desc: 'Prasadam preparation for Sunday feast.',
+    status: 'Active',
+    created: iso(dayOff(-60))
+  };
+  DB.templates.push(tplKitchen);
+
+  DB.activities.push({
+    id: 'ac_s1',
+    type: 'Seva',
+    name: 'Sunday Feast Prasadam Cooking',
+    title: 'Sunday Feast Prasadam Cooking',
+    cat: 'Services',
+    dept: tplKitchen.dept,
+    batch: null,
+    date: iso(TODAY),
+    start: '08:00',
+    end: '13:00',
+    location: 'BACE Kitchen',
+    desc: 'Prasadam cooking for Sunday feast.',
+    priority: 'High',
+    need: 2,
+    vols: 2,
+    skills: ['Cooking'],
+    responsible: 'd1',
+    owner: 'd1',
+    templateId: 'tpl1',
+    recurrence: 'Weekly',
+    overridden: false,
+    status: 'In Progress',
+    actionItems: [],
+    budget: { allocated: 5000, spent: 3200 },
+    report: null,
+    proof: null
+  });
+  DB.assignments.push({
+    id: 'as1',
+    activity: 'ac_s1',
+    devotee: 'd_sample',
+    state: 'Accepted',
+    actualPerformer: null,
+    completedAt: null
+  });
+
+  DB.activities.push({
+    id: 'ac_e1',
+    type: 'Event',
+    name: 'Sunday Love Feast & Kirtan',
+    title: 'Sunday Love Feast & Kirtan',
+    cat: 'Festivals',
+    dept: null,
+    batch: null,
+    date: iso(dayOff(3)),
+    start: '16:00',
+    end: '20:00',
+    location: 'Temple Hall',
+    desc: 'Weekly community gathering with kirtan, spiritual discourse and sanctified feast.',
+    priority: 'High',
+    need: 4,
+    vols: 4,
+    skills: ['Hospitality'],
+    responsible: 'd1',
+    owner: 'd1',
+    status: 'Scheduled',
+    actionItems: [
+      { t: 'Confirm hall setup', done: true },
+      { t: 'Coordinate prasadam menu', done: true },
+      { t: 'Kirtan lead confirmed', done: false }
+    ],
+    budget: { allocated: 10000, spent: 0 },
+    recurrence: 'One time',
+    templateId: null,
+    expected: 60
+  });
+
+  DB.activities.push({
+    id: 'ac_c1',
+    type: 'Class',
+    name: 'Narad Sabha Weekly Study',
+    title: 'Narad Sabha Weekly Study',
+    cat: 'Classes',
+    dept: null,
+    batch: 'b7',
+    date: iso(dayOff(0)),
+    start: '18:00',
+    end: '19:30',
+    location: 'Jia Sarai BACE',
+    desc: 'Weekly scriptural study and discussion for Narad Sabha.',
+    priority: 'High',
+    need: 2,
+    vols: 2,
+    skills: ['Teaching'],
+    responsible: dhirendraId || 'd1',
+    owner: dhirendraId || 'd1',
+    templateId: null,
+    recurrence: 'Weekly',
+    status: 'Scheduled',
+    actionItems: [],
+    budget: { allocated: 2000, spent: 0 },
+    report: null,
+    expected: 19
+  });
+
+  DB.activities.push({
+    id: 'ac_c2',
+    type: 'Class',
+    name: 'Gaurvani Sabha Weekly Study',
+    title: 'Gaurvani Sabha Weekly Study',
+    cat: 'Classes',
+    dept: null,
+    batch: 'b8',
+    date: iso(dayOff(4)),
+    start: '18:30',
+    end: '20:00',
+    location: 'Jia Sarai BACE',
+    desc: 'Weekly discourse and sadhana circle for Gaurvani Sabha.',
+    priority: 'High',
+    need: 2,
+    vols: 2,
+    skills: ['Teaching'],
+    responsible: audaryaId || 'd1',
+    owner: audaryaId || 'd1',
+    templateId: null,
+    recurrence: 'Weekly',
+    status: 'Scheduled',
+    actionItems: [],
+    budget: { allocated: 2000, spent: 0 },
+    report: null,
+    expected: 18
+  });
+
+  DB.activities.push({
+    id: 'ac_c3',
+    type: 'Class',
+    name: 'Bhagavad-gita Foundation',
+    title: 'Bhagavad-gita Foundation',
+    cat: 'Classes',
+    dept: null,
+    batch: 'b1',
+    date: iso(dayOff(1)),
+    start: '18:30',
+    end: '20:00',
+    location: 'Seminar Room',
+    desc: 'Foundational class for newcomers.',
+    priority: 'Medium',
+    need: 1,
+    vols: 1,
+    skills: ['Teaching'],
+    responsible: audaryaId || 'd1',
+    owner: audaryaId || 'd1',
+    templateId: null,
+    recurrence: 'Weekly',
+    status: 'Scheduled',
+    actionItems: [],
+    budget: { allocated: 1500, spent: 0 },
+    report: null,
+    expected: 10
+  });
+
+  DB.activities.push({
+    id: 'ac_t1',
+    type: 'Task',
+    name: 'Submit weekly seva report',
+    title: 'Submit weekly seva report',
+    cat: 'Management',
+    dept: tplKitchen.dept,
+    batch: null,
+    date: iso(TODAY),
+    start: '',
+    end: '',
+    location: '',
+    desc: 'Review completed services and enter report into the portal.',
+    priority: 'Medium',
+    need: 1,
+    vols: 1,
+    skills: [],
+    responsible: 'd1',
+    owner: 'd1',
+    status: 'In Progress',
+    actionItems: [],
+    budget: { allocated: 0, spent: 0 },
+    recurrence: 'One time',
+    templateId: null,
+    due: iso(dayOff(1))
+  });
+  DB.assignments.push({
+    id: 'as2',
+    activity: 'ac_t1',
+    devotee: 'd1',
+    state: 'Accepted',
+    actualPerformer: null,
+    completedAt: null
+  });
+
+  DB.activities.forEach(a => { if (!a.due) a.due = a.date; if (!a.title) a.title = a.name; });
+
+  /* 1 Sample Attendance Record per category */
+  DB.attendance.push({ id: 'at1', category: 'Seva', ref: 'ac_s1', devotee: 'd_sample', date: iso(dayOff(-7)), status: 'Present' });
+  DB.attendance.push({ id: 'at2', category: 'Preaching batch', ref: 'ac_c3', devotee: 'd_sample', date: iso(dayOff(-7)), status: 'Present' });
+  DB.attendance.push({ id: 'at3', category: 'Morning programme', ref: 'mp1', devotee: 'd1', date: iso(TODAY), status: 'Present' });
+
+  /* 1 Sample Inventory item & 1 BBT book + 1 Request */
+  DB.inventory.push({ id: 'inv1', name: 'Mridanga', cat: 'Sankirtan', total: 6, issued: 1, type: 'Item' });
+  DB.inventory.push({ id: 'inv2', name: 'Bhagavad-gita As It Is', cat: 'Book', total: 100, issued: 4, type: 'Book' });
+  DB.invRequests.push({
+    id: 'ir1',
+    item: 'inv2',
+    devotee: 'd_sample',
+    qty: 4,
+    purpose: 'Campus book distribution',
+    requested: iso(dayOff(-2)),
+    status: 'Issued',
+    approvedBy: audaryaId || 'd1',
+    due: iso(dayOff(12)),
+    returned: null
+  });
+
+  /* 1 Sample Kitchen menu, rebate & feedback */
+  DB.menus.push({
+    id: 'mn1',
+    date: iso(TODAY),
+    breakfast: 'Poha & milk, bananas',
+    lunch: 'Rice, dal, seasonal sabji, fresh salad',
+    dinner: 'Roti, dal, sabji',
+    announcement: '',
+    by: 'd1'
+  });
+  DB.rebates.push({
+    id: 'rb1',
+    devotee: 'd_sample',
+    from: iso(TODAY),
+    to: iso(dayOff(3)),
+    reason: 'Exams — eating at hostel mess',
+    status: 'Pending',
+    days: 3
+  });
+  DB.feedback.push({
+    id: 'fb1',
+    devotee: 'd_sample',
+    date: iso(TODAY),
+    meal: 'Lunch',
+    rating: 5,
+    note: 'Prasadam was fresh and delicious.'
+  });
+
+  /* 1 Sample Morning Program QR session */
+  DB.qrSessions.push({
+    id: 'qr1',
+    date: iso(TODAY),
+    window: '04:25 – 05:05',
+    code: '108108',
+    rotateSec: 30,
+    checkins: [{ devotee: 'd1', at: '04:35', device: 'mobile' }],
+    corrections: []
+  });
+
+  /* 1 Sample SOP */
+  DB.sops.push({
+    id: 'sop1',
+    name: 'Deity Worship SOP',
+    cat: 'BACE Management',
+    owner: 'Deity Department',
+    freq: 'Daily',
+    status: 'Active',
+    version: 'v1.0',
+    updated: iso(dayOff(-30)),
+    responsible: 'd1',
+    purpose: 'Maintain highest standards of cleanliness and punctuality for deity worship.',
+    scope: 'Applies to everyone serving on the altar.',
+    procedure: [
+      'Check the board before starting.',
+      'Confirm bhoga offering is clean and punctual.',
+      'Carry out the aarti and seva to the written standard.',
+      'Hand over altar cleanly with a short log note.'
+    ],
+    checklist: [
+      { t: 'Altar cleaned', done: true },
+      { t: 'Bhoga offered on time', done: true },
+      { t: 'Aarti sung with devotion', done: true },
+      { t: 'Altar safely closed', done: false }
+    ],
+    standards: 'Nothing is considered done until it is recorded in the system.',
+    escalation: 'Unresolved in 24 hours → Head pujari → Area Leader.',
+    versions: [{ v: 'v1.0', at: iso(dayOff(-60)), by: 'Surya Narayana Das' }]
+  });
+
+  /* 1 Sample Report per category */
+  DB.reports.push({
+    id: 'rp1',
+    kind: 'Department weekly',
+    dept: tplKitchen.dept,
+    batch: null,
+    period: 'Week ending ' + fmtD(iso(dayOff(-2))),
+    submitted: iso(dayOff(-1)),
+    status: 'Approved',
+    by: 'd1',
+    activities: 'Daily prasadam cooking and distribution ran smoothly.',
+    attendance: 92,
+    volunteers: 5,
+    pending: 1,
+    challenges: 'None this week.',
+    needs: 'Nothing pending.',
+    next: 'Maintain schedule.'
+  });
+  DB.reports.push({
+    id: 'rp2',
+    kind: 'Preaching weekly',
+    batch: 'b7',
+    dept: null,
+    period: 'Week ending ' + fmtD(iso(dayOff(-2))),
+    submitted: iso(dayOff(-1)),
+    status: 'Submitted',
+    by: dhirendraId || 'd1',
+    newContacts: 1,
+    firstMeetings: 1,
+    followups: 2,
+    classes: 1,
+    attendanceTotal: 18,
+    newParticipants: 1,
+    regular: 17,
+    inactive: 1,
+    attendance: 95,
+    volunteers: 4,
+    story: 'Narad Sabha members actively engaged in scriptural study and evening service.',
+    challenges: 'None.',
+    next: 'Continue regular classes and seva training.'
+  });
+  DB.reports.push({
+    id: 'rp3',
+    kind: 'Care weekly',
+    batch: null,
+    dept: null,
+    period: 'Week ending ' + fmtD(iso(dayOff(-2))),
+    submitted: iso(dayOff(-1)),
+    status: 'Submitted',
+    by: audaryaId || 'd1',
+    activities: 'Group 1 meeting conducted with good turnout.',
+    attendance: 85,
+    volunteers: 2,
+    pending: 0,
+    challenges: 'None.',
+    needs: 'None.',
+    next: 'Follow up with sample devotee.'
+  });
+
+  /* 1 Sample Devotee Care record for each sub-section */
+  DB.meetings.push({
+    id: 'mt1',
+    devotee: 'd_sample',
+    date: iso(dayOff(-7)),
+    senior: audaryaId || 'd1',
+    type: 'Personal meeting',
+    area: 'Sadhana',
+    points: 'Discussion on morning japa meditation and college study schedule.',
+    actions: 'Maintain steady 4 rounds and attend morning program.',
+    next: iso(dayOff(14)),
+    confidential: true
+  });
+  DB.camps.push({ id: 'cp1', devotee: 'd_sample', name: 'Vrindavan Yatra', date: iso(dayOff(-60)) });
+  DB.templeVisits.push({ id: 'tv1', devotee: 'd_sample', date: iso(dayOff(-20)), temple: 'ISKCON Punjabi Bagh', notes: 'Attended Sunday feast and evening darshan.' });
+  DB.sadhana.push({ id: 'sd1', devotee: 'd_sample', week: 'This week', rounds: 4, avgWake: '5:30 am', reading: 'Daily', program: 75 });
+
+  /* 1 Sample Notification */
+  DB.notifications.push({
+    id: 'n0',
+    em: '🪔',
+    title: 'Seva assigned',
+    body: 'You are assigned to Sunday feast prasadam cooking',
+    date: iso(TODAY),
+    read: false,
+    cat: 'Management'
+  });
+  DB.notifPrefs = { 'Seva & assignments': true, 'Attendance reminders': true, 'Follow-ups': true, 'Reports & approvals': true, 'Messages & chat': true, 'Events & festivals': true, 'Inventory approvals': false };
+
+  /* Messages: Batch chats for Narad & Gaurvani + 1 Community + 1 Direct message */
+  const gaurIds = DB.devotees.filter(d => d.batch === 'b8').map(d => d.id);
+  const naradIds = DB.devotees.filter(d => d.batch === 'b7').map(d => d.id);
+  DB.threads.push({
+    id: 'th_gaur',
+    type: 'batch',
+    name: 'Gaurvani Sabha chat',
+    members: gaurIds,
+    ref: 'b8',
+    messages: [
+      { id: 'm_g1', from: audaryaId || 'd1', text: "Hare Krishna Prabhus 🙏 Welcome to the Gaurvani Sabha communication group.", at: '18:30', date: iso(TODAY), pinned: true }
+    ],
+    pinnedNote: null
+  });
+  DB.threads.push({
+    id: 'th_narad',
+    type: 'batch',
+    name: 'Narad Sabha chat',
+    members: naradIds,
+    ref: 'b7',
+    messages: [
+      { id: 'm_n1', from: dhirendraId || 'd1', text: "Hare Krishna Prabhus 🙏 Class this week starts at 6:00 pm.", at: '18:00', date: iso(TODAY), pinned: true }
+    ],
+    pinnedNote: null
+  });
+  DB.threads.push({
+    id: 'th_comm',
+    type: 'community',
+    name: 'Community announcements',
+    members: DB.devotees.map(d => d.id),
+    ref: null,
+    messages: [
+      { id: 'm_c1', from: 'd1', text: 'Sunday feast program this week starts at 4:00 pm in the Temple Hall.', at: '10:00', date: iso(TODAY), pinned: true }
+    ],
+    pinnedNote: null
+  });
+  DB.threads.push({
+    id: 'th_dm',
+    type: 'dm',
+    name: 'Direct message',
+    members: ['d1', 'd_sample'],
+    ref: null,
+    messages: [
+      { id: 'm_d1', from: 'd1', text: 'Hare Krishna Rahul, hope your studies and sadhana are going well 🙏', at: '11:30', date: iso(TODAY), pinned: false }
+    ],
+    pinnedNote: null
+  });
+
+  /* Users: Admin, Surya Narayana Das, Coordinators + 1 sample user */
+  DB.users = [
+    { id: 'u_admin', role: 'admin', devotee: null, name: 'BACE Administrator' },
+    { id: 'u1', role: 'area_leader', devotee: 'd1', name: 'Surya Narayana Das' },
+    { id: 'u2', role: 'coordinator', devotee: audaryaId || 'd1', name: 'Audarya Gaur pr' },
+    { id: 'u3', role: 'preaching_coord', devotee: dhirendraId || 'd1', batch: 'b7', name: 'Dhirendra pr' },
+    { id: 'u4', role: 'devotee', devotee: 'd_sample', name: 'Rahul Sharma' }
+  ];
+
+  /* 1 Sample Audit Log */
+  DB.audit.push({
+    id: 'au0',
+    user: 'System Administrator',
+    action: 'System configured',
+    record: 'Narad Sabha, Gaurvani Sabha and departments loaded',
+    at: `${fmtD(iso(TODAY))}, 09:00`,
+    ts: Date.now()
+  });
 })();
 
 /* ---------------- lookups ---------------- */
@@ -2259,12 +2531,6 @@ const PILLARS=[
    {t:'Preaching dashboard',em:'📊',r:'#/preaching',m:'preaching'},
    {sub:'Level 1'},
    {t:'Taksharya',em:'•',r:'#/batch/b1',m:'preaching',indent:1},
-   {t:'Sreshtha',em:'•',r:'#/batch/b2',m:'preaching',indent:1},
-   {t:'IITD Faculty & Staff',em:'•',r:'#/batch/b3',m:'preaching',indent:1},
-   {t:'Siksharthakam',em:'•',r:'#/batch/b4',m:'preaching',indent:1},
-   {sub:'Level 2'},
-   {t:'Arjun Sabha',em:'•',r:'#/batch/b5',m:'preaching',indent:1},
-   {t:'Alumni Preaching',em:'•',r:'#/batch/b6',m:'preaching',indent:1},
    {sub:'Level 3'},
    {t:'Narad Sabha',em:'•',r:'#/batch/b7',m:'preaching',indent:1},
    {t:'Gaurvani Sabha',em:'•',r:'#/batch/b8',m:'preaching',indent:1},
