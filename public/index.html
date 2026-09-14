@@ -1235,7 +1235,7 @@ const STATS=()=>({
 /* =========================================================================
    APP STATE + UI PRIMITIVES
    ========================================================================= */
-const APP={user:null,route:'#/',search:'',fabOpen:false,modal:'',tab:{},filters:{},page:{},
+const APP={user:null,route:'#/',search:'',fabOpen:false,modal:'',tab:{},filters:{},page:{},perPage:{},
   nav:{open:{mgmt:true,preach:false,care:false}},sbScroll:0,chat:{thread:null},
   range:{from:iso(dayOff(-30)),to:iso(dayOff(30))},crumbLeaf:null,draft:{}};
 
@@ -1364,14 +1364,26 @@ function budgetBlock(b,label='Budget'){
 function dataTable({id,cols,rows,onRow,per=10,toolbar='',empty,exportName}){
   const t=toolbar?`<div class="toolbar">${toolbar}</div>`:'';
   if(!rows.length)return `<div class="card">${t}${empty||emptyState('Nothing to show','No records match the current filters.','')}</div>`;
-  const pages=Math.ceil(rows.length/per),p=Math.min(APP.page[id]||1,pages),slice=rows.slice((p-1)*per,p*per);
+  const currentPer=APP.perPage?.[id]||per;
+  const pages=Math.ceil(rows.length/currentPer),p=Math.min(APP.page[id]||1,pages),slice=rows.slice((p-1)*currentPer,p*currentPer);
   return `<div class="card">${t}
    <div class="tbl-wrap"><table class="tbl"><thead><tr>${cols.map(c=>`<th>${c.h}</th>`).join('')}</tr></thead>
    <tbody>${slice.map(r=>`<tr class="${onRow?'click':''}" ${onRow?`data-act="${onRow}" data-id="${r.id}"`:''}>${cols.map(c=>`<td data-l="${esc(c.label || (typeof c.h==='string'?c.h.replace(/<[^>]*>/g,'').trim():''))}">${c.c(r)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>
    <div class="tbl-foot"><span>${rows.length} record${rows.length!==1?'s':''} · page ${p} of ${pages}</span>
      ${exportName?`<button class="btn sm" data-act="export-table" data-t="${id}">${ic('download')}CSV</button>`:''}
-     <div class="pg"><button class="btn sm" data-act="page" data-t="${id}" data-p="${p-1}" ${p<=1?'disabled':''}>Previous</button>
-     <button class="btn sm" data-act="page" data-t="${id}" data-p="${p+1}" ${p>=pages?'disabled':''}>Next</button></div></div></div>`;
+     <div class="pg" style="display:flex;flex-direction:column;align-items:flex-end;gap:5px">
+       <div style="display:flex;gap:5px;align-items:center">
+         <button class="btn sm" data-act="page" data-t="${id}" data-p="${p-1}" ${p<=1?'disabled':''}>Previous</button>
+         <button class="btn sm" data-act="page" data-t="${id}" data-p="${p+1}" ${p>=pages?'disabled':''}>Next</button>
+       </div>
+       <div style="display:inline-flex;align-items:center;gap:5px;font-size:11.5px">
+         <span style="color:var(--ink-2);font-weight:500">Show:</span>
+         <div style="display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--surface)">
+           ${[10, 20, 50].map(n=>`<button type="button" class="btn sm ${currentPer===n?'pri':''}" data-act="set-per-page" data-t="${id}" data-n="${n}" style="border:none;border-radius:0;padding:2px 8px;font-size:11px;font-weight:600;${n!==10?'border-left:1px solid var(--line)':''}" title="Show ${n} records per page">${n}</button>`).join('')}
+         </div>
+         <span style="color:var(--ink-3)">per page</span>
+       </div>
+     </div></div></div>`;
 }
 /* real CSV export */
 function downloadCSV(filename,rows){
@@ -2465,13 +2477,11 @@ function viewDevotees(){
   let activeFilterCount = 0;
   if(f.q) activeFilterCount++;
   if(f.status) activeFilterCount++;
-  if(f.level) activeFilterCount++;
   if(f.batch) activeFilterCount++;
   if(f.dept) activeFilterCount++;
   if(f.careGroup) activeFilterCount++;
   if(f.skill) activeFilterCount++;
   if(f.attendance) activeFilterCount++;
-  if(f.swabhav) activeFilterCount++;
   if(f.sort && f.sort !== 'name_asc') activeFilterCount++;
 
   const toolbar=`
@@ -2507,67 +2517,52 @@ function viewDevotees(){
         ${can('directory')?`<button class="btn sm" data-act="export-devotees" style="margin-left:auto">${ic('download')}Export CSV</button>`:''}
       </div>
 
-      <!-- Column Filters Row -->
-      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:var(--surface-2);padding:10px 12px;border-radius:10px;border:1px solid var(--line-2)">
-        <span class="tiny" style="font-weight:700;color:var(--ink);margin-right:4px;display:flex;align-items:center;gap:4px">
+      <!-- Column Filters Row (Single line, scrollable if needed) -->
+      <div style="display:flex;gap:8px;align-items:center;background:var(--surface-2);padding:9px 12px;border-radius:10px;border:1px solid var(--line-2);overflow-x:auto;flex-wrap:nowrap;scrollbar-width:thin">
+        <span class="tiny" style="font-weight:700;color:var(--ink);margin-right:2px;display:flex;align-items:center;gap:4px;flex-shrink:0;white-space:nowrap">
           ${ic('filter')} Filter by:
         </span>
 
         <!-- 1. Department Filter -->
-        <select data-act="f" data-k="dev" data-n="dept" title="Filter by Department / Seva" style="padding:6px 10px;border-radius:8px;border:1px solid ${f.dept?'var(--accent)':'var(--line)'};font-size:12.5px;background:${f.dept?'var(--accent-soft)':'var(--surface)'};color:${f.dept?'var(--accent)':'var(--ink)'};${f.dept?'font-weight:700':''}">
+        <select data-act="f" data-k="dev" data-n="dept" title="Filter by Department / Seva" style="padding:6px 9px;border-radius:8px;border:1px solid ${f.dept?'var(--accent)':'var(--line)'};font-size:12.5px;background:${f.dept?'var(--accent-soft)':'var(--surface)'};color:${f.dept?'var(--accent)':'var(--ink)'};${f.dept?'font-weight:700':''};flex-shrink:0;min-width:130px;max-width:165px">
           <option value="">🏢 All Departments</option>
           ${activeDepts().map(d=>`<option value="${d.id}" ${f.dept===d.id?'selected':''}>Dept: ${esc(d.name)}</option>`).join('')}
           <option value="none" ${f.dept==='none'?'selected':''}>No seva / Unallocated</option>
         </select>
 
         <!-- 2. Batch Filter -->
-        <select data-act="f" data-k="dev" data-n="batch" title="Filter by Batch" style="padding:6px 10px;border-radius:8px;border:1px solid ${f.batch?'var(--accent)':'var(--line)'};font-size:12.5px;background:${f.batch?'var(--accent-soft)':'var(--surface)'};color:${f.batch?'var(--accent)':'var(--ink)'};${f.batch?'font-weight:700':''}">
+        <select data-act="f" data-k="dev" data-n="batch" title="Filter by Batch" style="padding:6px 9px;border-radius:8px;border:1px solid ${f.batch?'var(--accent)':'var(--line)'};font-size:12.5px;background:${f.batch?'var(--accent-soft)':'var(--surface)'};color:${f.batch?'var(--accent)':'var(--ink)'};${f.batch?'font-weight:700':''};flex-shrink:0;min-width:120px;max-width:155px">
           <option value="">📖 All Batches</option>
           ${(DB.batches||[]).map(b=>`<option value="${b.id}" ${f.batch===b.id?'selected':''}>Batch: ${esc(b.name)}</option>`).join('')}
           <option value="none" ${f.batch==='none'?'selected':''}>Not in a batch</option>
         </select>
 
         <!-- 3. Care Group Filter -->
-        <select data-act="f" data-k="dev" data-n="careGroup" title="Filter by Care Group" style="padding:6px 10px;border-radius:8px;border:1px solid ${f.careGroup?'var(--accent)':'var(--line)'};font-size:12.5px;background:${f.careGroup?'var(--accent-soft)':'var(--surface)'};color:${f.careGroup?'var(--accent)':'var(--ink)'};${f.careGroup?'font-weight:700':''}">
+        <select data-act="f" data-k="dev" data-n="careGroup" title="Filter by Care Group" style="padding:6px 9px;border-radius:8px;border:1px solid ${f.careGroup?'var(--accent)':'var(--line)'};font-size:12.5px;background:${f.careGroup?'var(--accent-soft)':'var(--surface)'};color:${f.careGroup?'var(--accent)':'var(--ink)'};${f.careGroup?'font-weight:700':''};flex-shrink:0;min-width:130px;max-width:160px">
           <option value="">❤️ All Care Groups</option>
           ${(DB.careGroups||[]).map(g=>`<option value="${g.id}" ${f.careGroup===g.id?'selected':''}>Care: ${esc(g.name)}</option>`).join('')}
           <option value="none" ${f.careGroup==='none'?'selected':''}>No care group</option>
         </select>
 
         <!-- 4. Status Filter -->
-        <select data-act="f" data-k="dev" data-n="status" title="Filter by Status" style="padding:6px 10px;border-radius:8px;border:1px solid ${f.status?'var(--accent)':'var(--line)'};font-size:12.5px;background:${f.status?'var(--accent-soft)':'var(--surface)'};color:${f.status?'var(--accent)':'var(--ink)'};${f.status?'font-weight:700':''}">
+        <select data-act="f" data-k="dev" data-n="status" title="Filter by Status" style="padding:6px 9px;border-radius:8px;border:1px solid ${f.status?'var(--accent)':'var(--line)'};font-size:12.5px;background:${f.status?'var(--accent-soft)':'var(--surface)'};color:${f.status?'var(--accent)':'var(--ink)'};${f.status?'font-weight:700':''};flex-shrink:0;min-width:115px;max-width:145px">
           <option value="">✨ All Statuses</option>
           ${['Active','Pending Approval','New','Inactive'].map(s=>`<option value="${s}" ${f.status===s?'selected':''}>Status: ${s}</option>`).join('')}
         </select>
 
-        <!-- 5. Level Filter -->
-        <select data-act="f" data-k="dev" data-n="level" title="Filter by Level" style="padding:6px 10px;border-radius:8px;border:1px solid ${f.level?'var(--accent)':'var(--line)'};font-size:12.5px;background:${f.level?'var(--accent-soft)':'var(--surface)'};color:${f.level?'var(--accent)':'var(--ink)'};${f.level?'font-weight:700':''}">
-          <option value="">🎓 All Levels</option>
-          <option value="1" ${f.level==='1'?'selected':''}>Level 1</option>
-          <option value="2" ${f.level==='2'?'selected':''}>Level 2</option>
-          <option value="3" ${f.level==='3'?'selected':''}>Level 3</option>
-          <option value="0" ${f.level==='0'?'selected':''}>Unlevelled</option>
-        </select>
-
-        <!-- 6. Skills Filter -->
-        <select data-act="f" data-k="dev" data-n="skill" title="Filter by Skill" style="padding:6px 10px;border-radius:8px;border:1px solid ${f.skill?'var(--accent)':'var(--line)'};font-size:12.5px;background:${f.skill?'var(--accent-soft)':'var(--surface)'};color:${f.skill?'var(--accent)':'var(--ink)'};${f.skill?'font-weight:700':''}">
+        <!-- 5. Skills Filter -->
+        <select data-act="f" data-k="dev" data-n="skill" title="Filter by Skill" style="padding:6px 9px;border-radius:8px;border:1px solid ${f.skill?'var(--accent)':'var(--line)'};font-size:12.5px;background:${f.skill?'var(--accent-soft)':'var(--surface)'};color:${f.skill?'var(--accent)':'var(--ink)'};${f.skill?'font-weight:700':''};flex-shrink:0;min-width:110px;max-width:140px">
           <option value="">🛠️ All Skills</option>
           ${SKILLS.map(s=>`<option value="${s}" ${f.skill===s?'selected':''}>Skill: ${s}</option>`).join('')}
         </select>
 
-        <!-- 7. Attendance Filter -->
-        <select data-act="f" data-k="dev" data-n="attendance" title="Filter by Attendance %" style="padding:6px 10px;border-radius:8px;border:1px solid ${f.attendance?'var(--accent)':'var(--line)'};font-size:12.5px;background:${f.attendance?'var(--accent-soft)':'var(--surface)'};color:${f.attendance?'var(--accent)':'var(--ink)'};${f.attendance?'font-weight:700':''}">
+        <!-- 6. Attendance Filter -->
+        <select data-act="f" data-k="dev" data-n="attendance" title="Filter by Attendance %" style="padding:6px 9px;border-radius:8px;border:1px solid ${f.attendance?'var(--accent)':'var(--line)'};font-size:12.5px;background:${f.attendance?'var(--accent-soft)':'var(--surface)'};color:${f.attendance?'var(--accent)':'var(--ink)'};${f.attendance?'font-weight:700':''};flex-shrink:0;min-width:125px;max-width:155px">
           <option value="">📊 All Attendance</option>
-          <option value="high" ${f.attendance==='high'?'selected':''}>Att: ≥ 80% (Regular)</option>
-          <option value="mid" ${f.attendance==='mid'?'selected':''}>Att: 50% – 79% (Average)</option>
-          <option value="low" ${f.attendance==='low'?'selected':''}>Att: &lt; 50% (Irregular)</option>
-          <option value="critical" ${f.attendance==='critical'?'selected':''}>Att: &lt; 30% (Critical)</option>
-        </select>
-
-        <!-- 8. Swabhav Filter -->
-        <select data-act="f" data-k="dev" data-n="swabhav" title="Filter by Swabhav Nature" style="padding:6px 10px;border-radius:8px;border:1px solid ${f.swabhav?'var(--accent)':'var(--line)'};font-size:12.5px;background:${f.swabhav?'var(--accent-soft)':'var(--surface)'};color:${f.swabhav?'var(--accent)':'var(--ink)'};${f.swabhav?'font-weight:700':''}">
-          <option value="">🌿 All Swabhav</option>
-          ${SWABHAV.map(s=>`<option value="${s[0]}" ${f.swabhav===s[0]?'selected':''}>Nature: ${s[0]}</option>`).join('')}
+          <option value="high" ${f.attendance==='high'?'selected':''}>Att: ≥ 80%</option>
+          <option value="mid" ${f.attendance==='mid'?'selected':''}>Att: 50%–79%</option>
+          <option value="low" ${f.attendance==='low'?'selected':''}>Att: &lt; 50%</option>
+          <option value="critical" ${f.attendance==='critical'?'selected':''}>Att: &lt; 30%</option>
         </select>
       </div>
     </div>`;
@@ -2584,7 +2579,7 @@ function viewDevotees(){
        </span>
      </div>`,label:'Devotee',c:d=>`<div class="who">${av(d.name,'m')}<div><b>${esc(d.name)}</b><span>${esc(d.org || d.highestEducation || 'BACE')} · joined ${fmtD(d.joined)}</span></div></div>`},
      {h:`Status ${f.status?`<span class="badge b-grey" style="padding:1px 5px;font-size:10px">Filtered</span>`:''}`,label:'Status',c:d=>sbadge(d.status)},
-     {h:`Level / batch ${f.batch||f.level?`<span class="badge b-indigo" style="padding:1px 5px;font-size:10px">Filtered</span>`:''}`,label:'Level / batch',c:d=>d.batch?`${badge('L'+d.level,'indigo')} ${esc(batch(d.batch)?.name||'')}`:'<span class="tiny">Not in a batch</span>'},
+     {h:`Level / batch ${f.batch?`<span class="badge b-indigo" style="padding:1px 5px;font-size:10px">Filtered</span>`:''}`,label:'Level / batch',c:d=>d.batch?`${badge('L'+d.level,'indigo')} ${esc(batch(d.batch)?.name||'')}`:'<span class="tiny">Not in a batch</span>'},
      {h:`Department ${f.dept?`<span class="badge b-saffron" style="padding:1px 5px;font-size:10px">Filtered</span>`:''}`,label:'Department',c:d=>d.dept?esc(dept(d.dept)?.name||''):'<span class="tiny">No seva</span>'},
      {h:`Care group ${f.careGroup?`<span class="badge b-green" style="padding:1px 5px;font-size:10px">Filtered</span>`:''}`,label:'Care group',c:d=>d.careGroup?esc(group(d.careGroup)?.name||''):'<span class="tiny">—</span>'},
      {h:`Skills ${f.skill?`<span class="badge b-grey" style="padding:1px 5px;font-size:10px">Filtered</span>`:''}`,label:'Skills',c:d=>d.skills.map(s=>badge(s,'grey')).join(' ')},
@@ -4754,9 +4749,10 @@ document.addEventListener('click',e=>{
   case 'open-devotee-row':stop();go('#/devotee/'+(t.dataset.id||''));break;
   case 'delete-devotee':{stop();const dId=t.dataset.id||id;APP.deleteDevoteeTarget=dId;APP.modal='delete-devotee-modal';render();break}
   case 'confirm-delete-devotee':{stop();const dId=t.dataset.id||APP.deleteDevoteeTarget;deleteDevoteeAction(dId);break}
-  case 'clear-dev-filters':{stop();APP.filters.dev={q:'',status:'',dept:'',batch:'',level:'',careGroup:'',skill:'',attendance:'',swabhav:'',sort:'name_asc'};APP.page.dev=1;toast('Filters reset');render();break}
+  case 'clear-dev-filters':{stop();APP.filters.dev={q:'',status:'',dept:'',batch:'',careGroup:'',skill:'',attendance:'',sort:'name_asc'};APP.page.dev=1;toast('Filters reset');render();break}
   case 'set-dev-sort':{stop();APP.filters.dev=APP.filters.dev||{};APP.filters.dev.sort=t.dataset.v;APP.page.dev=1;render();break}
   case 'toggle-dev-sort':{stop();APP.filters.dev=APP.filters.dev||{};APP.filters.dev.sort=APP.filters.dev.sort==='name_asc'?'name_desc':'name_asc';APP.page.dev=1;render();break}
+  case 'set-per-page':{stop();const tId=t.dataset.t;const n=parseInt(t.dataset.n,10)||10;APP.perPage=APP.perPage||{};APP.perPage[tId]=n;APP.page[tId]=1;render();break}
   case 'open-dept':stop();go('#/dept/'+id);break;
   case 'open-batch':stop();go('#/batch/'+id);break;
   case 'open-group':stop();go('#/group/'+id);break;
