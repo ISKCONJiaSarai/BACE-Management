@@ -1723,7 +1723,7 @@ const logAudit=(action,record)=>DB.audit.unshift({id:uid('au'),user:(APP.user?na
     ]
   });
 
-  /* 1 Sample Contact (Amit Verma) */
+  /* Seed Contacts across batches & stages */
   DB.contacts.push({
     id: 'c1',
     name: 'Amit Verma',
@@ -1748,6 +1748,94 @@ const logAudit=(action,record)=>DB.audit.unshift({id:uid('au'),user:(APP.user?na
       { date: iso(dayOff(-15)), title: 'First contact', desc: 'Met through campus stall.', tone: 'saffron' },
       { date: iso(dayOff(-2)), title: 'Attended introductory session', desc: 'Joined Sunday youth gathering.', tone: 'teal' }
     ]
+  });
+  DB.contacts.push({
+    id: 'c2',
+    name: 'Rahul Mishra',
+    phone: '+91 9811223344',
+    email: 'rahul.mishra@iitd.ac.in',
+    org: 'IIT Delhi',
+    year: '1st',
+    profession: 'B.Tech 1st year',
+    source: 'Campus stall',
+    firstContact: iso(dayOff(-30)),
+    firstInteraction: 'Invited to evening discussion on science and spirituality',
+    interests: 'Science & Spirituality, Meditation',
+    stage: 'Attending class',
+    batch: 'b1',
+    preacher: dhirendraId || 'd1',
+    facilitator: null,
+    last: iso(dayOff(-3)),
+    classes: 3,
+    events: 1,
+    notes: 'Very receptive, regularly brings questions to class.',
+    timeline: [{ date: iso(dayOff(-30)), title: 'First contact', desc: 'Book table interaction.', tone: 'saffron' }]
+  });
+  DB.contacts.push({
+    id: 'c3',
+    name: 'Dr. Saurabh Sharma',
+    phone: '+91 9711882233',
+    email: 'saurabh.faculty@iitd.ac.in',
+    org: 'IIT Delhi (staff)',
+    year: '—',
+    profession: 'Faculty / Assistant Professor',
+    source: 'Friend referral',
+    firstContact: iso(dayOff(-60)),
+    firstInteraction: 'Referred by senior devotee for faculty circle',
+    interests: 'Bhagavad Gita, Leadership, Stress Management',
+    stage: 'Regular participant',
+    batch: 'b3',
+    preacher: 'd1',
+    facilitator: audaryaId || 'd1',
+    last: iso(dayOff(-5)),
+    classes: 6,
+    events: 2,
+    notes: 'Keen on hosting weekend study circle for colleagues.',
+    timeline: [{ date: iso(dayOff(-60)), title: 'Introduced', desc: 'Connected through academic circle.', tone: 'indigo' }]
+  });
+  DB.contacts.push({
+    id: 'c4',
+    name: 'Vikram Patel',
+    phone: '+91 9955443322',
+    email: 'vikram.dtu@example.org',
+    org: 'DTU',
+    year: '3rd',
+    profession: 'B.Tech 3rd year',
+    source: 'Instagram',
+    firstContact: iso(dayOff(-20)),
+    firstInteraction: 'DM asking about youth meditation classes',
+    interests: 'Kirtan, Youth Camp',
+    stage: 'Interested',
+    batch: 'b2',
+    preacher: audaryaId || 'd1',
+    facilitator: null,
+    last: iso(dayOff(-6)),
+    classes: 2,
+    events: 1,
+    notes: 'Interested in visiting the BACE during the weekend.',
+    timeline: [{ date: iso(dayOff(-20)), title: 'Online inquiry', desc: 'Responded on Instagram.', tone: 'saffron' }]
+  });
+  DB.contacts.push({
+    id: 'c5',
+    name: 'Aniket Gupta',
+    phone: '+91 9877665544',
+    email: 'aniket.gupta@nsut.ac.in',
+    org: 'NSUT',
+    year: '4th',
+    profession: 'B.Tech 4th year',
+    source: 'Festival',
+    firstContact: iso(dayOff(-45)),
+    firstInteraction: 'Janmashtami festival youth volunteer',
+    interests: 'Preaching, Book Distribution, Management',
+    stage: 'Attending class',
+    batch: 'b7',
+    preacher: dhirendraId || 'd1',
+    facilitator: null,
+    last: iso(dayOff(-4)),
+    classes: 4,
+    events: 2,
+    notes: 'Wants to join Narad Sabha preacher training programme.',
+    timeline: [{ date: iso(dayOff(-45)), title: 'Festival seva', desc: 'Volunteered during festival.', tone: 'green' }]
   });
 
   /* 1 Sample Preaching follow-up + 1 Sample Care follow-up */
@@ -2389,6 +2477,34 @@ const batchMembers=b=>{
   ].filter(Boolean).map(x => String(x).toLowerCase().trim()));
   return (DB.devotees||[]).filter(d => d.batch && valid.has(String(d.batch).toLowerCase().trim()));
 };
+function batchContacts(b){
+  if(!b) return [];
+  const targetBatch = batch(b);
+  const valid = new Set([
+    typeof b === 'object' ? b.id : b,
+    typeof b === 'object' ? b._id : null,
+    typeof b === 'object' ? b.customId : null,
+    typeof b === 'object' ? b.name : null,
+    targetBatch?.id,
+    targetBatch?._id,
+    targetBatch?.customId,
+    targetBatch?.name
+  ].filter(Boolean).map(x => String(x).toLowerCase().trim()));
+
+  const teamDevs = new Set([
+    targetBatch?.incharge,
+    targetBatch?.coordinator,
+    ...(targetBatch?.volunteers || []),
+    ...(targetBatch?.facilitators || [])
+  ].filter(Boolean));
+
+  return (DB.contacts || []).filter(c => {
+    if(c.batch && valid.has(String(c.batch).toLowerCase().trim())) return true;
+    if(c.preacher && teamDevs.has(c.preacher)) return true;
+    if(c.facilitator && teamDevs.has(c.facilitator)) return true;
+    return false;
+  });
+}
 const activeDepts=()=>DB.departments.filter(d=>d.status==='Active');
 const activeBatches=()=>DB.batches.filter(b=>b.status==='Active');
 const deptActs=id=>DB.activities.filter(a=>a.dept===id);
@@ -2581,12 +2697,15 @@ function donut(value,label,color='var(--accent)',tip){
   </svg><div class="tiny" style="max-width:160px">${label}</div></div>`;
 }
 function funnel(rows){
-  const max=rows[0]?rows[0].v||1:1;
+  const max = Math.max(...rows.map(r => Number(r.v) || 0), 1);
   return `<div class="chart" style="display:flex;flex-direction:column;gap:6px">${rows.map((r,i)=>{
-    const wpc=Math.max(14,r.v/max*100);const conv=i?pct(r.v,rows[i-1].v):100;
-    return `<div style="display:flex;align-items:center;gap:11px;${r.r?'cursor:pointer':''}" ${tipAttr(r.tip||`${r.l}: ${r.v}${i?` · ${conv}% from ${rows[i-1].l}`:''}`)} ${r.r?`data-act="drill" data-r="${r.r}"`:''}>
+    const val = Number(r.v) || 0;
+    const wpc = Math.min(100, Math.max(14, Math.round((val / max) * 100)));
+    const prev = i > 0 ? (Number(rows[i-1].v) || 0) : val;
+    const conv = (i > 0 && prev > 0) ? pct(val, prev) : (val > 0 ? 100 : 0);
+    return `<div style="display:flex;align-items:center;gap:11px;${r.r?'cursor:pointer':''}" ${tipAttr(r.tip||`${r.l}: ${val}${i?` · ${conv}% from ${rows[i-1].l}`:''}`)} ${r.r?`data-act="drill" data-r="${r.r}"`:''}>
       <div style="width:130px;font-size:12.5px;color:var(--ink-2);flex:none">${esc(r.l)}</div>
-      <div style="flex:1"><div style="height:29px;width:${wpc}%;background:${r.color||'var(--indigo)'};opacity:${1-i*.06};border-radius:7px;display:flex;align-items:center;padding-left:10px;color:#fff;font-size:12.5px;font-weight:600">${r.v}</div></div>
+      <div style="flex:1"><div style="height:29px;width:${wpc}%;background:${r.color||'var(--indigo)'};opacity:${1-i*.06};border-radius:7px;display:flex;align-items:center;padding-left:10px;color:#fff;font-size:12.5px;font-weight:600">${val}</div></div>
       <div style="width:48px;text-align:right;font-size:12px;color:${i&&conv<45?'var(--danger)':'var(--ink-3)'}">${i?conv+'%':''}</div></div>`}).join('')}</div>`;
 }
 function budgetBlock(b,label='Budget'){
@@ -4873,7 +4992,7 @@ function batchDashboardBody(b){
   const today=batchActs(b.id).filter(a=>a.date===iso(TODAY));
   const nextClass=batchActs(b.id).filter(a=>a.type==='Class'&&a.date>=iso(TODAY)).sort((x,y)=>x.date<y.date?-1:1)[0];
   const events=batchActs(b.id).filter(a=>a.type==='Event');
-  const contacts=DB.contacts.filter(c=>c.batch===b.id);
+  const contacts=batchContacts(b.id);
   const fus=DB.followups.filter(f=>f.kind==='Preaching'&&contacts.some(c=>c.id===f.subject));
   const thread=DB.threads.find(t=>t.type==='batch'&&t.ref===b.id);
   const trend=m.perClass.slice(-6).map(p=>({label:fmtD(p.c.date).slice(0,6),v:p.pctv,
@@ -4921,12 +5040,57 @@ function batchDashboardBody(b){
       )}
     </div>
     <div style="display:flex;flex-direction:column;gap:15px">
-      ${section('🌱 Batch funnel',`<div class="card-b">${funnel([
-        {l:'Contacts',v:contacts.length,tip:`Contacts linked to ${b.name}: ${contacts.length}`},
-        {l:'Interested',v:contacts.filter(c=>STAGES.indexOf(c.stage)>=2).length},
-        {l:'Attending class',v:contacts.filter(c=>STAGES.indexOf(c.stage)>=4).length},
-        {l:'Regular',v:contacts.filter(c=>STAGES.indexOf(c.stage)>=5).length},
-        {l:'In this batch',v:m.members.length,color:'var(--teal)',r:'#/batch/'+b.id}])}</div>`)}
+      ${(()=>{
+        const mode = APP.tab['bfunnel_'+b.id] || ((b.level === 1 && contacts.length > 0) ? 'outreach' : 'growth');
+        const mList = m.members;
+        
+        // Growth funnel (spiritual progression of enrolled devotees)
+        const activeDevs = mList.filter(d => d.status === 'Active');
+        const regularAttDevs = mList.filter(d => (d.attendancePct || 0) >= 60);
+        const sadhana16Devs = mList.filter(d => (d.sadhana?.rounds || 0) >= 16);
+        const engagedDevs = mList.filter(d => d.dept || d.service || d.swabhav?.engaged);
+
+        // Outreach pipeline (conversion from first contact to batch membership)
+        const interestedContacts = contacts.filter(c => STAGES.indexOf(c.stage) >= 2);
+        const classContacts = contacts.filter(c => c.classes > 0 || STAGES.indexOf(c.stage) >= 4);
+        const regularContacts = contacts.filter(c => STAGES.indexOf(c.stage) >= 5);
+        const totalSphere = contacts.length + mList.length;
+
+        const growthRows = [
+          { l: 'Enrolled members', v: mList.length, color: 'var(--indigo)', r: '#/batch/' + b.id, tip: `All enrolled devotees in ${b.name}: ${mList.length}` },
+          { l: 'Active status', v: activeDevs.length, color: 'var(--teal)', r: '#/devotees', tip: `Active devotees in this batch: ${activeDevs.length}` },
+          { l: 'Regular attendance', v: regularAttDevs.length, color: 'var(--green)', r: '#/batch-attendance', tip: `Devotees with ≥60% class attendance: ${regularAttDevs.length}` },
+          { l: '16 rounds japa', v: sadhana16Devs.length, color: 'var(--saffron)', r: '#/sadhana', tip: `Devotees chanting 16 rounds daily: ${sadhana16Devs.length}` },
+          { l: 'Engaged in seva', v: engagedDevs.length, color: 'var(--mustard)', r: '#/assign', tip: `Devotees actively serving in departments: ${engagedDevs.length}` }
+        ];
+
+        const outreachRows = [
+          { l: 'Total in orbit', v: totalSphere, r: '#/contacts', tip: `Total contacts reached (${contacts.length}) + enrolled devotees (${mList.length})` },
+          { l: 'Interested', v: interestedContacts.length + mList.length, r: '#/contacts', tip: `Expressed interest or attended intro discussions` },
+          { l: 'Attending classes', v: classContacts.length + regularAttDevs.length, r: '#/classes', tip: `Attending classes and weekly sessions` },
+          { l: 'Regular devotees', v: regularContacts.length + activeDevs.length, r: '#/batch-attendance', tip: `Consistent participants in programmes` },
+          { l: 'Enrolled in batch', v: mList.length, color: 'var(--teal)', r: '#/batch/' + b.id, tip: `Formally joined ${b.name}` }
+        ];
+
+        const rows = mode === 'outreach' ? outreachRows : growthRows;
+        
+        const tabsHtml = `<div style="display:inline-flex;border:1px solid var(--line);border-radius:8px;padding:2px;background:var(--surface-2);gap:2px">
+          <button type="button" class="btn sm ${mode==='growth'?'pri':''}" data-act="toggle-batch-funnel" data-id="${b.id}" data-mode="growth" style="padding:3px 9px;font-size:11px;border-radius:6px;border:none" title="Track member sadhana & seva growth">🪷 Devotee Growth</button>
+          <button type="button" class="btn sm ${mode==='outreach'?'pri':''}" data-act="toggle-batch-funnel" data-id="${b.id}" data-mode="outreach" style="padding:3px 9px;font-size:11px;border-radius:6px;border:none" title="Track contact outreach & admission">🌱 Outreach Pipeline</button>
+        </div>`;
+
+        return section('🌱 Batch funnel', `<div class="card-b">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+            ${tabsHtml}
+            <button class="btn sm" data-act="open-contact-batch" data-batch="${b.id}" style="font-size:11.5px;padding:3px 8px">${ic('plus')}Add contact</button>
+          </div>
+          ${funnel(rows)}
+          <div class="tiny" style="margin-top:10px;display:flex;justify-content:space-between;align-items:center">
+            <span>${mode === 'growth' ? 'Tracks member progression from enrolment to 16 rounds & active seva.' : 'Tracks pipeline from first contact to batch enrolment.'}</span>
+            <span style="color:var(--ink-3)">Click any bar to drill down</span>
+          </div>
+        </div>`);
+      })()}
       ${section('🧾 Budget',`<div class="card-b">${budgetBlock(b.budget)}
         ${ownsBatch(b.id)?`<button class="btn block" style="margin-top:12px" data-act="edit-budget" data-kind="batch" data-id="${b.id}">${ic('edit')}Update budget</button>`:''}</div>`)}
       ${section('⏰ Follow-ups',`<div class="list">
@@ -6975,16 +7139,17 @@ function openDevoteeForm(id){
     FLD('source','How they were first contacted','select',{v:d?.source||'Book distribution',opts:SOURCES,half:1})
   ],'save-devotee',{id},'One record — every pillar links to it rather than copying it.');
 }
-function openContactForm(){
+function openContactForm(defaultBatch=''){
   openForm('Add contact',[
     FLD('name','Full name','text'),FLD('phone','Phone','text',{half:1}),FLD('email','Email','text',{half:1}),
     FLD('org','College / organisation','select',{opts:ORGS,half:1}),FLD('year','Year','select',{opts:['1st','2nd','3rd','4th','—'],half:1}),
+    FLD('batch','Assigned Batch','select',{opts:[['','No batch assigned'],...activeBatches().map(b=>[b.id,b.name])],v:defaultBatch||'',half:1}),
+    FLD('stage','Stage','select',{opts:STAGES,half:1}),
     FLD('source','Contact source','select',{opts:SOURCES,half:1}),
     FLD('firstContact','First contact date','date',{v:iso(TODAY),half:1}),
     FLD('firstInteraction','First interaction','text',{ph:'Took a book at the stall'}),
     FLD('interests','Interests','text',{ph:'Philosophy, kirtan'}),
     FLD('preacher','Assigned preacher','select',{opts:DB.devotees.filter(d=>d.level>=2).map(x=>[x.id,x.name]),half:1}),
-    FLD('stage','Stage','select',{opts:STAGES,half:1}),
     FLD('notes','Notes','textarea')
   ],'save-contact',{});
 }
@@ -7809,11 +7974,13 @@ document.addEventListener('click',e=>{
     g.attendance=pct(+v.present,g.members.length||1);
     logAudit('Group meeting logged',g.name);toast('Meeting logged');APP.modal='';render();break}
   /* ---- contacts ---- */
+  case 'toggle-batch-funnel':stop();APP.tab['bfunnel_'+t.dataset.id]=t.dataset.mode;render();break;
+  case 'open-contact-batch':stop();openContactForm(t.dataset.batch);break;
   case 'add-contact':openContactForm();break;
   case 'save-contact':{const v=collect();
     if(!v.name.trim()){toast('A contact needs a name','⚠️');break}
     const c={id:uid('c'),name:v.name,phone:v.phone,email:v.email,org:v.org,year:v.year,profession:'—',source:v.source,
-      firstContact:v.firstContact,firstInteraction:v.firstInteraction,interests:v.interests,stage:v.stage,batch:null,
+      firstContact:v.firstContact,firstInteraction:v.firstInteraction,interests:v.interests,stage:v.stage,batch:v.batch||null,
       preacher:v.preacher,facilitator:null,last:v.firstContact,classes:0,events:0,notes:v.notes,
       timeline:[{date:v.firstContact,title:'First contact',desc:v.firstInteraction||'Recorded in the system.',tone:'saffron'}]};
     DB.contacts.push(c);
