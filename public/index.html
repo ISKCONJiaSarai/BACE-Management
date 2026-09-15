@@ -5158,7 +5158,9 @@ function contactDrawer(id){
    <div class="modal-b">
     <div class="chips" style="margin-bottom:14px">${badge(c.stage,'indigo')}${badge(c.source,'grey')}${c.batch?badge(batch(c.batch).name,'teal'):''}</div>
     <dl class="kv"><dt>Phone</dt><dd>${esc(c.phone)}</dd><dt>Email</dt><dd>${esc(c.email)}</dd>
-      <dt>Year</dt><dd>${esc(c.year)}</dd><dt>First contact</dt><dd>${fmtD(c.firstContact)}</dd>
+      <dt>Present college / job</dt><dd>${esc(c.org||c.profession||'—')}</dd>
+      <dt>Present address</dt><dd>${esc(c.address||c.residence||'—')}</dd>
+      <dt>First contact</dt><dd>${fmtD(c.firstContact)}</dd>
       <dt>First interaction</dt><dd>${esc(c.firstInteraction)}</dd><dt>Interests</dt><dd>${esc(c.interests)}</dd>
       <dt>Assigned preacher</dt><dd>${esc(nameOf(c.preacher))}</dd><dt>Classes attended</dt><dd>${c.classes}</dd>
       <dt>Events attended</dt><dd>${c.events}</dd><dt>Last interaction</dt><dd>${fmtD(c.last)} (${relD(c.last)})</dd></dl>
@@ -7142,7 +7144,8 @@ function openDevoteeForm(id){
 function openContactForm(defaultBatch=''){
   openForm('Add contact',[
     FLD('name','Full name','text'),FLD('phone','Phone','text',{half:1}),FLD('email','Email','text',{half:1}),
-    FLD('org','College / organisation','select',{opts:ORGS,half:1}),FLD('year','Year','select',{opts:['1st','2nd','3rd','4th','—'],half:1}),
+    FLD('org','Present college / job','text',{half:1,ph:'e.g. IIT Delhi / Software Engineer'}),
+    FLD('address','Present address','text',{half:1,ph:'e.g. Nilgiri Hostel / Jia Sarai'}),
     FLD('batch','Assigned Batch','select',{opts:[['','No batch assigned'],...activeBatches().map(b=>[b.id,b.name])],v:defaultBatch||'',half:1}),
     FLD('stage','Stage','select',{opts:STAGES,half:1}),
     FLD('source','Contact source','select',{opts:SOURCES,half:1}),
@@ -7979,7 +7982,7 @@ document.addEventListener('click',e=>{
   case 'add-contact':openContactForm();break;
   case 'save-contact':{const v=collect();
     if(!v.name.trim()){toast('A contact needs a name','⚠️');break}
-    const c={id:uid('c'),name:v.name,phone:v.phone,email:v.email,org:v.org,year:v.year,profession:'—',source:v.source,
+    const c={id:uid('c'),name:v.name,phone:v.phone,email:v.email,org:v.org,address:v.address||'',year:'—',profession:v.org||'—',source:v.source,
       firstContact:v.firstContact,firstInteraction:v.firstInteraction,interests:v.interests,stage:v.stage,batch:v.batch||null,
       preacher:v.preacher,facilitator:null,last:v.firstContact,classes:0,events:0,notes:v.notes,
       timeline:[{date:v.firstContact,title:'First contact',desc:v.firstInteraction||'Recorded in the system.',tone:'saffron'}]};
