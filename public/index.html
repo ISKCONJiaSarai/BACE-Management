@@ -413,6 +413,25 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
 @media(max-width:620px){.form-row,.form-row.t3{grid-template-columns:1fr}}
 .err{color:var(--danger);font-size:12px;margin-top:4px}
 
+/* ---------- mobile filter panel ---------- */
+.mob-filter-bar{display:none}
+@media(max-width:760px){
+  .mob-filter-bar{display:block;border-top:1px solid var(--line-2);padding:10px 12px 4px;background:var(--surface-2)}
+  .mob-filter-toggle{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:9px;border:1px solid var(--line);background:var(--surface);font-size:13px;font-weight:500;cursor:pointer;width:100%;justify-content:space-between}
+  .mob-filter-toggle.has-filters{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:600}
+  .mob-filter-toggle .mob-f-count{background:var(--accent);color:#fff;border-radius:20px;font-size:11px;padding:1px 7px;font-weight:700}
+  .mob-filter-toggle .mob-f-arrow{transition:transform .2s ease;font-size:11px;opacity:.6}
+  .mob-filter-toggle.open .mob-f-arrow{transform:rotate(180deg)}
+  .mob-filter-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px 0 6px;animation:drop .15s ease-out}
+  .mob-filter-grid.hidden{display:none}
+  .mob-filter-item{display:flex;flex-direction:column;gap:3px}
+  .mob-filter-item label{font-size:11px;font-weight:600;color:var(--ink-2);text-transform:uppercase;letter-spacing:.04em}
+  .mob-filter-item select{width:100%;padding:7px 8px;border-radius:8px;border:1px solid var(--line);background:var(--surface);font-size:13px;color:var(--ink);appearance:auto}
+  .mob-filter-item select.active{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:600}
+  .mob-filter-reset{display:flex;justify-content:flex-end;margin-top:4px}
+  .mob-filter-reset button{font-size:12px;color:var(--danger);background:none;border:none;padding:4px 2px;cursor:pointer;font-weight:600}
+}
+
 /* ---------- modal / drawer ---------- */
 .scrim{position:fixed;inset:0;background:rgba(33,27,19,.44);backdrop-filter:blur(2px);z-index:60;display:grid;place-items:center;padding:16px;animation:fade .16s ease-out}
 @keyframes fade{from{opacity:0}to{opacity:1}}
@@ -2459,7 +2478,8 @@ const ICONS={
  box:'M21 8v13H3V8M1 3h22v5H1zM10 12h4',qr:'M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h3v3h-3zM18 18h3v3h-3z',
  rupee:'M6 3h12M6 8h12M16 3c0 5-4 5-7 5l7 8',leaf:'M11 20A7 7 0 0 1 4 13c0-5 5-10 16-10 0 11-5 16-10 16ZM4 21c2-6 6-9 10-10',
  repeat:'M17 1l4 4-4 4M3 11V9a4 4 0 0 1 4-4h14M7 23l-4-4 4-4M21 13v2a4 4 0 0 1-4 4H3',
- logout:'M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9'
+ logout:'M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9',
+ sliders:'M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6'
 };
 const ic=(n,c='')=>`<svg class="ic ${c}" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="${ICONS[n]||ICONS.grid}"/></svg>`;
 const av=(name,size='s')=>`<span class="av ${size}" style="background:${avc(name||'?')}">${initials(name||'?')}</span>`;
@@ -3788,16 +3808,45 @@ function viewDevotees(){
   if(f.attendance) activeFilterCount++;
   if(f.sort && f.sort !== 'name_asc') activeFilterCount++;
 
+  const mobFilterOpen = APP.mobFilterOpen || false;
+  const mobSelect = (key, currentVal, opts, label, isSort = false) => {
+    const isActive = !!currentVal && currentVal !== 'name_asc';
+    return `<div class="mob-filter-item">
+      <label>${esc(label)}</label>
+      <select data-act="f" data-k="dev" data-n="${key}" class="${isActive?'active':''}">
+        <option value="${isSort?'name_asc':''}">All</option>
+        ${opts.map(([val, lbl]) => `<option value="${val}" ${currentVal===val?'selected':''}>${esc(lbl)}</option>`).join('')}
+      </select>
+    </div>`;
+  };
+
   const toolbar=`
     <div style="display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;width:100%">
-      <div style="position:relative;flex:1;min-width:260px;max-width:440px">
-        <input type="search" placeholder="🔍 Search devotees by name, phone, email, college, job..." value="${esc(f.q)}" data-act="f" data-k="dev" data-n="q" style="width:100%;padding:8px 12px 8px 34px;border-radius:9px;border:1px solid var(--line);font-size:13.5px;background:var(--surface)">
+      <div style="position:relative;flex:1;min-width:0">
+        <input type="search" placeholder="🔍 Search devotees..." value="${esc(f.q)}" data-act="f" data-k="dev" data-n="q" style="width:100%;padding:8px 12px 8px 34px;border-radius:9px;border:1px solid var(--line);font-size:13.5px;background:var(--surface)">
         <span style="position:absolute;left:11px;top:9px;font-size:13px;opacity:0.55;pointer-events:none">🔍</span>
       </div>
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-        ${activeFilterCount > 0 ? `<button class="btn sm" data-act="clear-dev-filters" title="Reset all column filters and sort" style="color:var(--danger);background:rgba(220,53,69,0.06);border-color:rgba(220,53,69,0.25);font-weight:600;display:inline-flex;align-items:center;gap:5px">${ic('x')} Reset Filters (${activeFilterCount})</button>` : ''}
-        ${can('directory')?`<button class="btn sm" data-act="export-devotees" title="Export current devotees as CSV" style="display:inline-flex;align-items:center;gap:4px">${ic('download')}Export CSV</button>`:''}
-        ${canImportCsv()?`<button class="btn sm pri" data-act="open-import-csv" title="Import devotees from CSV" style="display:inline-flex;align-items:center;gap:4px">${ic('upload')}Import CSV</button>`:''}
+        ${activeFilterCount > 0 ? `<button class="btn sm" data-act="clear-dev-filters" title="Reset all filters" style="color:var(--danger);background:rgba(220,53,69,0.06);border-color:rgba(220,53,69,0.25);font-weight:600;display:inline-flex;align-items:center;gap:5px">${ic('x')} Reset (${activeFilterCount})</button>` : ''}
+        ${can('directory')?`<button class="btn sm" data-act="export-devotees" title="Export CSV" style="display:inline-flex;align-items:center;gap:4px">${ic('download')}Export CSV</button>`:''}
+        ${canImportCsv()?`<button class="btn sm pri" data-act="open-import-csv" title="Import CSV" style="display:inline-flex;align-items:center;gap:4px">${ic('upload')}Import CSV</button>`:''}
+      </div>
+    </div>
+    <div class="mob-filter-bar">
+      <button class="mob-filter-toggle ${activeFilterCount>0?'has-filters':''} ${mobFilterOpen?'open':''}" data-act="toggle-mob-filters">
+        <span>${ic('sliders')} Filters${activeFilterCount>0?` <span class="mob-f-count">${activeFilterCount}</span>`:''}</span>
+        <span class="mob-f-arrow">▼</span>
+      </button>
+      <div class="mob-filter-grid ${mobFilterOpen?'':'hidden'}">
+        ${mobSelect('sort', f.sort, [['name_asc','A→Z'],['name_desc','Z→A'],['date_desc','Newest'],['date_asc','Oldest'],['sadhana_desc','Rounds']], 'Sort by', true)}
+        ${mobSelect('role', f.role, Object.entries(ROLES).filter(([k])=>k!=='admin').map(([k,r])=>[k,r.name]), 'Role')}
+        ${mobSelect('status', f.status, [['Active','Active'],['Pending Approval','Pending'],['New','New'],['Inactive','Inactive']], 'Status')}
+        ${mobSelect('batch', f.batch, [...(DB.batches||[]).map(b=>[b.id,b.name]),['none','No batch']], 'Batch')}
+        ${mobSelect('dept', f.dept, [...activeDepts().map(d=>[d.id,d.name]),['none','No seva']], 'Department')}
+        ${mobSelect('careGroup', f.careGroup, [...(DB.careGroups||[]).map(g=>[g.id,g.name]),['none','No group']], 'Care group')}
+        ${mobSelect('attendance', f.attendance, [['high','≥80%'],['mid','50-79%'],['low','<50%'],['critical','<30%']], 'Attendance')}
+        ${mobSelect('skill', f.skill, SKILLS.map(s=>[s,s]), 'Skill')}
+        ${activeFilterCount>0?'<div class="mob-filter-reset"><button data-act="clear-dev-filters">✕ Clear all filters</button></div>':''}
       </div>
     </div>`;
 
@@ -7276,6 +7325,7 @@ document.addEventListener('click',e=>{
   case 'download-csv-template':{stop();downloadDevoteeCsvTemplate();break;}
   case 'confirm-import-csv':{stop();executeDevoteeCsvImport();break;}
   case 'clear-dev-filters':{stop();APP.filters.dev={q:'',role:'',status:'',dept:'',batch:'',careGroup:'',skill:'',attendance:'',sort:'name_asc'};APP.page.dev=1;toast('Filters reset');render();break}
+  case 'toggle-mob-filters':{stop();APP.mobFilterOpen=!APP.mobFilterOpen;render();break}
   case 'set-dev-sort':{stop();APP.filters.dev=APP.filters.dev||{};APP.filters.dev.sort=t.dataset.v;APP.page.dev=1;render();break}
   case 'toggle-dev-sort':{stop();APP.filters.dev=APP.filters.dev||{};APP.filters.dev.sort=APP.filters.dev.sort==='name_asc'?'name_desc':'name_asc';APP.page.dev=1;render();break}
   case 'set-per-page':{stop();const tId=t.dataset.t;const n=parseInt(t.dataset.n,10)||10;APP.perPage=APP.perPage||{};APP.perPage[tId]=n;APP.page[tId]=1;render();break}
