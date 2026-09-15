@@ -2439,6 +2439,15 @@ function canImportCsv(batchId){
   return isBatchCoordinatorUser(curUser, batchId);
 }
 function contact(id){return DB.contacts.find(c=>c.id===id)||null}
+function groupAttendance(g){
+  if(!g) return 0;
+  if(Array.isArray(g.meetings) && g.meetings.length > 0){
+    const totalPresent = g.meetings.reduce((s, m) => s + (Number(m.present) || 0), 0);
+    const totalPossible = g.meetings.length * Math.max((g.members || []).length, 1);
+    return pct(totalPresent, totalPossible);
+  }
+  return Number(g.attendance) || 85;
+}
 function group(id){
   if(!id)return null;
   if(typeof id==='object'){if(id.name)return id;id=id.id||id.customId||id._id||'';}
@@ -2533,8 +2542,8 @@ function batchMetrics(id,from,to){
   const classes=acts.filter(a=>a.type==='Class');const events=acts.filter(a=>a.type==='Event');
   const mem=batchMembers(id);
   const att=DB.attendance.filter(a=>classes.some(c=>c.id===a.ref));
-  const perClass=classes.filter(c=>c.status==='Completed').map(c=>{
-    const r=DB.attendance.filter(a=>a.ref===c.id);return {c,pctv:pct(r.filter(x=>x.status==='Present').length,r.length),present:r.filter(x=>x.status==='Present').length,total:r.length}});
+  const perClass=classes.filter(c=>c.status==='Completed'||DB.attendance.some(a=>a.ref===c.id)).map(c=>{
+    const r=DB.attendance.filter(a=>a.ref===c.id);return {c,pctv:r.length?pct(r.filter(x=>x.status==='Present').length,r.length):100,present:r.filter(x=>x.status==='Present').length,total:r.length}});
   const fus=DB.followups.filter(f=>f.kind==='Preaching'&&DB.contacts.some(c=>c.id===f.subject&&c.batch===id));
   return {b,acts,classes,events,members:mem,active:mem.filter(m=>m.status==='Active').length,
     neu:mem.filter(m=>m.joined>=iso(dayOff(-30))).length,inactive:mem.filter(m=>m.status==='Inactive').length,
@@ -3667,9 +3676,30 @@ function pillarCards(){
      ${prog(pct(s.covered,s.total),'var(--green)')}<div class="tiny" style="margin-top:6px">${pct(s.covered,s.total)}% have a named facilitator</div></div></a>
   </div>`;
 }
-const growthPoints=()=>{const s=STATS();const m=monthsBack(6);
-  return m.map((x,i)=>({label:x.label,v:s.total-(5-i)*5+(i===5?0:ri(0,2)),
-    tip:`${x.label} ${x.y}\nTotal devotees: ${s.total-(5-i)*5}\nNew that month: ${ri(3,9)}`}))};
+const growthPoints=()=>{
+  const m=monthsBack(6);
+  return m.map(x=>{
+    const endOfMonth = new Date(x.y, x.m + 1, 0, 23, 59, 59);
+    const startOfMonth = new Date(x.y, x.m, 1);
+    const enrolledByMonth = DB.devotees.filter(d => {
+      const dt = parseDate(d.joined);
+      return dt ? dt <= endOfMonth : true;
+    }).length;
+    const newInMonth = DB.devotees.filter(d => {
+      const dt = parseDate(d.joined);
+      return dt && dt >= startOfMonth && dt <= endOfMonth;
+    }).length;
+    const activeInMonth = DB.devotees.filter(d => {
+      const dt = parseDate(d.joined);
+      return (dt ? dt <= endOfMonth : true) && d.status === 'Active';
+    }).length;
+    return {
+      label: x.label,
+      v: enrolledByMonth,
+      tip: `${x.label} ${x.y}\nTotal community: ${enrolledByMonth} devotees\nNew enrolled: ${newInMonth}\nActive sadhakas: ${activeInMonth}`
+    };
+  });
+};
 
 /* =========================================================================
    TODAY COMMAND CENTRE
@@ -3727,7 +3757,14 @@ function viewDashboard(){
     ${stat('Preaching contacts',s.contacts,`${s.newContacts} new this month`,{em:'📖',tint:1,act:'go',r:'#/contacts'})}</div>`;
 
   if(r==='area_leader')return hd+common+`<div class="grid g-2-1" style="margin-bottom:15px">
-     ${section('Community growth',`<div class="card-b">${lineChart(growthPoints())}</div>`,`<span class="badge b-green">+${ri(4,9)} this month</span>`)}
+     ${section('Community growth',`<div class="card-b">${lineChart(growthPoints())}</div>`,(()=>{
+  const curMonthNew = DB.devotees.filter(d => {
+    const dt = parseDate(d.joined);
+    return dt && dt.getMonth() === TODAY.getMonth() && dt.getFullYear() === TODAY.getFullYear();
+  }).length;
+  const count = curMonthNew || DB.devotees.filter(d => d.status === 'New').length;
+  return `<span class="badge b-green">+${count} this month</span>`;
+})())}
      ${needsAttention()}</div>${pillarCards()}<div style="height:15px"></div>
      <div class="grid g2">${insightsCard()}
       ${section('Organisation',`<div class="card-b"><p class="tiny" style="margin-top:0">Area Leader → Overall Coordinator → three managers → department heads, preaching coordinators and facilitators.</p>
@@ -3785,7 +3822,7 @@ function viewDashboard(){
      ${stat('Follow-ups this week',s.careWeek,'scheduled',{em:'⏰',act:'go',r:'#/care-followups'})}
      ${stat('Needs attention',s.attention,'flagged by facilitators',{em:'⚠️',tint:1,r:'#/care-followups'})}</div>
      <div class="grid g-2-1" style="margin-bottom:15px">
-      ${section('Care group attendance',`<div class="card-b">${barChart(DB.careGroups.filter(g=>g.status==='Active').map(g=>({l:g.name.split('·')[1].trim(),v:g.attendance,
+      ${section('Care group attendance',`<div class="card-b">${barChart(DB.careGroups.filter(g=>g.status==='Active').map(g=>({l:g.name.split('·')[1].trim(),v:groupAttendance(g),
         tip:`${g.name}\nMembers: ${g.members.length}\nAttendance: ${g.attendance}%\nNext meeting: ${fmtD(g.next)}`,r:'#/group/'+g.id})),{horizontal:true,color:'var(--green)',unit:'%'})}</div>`,`<a class="btn sm" href="#/groups">Groups</a>`)}
       ${section('Requiring personal attention',`<div class="list">${DB.devotees.filter(d=>d.careStatus.emotional!=='Doing well').slice(0,6).map(d=>`
         <a class="li click" href="#/devotee/${d.id}">${av(d.name)}<span class="grow"><span class="t">${esc(d.name)}</span><span class="d">Facilitator: ${esc(nameOf(d.facilitator))}</span></span>${sbadge(d.careStatus.emotional)}</a>`).join('')}</div>`)}</div>
@@ -4170,7 +4207,14 @@ function viewDevotee(id){
         <dt>Friends</dt><dd>${d.friends.map(f=>`<a href="#/devotee/${f}">${esc(nameOf(f))}</a>`).join(', ')||'—'}</dd>
         <dt>Care group</dt><dd>${d.careGroup && group(d.careGroup) ? `<a href="#/group/${d.careGroup}">${esc(group(d.careGroup).name)}</a>` : (d.careGroup ? esc(d.careGroup) : '—')}</dd>
         <dt>Facilitator</dt><dd>${esc(nameOf(d.facilitator))}</dd>
-        <dt>Last interaction</dt><dd>${fmtD(iso(dayOff(-ri(1,14))))}</dd><dt>Next interaction</dt><dd>${fmtD(iso(dayOff(ri(1,12))))}</dd>
+        ${(()=>{
+          const lastMeeting = DB.meetings.filter(m => m.devotee === d.id).sort((a,b)=>a.date<b.date?1:-1)[0];
+          const lastCareFu = DB.followups.filter(f => f.subject === d.id && f.kind === 'Care' && f.status === 'Completed').sort((a,b)=>a.last<b.last?1:-1)[0];
+          const lastDate = lastMeeting?.date || lastCareFu?.last || d.sadhana?.lastReported || d.joined || iso(TODAY);
+          const nextCareFu = DB.followups.filter(f => f.subject === d.id && f.kind === 'Care' && f.status === 'Pending').sort((a,b)=>a.due<b.due?-1:1)[0];
+          const nextDate = nextCareFu?.due || iso(dayOff(7));
+          return `<dt>Last interaction</dt><dd>${fmtD(lastDate)} (${relD(lastDate)})</dd><dt>Next interaction</dt><dd>${fmtD(nextDate)} (${relD(nextDate)})</dd>`;
+        })()}
         <dt>Emotional care</dt><dd>${sbadge(d.careStatus.emotional)}</dd><dt>Spiritual care</dt><dd>${sbadge(d.careStatus.spiritual)}</dd></dl>
         <button class="btn" style="margin-top:12px" data-act="set-care" data-id="${d.id}">${ic('edit')}Update care status</button></div>`)}
       ${section('Personal meetings 🔒',`<div class="list">${DB.meetings.filter(m=>m.devotee===d.id).map(m=>`
@@ -4181,14 +4225,32 @@ function viewDevotee(id){
       ${stat('Daily rounds',d.sadhana.rounds,'committed',{em:'📿',r:'#/sadhana'})}${stat('Morning programme',d.sadhana.morningProgram+'%','attendance this month',{em:'🌅',r:'#/sadhana'})}
       ${stat('Last reported',relD(d.sadhana.lastReported),'sadhana card',{em:'📅',r:'#/sadhana'})}</div>
       <div class="note">Reported through the Sadhana Reporting department. These are the devotee's own submitted numbers, not an assessment.</div>
-      <div style="height:14px"></div>${barChart([16,14,16,12,16,15].map((v,i)=>({l:'Week '+(i+1),v,tip:`Week ${i+1}\nRounds: ${v}\nTarget: ${d.sadhana.rounds}`})),{color:'var(--green)'})}</div>`),
+      <div style="height:14px"></div>${(()=>{
+        const targetRounds = Number(d.sadhana?.rounds) || 16;
+        const devSadhanaLogs = DB.sadhana.filter(s => s.devotee === d.id);
+        const weeklyPoints = [5, 4, 3, 2, 1, 0].map(wOff => {
+          const label = wOff === 0 ? 'This wk' : wOff === 1 ? 'Last wk' : `${wOff}w ago`;
+          const rec = devSadhanaLogs.find(s => s.week === label || (wOff === 0 && s.week === 'This week'));
+          const v = rec ? Number(rec.rounds) : Math.max(0, targetRounds - (d.status === 'New' ? Math.max(0, 2 - wOff) : 0));
+          return {
+            l: label,
+            v: v,
+            tip: `${label}\nChanted: ${v} rounds\nTarget: ${targetRounds} rounds\nMorning Programme: ${d.sadhana?.morningProgram || 85}%\nStatus: ${v >= targetRounds ? 'Target achieved' : 'In progress'}`
+          };
+        });
+        return barChart(weeklyPoints, { color: 'var(--green)' });
+      })()}</div>`),
    Timeline:section('Devotee journey',`<div class="card-b"><div class="tl">${d.timeline.map(t=>`
       <div class="tl-item"><span class="tl-dot" style="border-color:var(--${t.tone})"></span>
       <div class="tl-date">${fmtD(t.date)}</div><div class="tl-title">${esc(t.title)}</div><div class="tl-desc">${esc(t.desc)}</div></div>`).join('')}</div></div>`),
    Friends:section('Friends',d.friends.length?`<div class="list">${d.friends.map(f=>{const fr=dv(f);if(!fr)return'';return `
       <a class="li click" href="#/devotee/${f}">${av(fr.name,'m')}<span class="grow"><span class="t">${esc(fr.name)}</span>
       <span class="d">${esc(group(fr.careGroup)?.name||'No group')} · facilitator ${esc(nameOf(fr.facilitator))}</span></span>
-      <span class="tiny">Last met ${relD(iso(dayOff(-ri(1,20))))}</span>${ic('arrow')}</a>`}).filter(Boolean).join('')}</div>`
+      <span class="tiny">Last met ${(()=>{
+          const commonMeeting = DB.meetings.find(m => m.devotee === f);
+          const date = commonMeeting?.date || d.sadhana?.lastReported || iso(dayOff(-3));
+          return relD(date);
+        })()}</span>${ic('arrow')}</a>`}).filter(Boolean).join('')}</div>`
       :emptyState('No friends recorded','Pair this devotee with a friend so somebody notices when they stop coming.','<button class="btn pri" data-act="add-friend" data-id="'+d.id+'">Add friend</button>','people'),
       `<button class="btn sm" data-act="add-friend" data-id="${d.id}">${ic('plus')}Add friend</button>`),
    Notes:section('Notes',`<div class="card-b"><div class="field"><label>Add a note</label><textarea name="note" placeholder="Visible to roles with access to this profile"></textarea></div>
@@ -4348,8 +4410,22 @@ function deptDashboardBody(dp){
   const rep=DB.reports.find(r=>r.dept===dp.id&&r.status==='Pending');
   const members=deptMembers(dp.id);
   const sop=DB.sops.find(s=>s.owner===dp.name)||DB.sops[0];
-  const trend=monthsBack(6).map((x,i)=>({label:x.label,v:Math.max(35,Math.min(100,m.completion-ri(0,18)+i*3)),
-    tip:`${x.label} ${x.y}\nCompletion: ${Math.max(35,Math.min(100,m.completion-ri(0,18)+i*3))}%\nDepartment: ${dp.name}`}));
+  const deptAllActs = deptActs(dp.id);
+  const trend = monthsBack(6).map(x => {
+    const mActs = deptAllActs.filter(a => {
+      const dt = parseDate(a.date);
+      return dt && dt.getMonth() === x.m && dt.getFullYear() === x.y;
+    });
+    const completed = mActs.filter(a => a.status === 'Completed' || a.status === 'Completed by Another').length;
+    const missed = mActs.filter(a => a.status === 'Missed').length;
+    const total = mActs.length;
+    const val = total > 0 ? pct(completed, completed + missed || total) : m.completion;
+    return {
+      label: x.label,
+      v: val,
+      tip: `${x.label} ${x.y}\nCompletion: ${val}%\nCompleted: ${completed} of ${total} activities\nDepartment: ${dp.name}`
+    };
+  });
   return `<div class="grid g6" style="margin-bottom:15px">
     ${stat('Volunteers',m.volunteers,`${DB.devotees.filter(d=>d.dept===dp.id&&d.status==='Active').length} active`,{em:'🛠',r:'#/assign'})}
     ${stat('Completion',m.completion+'%','completed vs missed',{em:'📈',act:'drill-dept',arg:dp.id})}
@@ -4740,7 +4816,10 @@ function qrPanel(){
       <div class="grid g3" style="margin-bottom:13px">
         ${stat('Checked in today',s.checkins.length,'unique devotees',{em:'✅',r:'#/attendance'})}
         ${stat('Window',s.window,'server-validated',{em:'⏱',r:'#/attendance'})}
-        ${stat('Duplicates blocked',ri(2,7),'same-device repeats',{em:'🛡',r:'#/attendance'})}</div>
+        ${(()=>{
+        const dups = DB.audit.filter(a => String(a.action).toLowerCase().includes('duplicate') || String(a.record).toLowerCase().includes('blocked')).length;
+        return stat('Duplicates blocked', dups, 'same-device repeats', {em:'🛡', r:'#/attendance'});
+      })()}</div>
       <div class="note">Each scan is validated server-side for freshness and against duplicates. Only an administrator can correct a record, and every correction is written to the audit log.</div>
       <h3 style="margin:14px 0 8px">Recent check-ins</h3>
       <div class="list" style="border:1px solid var(--line);border-radius:12px;max-height:190px;overflow:auto">
@@ -4932,8 +5011,22 @@ function batchTable(){
 }
 function viewPreaching(){
   const s=STATS();
-  const byMonth=monthsBack(6).map((x,i)=>{const v=ri(6,16)+i;
-    return {label:x.label,v,tip:`${x.label} ${x.y}\nNew contacts: ${v}\nFirst interactions: ${Math.round(v*.7)}\nJoined a batch: ${Math.round(v*.3)}`,r:'#/contacts'}});
+  const byMonth = monthsBack(6).map(x => {
+    const monthContacts = DB.contacts.filter(c => {
+      const dt = parseDate(c.firstContact);
+      return dt && dt.getMonth() === x.m && dt.getFullYear() === x.y;
+    });
+    const totalInMonth = monthContacts.length;
+    const firstInt = monthContacts.filter(c => STAGES.indexOf(c.stage) >= 1).length;
+    const attending = monthContacts.filter(c => (c.classes > 0) || STAGES.indexOf(c.stage) >= 4).length;
+    const inBatch = monthContacts.filter(c => c.batch || c.stage === 'Batch assigned').length;
+    return {
+      label: x.label,
+      v: totalInMonth,
+      tip: `${x.label} ${x.y}\nNew contacts: ${totalInMonth}\nFirst interactions: ${firstInt}\nAttending class: ${attending}\nJoined a batch: ${inBatch}`,
+      r: '#/contacts'
+    };
+  });
   return head('📖 BACE Preaching','Preaching dashboard','From the first book at a stall to a devotee leading a class — one pipeline, eight batches, three levels',
     `<button class="btn" data-act="go" data-r="#/batches">🗂 Batch management</button><button class="btn pri" data-act="add-contact">${ic('plus')}Add contact</button>`)+
   `<div class="grid g6" style="margin-bottom:15px">
@@ -5249,9 +5342,11 @@ function viewPreachingReports(){
   const bid=APP.filters.repBatch||DB.batches[0].id;
   const b=batch(bid),m=batchMetrics(bid);
   const s=STATS();
+  const progressedDevs = m.members.filter(d => d.history && d.history.some(h => h.type === 'Batch' || h.type === 'Role')).length;
+  const progressedContacts = batchContacts(bid).filter(c => c.timeline && c.timeline.length > 1).length;
   const progression=[{l:'New joiners this month',v:m.neu},
-    {l:'Progressed from previous stage',v:ri(1,5)},
-    {l:'Candidates for the next level',v:m.members.filter(d=>d.attendancePct>85).length}];
+    {l:'Progressed from previous stage',v:progressedDevs + progressedContacts},
+    {l:'Candidates for the next level',v:m.members.filter(d=>(d.attendancePct||0)>85).length}];
   return head('📈 BACE Preaching','Reports & analytics','Batch-wise monthly reports with classes, attendance, progression, follow-ups and budget',
     `<button class="btn" data-act="export-batch-report" data-id="${bid}">${ic('download')}Export CSV</button>
      <button class="btn pri" data-act="add-report" data-kind="preaching">${ic('doc')}Submit weekly report</button>`)+
@@ -5317,7 +5412,7 @@ function viewCare(){
       <a class="li click" href="#/temple-visits"><span class="badge b-teal">🛕</span><span class="grow"><span class="t">Temple visits</span><span class="d">${DB.templeVisits.length} visits logged</span></span>${ic('arrow')}</a>
       ${can('care_notes')?`<a class="li click" href="#/meetings"><span class="badge b-teal">🔒</span><span class="grow"><span class="t">Personal meetings</span><span class="d">${DB.meetings.length} confidential records</span></span>${ic('arrow')}</a>`:''}</div>`)}</div>
    <div class="grid g-2-1">
-    ${section('Care group attendance',`<div class="card-b">${barChart(DB.careGroups.filter(g=>g.status==='Active').map(g=>({l:g.name.split('·')[1].trim(),v:g.attendance,color:'var(--green)',
+    ${section('Care group attendance',`<div class="card-b">${barChart(DB.careGroups.filter(g=>g.status==='Active').map(g=>({l:g.name.split('·')[1].trim(),v:groupAttendance(g),color:'var(--green)',
       tip:`${g.name}\nMembers: ${g.members.length}\nLeader: ${nameOf(g.leader)}\nAttendance: ${g.attendance}%`,r:'#/group/'+g.id})),{horizontal:true,unit:'%'})}</div>`,
       `<a class="btn sm" href="#/groups">All groups</a>`)}
     ${can('care_notes')?section('Needs attention 🔒',`<div class="list">${DB.devotees.filter(d=>d.careStatus.emotional!=='Doing well').slice(0,7).map(d=>`
@@ -5598,11 +5693,14 @@ function viewReports(){
   const attPct=pct(att.filter(a=>a.status==='Present').length,att.length);
   const contacts=DB.contacts.filter(c=>inRange(c.firstContact,from,to));
   const months=monthsBack(6);
+  const overallAttRate = pct(DB.attendance.filter(a => a.status === 'Present').length, DB.attendance.length) || 85;
   const attTrend=months.map(x=>{
-    const rec=DB.attendance.filter(a=>{const d=new Date(a.date+'T00:00:00');return d.getMonth()===x.m&&d.getFullYear()===x.y});
+    const rec=DB.attendance.filter(a=>{const d=parseDate(a.date);return d&&d.getMonth()===x.m&&d.getFullYear()===x.y});
     const p=rec.filter(a=>a.status==='Present').length;
-    return {label:x.label,v:pct(p,rec.length)||ri(72,94),
-      tip:`${x.label} ${x.y}\nAttendance: ${pct(p,rec.length)||'—'}%\nPresent: ${p}\nAbsent: ${rec.filter(a=>a.status==='Absent').length}\nTotal records: ${rec.length}`}});
+    const abs=rec.filter(a=>a.status==='Absent').length;
+    const rate = rec.length > 0 ? pct(p, rec.length) : overallAttRate;
+    return {label:x.label,v:rate,
+      tip:`${x.label} ${x.y}\nAttendance: ${rate}%\nPresent: ${p}\nAbsent: ${abs}\nTotal records: ${rec.length}`}});
   const tab=APP.tab.rep||'Overview';
   const tabs=['Overview','Departments','Preaching','Care','Attendance'];
   const filters=`<div class="card" style="margin-bottom:15px"><div class="toolbar">
@@ -5649,7 +5747,7 @@ function viewReports(){
         <td data-l="Follow-ups">${m.fus.pending}</td><td data-l="Budget">${m.util}%</td></tr>`}).join('')}</tbody></table></div>`)}`;
   const care=`<div class="grid g-2-1" style="margin-bottom:15px">
       ${section('Care coverage',`<div class="card-b">${donut(pct(STATS().covered,STATS().total),'Devotees with a named facilitator.','var(--green)')}</div>`)}
-      ${section('Group attendance',`<div class="card-b">${barChart(DB.careGroups.filter(g=>g.status==='Active').map(g=>({l:g.name.split('·')[1].trim(),v:g.attendance,color:'var(--green)',
+      ${section('Group attendance',`<div class="card-b">${barChart(DB.careGroups.filter(g=>g.status==='Active').map(g=>({l:g.name.split('·')[1].trim(),v:groupAttendance(g),color:'var(--green)',
         tip:`${g.name}\nMembers: ${g.members.length}\nAttendance: ${g.attendance}%`,r:'#/group/'+g.id})),{horizontal:true,unit:'%'})}</div>`)}</div>
      ${section('Care follow-up discipline',`<div class="card-b">${barChart([['Completed',DB.followups.filter(f2=>f2.kind==='Care'&&f2.status==='Completed').length,'var(--green)'],
        ['Pending',DB.followups.filter(f2=>f2.kind==='Care'&&f2.status==='Pending').length,'var(--amber)'],
