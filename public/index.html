@@ -2217,8 +2217,24 @@ const logAudit=(action,record)=>DB.audit.unshift({id:uid('au'),user:(APP.user?na
 })();
 
 /* ---------------- lookups ---------------- */
-function dv(id){return DB.devotees.find(d=>d.id===id||d.customId===id)||null}
-function nameOf(id){if(!id)return 'Unassigned';const d=dv(id)||DB.devotees.find(x=>x.name===id);return d?d.name:id}
+function dv(id){
+  if(!id)return null;
+  if(typeof id==='object')return dv(id.id||id._id||id.customId||id.name);
+  const s=String(id).trim();
+  const sLower=s.toLowerCase();
+  return (DB.devotees||[]).find(d=>
+    String(d.id||'')===s ||
+    String(d.customId||'')===s ||
+    (d._id && String(d._id)===s) ||
+    String(d.name||'').trim().toLowerCase()===sLower
+  )||null;
+}
+function nameOf(id){
+  if(!id)return 'Unassigned';
+  if(typeof id==='object')return id.name||id.id||id._id||'Unassigned';
+  const d=dv(id)||(DB.devotees||[]).find(x=>String(x.name||'').trim().toLowerCase()===String(id).trim().toLowerCase()||(x._id&&String(x._id)===String(id)));
+  return d?d.name:id;
+}
 function devoteeDisplayName(id){
   const d=dv(id);
   const curEmail = ((d&&d.email) || (APP.user&&APP.user.email) || '').toLowerCase().trim();
@@ -2266,8 +2282,32 @@ function devoteeRoleObj(id){
   const r = devoteeRole(id);
   return ROLES[r] || ROLES.devotee;
 }
-function dept(id){return DB.departments.find(d=>d.id===id)||null}
-function batch(id){return DB.batches.find(b=>b.id===id)||null}
+function dept(id){
+  if(!id)return null;
+  if(typeof id==='object'){if(id.name)return id;id=id.id||id.customId||id._id||'';}
+  const str=String(id).toLowerCase().trim();
+  return (DB.departments||[]).find(d=>
+    String(d.id||'').toLowerCase()===str ||
+    String(d.customId||'').toLowerCase()===str ||
+    String(d._id||'').toLowerCase()===str ||
+    String(d.name||'').toLowerCase().trim()===str
+  )||null;
+}
+function batch(id){
+  if(!id)return null;
+  if(typeof id==='object'){if(id.name)return id;id=id.id||id.customId||id._id||'';}
+  const str=String(id).toLowerCase().trim();
+  return (DB.batches||[]).find(b=>
+    String(b.id||'').toLowerCase()===str ||
+    String(b.customId||'').toLowerCase()===str ||
+    String(b._id||'').toLowerCase()===str ||
+    String(b.name||'').toLowerCase().trim()===str ||
+    (str.includes('gaur') && String(b.name||'').toLowerCase().includes('gaur')) ||
+    (str.includes('narad') && String(b.name||'').toLowerCase().includes('narad')) ||
+    (str.includes('taksh') && String(b.name||'').toLowerCase().includes('taksh')) ||
+    (str.includes('sresh') && String(b.name||'').toLowerCase().includes('sresh'))
+  )||null;
+}
 function isBatchCoordinatorUser(user, batchId){
   const u = user || (APP && APP.user);
   if(!u) return false;
@@ -2295,7 +2335,17 @@ function canImportCsv(batchId){
   return isBatchCoordinatorUser(curUser, batchId);
 }
 function contact(id){return DB.contacts.find(c=>c.id===id)||null}
-function group(id){return DB.careGroups.find(g=>g.id===id)||null}
+function group(id){
+  if(!id)return null;
+  if(typeof id==='object'){if(id.name)return id;id=id.id||id.customId||id._id||'';}
+  const str=String(id).toLowerCase().trim();
+  return (DB.careGroups||[]).find(g=>
+    String(g.id||'').toLowerCase()===str ||
+    String(g.customId||'').toLowerCase()===str ||
+    String(g._id||'').toLowerCase()===str ||
+    String(g.name||'').toLowerCase().trim()===str
+  )||null;
+}
 function act(id){return DB.activities.find(a=>a.id===id)||null}
 const scopeName=a=>a.dept?dept(a.dept)?.name:a.batch?batch(a.batch)?.name:'Community';
 const subjectName=f=>f.kind==='Preaching'?(contact(f.subject)||{}).name||'Unknown contact':nameOf(f.subject);
@@ -2692,7 +2742,8 @@ const CRUMBS={'':'Dashboard',today:'Today',devotees:'Devotees',devotee:'Devotee'
  meetings:'Personal meetings','care-followups':'Care follow-ups','care-reports':'Care reports',reports:'Reports & analytics',
  calendar:'Community calendar',messages:'Messages',notifications:'Notifications',admin:'Administration',more:'Menu'};
 function topbar(){
-  const parts=APP.route.split('/').filter(Boolean);
+  const cleanRoute = APP.route.replace(/^#\/?/, '');
+  const parts = cleanRoute.split('/').filter(Boolean);
   const unread=DB.notifications.filter(n=>!n.read).length;
   const pageTitle=CRUMBS[parts[0]]||parts[0]||'Dashboard';
   return `<header class="topbar">
@@ -3916,7 +3967,7 @@ function viewDevotee(id){
    Care:careOK?`<div class="grid g2">
       ${section('Care status',`<div class="card-b"><dl class="kv">
         <dt>Friends</dt><dd>${d.friends.map(f=>`<a href="#/devotee/${f}">${esc(nameOf(f))}</a>`).join(', ')||'—'}</dd>
-        <dt>Care group</dt><dd>${d.careGroup?`<a href="#/group/${d.careGroup}">${esc(group(d.careGroup).name)}</a>`:'—'}</dd>
+        <dt>Care group</dt><dd>${d.careGroup && group(d.careGroup) ? `<a href="#/group/${d.careGroup}">${esc(group(d.careGroup).name)}</a>` : (d.careGroup ? esc(d.careGroup) : '—')}</dd>
         <dt>Facilitator</dt><dd>${esc(nameOf(d.facilitator))}</dd>
         <dt>Last interaction</dt><dd>${fmtD(iso(dayOff(-ri(1,14))))}</dd><dt>Next interaction</dt><dd>${fmtD(iso(dayOff(ri(1,12))))}</dd>
         <dt>Emotional care</dt><dd>${sbadge(d.careStatus.emotional)}</dd><dt>Spiritual care</dt><dd>${sbadge(d.careStatus.spiritual)}</dd></dl>
@@ -3933,10 +3984,10 @@ function viewDevotee(id){
    Timeline:section('Devotee journey',`<div class="card-b"><div class="tl">${d.timeline.map(t=>`
       <div class="tl-item"><span class="tl-dot" style="border-color:var(--${t.tone})"></span>
       <div class="tl-date">${fmtD(t.date)}</div><div class="tl-title">${esc(t.title)}</div><div class="tl-desc">${esc(t.desc)}</div></div>`).join('')}</div></div>`),
-   Friends:section('Friends',d.friends.length?`<div class="list">${d.friends.map(f=>{const fr=dv(f);return `
+   Friends:section('Friends',d.friends.length?`<div class="list">${d.friends.map(f=>{const fr=dv(f);if(!fr)return'';return `
       <a class="li click" href="#/devotee/${f}">${av(fr.name,'m')}<span class="grow"><span class="t">${esc(fr.name)}</span>
       <span class="d">${esc(group(fr.careGroup)?.name||'No group')} · facilitator ${esc(nameOf(fr.facilitator))}</span></span>
-      <span class="tiny">Last met ${relD(iso(dayOff(-ri(1,20))))}</span>${ic('arrow')}</a>`}).join('')}</div>`
+      <span class="tiny">Last met ${relD(iso(dayOff(-ri(1,20))))}</span>${ic('arrow')}</a>`}).filter(Boolean).join('')}</div>`
       :emptyState('No friends recorded','Pair this devotee with a friend so somebody notices when they stop coming.','<button class="btn pri" data-act="add-friend" data-id="'+d.id+'">Add friend</button>','people'),
       `<button class="btn sm" data-act="add-friend" data-id="${d.id}">${ic('plus')}Add friend</button>`),
    Notes:section('Notes',`<div class="card-b"><div class="field"><label>Add a note</label><textarea name="note" placeholder="Visible to roles with access to this profile"></textarea></div>
@@ -3948,7 +3999,7 @@ function viewDevotee(id){
     ${av(d.name,'l')}
     <div style="min-width:190px"><h1 style="font-size:23px">${esc(d.name)}</h1>
       <div class="tiny" style="margin-top:4px">${esc(d.occupation)} · ${esc(d.org)} · joined ${fmtD(d.joined)}</div>
-      <div class="chips" style="margin-top:10px">${roleBadge}${sbadge(d.status)}${d.batch?badge('📖 '+batch(d.batch).name,'indigo'):''}${d.dept?badge('🕉 '+dept(d.dept).name,'saffron'):''}${d.careGroup?badge('❤️ '+group(d.careGroup).name,'green'):''}</div></div>
+      <div class="chips" style="margin-top:10px">${roleBadge}${sbadge(d.status)}${d.batch && batch(d.batch) ? badge('📖 ' + batch(d.batch).name, 'indigo') : ''}${d.dept && dept(d.dept) ? badge('🕉 ' + dept(d.dept).name, 'saffron') : ''}${d.careGroup && group(d.careGroup) ? badge('❤️ ' + group(d.careGroup).name, 'green') : ''}</div></div>
     <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn" data-act="dm" data-id="${d.id}">${ic('chat')}Message</button>
       <button class="btn" data-act="add-followup">${ic('clock')}Follow-up</button>
@@ -6399,27 +6450,55 @@ async function syncDevoteesFromServer(){
           (serverDev.email && x.email && x.email.trim().toLowerCase() === serverDev.email.trim().toLowerCase())
         );
 
+        // Resolve relational references to match local IDs and map MongoDB _id
+        let resolvedBatchId = null;
+        if(serverDev.batch){
+          const bMatch = batch(serverDev.batch);
+          if(bMatch){
+            if(typeof serverDev.batch === 'object' && serverDev.batch._id) bMatch._id = String(serverDev.batch._id);
+            resolvedBatchId = bMatch.id;
+          } else {
+            resolvedBatchId = typeof serverDev.batch === 'object' ? (serverDev.batch._id || serverDev.batch.id) : serverDev.batch;
+          }
+        }
+        let resolvedDeptId = null;
+        if(serverDev.dept){
+          const dMatch = dept(serverDev.dept);
+          if(dMatch){
+            if(typeof serverDev.dept === 'object' && serverDev.dept._id) dMatch._id = String(serverDev.dept._id);
+            resolvedDeptId = dMatch.id;
+          } else {
+            resolvedDeptId = typeof serverDev.dept === 'object' ? (serverDev.dept._id || serverDev.dept.id) : serverDev.dept;
+          }
+        }
+        let resolvedGroupId = null;
+        if(serverDev.careGroup){
+          const gMatch = group(serverDev.careGroup);
+          if(gMatch){
+            if(typeof serverDev.careGroup === 'object' && serverDev.careGroup._id) gMatch._id = String(serverDev.careGroup._id);
+            resolvedGroupId = gMatch.id;
+          } else {
+            resolvedGroupId = typeof serverDev.careGroup === 'object' ? (serverDev.careGroup._id || serverDev.careGroup.id) : serverDev.careGroup;
+          }
+        }
+
         if(!localDev){
           localDev = normalizeDevotee({
             ...serverDev,
             id: targetId || ('d_' + Date.now()),
-            batch: serverDev.batch ? (serverDev.batch._id || serverDev.batch.id || serverDev.batch) : null,
-            dept: serverDev.dept ? (serverDev.dept._id || serverDev.dept.id || serverDev.dept) : null,
-            careGroup: serverDev.careGroup ? (serverDev.careGroup._id || serverDev.careGroup.id || serverDev.careGroup) : null
+            batch: resolvedBatchId,
+            dept: resolvedDeptId,
+            careGroup: resolvedGroupId
           });
           DB.devotees.push(localDev);
           changed = true;
         } else {
+          if(serverDev._id && !localDev._id) localDev._id = String(serverDev._id);
           if(serverDev.phone && localDev.phone !== serverDev.phone) { localDev.phone = serverDev.phone; changed = true; }
           if(serverDev.email && localDev.email !== serverDev.email) { localDev.email = serverDev.email; changed = true; }
-          if(serverDev.batch) {
-            const bId = String(serverDev.batch._id || serverDev.batch.id || serverDev.batch);
-            if(localDev.batch !== bId) { localDev.batch = bId; changed = true; }
-          }
-          if(serverDev.dept) {
-            const dId = String(serverDev.dept._id || serverDev.dept.id || serverDev.dept);
-            if(localDev.dept !== dId) { localDev.dept = dId; changed = true; }
-          }
+          if(resolvedBatchId && localDev.batch !== resolvedBatchId) { localDev.batch = resolvedBatchId; changed = true; }
+          if(resolvedDeptId && localDev.dept !== resolvedDeptId) { localDev.dept = resolvedDeptId; changed = true; }
+          if(resolvedGroupId && localDev.careGroup !== resolvedGroupId) { localDev.careGroup = resolvedGroupId; changed = true; }
           if(serverDev.batchRole && localDev.batchRole !== serverDev.batchRole) { localDev.batchRole = serverDev.batchRole; changed = true; }
           if(serverDev.status && localDev.status !== serverDev.status) { localDev.status = serverDev.status; changed = true; }
           if(serverDev.level !== undefined && localDev.level !== serverDev.level) { localDev.level = serverDev.level; changed = true; }
