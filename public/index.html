@@ -2374,7 +2374,21 @@ const filled=a=>assignsFor(a.id).filter(x=>x.state!=='Declined').length;
 const isFilled=a=>filled(a)>=a.need;
 const attFor=(id,cat)=>{const r=DB.attendance.filter(a=>a.devotee===id&&(!cat||a.category===cat));return pct(r.filter(a=>a.status==='Present').length,r.length)};
 const deptMembers=id=>DB.deptMembers.filter(m=>m.dept===id&&m.status==='Active');
-const batchMembers=b=>DB.devotees.filter(d=>d.batch===(b.id||b));
+const batchMembers=b=>{
+  if(!b) return [];
+  const targetBatch = batch(b);
+  const valid = new Set([
+    typeof b === 'object' ? b.id : b,
+    typeof b === 'object' ? b._id : null,
+    typeof b === 'object' ? b.customId : null,
+    typeof b === 'object' ? b.name : null,
+    targetBatch?.id,
+    targetBatch?._id,
+    targetBatch?.customId,
+    targetBatch?.name
+  ].filter(Boolean).map(x => String(x).toLowerCase().trim()));
+  return (DB.devotees||[]).filter(d => d.batch && valid.has(String(d.batch).toLowerCase().trim()));
+};
 const activeDepts=()=>DB.departments.filter(d=>d.status==='Active');
 const activeBatches=()=>DB.batches.filter(b=>b.status==='Active');
 const deptActs=id=>DB.activities.filter(a=>a.dept===id);
@@ -2506,7 +2520,8 @@ function head(eyebrow,title,sub,actions=''){
   <div class="actions">${actions}</div></div>`;
 }
 function section(title,body,right=''){
-  return `<div class="card"><div class="card-h"><h3>${esc(title)}</h3><div class="r">${right}</div></div>${body}</div>`;
+  const h3 = (typeof title === 'string' && title.includes('<')) ? title : esc(title);
+  return `<div class="card"><div class="card-h"><h3 style="display:inline-flex;align-items:center">${h3}</h3><div class="r">${right}</div></div>${body}</div>`;
 }
 const stat=(lbl,val,foot='',o={})=>{
   const act = o.act || (o.r ? 'go' : '');
@@ -4884,7 +4899,16 @@ function batchDashboardBody(b){
       ${section('📊 Class attendance trend',trend.length?`<div class="card-b">${lineChart(trend,{unit:'%',color:'var(--indigo)'})}
         <div class="tiny" style="margin-top:8px">Hover a point for present / absent / total for that class</div></div>`
         :emptyState('No attendance yet','The trend appears once classes are held and attendance is marked.',''))}
-      ${section('👥 Members',m.members.length?`<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Devotee</th><th>Status</th><th>Attendance</th><th>Rounds</th><th>Facilitator</th></tr></thead><tbody>
+      ${section(`👥 Members <span class="badge b-grey" style="font-size:11.5px;padding:2px 8px;font-weight:600;vertical-align:middle;margin-left:6px">${m.members.length}</span>`,m.members.length?`
+        <div style="padding:10px 16px;background:var(--surface-2);border-bottom:1px solid var(--line-2);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:13px;font-weight:600;color:var(--ink-2)">Total Members:</span>
+            <span class="badge b-indigo" style="font-size:12.5px;font-weight:700;padding:2px 9px;border-radius:12px">${m.members.length}</span>
+            <span style="color:var(--ink-3);font-size:12px">(${m.active} active${m.inactive ? ` · ${m.inactive} inactive` : ''})</span>
+          </div>
+          ${m.neu ? `<span class="badge b-saffron" style="font-size:11px;font-weight:600">${m.neu} new this month</span>` : ''}
+        </div>
+        <div class="tbl-wrap"><table class="tbl"><thead><tr><th>Devotee</th><th>Status</th><th>Attendance</th><th>Rounds</th><th>Facilitator</th></tr></thead><tbody>
         ${m.members.map(d=>`<tr class="click" data-act="open-devotee" data-id="${d.id}">
           <td data-l="Devotee"><div class="who">${av(d.name)}<div><b>${esc(d.name)}</b><span>${esc(d.org)}</span></div></div></td>
           <td data-l="Status">${sbadge(d.status)}</td>
@@ -7518,8 +7542,9 @@ document.addEventListener('click',e=>{
   case 'archive-batch':stop();{const b=batch(id);b.status='Archived';logAudit('Batch archived',b.name);
     toast(b.name+' archived — members and history retained','🗄');render();break}
   case 'batch-members':stop();{const b=batch(id);
-    openPicker({title:'Members of '+b.name,sub:'Tick to add, untick to remove. Members keep one devotee record.',
-      items:devItems(x=>x.status!=='Inactive'),selected:batchMembers(id).map(x=>x.id),multi:true,save:'save-batch-members',ctx:{id}});break}
+    const curMembers=batchMembers(id);
+    openPicker({title:'Members of '+b.name,sub:`Total ${curMembers.length} member${curMembers.length===1?'':'s'} currently enrolled. Tick to add, untick to remove.`,
+      items:devItems(x=>x.status!=='Inactive'),selected:curMembers.map(x=>x.id),multi:true,save:'save-batch-members',ctx:{id}});break}
   case 'save-batch-members':{const m=APP.modal;const before=batchMembers(m.ctx.id).map(x=>x.id);
     before.filter(x=>!m.selected.includes(x)).forEach(x=>{const d=dv(x);d.history.push({type:'Batch',from:batch(m.ctx.id).name,to:'—',date:iso(TODAY)});d.batch=null});
     m.selected.forEach(x=>{const d=dv(x);if(d.batch!==m.ctx.id){if(d.batch)d.history.push({type:'Batch',from:batch(d.batch).name,to:batch(m.ctx.id).name,date:iso(TODAY)});
