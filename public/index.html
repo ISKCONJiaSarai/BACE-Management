@@ -2910,8 +2910,13 @@ async function handleGoogleAuthResponse(response){
       };
     } else {
       let d=DB.devotees.find(x=>x.id===data.user.devotee||(x.email&&x.email.toLowerCase()===data.user.email.toLowerCase()));
-      const displayName = isSurya ? 'Surya Narayana Das' : data.user.name;
-      const displayRole = isSurya ? 'area_leader' : (data.user.role || 'devotee');
+      const displayName = isSurya ? 'Surya Narayana Das' : ((d && d.name && d.name !== 'Google Devotee') ? d.name : data.user.name);
+      const displayRole = isSurya ? 'area_leader' : (data.user.role || (d ? devoteeRole(d) : 'devotee'));
+
+      // If devotee exists in database or data.user is approved, treat as fully approved:
+      const isKnownInDb = !!(d && d.name && d.name !== 'Google Devotee') || data.user.isApproved || data.user.approvalStatus === 'approved';
+      const finalApproval = (isSurya || isKnownInDb || data.user.approvalStatus === 'approved') ? 'approved' : (data.user.approvalStatus || 'pending_profile');
+      const finalProfileCompleted = (isSurya || isKnownInDb || !!data.user.profileCompleted);
 
       if(!d){
         d=normalizeDevotee({
@@ -2919,7 +2924,7 @@ async function handleGoogleAuthResponse(response){
           name:displayName,
           email:data.user.email,
           avatar:data.user.avatar||'',
-          status:(data.user.isApproved || isSurya)?'Active':'Pending Approval',
+          status: finalApproval === 'approved' ? 'Active' : 'Pending Approval',
           joined:iso(TODAY),
           rounds:16,
           morning:85,
@@ -2927,10 +2932,10 @@ async function handleGoogleAuthResponse(response){
           swabhav:'Organising'
         });
         DB.devotees.push(d);
-      } else if(data.user.devoteeDetails){
-        Object.assign(d, data.user.devoteeDetails);
+      } else {
+        if(data.user.devoteeDetails) Object.assign(d, data.user.devoteeDetails);
         if(isSurya) { d.name = 'Surya Narayana Das'; d.appointment = 'Area Leader'; d.status = 'Active'; }
-        else if(!data.user.isApproved && d.status==='Active') d.status='Pending Approval';
+        else if(finalApproval === 'approved') d.status='Active';
         normalizeDevotee(d);
       }
 
@@ -2941,8 +2946,8 @@ async function handleGoogleAuthResponse(response){
         email:data.user.email,
         name:displayName,
         avatar:data.user.avatar,
-        approvalStatus:(isSurya ? 'approved' : (data.user.approvalStatus || (data.user.isApproved ? 'approved' : 'pending_profile'))),
-        profileCompleted:isSurya ? true : !!data.user.profileCompleted
+        approvalStatus: finalApproval,
+        profileCompleted: finalProfileCompleted
       };
     }
 
@@ -6919,6 +6924,11 @@ function render(){
   if(!APP.user){app.innerHTML=viewLogin();initGoogleAuth();return}
 
   // Gating for unapproved devotees:
+  const isDevoteeInLocalDb = !!(APP.user.devotee && dv(APP.user.devotee)) || DB.devotees.some(x => x.email && APP.user.email && x.email.trim().toLowerCase() === APP.user.email.trim().toLowerCase());
+  if (isDevoteeInLocalDb && APP.user.approvalStatus !== 'approved') {
+    APP.user.approvalStatus = 'approved';
+    APP.user.profileCompleted = true;
+  }
   if(APP.user.approvalStatus==='pending_profile' || (!APP.user.profileCompleted && !['admin','area_leader'].includes(APP.user.role))){
     app.innerHTML=viewCompleteProfile();
     return;

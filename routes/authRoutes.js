@@ -28,6 +28,8 @@ function isSuryaEmail(email) {
   return clean === 'suryakiranjune2@gmail.com';
 }
 
+const escapeRegex = s => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 /**
  * @route   GET /api/auth/config
  * @desc    Get public OAuth configuration (Client ID)
@@ -83,6 +85,7 @@ router.post('/google', async (req, res) => {
     }).populate('devotee');
 
     let devoteeDoc = null;
+    let isEmailInDb = false;
 
     if (isBaceAdmin) {
       // BACE Administrator must NOT be present in devotee database
@@ -97,14 +100,22 @@ router.post('/google', async (req, res) => {
     } else {
       devoteeDoc = user ? user.devotee : null;
 
-      // 2. If no user, check if a devotee record already exists with this email
+      // 2. Check if a devotee record exists with this email in database
       stage = 'find_devotee';
       if (!devoteeDoc) {
-        devoteeDoc = await Devotee.findOne({ email: normalizedEmail });
+        devoteeDoc = await Devotee.findOne({
+          email: { $regex: new RegExp('^' + escapeRegex(normalizedEmail) + '$', 'i') }
+        });
       }
 
-      // 3. If still no devotee record, create a new one
-      if (!devoteeDoc) {
+      if (devoteeDoc) {
+        isEmailInDb = true;
+        if (devoteeDoc.status === 'Pending Approval' || devoteeDoc.status === 'New') {
+          devoteeDoc.status = 'Active';
+          await devoteeDoc.save();
+        }
+      } else {
+        // 3. If still no devotee record, create a new one
         stage = 'create_devotee';
         const customId = `d_g_${Date.now()}`;
         const defaultName = isSuryaAreaLeader ? 'Surya Narayana Das' : (name || 'Google Devotee');
@@ -122,7 +133,24 @@ router.post('/google', async (req, res) => {
       }
     }
 
-    const determinedRole = isBaceAdmin ? 'admin' : (isSuryaAreaLeader ? 'area_leader' : 'devotee');
+    // Determine appropriate role from devotee record if in database
+    let devoteeRole = 'devotee';
+    if (devoteeDoc) {
+      const appt = (devoteeDoc.appointment || '').toLowerCase();
+      const bRole = (devoteeDoc.batchRole || '').toLowerCase();
+      if (isSuryaAreaLeader || appt.includes('area leader')) devoteeRole = 'area_leader';
+      else if (appt.includes('overall coordinator') || (appt.includes('coordinator') && !appt.includes('batch'))) devoteeRole = 'coordinator';
+      else if (appt.includes('preaching manager')) devoteeRole = 'preaching_manager';
+      else if (appt.includes('care manager')) devoteeRole = 'care_manager';
+      else if (appt.includes('internal manager')) devoteeRole = 'internal_manager';
+      else if (appt.includes('department head') || appt.includes('dept head')) devoteeRole = 'dept_head';
+      else if (appt.includes('preaching coordinator') || bRole === 'coordinator') devoteeRole = 'preaching_coord';
+      else if (appt.includes('facilitator') || devoteeDoc.isFacilitator) devoteeRole = 'facilitator';
+    }
+
+    const determinedRole = isBaceAdmin ? 'admin' : (isSuryaAreaLeader ? 'area_leader' : devoteeRole);
+    // Any devotee whose email is in the database is automatically approved without asking for data or approval!
+    const isAutoApproved = isBaceAdmin || isSuryaAreaLeader || isEmailInDb;
 
     // 4. Create or update User record
     if (!user) {
@@ -137,8 +165,8 @@ router.post('/google', async (req, res) => {
         avatar: picture,
         devotee: isBaceAdmin ? null : devoteeDoc?._id,
         role: determinedRole,
-        approvalStatus: (isBaceAdmin || isSuryaAreaLeader) ? 'approved' : 'pending_profile',
-        profileCompleted: (isBaceAdmin || isSuryaAreaLeader) ? true : false,
+        approvalStatus: isAutoApproved ? 'approved' : 'pending_profile',
+        profileCompleted: isAutoApproved ? true : false,
         lastLogin: new Date()
       });
     } else {
@@ -163,6 +191,12 @@ router.post('/google', async (req, res) => {
             devoteeDoc.appointment = 'Area Leader';
             devoteeDoc.status = 'Active';
             await devoteeDoc.save();
+          }
+        } else if (isAutoApproved) {
+          user.approvalStatus = 'approved';
+          user.profileCompleted = true;
+          if (determinedRole !== 'devotee' && user.role === 'devotee') {
+            user.role = determinedRole;
           }
         } else if (!user.approvalStatus) {
           user.approvalStatus = user.profileCompleted ? 'pending_approval' : 'pending_profile';
@@ -271,7 +305,25 @@ router.get('/me', protect, async (req, res) => {
       await user.save();
     }
 
-    const devoteeDoc = user.devotee;
+    let devoteeDoc = user.devotee;
+    if (!devoteeDoc && user.email) {
+      devoteeDoc = await Devotee.findOne({
+        email: { $regex: new RegExp('^' + escapeRegex(user.email.toLowerCase().trim()) + '$', 'i') }
+      });
+      if (devoteeDoc) {
+        user.devotee = devoteeDoc._id;
+      }
+    }
+
+    if (devoteeDoc && (user.approvalStatus !== 'approved' || !user.profileCompleted)) {
+      user.approvalStatus = 'approved';
+      user.profileCompleted = true;
+      if (devoteeDoc.status === 'Pending Approval' || devoteeDoc.status === 'New') {
+        devoteeDoc.status = 'Active';
+        await devoteeDoc.save();
+      }
+      await user.save();
+    }
 
     res.json({
       success: true,
