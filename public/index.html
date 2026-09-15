@@ -1350,7 +1350,7 @@ const ACCESS={
   care_notes:['coordinator','care_manager','facilitator','area_leader','admin'],
   inventory:['area_leader','coordinator','internal_manager','dept_head','admin'],
   reports:['area_leader','coordinator','internal_manager','preaching_manager','care_manager','dept_head','preaching_coord','admin'],
-  admin:['admin']
+  admin:['admin','area_leader']
 };
 const can=(m,role)=>{
   const curUser = (APP && APP.user) || {};
@@ -1360,11 +1360,11 @@ const can=(m,role)=>{
   // 1. Exclusive BACE Administrator (terkadambajs@gmail.com) has full, unrestricted access to everything (including devotee care)
   if(isSuperAdmin) return true;
 
-  // 2. The Administration module is strictly prohibited and invisible to all other users
-  if(m === 'admin') return false;
-
   role = role || curUser.role;
   if(isSuryaEmail(curEmail) && role === 'admin') role = 'area_leader';
+
+  // 2. The Administration module is accessible to BACE Administrator and Area Leader (for approvals, user management, and configuration)
+  if(m === 'admin') return role === 'area_leader' || isSuryaEmail(curEmail);
 
   const a = ACCESS[m];
   return a === '*' || (a || []).includes(role);
@@ -2667,7 +2667,7 @@ const NAV_BOTTOM=[
   {t:'Community calendar',em:'📅',r:'#/calendar',m:'calendar'},
   {t:'Messages',em:'💬',r:'#/messages',m:'messages',badge:'unreadMsgs'},
   {t:'Notifications',em:'🔔',r:'#/notifications',m:'dashboard'},
-  {t:'Administration',em:'⚙️',r:'#/admin',m:'admin'}
+  {t:'Administration',em:'⚙️',r:'#/admin',m:'admin',badge:'pendingApprovals'}
 ];
 const MODULE_ACCENT={mgmt:'saffron',depts:'saffron',dept:'saffron',assign:'saffron',attendance:'saffron','dept-reports':'saffron',inventory:'saffron',actions:'saffron',sops:'teal',
  preaching:'indigo',batches:'indigo',batch:'indigo',contacts:'indigo',followups:'indigo',classes:'indigo','batch-attendance':'indigo','preaching-reports':'indigo',
@@ -2687,7 +2687,12 @@ function visibleThread(t){
   if(['coordinator','admin','area_leader'].includes(APP.user.role)&&t.type!=='dm')return true;
   return t.members.includes(APP.user.devotee);
 }
-function navCount(k){const s=STATS();return k==='unreadMsgs'?unreadMsgs():s[k]||0}
+function navCount(k){
+  const s=STATS();
+  if(k==='unreadMsgs') return unreadMsgs();
+  if(k==='pendingApprovals') return DB.devotees.filter(d => d.status === 'Pending Approval').length;
+  return s[k]||0;
+}
 
 function navItem(i,pill){
   if(i.sub!==undefined)return i.sub.trim()?`<div class="nav-sub">${esc(i.sub)}</div>`:'<div style="height:6px"></div>';
@@ -2913,10 +2918,12 @@ async function handleGoogleAuthResponse(response){
       const displayName = isSurya ? 'Surya Narayana Das' : ((d && d.name && d.name !== 'Google Devotee') ? d.name : data.user.name);
       const displayRole = isSurya ? 'area_leader' : (data.user.role || (d ? devoteeRole(d) : 'devotee'));
 
-      // If devotee exists in database or data.user is approved, treat as fully approved:
-      const isKnownInDb = !!(d && d.name && d.name !== 'Google Devotee') || data.user.isApproved || data.user.approvalStatus === 'approved';
-      const finalApproval = (isSurya || isKnownInDb || data.user.approvalStatus === 'approved') ? 'approved' : (data.user.approvalStatus || 'pending_profile');
-      const finalProfileCompleted = (isSurya || isKnownInDb || !!data.user.profileCompleted);
+      // Only active devotees already in database (or Area Leader Surya) or server-approved users are auto-approved:
+      const isActiveInDb = !!(d && d.status === 'Active');
+      const isServerApproved = data.user.isApproved || data.user.approvalStatus === 'approved';
+      const isAutoApproved = isSurya || (isActiveInDb && isServerApproved);
+      const finalApproval = isAutoApproved ? 'approved' : (data.user.approvalStatus || (d && d.status === 'Pending Approval' ? 'pending_approval' : 'pending_profile'));
+      const finalProfileCompleted = isAutoApproved ? true : !!data.user.profileCompleted;
 
       if(!d){
         d=normalizeDevotee({
@@ -2936,6 +2943,7 @@ async function handleGoogleAuthResponse(response){
         if(data.user.devoteeDetails) Object.assign(d, data.user.devoteeDetails);
         if(isSurya) { d.name = 'Surya Narayana Das'; d.appointment = 'Area Leader'; d.status = 'Active'; }
         else if(finalApproval === 'approved') d.status='Active';
+        else if(finalApproval === 'pending_approval' || finalApproval === 'pending_profile') d.status='Pending Approval';
         normalizeDevotee(d);
       }
 
@@ -3417,16 +3425,16 @@ async function fetchServerPendingApprovals(){
           }
         }
       });
-      // Synchronize: mark any devotee as Active if they are no longer in server pending list
-      DB.devotees.forEach(d => {
-        if(d.status === 'Pending Approval') {
+      // Synchronize: ensure all devotees in the server pending approvals list have status 'Pending Approval'
+      if (Array.isArray(json.data)) {
+        DB.devotees.forEach(d => {
           const isPending = (d.id && pendingServerIds.has(String(d.id))) || (d.customId && pendingServerIds.has(String(d.customId))) || (d.email && pendingServerEmails.has(d.email.toLowerCase().trim()));
-          if(!isPending) {
-            d.status = 'Active';
+          if (isPending && d.status !== 'Pending Approval') {
+            d.status = 'Pending Approval';
             addedAny = true;
           }
-        }
-      });
+        });
+      }
       if(addedAny) render();
     }
   }catch(e){
@@ -6924,20 +6932,29 @@ function render(){
   if(!APP.user){app.innerHTML=viewLogin();initGoogleAuth();return}
 
   // Gating for unapproved devotees:
-  const isDevoteeInLocalDb = !!(APP.user.devotee && dv(APP.user.devotee)) || DB.devotees.some(x => x.email && APP.user.email && x.email.trim().toLowerCase() === APP.user.email.trim().toLowerCase());
-  if (isDevoteeInLocalDb && APP.user.approvalStatus !== 'approved') {
-    APP.user.approvalStatus = 'approved';
-    APP.user.profileCompleted = true;
+  const curDevotee = (APP.user.devotee && dv(APP.user.devotee)) || DB.devotees.find(x => x.email && APP.user.email && x.email.trim().toLowerCase() === APP.user.email.trim().toLowerCase());
+  const isMasterOrLeader = APP.user.role === 'admin' || APP.user.role === 'area_leader' || isBaceAdminEmail(APP.user.email) || isSuryaEmail(APP.user.email);
+
+  if (!isMasterOrLeader) {
+    if (curDevotee && curDevotee.status === 'Pending Approval') {
+      if (APP.user.approvalStatus === 'approved') {
+        APP.user.approvalStatus = APP.user.profileCompleted ? 'pending_approval' : 'pending_profile';
+      }
+    } else if (curDevotee && curDevotee.status === 'Active' && !['pending_profile', 'pending_approval', 'rejected'].includes(APP.user.approvalStatus)) {
+      APP.user.approvalStatus = 'approved';
+      APP.user.profileCompleted = true;
+    }
   }
-  if(APP.user.approvalStatus==='pending_profile' || (!APP.user.profileCompleted && !['admin','area_leader'].includes(APP.user.role))){
+
+  if(APP.user.approvalStatus==='pending_profile' || (!APP.user.profileCompleted && !isMasterOrLeader)){
     app.innerHTML=viewCompleteProfile();
     return;
   }
-  if(APP.user.approvalStatus==='pending_approval'){
+  if(APP.user.approvalStatus==='pending_approval' && !isMasterOrLeader){
     app.innerHTML=viewPendingApproval();
     return;
   }
-  if(APP.user.approvalStatus==='rejected'){
+  if(APP.user.approvalStatus==='rejected' && !isMasterOrLeader){
     app.innerHTML=viewRejectedApproval();
     return;
   }
@@ -8282,13 +8299,17 @@ try {
           else if (effectiveRole === 'admin') effectiveRole = 'devotee';
         }
 
+        const savedApproval = u.approvalStatus || (isSurya ? 'approved' : 'pending_profile');
+        const savedProfileCompleted = u.profileCompleted !== undefined ? !!u.profileCompleted : (isSurya ? true : false);
+        const isActuallyApproved = isSurya || savedApproval === 'approved';
+
         if (!d) {
           d = normalizeDevotee({
             id: u.devotee || ('d_' + Date.now()),
             name: spiritualName,
             email: u.email,
             avatar: u.avatar || '',
-            status: 'Active',
+            status: isActuallyApproved ? 'Active' : 'Pending Approval',
             joined: iso(TODAY),
             batch: 'b1',
             dept: 'kitchen',
@@ -8301,7 +8322,11 @@ try {
         } else {
           d.name = spiritualName;
           d.appointment = appointment;
-          d.status = 'Active';
+          if (isActuallyApproved) {
+            d.status = 'Active';
+          } else if (savedApproval === 'pending_approval' || savedApproval === 'pending_profile') {
+            d.status = 'Pending Approval';
+          }
         }
 
         APP.user = {
@@ -8311,8 +8336,8 @@ try {
           email: u.email,
           name: spiritualName,
           avatar: u.avatar,
-          approvalStatus: 'approved',
-          profileCompleted: true
+          approvalStatus: isActuallyApproved ? 'approved' : savedApproval,
+          profileCompleted: isActuallyApproved ? true : savedProfileCompleted
         };
       }
 

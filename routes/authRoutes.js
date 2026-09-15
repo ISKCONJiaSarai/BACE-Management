@@ -110,10 +110,6 @@ router.post('/google', async (req, res) => {
 
       if (devoteeDoc) {
         isEmailInDb = true;
-        if (devoteeDoc.status === 'Pending Approval' || devoteeDoc.status === 'New') {
-          devoteeDoc.status = 'Active';
-          await devoteeDoc.save();
-        }
       } else {
         // 3. If still no devotee record, create a new one
         stage = 'create_devotee';
@@ -149,8 +145,9 @@ router.post('/google', async (req, res) => {
     }
 
     const determinedRole = isBaceAdmin ? 'admin' : (isSuryaAreaLeader ? 'area_leader' : devoteeRole);
-    // Any devotee whose email is in the database is automatically approved without asking for data or approval!
-    const isAutoApproved = isBaceAdmin || isSuryaAreaLeader || isEmailInDb;
+    // Only existing Active devotees (or Admin/Surya) are automatically approved without asking for data or approval!
+    const isDevoteeActiveInDb = devoteeDoc && devoteeDoc.status === 'Active';
+    const isAutoApproved = isBaceAdmin || isSuryaAreaLeader || isDevoteeActiveInDb;
 
     // 4. Create or update User record
     if (!user) {
@@ -198,8 +195,17 @@ router.post('/google', async (req, res) => {
           if (determinedRole !== 'devotee' && user.role === 'devotee') {
             user.role = determinedRole;
           }
-        } else if (!user.approvalStatus) {
-          user.approvalStatus = user.profileCompleted ? 'pending_approval' : 'pending_profile';
+        } else {
+          // Devotee is Pending Approval or has not completed profile
+          if (devoteeDoc && devoteeDoc.status === 'Pending Approval') {
+            if (!user.profileCompleted) {
+              user.approvalStatus = 'pending_profile';
+            } else if (user.approvalStatus !== 'approved') {
+              user.approvalStatus = 'pending_approval';
+            }
+          } else if (!user.approvalStatus) {
+            user.approvalStatus = user.profileCompleted ? 'pending_approval' : 'pending_profile';
+          }
         }
       }
 
@@ -315,12 +321,17 @@ router.get('/me', protect, async (req, res) => {
       }
     }
 
-    if (devoteeDoc && (user.approvalStatus !== 'approved' || !user.profileCompleted)) {
+    const isDevoteeActive = devoteeDoc && devoteeDoc.status === 'Active';
+
+    if ((isBace || isSurya || isDevoteeActive) && (user.approvalStatus !== 'approved' || !user.profileCompleted)) {
       user.approvalStatus = 'approved';
       user.profileCompleted = true;
-      if (devoteeDoc.status === 'Pending Approval' || devoteeDoc.status === 'New') {
-        devoteeDoc.status = 'Active';
-        await devoteeDoc.save();
+      await user.save();
+    } else if (devoteeDoc && devoteeDoc.status === 'Pending Approval') {
+      if (!user.profileCompleted) {
+        user.approvalStatus = 'pending_profile';
+      } else if (user.approvalStatus !== 'approved') {
+        user.approvalStatus = 'pending_approval';
       }
       await user.save();
     }
@@ -500,13 +511,16 @@ router.post('/complete-profile', protect, async (req, res) => {
 router.get('/pending-approvals', protect, requireAdminOrAreaLeader, async (req, res) => {
   try {
     const pendingUsers = await User.find({
-      approvalStatus: 'pending_approval'
+      approvalStatus: { $in: ['pending_approval', 'pending_profile'] }
     }).populate('devotee');
 
     // Also get devotees with status 'Pending Approval' who may not have a user yet
     const pendingDevotees = await Devotee.find({
       status: 'Pending Approval'
     }).sort({ createdAt: -1 });
+
+    const seenDevoteeIds = new Set(pendingUsers.map(u => u.devotee?._id?.toString()).filter(Boolean));
+    const seenEmails = new Set(pendingUsers.map(u => (u.email || u.devotee?.email || '').toLowerCase().trim()).filter(Boolean));
 
     const results = pendingUsers.map(u => ({
       userId: u._id,
@@ -519,9 +533,10 @@ router.get('/pending-approvals', protect, requireAdminOrAreaLeader, async (req, 
     }));
 
     // Add any devotee records with status Pending Approval that aren't already represented
-    const userDevoteeIds = new Set(pendingUsers.map(u => u.devotee?._id?.toString()).filter(Boolean));
     for (const d of pendingDevotees) {
-      if (!userDevoteeIds.has(d._id.toString())) {
+      const devIdStr = d._id?.toString();
+      const devEmail = (d.email || '').toLowerCase().trim();
+      if (!seenDevoteeIds.has(devIdStr) && (!devEmail || !seenEmails.has(devEmail))) {
         results.push({
           userId: null,
           username: d.email?.split('@')[0] || d.name,
@@ -580,8 +595,28 @@ router.post('/approve-devotee/:id', protect, requireAdminOrAreaLeader, async (re
 
     if (devotee) {
       devotee.status = 'Active';
-      if (batch) devotee.batch = batch;
-      if (dept) devotee.dept = dept;
+      if (batch) {
+        if (mongoose.Types.ObjectId.isValid(batch)) {
+          devotee.batch = batch;
+        } else {
+          try {
+            const Batch = require('../models/Batch');
+            const foundBatch = await Batch.findOne({ $or: [{ customId: batch }, { name: batch }] });
+            if (foundBatch) devotee.batch = foundBatch._id;
+          } catch (_) {}
+        }
+      }
+      if (dept) {
+        if (mongoose.Types.ObjectId.isValid(dept)) {
+          devotee.dept = dept;
+        } else {
+          try {
+            const Department = require('../models/Department');
+            const foundDept = await Department.findOne({ $or: [{ customId: dept }, { name: dept }] });
+            if (foundDept) devotee.dept = foundDept._id;
+          } catch (_) {}
+        }
+      }
       await devotee.save();
     }
 
