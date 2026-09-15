@@ -169,4 +169,248 @@ router.post('/bulk', async (req, res) => {
   }
 });
 
+// Helper to escape regex special chars
+const escapeRegex = (str) => String(str || '').replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
+
+// @route   POST /api/devotees/import-csv
+// @desc    Import/upload devotees from CSV with upsert (update existing names, add new, no repetitions)
+// @access  Protected: Batch Coordinator (for assigned batch), Area Leader, Admin
+const { protect, requireDevoteeImportPermission } = require('../middleware/auth');
+const { Batch, Department, CareGroup } = require('../models');
+
+router.post('/import-csv', protect, requireDevoteeImportPermission, async (req, res) => {
+  try {
+    const { devotees, targetBatchId } = req.body;
+
+    if (!Array.isArray(devotees) || devotees.length === 0) {
+      return res.status(400).json({ success: false, message: 'Devotees array is required and cannot be empty' });
+    }
+
+    // Load reference data for mapping names/customIds to ObjectIds
+    const [allBatches, allDepts, allCareGroups] = await Promise.all([
+      Batch.find({}),
+      Department.find({}),
+      CareGroup.find({})
+    ]);
+
+    const batchMap = new Map();
+    allBatches.forEach(b => {
+      batchMap.set(String(b._id), b._id);
+      if (b.customId) batchMap.set(b.customId.toLowerCase(), b._id);
+      batchMap.set(b.name.toLowerCase().trim(), b._id);
+    });
+
+    const deptMap = new Map();
+    allDepts.forEach(d => {
+      deptMap.set(String(d._id), d._id);
+      if (d.customId) deptMap.set(d.customId.toLowerCase(), d._id);
+      deptMap.set(d.name.toLowerCase().trim(), d._id);
+    });
+
+    const careGroupMap = new Map();
+    allCareGroups.forEach(g => {
+      careGroupMap.set(String(g._id), g._id);
+      if (g.customId) careGroupMap.set(g.customId.toLowerCase(), g._id);
+      careGroupMap.set(g.name.toLowerCase().trim(), g._id);
+    });
+
+    // Check scope for Batch Coordinator
+    const isRestrictedCoordinator = !req.importScope.all && req.importScope.isBatchCoordinator;
+    const allowedBatchIds = (req.importScope.coordinatedBatchIds || []).map(String);
+
+    let defaultBatchObjectId = null;
+    if (targetBatchId && batchMap.has(String(targetBatchId))) {
+      defaultBatchObjectId = batchMap.get(String(targetBatchId));
+    } else if (isRestrictedCoordinator && allowedBatchIds.length > 0) {
+      defaultBatchObjectId = batchMap.get(allowedBatchIds[0]) || null;
+    }
+
+    let addedCount = 0;
+    let updatedCount = 0;
+    const processedDevotees = [];
+
+    for (const row of devotees) {
+      const rawName = String(row.name || row.devotee || row['Devotee Name'] || '').trim();
+      if (!rawName) continue;
+
+      if (isAdminDevotee(row) || rawName === 'ISKCON BACE Admin' || (row.email && row.email.includes('terkadamba'))) {
+        continue;
+      }
+
+      // Resolve batch
+      let resolvedBatchId = defaultBatchObjectId;
+      const batchInput = row.batch || row.batchName || row['Batch'];
+      if (batchInput) {
+        const cleanB = String(batchInput).toLowerCase().trim();
+        if (batchMap.has(cleanB)) {
+          resolvedBatchId = batchMap.get(cleanB);
+        } else if (batchMap.has(String(batchInput))) {
+          resolvedBatchId = batchMap.get(String(batchInput));
+        }
+      }
+
+      // If restricted coordinator, enforce that devotee belongs to allowed batch
+      if (isRestrictedCoordinator) {
+        if (resolvedBatchId && !allowedBatchIds.includes(String(resolvedBatchId))) {
+          // If row specified an unauthorized batch, lock to their authorized batch
+          resolvedBatchId = defaultBatchObjectId || (allowedBatchIds[0] ? (batchMap.get(allowedBatchIds[0]) || null) : null);
+        } else if (!resolvedBatchId && defaultBatchObjectId) {
+          resolvedBatchId = defaultBatchObjectId;
+        }
+      }
+
+      // Resolve department
+      let resolvedDeptId = null;
+      const deptInput = row.dept || row.department || row['Department'];
+      if (deptInput) {
+        const cleanD = String(deptInput).toLowerCase().trim();
+        if (deptMap.has(cleanD)) {
+          resolvedDeptId = deptMap.get(cleanD);
+        } else if (deptMap.has(String(deptInput))) {
+          resolvedDeptId = deptMap.get(String(deptInput));
+        }
+      }
+
+      // Resolve care group
+      let resolvedCareGroupId = null;
+      const cgInput = row.careGroup || row['Care Group'];
+      if (cgInput) {
+        const cleanG = String(cgInput).toLowerCase().trim();
+        if (careGroupMap.has(cleanG)) {
+          resolvedCareGroupId = careGroupMap.get(cleanG);
+        }
+      }
+
+      // 1. Search for existing devotee by Name (case-insensitive, exact match)
+      const nameRegex = new RegExp(`^${escapeRegex(rawName)}$`, 'i');
+      let existing = await Devotee.findOne({ name: nameRegex });
+
+      // Fallback: If not matched by name, but email is provided and matches
+      if (!existing && row.email && String(row.email).trim().length > 3) {
+        const cleanEmail = String(row.email).toLowerCase().trim();
+        existing = await Devotee.findOne({ email: cleanEmail });
+      }
+
+      if (existing) {
+        // Protect BACE Administrator
+        if (isAdminDevotee(existing)) continue;
+
+        // If batch coordinator is updating, ensure devotee is in their batch
+        if (isRestrictedCoordinator && existing.batch && !allowedBatchIds.includes(String(existing.batch))) {
+          continue;
+        }
+
+        // UPDATE existing devotee (No repetitions!)
+        if (row.phone) existing.phone = String(row.phone).trim();
+        if (row.email && !existing.email) existing.email = String(row.email).toLowerCase().trim();
+        else if (row.email) existing.email = String(row.email).toLowerCase().trim();
+
+        if (row.residence) existing.residence = String(row.residence).trim();
+        if (row.address) existing.address = String(row.address).trim();
+        if (row.attendanceMode) existing.attendanceMode = String(row.attendanceMode).trim();
+        if (row.batchRole) existing.batchRole = String(row.batchRole).trim();
+        if (resolvedBatchId) existing.batch = resolvedBatchId;
+        if (resolvedDeptId) existing.dept = resolvedDeptId;
+        if (resolvedCareGroupId) existing.careGroup = resolvedCareGroupId;
+
+        if (row.status) existing.status = String(row.status).trim();
+        if (row.level !== undefined && row.level !== '') existing.level = Number(row.level);
+        if (row.org) existing.org = String(row.org).trim();
+        if (row.occupation) existing.occupation = String(row.occupation).trim();
+        if (row.highestEducation) existing.highestEducation = String(row.highestEducation).trim();
+        if (row.presentStudiesOrJob) existing.presentStudiesOrJob = String(row.presentStudiesOrJob).trim();
+        if (row.emergency) existing.emergency = String(row.emergency).trim();
+        if (row.attendancePct !== undefined && row.attendancePct !== '') existing.attendancePct = Math.min(100, Math.max(0, Number(row.attendancePct)));
+        if (row.appointment && row.appointment !== 'BACE Administrator' && row.appointment !== 'System Administrator') {
+          existing.appointment = String(row.appointment).trim();
+        }
+
+        if (row.rounds !== undefined && row.rounds !== '') {
+          existing.sadhana = existing.sadhana || {};
+          existing.sadhana.rounds = Math.min(64, Math.max(0, Number(row.rounds)));
+        }
+
+        if (row.skills) {
+          const skillsArr = Array.isArray(row.skills) ? row.skills : String(row.skills).split(',').map(s => s.trim()).filter(Boolean);
+          if (skillsArr.length) {
+            existing.skills = Array.from(new Set([...(existing.skills || []), ...skillsArr]));
+          }
+        }
+
+        if (row.joined) {
+          const parsedDate = new Date(row.joined);
+          if (!isNaN(parsedDate.getTime())) existing.joined = parsedDate;
+        }
+
+        await existing.save();
+
+        // Populate relationships for response
+        const populated = await Devotee.findById(existing._id)
+          .populate('dept', 'name icon')
+          .populate('batch', 'name level')
+          .populate('careGroup', 'name')
+          .populate('facilitator', 'name');
+
+        processedDevotees.push(populated);
+        updatedCount++;
+      } else {
+        // CREATE new devotee
+        const customId = `d_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+        const newDevoteeData = {
+          customId,
+          name: rawName,
+          gender: row.gender || 'M',
+          phone: row.phone ? String(row.phone).trim() : '',
+          email: row.email ? String(row.email).toLowerCase().trim() : undefined,
+          residence: row.residence ? String(row.residence).trim() : '',
+          address: row.address ? String(row.address).trim() : '',
+          attendanceMode: row.attendanceMode ? String(row.attendanceMode).trim() : 'Offline at BACE',
+          batchRole: row.batchRole ? String(row.batchRole).trim() : 'Member',
+          batch: resolvedBatchId || null,
+          dept: resolvedDeptId || null,
+          careGroup: resolvedCareGroupId || null,
+          status: row.status ? String(row.status).trim() : 'Active',
+          level: row.level !== undefined && row.level !== '' ? Number(row.level) : (resolvedBatchId ? 1 : 0),
+          org: row.org ? String(row.org).trim() : 'IIT Delhi',
+          occupation: row.occupation ? String(row.occupation).trim() : 'Student',
+          highestEducation: row.highestEducation ? String(row.highestEducation).trim() : '',
+          presentStudiesOrJob: row.presentStudiesOrJob ? String(row.presentStudiesOrJob).trim() : '',
+          emergency: row.emergency ? String(row.emergency).trim() : '',
+          attendancePct: row.attendancePct !== undefined && row.attendancePct !== '' ? Math.min(100, Math.max(0, Number(row.attendancePct))) : 85,
+          appointment: (row.appointment && row.appointment !== 'BACE Administrator') ? String(row.appointment).trim() : null,
+          joined: (row.joined && !isNaN(new Date(row.joined).getTime())) ? new Date(row.joined) : new Date(),
+          sadhana: {
+            rounds: row.rounds !== undefined && row.rounds !== '' ? Math.min(64, Math.max(0, Number(row.rounds))) : 0,
+            morningProgram: 0
+          },
+          skills: Array.isArray(row.skills) ? row.skills : (row.skills ? String(row.skills).split(',').map(s => s.trim()).filter(Boolean) : [])
+        };
+
+        const created = await Devotee.create(newDevoteeData);
+        const populated = await Devotee.findById(created._id)
+          .populate('dept', 'name icon')
+          .populate('batch', 'name level')
+          .populate('careGroup', 'name')
+          .populate('facilitator', 'name');
+
+        processedDevotees.push(populated);
+        addedCount++;
+      }
+    }
+
+    res.json({
+      success: true,
+      message: `Successfully processed ${processedDevotees.length} devotees (${addedCount} added, ${updatedCount} updated)`,
+      total: processedDevotees.length,
+      added: addedCount,
+      updated: updatedCount,
+      data: processedDevotees
+    });
+  } catch (err) {
+    console.error('Import CSV error:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 module.exports = router;
+

@@ -2268,6 +2268,32 @@ function devoteeRoleObj(id){
 }
 function dept(id){return DB.departments.find(d=>d.id===id)||null}
 function batch(id){return DB.batches.find(b=>b.id===id)||null}
+function isBatchCoordinatorUser(user, batchId){
+  const u = user || (APP && APP.user);
+  if(!u) return false;
+  const devId = u.devotee || u.id;
+  const d = dv(devId) || (DB.devotees||[]).find(x => x.id === devId || x.customId === devId);
+  
+  if (batchId) {
+    if (ownsBatch(batchId)) return true;
+    const b = batch(batchId);
+    if (b && (b.coordinator === devId || (d && d.batchRole === 'Coordinator' && d.batch === batchId))) return true;
+    return false;
+  }
+  
+  if (u.role === 'preaching_coord' || u.role === 'coordinator') return true;
+  if (d && (d.batchRole === 'Coordinator' || d.appointment === 'Coordinator')) return true;
+  if ((DB.batches||[]).some(b => b.coordinator === devId || (d && d.batchRole === 'Coordinator' && d.batch === b.id))) return true;
+  return false;
+}
+function canImportCsv(batchId){
+  const curUser = (APP && APP.user) || {};
+  const curEmail = (curUser.email || '').toLowerCase().trim();
+  const isAdmin = curUser.role === 'admin' || isBaceAdminEmail(curEmail);
+  const isAreaLeader = curUser.role === 'area_leader' || isSuryaEmail(curEmail);
+  if(isAdmin || isAreaLeader) return true;
+  return isBatchCoordinatorUser(curUser, batchId);
+}
 function contact(id){return DB.contacts.find(c=>c.id===id)||null}
 function group(id){return DB.careGroups.find(g=>g.id===id)||null}
 function act(id){return DB.activities.find(a=>a.id===id)||null}
@@ -2370,12 +2396,12 @@ const ICONS={
  chart:'M4 20V10M10 20V4M16 20v-7M22 20H2',cal:'M7 2v4M17 2v4M3 9h18M4 5h16v16H4z',doc:'M14 2H6v20h12V6zM14 2v4h4',
  check:'M20 6 9 17l-5-5',bell:'M18 8a6 6 0 1 0-12 0c0 7-2 8-2 8h16s-2-1-2-8M13.7 21a2 2 0 0 1-3.4 0',
  search:'M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14ZM21 21l-4.3-4.3',plus:'M12 5v14M5 12h14',
- cog:'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0 1.6 1.6 0 0 0-2.8-1.1l-.1.1a2 2 0 1 1-2.8-2.8l-.1-.1A1.6 1.6 0 0 0 3 15a2 2 0 1 1 0-4 1.6 1.6 0 0 0 1.1-2.7l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.6 1.6 0 0 0 9 4.6 2 2 0 1 1 13 4a1.6 1.6 0 0 0 2.7 1.1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1A1.6 1.6 0 0 0 19.4 11a2 2 0 1 1 0 4Z',
+ cog:'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0 1.6 1.6 0 0 0-2.8-1.1l-.1.1a2 2 0 1 1-2.8-2.8l-.1-.1A1.6 1.6 0 0 0 3 15a2 2 0 1 1 0-4 1.6 1.6 0 0 0 1.1-2.7l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.6 1.6 0 0 0 9 4.6 2 2 0 1 1 13 4a1.6 1.6 0 0 0 2.7 1.1l-.1-.1a2 2 0 1 1 2.8 2.8l-.1.1A1.6 1.6 0 0 0 19.4 11a2 2 0 1 1 0 4Z',
  flag:'M4 22V4M4 4h13l-2 4 2 4H4',clock:'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20ZM12 6v6l4 2',
  layers:'M12 2 2 7l10 5 10-5zM2 17l10 5 10-5M2 12l10 5 10-5',alert:'M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z',
  arrow:'M5 12h14M13 6l6 6-6 6',back:'M19 12H5M11 18l-6-6 6-6',x:'M18 6 6 18M6 6l12 12',chev:'M9 6l6 6-6 6',
  menu:'M4 6h16M4 12h16M4 18h16',
- filter:'M22 3H2l8 9.5V19l4 2v-8.5z',download:'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3',
+ filter:'M22 3H2l8 9.5V19l4 2v-8.5z',download:'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3',upload:'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12',
  lock:'M5 11h14v10H5zM8 11V7a4 4 0 0 1 8 0v4',shield:'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z',
  edit:'M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z',user:'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8',
  more:'M12 5h.01M12 12h.01M12 19h.01',folder:'M3 7a2 2 0 0 1 2-2h4l2 3h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z',
@@ -2879,6 +2905,7 @@ async function handleGoogleAuthResponse(response){
     if(!APP.nav.open.mgmt&&!APP.nav.open.preach&&!APP.nav.open.care)APP.nav.open.mgmt=true;
 
     logAudit('Google Login',`${data.user.name} logged in`);
+    syncDevoteesFromServer();
 
     if(APP.user.approvalStatus==='pending_profile'){
       toast('Hare Krishna! Please complete your devotee profile 🙏','📝');
@@ -3727,6 +3754,7 @@ function viewDevotees(){
         </div>
         ${activeFilterCount > 0 ? `<button class="btn sm" data-act="clear-dev-filters" title="Reset all filters" style="color:var(--danger);border-color:var(--danger-soft);font-weight:600">${ic('x')} Reset Filters (${activeFilterCount})</button>` : ''}
         ${can('directory')?`<button class="btn sm" data-act="export-devotees" style="margin-left:auto">${ic('download')}Export CSV</button>`:''}
+        ${canImportCsv()?`<button class="btn sm pri" data-act="open-import-csv" style="${can('directory')?'margin-left:6px':'margin-left:auto'}">${ic('upload')}Import CSV</button>`:''}
       </div>
 
       <!-- Column Filters Row (Responsive wrap, no horizontal scroll) -->
@@ -3787,7 +3815,7 @@ function viewDevotees(){
 
    return head('👥 One devotee, one record','Devotee directory',
      `${rows.length} devotee${rows.length!==1?'s':''} matching filters — searchable by everyone with an operational role; sensitive care information stays restricted`,
-     `<button class="btn pri" data-act="add-devotee">${ic('plus')}Add devotee</button>`)+
+     `${canImportCsv()?`<button class="btn" data-act="open-import-csv" style="margin-right:8px">${ic('upload')}Import CSV</button>`:''}<button class="btn pri" data-act="add-devotee">${ic('plus')}Add devotee</button>`)+
     (scoped?`<div class="note" style="margin-bottom:14px">You can search and view the whole community directory. You can only <b>edit</b> people inside your own ${APP.user.role==='dept_head'?'department':APP.user.role==='preaching_coord'?'batch':'care list'}.</div>`:'')+
     dataTable({id:'dev',exportName:'devotees',toolbar,cols:[
      {h:`<div style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;user-select:none" data-act="toggle-dev-sort" title="Click to sort A to Z or Z to A">
@@ -4718,7 +4746,10 @@ function batchDashboardBody(b){
           <td data-l="Attendance"><div style="min-width:88px">${prog(d.attendancePct)}<span class="tiny">${d.attendancePct}%</span></div></td>
           <td data-l="Rounds">${d.sadhana.rounds}</td><td data-l="Facilitator">${esc(nameOf(d.facilitator))}</td></tr>`).join('')}</tbody></table></div>`
         :emptyState('No members yet','Add members to this batch.',ownsBatch(b.id)?`<button class="btn pri" data-act="batch-members" data-id="${b.id}">Add members</button>`:'','people'),
-        ownsBatch(b.id)?`<button class="btn sm" data-act="batch-members" data-id="${b.id}">${ic('plus')}Manage members</button>`:'')}
+        ownsBatch(b.id)?`
+          ${canImportCsv(b.id)?`<button class="btn sm" data-act="open-import-csv" data-batch="${b.id}" style="margin-right:6px">${ic('upload')}Import CSV</button>`:''}
+          <button class="btn sm" data-act="batch-members" data-id="${b.id}">${ic('plus')}Manage members</button>`:''
+      )}
     </div>
     <div style="display:flex;flex-direction:column;gap:15px">
       ${section('🌱 Batch funnel',`<div class="card-b">${funnel([
@@ -4748,7 +4779,9 @@ function viewBatch(id){
   APP.crumbLeaf=b.name;
   return `<a class="btn ghost sm" href="#/batches" style="margin-bottom:10px">${ic('back')}All batches</a>`+
    head('📖 Level '+b.level+' batch',b.name,`${b.desc} · ${b.freq} on ${b.day} at ${b.time} · coordinator ${nameOf(b.coordinator)}`,
-    ownsBatch(b.id)?`<button class="btn" data-act="edit-batch" data-id="${b.id}">${ic('edit')}Edit batch</button>
+    ownsBatch(b.id)?`
+      ${canImportCsv(b.id)?`<button class="btn" data-act="open-import-csv" data-batch="${b.id}" style="margin-right:6px">${ic('upload')}Import CSV</button>`:''}
+      <button class="btn" data-act="edit-batch" data-id="${b.id}">${ic('edit')}Edit batch</button>
       <button class="btn" data-act="go-batch-attendance" data-b="${b.id}">✅ Attendance</button>
       <button class="btn pri" data-act="open-schedule" data-batch="${b.id}" data-type="Class">${ic('plus')}Schedule class</button>`:'')+
    batchDashboardBody(b);
@@ -5843,6 +5876,562 @@ function deleteDevoteeModal(){
     </div>
   </div></div>`;
 }
+
+/* ---------------- CSV Devotee Import & Synchronization ---------------- */
+function parseCSV(text) {
+  const lines = [];
+  let row = [''];
+  let inQuotes = false;
+  let i = 0;
+
+  while (i < text.length) {
+    const c = text[i];
+    const next = text[i + 1];
+
+    if (c === '"') {
+      if (inQuotes && next === '"') {
+        row[row.length - 1] += '"';
+        i += 2;
+        continue;
+      }
+      inQuotes = !inQuotes;
+    } else if (c === ',' && !inQuotes) {
+      row.push('');
+    } else if ((c === '\r' || c === '\n') && !inQuotes) {
+      if (c === '\r' && next === '\n') i++;
+      if (row.length > 1 || (row.length === 1 && row[0].trim().length > 0)) {
+        lines.push(row.map(s => s.trim()));
+      }
+      row = [''];
+    } else {
+      row[row.length - 1] += c;
+    }
+    i++;
+  }
+  if (row.length > 1 || (row.length === 1 && row[0].trim().length > 0)) {
+    lines.push(row.map(s => s.trim()));
+  }
+
+  if (lines.length < 2) return [];
+
+  const rawHeaders = lines[0].map(h => h.toLowerCase().replace(/[^a-z0-9]/g, ''));
+  const keyMap = {
+    name: ['name', 'devotee', 'devoteename', 'fullname', 'devotees'],
+    phone: ['phone', 'mobile', 'contact', 'phonenumber', 'whatsapp', 'tel'],
+    email: ['email', 'mail', 'emailaddress'],
+    batch: ['batch', 'batchname', 'sabha', 'course'],
+    batchRole: ['batchrole', 'role', 'designation', 'position'],
+    residence: ['residence', 'address', 'location', 'hostel', 'room'],
+    attendanceMode: ['attendancemode', 'mode', 'type'],
+    level: ['level', 'batchlevel', 'lvl'],
+    status: ['status', 'devoteestatus'],
+    dept: ['dept', 'department', 'seva', 'service'],
+    careGroup: ['caregroup', 'group', 'care'],
+    facilitator: ['facilitator', 'guide', 'mentor'],
+    org: ['org', 'organisation', 'organization', 'college', 'workplace', 'company', 'institute'],
+    occupation: ['occupation', 'profession', 'job'],
+    highestEducation: ['highesteducation', 'education', 'degree', 'qualification'],
+    presentStudiesOrJob: ['presentstudiesorjob', 'studies', 'study', 'currentjob'],
+    attendancePct: ['attendance', 'attendancepct', 'attendancepercentage', 'attpct', 'att'],
+    rounds: ['rounds', 'japarounds', 'sadhanarounds', 'japa', 'sadhana'],
+    skills: ['skills', 'skill', 'talents', 'swabhav'],
+    appointment: ['appointment', 'leadershiprole'],
+    joined: ['joined', 'joiningdate', 'dateofjoining', 'date']
+  };
+
+  const colIndexMap = {};
+  rawHeaders.forEach((h, idx) => {
+    for (const [key, aliases] of Object.entries(keyMap)) {
+      if (aliases.includes(h) && colIndexMap[key] === undefined) {
+        colIndexMap[key] = idx;
+        break;
+      }
+    }
+  });
+
+  if (colIndexMap.name === undefined) {
+    colIndexMap.name = (rawHeaders[0] === 'sn' || rawHeaders[0] === 'sr' || rawHeaders[0] === 'sno') ? 1 : 0;
+  }
+
+  const result = [];
+  for (let r = 1; r < lines.length; r++) {
+    const rData = lines[r];
+    const nameVal = (rData[colIndexMap.name] || '').trim();
+    if (!nameVal) continue;
+
+    const devotee = { name: nameVal };
+    for (const [key, cIdx] of Object.entries(colIndexMap)) {
+      if (key !== 'name' && cIdx !== undefined && rData[cIdx] !== undefined) {
+        const val = rData[cIdx].trim();
+        if (val !== '') devotee[key] = val;
+      }
+    }
+    result.push(devotee);
+  }
+  return result;
+}
+
+function analyzeImportData(rows, targetBatchId){
+  const toAdd = [];
+  const toUpdate = [];
+  const invalid = [];
+
+  const effectiveBatchId = targetBatchId || APP.importTargetBatch || null;
+
+  rows.forEach((row, idx) => {
+    const rawName = (row.name || '').trim();
+    if(!rawName){
+      invalid.push({ index: idx + 1, reason: 'Missing devotee name' });
+      return;
+    }
+
+    if(isBaceAdminEmail(row.email) || rawName === 'ISKCON BACE Admin' || rawName.toLowerCase() === 'bace administrator'){
+      invalid.push({ index: idx + 1, name: rawName, reason: 'Cannot import/modify BACE Administrator profile' });
+      return;
+    }
+
+    const existing = DB.devotees.find(d => 
+      !isBaceAdminEmail(d.email) && (
+        d.name.trim().toLowerCase() === rawName.toLowerCase() ||
+        (row.email && d.email && d.email.trim().toLowerCase() === row.email.trim().toLowerCase())
+      )
+    );
+
+    const devData = { ...row };
+    if(effectiveBatchId && !devData.batch){
+      devData.batch = effectiveBatchId;
+    }
+
+    if(existing){
+      toUpdate.push({
+        action: 'UPDATE',
+        name: rawName,
+        existingId: existing.id,
+        existingBatch: batch(existing.batch)?.name || 'Unassigned',
+        targetBatch: devData.batch ? (batch(devData.batch)?.name || devData.batch) : (batch(existing.batch)?.name || 'Unassigned'),
+        changes: devData
+      });
+    } else {
+      toAdd.push({
+        action: 'ADD',
+        name: rawName,
+        targetBatch: devData.batch ? (batch(devData.batch)?.name || devData.batch) : 'Unassigned',
+        data: devData
+      });
+    }
+  });
+
+  return {
+    total: rows.length,
+    validCount: toAdd.length + toUpdate.length,
+    toAdd,
+    toUpdate,
+    invalid,
+    rows
+  };
+}
+
+function downloadDevoteeCsvTemplate(){
+  const headers = [
+    'Name', 'Phone', 'Email', 'Batch', 'Batch Role', 'Residence', 'Attendance Mode',
+    'Level', 'Status', 'College/Org', 'Occupation', 'Highest Education', 'Present Studies or Job',
+    'Department', 'Care Group', 'Attendance %', 'Sadhana Rounds', 'Skills'
+  ];
+  const sampleRows = [
+    [
+      'Mukunda Datta Das', '9876543210', 'mukunda.datta@example.com', 'Gaurvani Sabha', 'Member',
+      'Jia Sarai BACE', 'Offline at BACE', '3', 'Active', 'IIT Delhi', 'Student',
+      'B.Tech', 'IITD Mechanical Engineering', 'Morning Program', 'Care Group 1', '90', '16', 'Organising, Teaching'
+    ],
+    [
+      'Vrindavan Chandra pr', '9876543211', 'vrindavan.chandra@example.com', 'Narad Sabha', 'Coordinator',
+      'Nilachal Dham BACE', 'Offline at BACE', '3', 'Active', 'DTU', 'Job',
+      'M.Tech', 'Software Engineer', 'Deity Department', 'Care Group 2', '85', '16', 'Music, Deity Seva'
+    ],
+    [
+      'Bhakta Rohan Sharma', '9876543212', 'rohan.sharma@example.com', 'Taksharya', 'Member',
+      'Kailash Hostel', 'Offline at BACE', '1', 'New', 'IIT Delhi', 'Student',
+      'B.Tech', 'IITD Chemical', 'Sankirtan Dept. & Inventory', 'Care Group 3', '75', '4', 'Reading'
+    ]
+  ];
+  downloadCSV('bace_devotees_template.csv', [headers, ...sampleRows]);
+  toast('Template downloaded: bace_devotees_template.csv', '⬇️');
+}
+
+function handleDevoteeCsvFile(file){
+  if(!file.name.toLowerCase().endsWith('.csv') && !file.type.includes('csv') && !file.type.includes('text')){
+    toast('Please upload a valid CSV (.csv) file', '⚠️');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      const text = e.target.result;
+      const parsedRows = parseCSV(text);
+      if(!parsedRows || parsedRows.length === 0){
+        toast('The uploaded CSV file contains no valid rows', '⚠️');
+        return;
+      }
+      const analysis = analyzeImportData(parsedRows, APP.importTargetBatch);
+      APP.parsedImportData = {
+        fileName: file.name,
+        fileSize: (file.size / 1024).toFixed(1) + ' KB',
+        rawRows: parsedRows,
+        ...analysis
+      };
+      render();
+    }catch(err){
+      console.error('Error parsing CSV:', err);
+      toast('Failed to parse CSV file: ' + err.message, '❌');
+    }
+  };
+  reader.readAsText(file);
+}
+
+async function executeDevoteeCsvImport(){
+  if(!APP.parsedImportData || !APP.parsedImportData.rawRows || APP.parsedImportData.rawRows.length === 0){
+    toast('No valid devotee records to import', '⚠️');
+    return;
+  }
+
+  const token = localStorage.getItem('bace_token');
+  const targetBatchId = APP.importTargetBatch || null;
+  const devoteesPayload = APP.parsedImportData.rawRows;
+
+  try {
+    toast('Importing devotees & syncing database...', '⏳');
+    let backendResult = null;
+
+    if(token){
+      const res = await fetch('/api/devotees/import-csv', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + token
+        },
+        body: JSON.stringify({
+          devotees: devoteesPayload,
+          targetBatchId: targetBatchId
+        })
+      });
+
+      const data = await res.json();
+      if(!res.ok || !data.success){
+        throw new Error(data.message || data.error || 'Server rejected CSV import');
+      }
+      backendResult = data;
+    }
+
+    // Synchronize in-memory DB.devotees
+    let localAdded = 0;
+    let localUpdated = 0;
+
+    devoteesPayload.forEach(row => {
+      const rawName = (row.name || '').trim();
+      if(!rawName) return;
+      if(isBaceAdminEmail(row.email) || rawName === 'ISKCON BACE Admin') return;
+
+      let existing = DB.devotees.find(d => 
+        !isBaceAdminEmail(d.email) && (
+          d.name.trim().toLowerCase() === rawName.toLowerCase() ||
+          (row.email && d.email && d.email.trim().toLowerCase() === row.email.trim().toLowerCase())
+        )
+      );
+
+      let bId = null;
+      if(targetBatchId){
+        bId = targetBatchId;
+      } else if(row.batch){
+        const matchB = (DB.batches||[]).find(b => 
+          b.id === row.batch || 
+          b.name.toLowerCase().trim() === String(row.batch).toLowerCase().trim()
+        );
+        bId = matchB ? matchB.id : row.batch;
+      }
+
+      let dpId = null;
+      if(row.dept){
+        const matchDp = (DB.departments||[]).find(dp => 
+          dp.id === row.dept || 
+          dp.name.toLowerCase().trim() === String(row.dept).toLowerCase().trim()
+        );
+        dpId = matchDp ? matchDp.id : row.dept;
+      }
+
+      let cgId = null;
+      if(row.careGroup){
+        const matchCg = (DB.careGroups||[]).find(cg => 
+          cg.id === row.careGroup || 
+          cg.name.toLowerCase().trim() === String(row.careGroup).toLowerCase().trim()
+        );
+        cgId = matchCg ? matchCg.id : row.careGroup;
+      }
+
+      if(existing){
+        if(row.phone) existing.phone = row.phone;
+        if(row.email) existing.email = row.email;
+        if(row.residence) existing.residence = row.residence;
+        if(row.address) existing.address = row.address;
+        if(row.attendanceMode) existing.attendanceMode = row.attendanceMode;
+        if(row.batchRole) existing.batchRole = row.batchRole;
+        if(bId) existing.batch = bId;
+        if(dpId) existing.dept = dpId;
+        if(cgId) existing.careGroup = cgId;
+        if(row.status) existing.status = row.status;
+        if(row.level !== undefined && row.level !== '') existing.level = Number(row.level);
+        if(row.org) existing.org = row.org;
+        if(row.occupation) existing.occupation = row.occupation;
+        if(row.highestEducation) existing.highestEducation = row.highestEducation;
+        if(row.presentStudiesOrJob) existing.presentStudiesOrJob = row.presentStudiesOrJob;
+        if(row.attendancePct !== undefined && row.attendancePct !== '') existing.attendancePct = Number(row.attendancePct);
+        if(row.rounds !== undefined && row.rounds !== ''){
+          existing.sadhana = existing.sadhana || {};
+          existing.sadhana.rounds = Number(row.rounds);
+        }
+        if(row.skills){
+          const sArr = Array.isArray(row.skills) ? row.skills : String(row.skills).split(',').map(s=>s.trim()).filter(Boolean);
+          if(sArr.length) existing.skills = Array.from(new Set([...(existing.skills||[]), ...sArr]));
+        }
+        normalizeDevotee(existing);
+        localUpdated++;
+      } else {
+        const newD = normalizeDevotee({
+          id: 'd_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+          name: rawName,
+          gender: row.gender || 'M',
+          phone: row.phone || '',
+          email: row.email || '',
+          residence: row.residence || 'Jia Sarai BACE',
+          address: row.address || '',
+          attendanceMode: row.attendanceMode || 'Offline at BACE',
+          batchRole: row.batchRole || 'Member',
+          batch: bId || null,
+          dept: dpId || null,
+          careGroup: cgId || null,
+          status: row.status || 'Active',
+          level: row.level !== undefined && row.level !== '' ? Number(row.level) : (bId ? 1 : 0),
+          org: row.org || 'IIT Delhi',
+          occupation: row.occupation || 'Student',
+          highestEducation: row.highestEducation || '',
+          presentStudiesOrJob: row.presentStudiesOrJob || '',
+          attendancePct: row.attendancePct !== undefined && row.attendancePct !== '' ? Number(row.attendancePct) : 85,
+          joined: row.joined || iso(TODAY),
+          sadhana: {
+            rounds: row.rounds !== undefined && row.rounds !== '' ? Number(row.rounds) : 0,
+            morningProgram: 0
+          },
+          skills: row.skills ? (Array.isArray(row.skills) ? row.skills : String(row.skills).split(',').map(s=>s.trim()).filter(Boolean)) : []
+        });
+        DB.devotees.unshift(newD);
+        localAdded++;
+      }
+    });
+
+    const finalAdded = backendResult ? backendResult.added : localAdded;
+    const finalUpdated = backendResult ? backendResult.updated : localUpdated;
+    const totalCount = finalAdded + finalUpdated;
+
+    logAudit('CSV Imported', `Imported ${totalCount} devotees from CSV (${finalAdded} added, ${finalUpdated} updated)`);
+    toast(`Hare Krishna! Successfully imported ${totalCount} devotees (${finalAdded} added, ${finalUpdated} updated) 🙏`, '🎉');
+
+    APP.modal = '';
+    APP.parsedImportData = null;
+    render();
+  } catch(err) {
+    console.error('Import execution error:', err);
+    toast(err.message || 'Failed to import CSV devotees', '❌');
+  }
+}
+
+function importCsvModal(){
+  const targetB = APP.importTargetBatch ? batch(APP.importTargetBatch) : null;
+  const pData = APP.parsedImportData;
+  const curUser = APP.user || {};
+  const isSuper = curUser.role === 'admin' || curUser.role === 'area_leader' || isBaceAdminEmail(curUser.email) || isSuryaEmail(curUser.email);
+  const myBatches = isSuper ? (DB.batches||[]) : (DB.batches||[]).filter(b => ownsBatch(b.id) || b.coordinator === curUser.devotee || b.coordinator === curUser.id);
+
+  return `<div class="scrim" data-act="close-scrim"><div class="modal" data-stop="1" style="max-width:640px;max-height:90vh;overflow-y:auto">
+    <div class="modal-h" style="border-bottom:1px solid var(--line);padding:16px 20px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:24px">📥</span>
+        <div>
+          <h2 style="font-size:18px;color:var(--ink)">Import Devotees via CSV</h2>
+          <div class="tiny" style="color:var(--ink-2)">Upload and synchronize devotee database · Duplicate prevention & automatic updates</div>
+        </div>
+      </div>
+      <button class="icon-btn" style="margin-left:auto" data-act="close-scrim">${ic('x')}</button>
+    </div>
+    <div class="modal-b" style="padding:20px;display:flex;flex-direction:column;gap:16px">
+
+      <!-- Role & Target Batch Info -->
+      <div style="background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+          <span class="tiny" style="font-weight:700;color:var(--ink)">🎯 Target Batch Assignment:</span>
+          ${targetB ? `<span class="badge b-indigo" style="font-size:12px">📖 ${esc(targetB.name)} (Locked)</span>` : ''}
+        </div>
+        ${!targetB ? `
+          <div style="display:flex;align-items:center;gap:8px">
+            <select data-act="import-target-batch" style="width:100%;padding:7px 10px;border-radius:8px;border:1px solid var(--line);font-size:13px;background:var(--surface);color:var(--ink)">
+              ${isSuper ? '<option value="">Auto-detect from CSV Batch column</option>' : ''}
+              ${myBatches.map(b => `<option value="${b.id}" ${APP.importTargetBatch === b.id ? 'selected' : ''}>Batch: ${esc(b.name)} (Level ${b.level})</option>`).join('')}
+            </select>
+          </div>
+        ` : `<div class="tiny" style="color:var(--ink-2)">Devotees in this upload will be placed in <b>${esc(targetB.name)}</b> (or keep their existing batch if already registered).</div>`}
+      </div>
+
+      <!-- Instructions & Template Banner -->
+      <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(46,125,107,0.08);border:1px solid rgba(46,125,107,0.2);padding:12px 14px;border-radius:10px;gap:10px;flex-wrap:wrap">
+        <div style="font-size:12.5px;color:var(--teal);line-height:1.45">
+          <b>💡 How Duplicate Prevention & Matching Works:</b><br/>
+          • If a devotee's <b>Name</b> already exists, their existing record is <b>updated</b> without duplicates.<br/>
+          • If the devotee is new, a <b>new record</b> is added and synchronized with the backend database.
+        </div>
+        <button class="btn sm" data-act="download-csv-template" style="flex-shrink:0;border-color:var(--teal);color:var(--teal);font-weight:600">
+          ${ic('download')} Sample Template
+        </button>
+      </div>
+
+      <!-- File Upload Dropzone -->
+      <div style="border:2px dashed var(--line);border-radius:12px;padding:24px 16px;text-align:center;background:var(--surface);cursor:pointer;position:relative;transition:border-color 0.2s"
+           onclick="document.getElementById('csvFileInput').click()">
+        <input type="file" id="csvFileInput" accept=".csv,text/csv" data-act="import-csv-file" style="display:none">
+        <div style="font-size:34px;margin-bottom:6px">📄</div>
+        <b style="font-size:14px;color:var(--ink);display:block">
+          ${pData ? esc(pData.fileName) : 'Click to select or drop a CSV file here'}
+        </b>
+        <span class="tiny" style="color:var(--ink-3)">
+          ${pData ? `${pData.fileSize} · ${pData.total} records parsed` : 'Accepts standard UTF-8 .csv files with devotee columns'}
+        </span>
+      </div>
+
+      <!-- Live Analysis Box (if file parsed) -->
+      ${pData ? `
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(160px, 1fr));gap:10px">
+            <div style="background:rgba(46,125,107,0.08);border:1px solid rgba(46,125,107,0.25);border-radius:10px;padding:10px;text-align:center">
+              <div class="tiny" style="color:var(--teal);font-weight:700">➕ NEW DEVOTEES</div>
+              <b style="font-size:22px;color:var(--teal)">${pData.toAdd.length}</b>
+              <div class="tiny" style="color:var(--ink-2)">will be added to database</div>
+            </div>
+            <div style="background:rgba(60,78,122,0.08);border:1px solid rgba(60,78,122,0.25);border-radius:10px;padding:10px;text-align:center">
+              <div class="tiny" style="color:var(--indigo);font-weight:700">🔄 EXISTING DEVOTEES</div>
+              <b style="font-size:22px;color:var(--indigo)">${pData.toUpdate.length}</b>
+              <div class="tiny" style="color:var(--ink-2)">will be updated (no duplicates)</div>
+            </div>
+            ${pData.invalid.length > 0 ? `
+              <div style="background:rgba(220,53,69,0.08);border:1px solid rgba(220,53,69,0.25);border-radius:10px;padding:10px;text-align:center">
+                <div class="tiny" style="color:var(--danger);font-weight:700">⚠️ SKIPPED</div>
+                <b style="font-size:22px;color:var(--danger)">${pData.invalid.length}</b>
+                <div class="tiny" style="color:var(--ink-2)">missing names / admin</div>
+              </div>
+            ` : ''}
+          </div>
+
+          <!-- Preview Table (first 5 rows) -->
+          <div style="border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface)">
+            <div style="padding:8px 12px;background:var(--surface-2);border-bottom:1px solid var(--line);font-size:12px;font-weight:700;color:var(--ink);display:flex;justify-content:space-between">
+              <span>Preview (Showing first ${Math.min(5, pData.validCount)} of ${pData.validCount})</span>
+              <span class="tiny" style="color:var(--ink-3)">Total valid: ${pData.validCount}</span>
+            </div>
+            <div style="max-height:160px;overflow-y:auto">
+              <table style="width:100%;border-collapse:collapse;font-size:12px">
+                <thead>
+                  <tr style="background:var(--surface);border-bottom:1px solid var(--line);text-align:left">
+                    <th style="padding:6px 10px">Action</th>
+                    <th style="padding:6px 10px">Name</th>
+                    <th style="padding:6px 10px">Phone</th>
+                    <th style="padding:6px 10px">Batch</th>
+                    <th style="padding:6px 10px">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${[...pData.toUpdate.map(x=>({ ...x.changes, _act:'UPDATE' })), ...pData.toAdd.map(x=>({ ...x.data, _act:'ADD' }))].slice(0, 5).map(row => `
+                    <tr style="border-bottom:1px solid var(--line-2)">
+                      <td style="padding:6px 10px">
+                        <span class="badge ${row._act === 'UPDATE' ? 'b-indigo' : 'b-green'}" style="font-size:10px;padding:1px 5px">
+                          ${row._act === 'UPDATE' ? '🔄 Update' : '➕ New'}
+                        </span>
+                      </td>
+                      <td style="padding:6px 10px;font-weight:600">${esc(row.name)}</td>
+                      <td style="padding:6px 10px;color:var(--ink-2)">${esc(row.phone || '—')}</td>
+                      <td style="padding:6px 10px">${esc(row.batch || (targetB ? targetB.name : '—'))}</td>
+                      <td style="padding:6px 10px">${sbadge(row.status || 'Active')}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      ` : ''}
+
+    </div>
+    <div class="modal-f" style="display:flex;gap:10px;justify-content:flex-end;border-top:1px solid var(--line);padding:14px 20px">
+      <button class="btn" data-act="close-scrim">Cancel</button>
+      <button class="btn pri" data-act="confirm-import-csv" ${!pData || pData.validCount === 0 ? 'disabled style="opacity:0.5;cursor:not-allowed"' : ''}>
+        ${ic('upload')} Confirm & Upload to Database
+      </button>
+    </div>
+  </div></div>`;
+}
+
+let lastDevoteesSync = 0;
+async function syncDevoteesFromServer(){
+  const token = localStorage.getItem('bace_token');
+  if(!token || Date.now() - lastDevoteesSync < 10000) return;
+  lastDevoteesSync = Date.now();
+  try {
+    const res = await fetch('/api/devotees', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if(!res.ok) return;
+    const json = await res.json();
+    if(json.success && Array.isArray(json.data)){
+      let changed = false;
+      json.data.forEach(serverDev => {
+        if(isBaceAdminEmail(serverDev.email) || serverDev.appointment === 'BACE Administrator') return;
+        const targetId = String(serverDev.customId || serverDev._id || serverDev.id || '');
+        const serverName = (serverDev.name || '').trim().toLowerCase();
+        
+        let localDev = DB.devotees.find(x => 
+          (targetId && (String(x.id) === targetId || String(x.customId) === targetId)) ||
+          (x.name && x.name.trim().toLowerCase() === serverName) ||
+          (serverDev.email && x.email && x.email.trim().toLowerCase() === serverDev.email.trim().toLowerCase())
+        );
+
+        if(!localDev){
+          localDev = normalizeDevotee({
+            ...serverDev,
+            id: targetId || ('d_' + Date.now()),
+            batch: serverDev.batch ? (serverDev.batch._id || serverDev.batch.id || serverDev.batch) : null,
+            dept: serverDev.dept ? (serverDev.dept._id || serverDev.dept.id || serverDev.dept) : null,
+            careGroup: serverDev.careGroup ? (serverDev.careGroup._id || serverDev.careGroup.id || serverDev.careGroup) : null
+          });
+          DB.devotees.push(localDev);
+          changed = true;
+        } else {
+          if(serverDev.phone && localDev.phone !== serverDev.phone) { localDev.phone = serverDev.phone; changed = true; }
+          if(serverDev.email && localDev.email !== serverDev.email) { localDev.email = serverDev.email; changed = true; }
+          if(serverDev.batch) {
+            const bId = String(serverDev.batch._id || serverDev.batch.id || serverDev.batch);
+            if(localDev.batch !== bId) { localDev.batch = bId; changed = true; }
+          }
+          if(serverDev.dept) {
+            const dId = String(serverDev.dept._id || serverDev.dept.id || serverDev.dept);
+            if(localDev.dept !== dId) { localDev.dept = dId; changed = true; }
+          }
+          if(serverDev.batchRole && localDev.batchRole !== serverDev.batchRole) { localDev.batchRole = serverDev.batchRole; changed = true; }
+          if(serverDev.status && localDev.status !== serverDev.status) { localDev.status = serverDev.status; changed = true; }
+          if(serverDev.level !== undefined && localDev.level !== serverDev.level) { localDev.level = serverDev.level; changed = true; }
+        }
+      });
+      if(changed) render();
+    }
+  } catch(e){
+    console.warn('Server devotees sync notice:', e);
+  }
+}
+
 function notifDrawer(){
   return `<div class="drawer-wrap" data-act="close-scrim"><div class="drawer" data-stop="1">
    <div class="modal-h"><h2 style="font-size:18px">🔔 Notifications</h2>
@@ -6019,6 +6608,7 @@ function modalHTML(){
   if(m==='notif')return notifDrawer();
   if(m==='search')return searchModal();
   if(m==='delete-devotee-modal')return deleteDevoteeModal();
+  if(m==='import-csv')return importCsvModal();
   if(typeof m==='string')return'';
   if(m.kind==='activity')return activityModal(m.id);
   if(m.kind==='contact')return contactDrawer(m.id);
@@ -6446,6 +7036,19 @@ document.addEventListener('click',e=>{
   case 'open-devotee-row':stop();go('#/devotee/'+(t.dataset.id||''));break;
   case 'delete-devotee':{stop();const dId=t.dataset.id||id;APP.deleteDevoteeTarget=dId;APP.modal='delete-devotee-modal';render();break}
   case 'confirm-delete-devotee':{stop();const dId=t.dataset.id||APP.deleteDevoteeTarget;deleteDevoteeAction(dId);break}
+  case 'open-import-csv':{stop();
+    const batchId = t.dataset.batch || null;
+    if(!canImportCsv(batchId)){
+      toast('CSV Import is restricted to Batch Coordinators, Area Leaders, and Admins', '⚠️');
+      break;
+    }
+    APP.modal = 'import-csv';
+    APP.importTargetBatch = batchId;
+    APP.parsedImportData = null;
+    render();
+    break;}
+  case 'download-csv-template':{stop();downloadDevoteeCsvTemplate();break;}
+  case 'confirm-import-csv':{stop();executeDevoteeCsvImport();break;}
   case 'clear-dev-filters':{stop();APP.filters.dev={q:'',status:'',dept:'',batch:'',careGroup:'',skill:'',attendance:'',sort:'name_asc'};APP.page.dev=1;toast('Filters reset');render();break}
   case 'set-dev-sort':{stop();APP.filters.dev=APP.filters.dev||{};APP.filters.dev.sort=t.dataset.v;APP.page.dev=1;render();break}
   case 'toggle-dev-sort':{stop();APP.filters.dev=APP.filters.dev||{};APP.filters.dev.sort=APP.filters.dev.sort==='name_asc'?'name_desc':'name_asc';APP.page.dev=1;render();break}
@@ -7373,6 +7976,20 @@ document.addEventListener('change',e=>{
    case 'cal-cat':APP.filters.calCat=t.value;render();break;
    case 'rep-batch':APP.filters.repBatch=t.value;render();break;
    case 'vol-f':{syncAssign();assignDraft()[t.dataset.n]=t.value;render();break}
+   case 'import-csv-file':{
+     const file = e.target.files && e.target.files[0];
+     if(file) handleDevoteeCsvFile(file);
+     break;
+   }
+   case 'import-target-batch':{
+     APP.importTargetBatch = t.value || null;
+     if(APP.parsedImportData && APP.parsedImportData.rawRows){
+       const analysis = analyzeImportData(APP.parsedImportData.rawRows, APP.importTargetBatch);
+       Object.assign(APP.parsedImportData, analysis);
+     }
+     render();
+     break;
+   }
   }
 });
 /* input events: search fields with focus retention */
@@ -7536,6 +8153,7 @@ if (bootParams.get('attBatch')) APP.filters.attBatch = bootParams.get('attBatch'
 if (bootParams.get('attClass')) APP.filters.attClass = bootParams.get('attClass');
 APP.route=location.hash||'#/';
 render();
+syncDevoteesFromServer();
 
 </script>
 </body>
