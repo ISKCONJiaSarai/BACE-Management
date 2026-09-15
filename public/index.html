@@ -3918,14 +3918,21 @@ function viewDevotee(id){
    Overview:`<div class="grid g-2-1">
      <div class="card"><div class="card-h"><h3>Basic information</h3></div><div class="card-b">
       <dl class="kv"><dt>Full name</dt><dd>${esc(d.name)}</dd><dt>Date of birth</dt><dd>${fmtD(d.dob)}</dd>
-      <dt>Phone</dt><dd>${esc(d.phone)}</dd><dt>Email</dt><dd>${esc(d.email)}</dd><dt>Address</dt><dd>${esc(d.address)}</dd>
-      <dt>Occupation</dt><dd>${esc(d.occupation)}</dd><dt>College / organisation</dt><dd>${esc(d.org)}</dd>
-      <dt>Emergency contact</dt><dd>${esc(d.emergency)}</dd><dt>Skills</dt><dd>${d.skills.map(s=>badge(s,'grey')).join(' ')}</dd>
-      <dt>Availability</dt><dd>${esc(d.availability)}</dd></dl></div>
+      <dt>Phone</dt><dd>${esc(d.phone)}</dd><dt>Email</dt><dd>${esc(d.email)}</dd>
+      <dt>Residence</dt><dd>${esc(d.residence||d.address||'—')}</dd>
+      <dt>Attendance mode</dt><dd><span class="badge ${d.attendanceMode==='Online'?'b-indigo':'b-teal'}">${esc(d.attendanceMode||'Offline at BACE')}</span></dd>
+      <dt>Occupation</dt><dd>${esc(d.occupation||'—')}</dd><dt>College / organisation</dt><dd>${esc(d.org||'—')}</dd>
+      <dt>Higher education</dt><dd>${esc(d.highestEducation||'—')}</dd>
+      <dt>Present studies or job</dt><dd>${esc(d.presentStudiesOrJob||'—')}</dd>
+      <dt>Permanent address</dt><dd>${esc(d.address||'—')}</dd>
+      <dt>Emergency contact</dt><dd>${esc(d.emergency||'—')}</dd><dt>Skills</dt><dd>${(d.skills||[]).map(s=>badge(s,'grey')).join(' ')||'—'}</dd>
+      <dt>Availability</dt><dd>${esc(d.availability||'Weekends')}</dd></dl></div>
       <div class="card-h" style="border-top:1px solid var(--line-2)"><h3>Community information</h3></div><div class="card-b">
       <dl class="kv"><dt>Joining date</dt><dd>${fmtD(d.joined)}</dd><dt>Status</dt><dd>${sbadge(d.status)}</dd>
       <dt>Hierarchy role</dt><dd><span style="font-weight:700;color:var(--ink)">${rObj.emoji} ${esc(rObj.name)}</span> <span class="tiny muted">· ${esc(rObj.scope)}</span></dd>
-      <dt>Current level</dt><dd>${d.level?'Level '+d.level:'Not yet levelled'}</dd><dt>Batch</dt><dd>${esc(batch(d.batch)?.name||'—')}</dd>
+      <dt>Current level</dt><dd>${d.level?'Level '+d.level:'Not yet levelled'}</dd>
+      <dt>Batch</dt><dd>${esc(batch(d.batch)?.name||'—')}</dd>
+      <dt>Batch role</dt><dd><span class="badge b-grey">${esc(d.batchRole||'Member')}</span></dd>
       <dt>Care group</dt><dd>${esc(group(d.careGroup)?.name||'—')}</dd><dt>Facilitator</dt><dd>${esc(nameOf(d.facilitator))}</dd>
       <dt>Mentor</dt><dd>${esc(nameOf(d.mentor))}</dd></dl></div></div>
      <div style="display:flex;flex-direction:column;gap:15px">
@@ -6764,20 +6771,31 @@ function openDevoteeForm(id){
     ['area_leader', '🪷 Area Leader (Strategic leadership & spiritual guidance)']
   ];
   openForm(d?'Edit devotee':'Add devotee',[
-    FLD('name','Full name','text',{v:d?.name}),
-    FLD('phone','Phone','text',{v:d?.phone,half:1}),FLD('email','Email','text',{v:d?.email,half:1}),
-    FLD('dob','Date of birth','date',{v:d?.dob,half:1}),FLD('joined','Joining date','date',{v:d?.joined||iso(TODAY),half:1}),
-    FLD('org','College / organisation','select',{v:d?.org,opts:ORGS,half:1}),
-    FLD('occupation','Occupation','select',{v:d?.occupation,opts:OCC,half:1}),
-    FLD('address','Address','text',{v:d?.address,half:1}),FLD('emergency','Emergency contact','text',{v:d?.emergency,half:1}),
-    FLD('role','Hierarchy Role','select',{v:curRole,opts:roleOpts,half:1}),
-    FLD('status','Status','select',{v:d?.status||'New',opts:['Active','New','Inactive'],half:1}),
-    FLD('dept','Department','select',{v:d?.dept||'',opts:[['','No department'],...activeDepts().map(x=>[x.id,x.name])],half:1}),
+    FLD('name','Full name','text',{v:d?.name||'',ph:'e.g. Mukunda Datta Das'}),
+    FLD('phone','Phone','text',{v:d?.phone||'',half:1,ph:'e.g. 9876543210'}),
+    FLD('email','Email','text',{v:d?.email||'',half:1,ph:'e.g. devotee@example.com'}),
+    FLD('dob','Date of birth','date',{v:d?.dob||'',half:1}),
+    FLD('joined','Joining date','date',{v:d?.joined||iso(TODAY),half:1}),
     FLD('batch','Batch','select',{v:d?.batch||'',opts:[['','No batch'],...DB.batches.map(x=>[x.id,x.name])],half:1}),
+    FLD('batchRole','Batch Role','select',{v:d?.batchRole||'Member',opts:['Member','Coordinator','Secretary'],half:1}),
+    FLD('residence','Residence','text',{v:d?.residence||d?.address||'',half:1,ph:'e.g. Jia Sarai BACE, Nilachal Dham BACE, Flat'}),
+    FLD('attendanceMode','Attendance mode','select',{v:d?.attendanceMode||d?.mode||'Offline at BACE',opts:['Offline at BACE','Online','Hybrid'],half:1}),
+    FLD('level','Level','select',{v:d?.level!==undefined?Number(d.level):1,opts:[[0,'Level 0 (Seeker)'],[1,'Level 1 (Beginner)'],[2,'Level 2 (Intermediate)'],[3,'Level 3 (Committed)']],half:1}),
+    FLD('status','Status','select',{v:d?.status||'Active',opts:['Active','New','Irregular','Graduated','Inactive'],half:1}),
+    FLD('org','College / organisation','text',{v:d?.org||'',half:1,ph:'e.g. IIT Delhi, DTU, NSUT'}),
+    FLD('occupation','Occupation','text',{v:d?.occupation||'',half:1,ph:'e.g. Student, Software Engineer'}),
+    FLD('highestEducation','Higher education','text',{v:d?.highestEducation||'',half:1,ph:'e.g. B.Tech, M.Tech, PhD'}),
+    FLD('presentStudiesOrJob','Present studies or job','text',{v:d?.presentStudiesOrJob||'',half:1,ph:'e.g. IITD Mechanical, Software Developer'}),
+    FLD('dept','Department','select',{v:d?.dept||'',opts:[['','No department'],...activeDepts().map(x=>[x.id,x.name])],half:1}),
     FLD('careGroup','Care group','select',{v:d?.careGroup||'',opts:[['','No group'],...DB.careGroups.map(x=>[x.id,x.name])],half:1}),
-    FLD('facilitator','Facilitator','select',{v:d?.facilitator||'',opts:[['','Not assigned'],...DB.devotees.filter(x=>x.isFacilitator).map(x=>[x.id,x.name])],half:1}),
+    FLD('role','Hierarchy Role','select',{v:curRole,opts:roleOpts,half:1}),
+    FLD('facilitator','Facilitator','select',{v:d?.facilitator||'',opts:[['','Not assigned'],...DB.devotees.filter(x=>x.isFacilitator||x.batchRole==='Coordinator').map(x=>[x.id,x.name])],half:1}),
+    FLD('sadhanaRounds','Sadhana rounds','number',{v:d?.sadhana?.rounds!==undefined?d.sadhana.rounds:16,half:1,ph:'16'}),
+    FLD('skills','Skills (comma-separated)','text',{v:Array.isArray(d?.skills)?d.skills.join(', '):(d?.skills||''),half:1,ph:'e.g. Teaching, Kirtan, Cooking'}),
+    FLD('address','Permanent address','text',{v:d?.address||'',half:1,ph:'e.g. Home town or permanent address'}),
+    FLD('emergency','Emergency contact','text',{v:d?.emergency||'',half:1,ph:'e.g. +91 9876543210 (Father)'}),
     FLD('availability','Availability','select',{v:d?.availability||'Weekends',opts:['Weekday mornings','Weekday evenings','Weekends','Anytime'],half:1}),
-    FLD('source','How they were first contacted','select',{v:d?.source,opts:SOURCES})
+    FLD('source','How they were first contacted','select',{v:d?.source||'Book distribution',opts:SOURCES,half:1})
   ],'save-devotee',{id},'One record — every pillar links to it rather than copying it.');
 }
 function openContactForm(){
@@ -6948,6 +6966,12 @@ async function syncDevoteeToBackend(d, roleKey){
       joined: d.joined,
       org: d.org,
       occupation: d.occupation,
+      highestEducation: d.highestEducation || '',
+      presentStudiesOrJob: d.presentStudiesOrJob || '',
+      residence: d.residence || d.address || '',
+      attendanceMode: d.attendanceMode || 'Offline at BACE',
+      batchRole: d.batchRole || 'Member',
+      level: d.level !== undefined ? Number(d.level) : 1,
       address: d.address,
       emergency: d.emergency,
       dept: d.dept || null,
@@ -6957,15 +6981,30 @@ async function syncDevoteeToBackend(d, roleKey){
       availability: d.availability,
       status: d.status,
       source: d.source,
+      skills: d.skills || [],
+      sadhana: d.sadhana || { rounds: 16, morningProgram: 0 },
       appointment: rObj.name,
       isFacilitator: (rKey === 'facilitator'),
-      role: rKey
+      role: rKey,
+      customId: d.customId || d.id
     };
-    await fetch(`/api/devotees/${d.id}`, {
+    const targetId = d._id || d.id;
+    const res = await fetch(`/api/devotees/${targetId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
       body: JSON.stringify(payload)
     });
+    if(!res.ok && (res.status === 404 || res.status === 400)){
+      const postRes = await fetch('/api/devotees', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify(payload)
+      });
+      if(postRes.ok){
+        const json = await postRes.json();
+        if(json.data && json.data._id) d._id = String(json.data._id);
+      }
+    }
   }catch(e){
     console.warn('Backend devotee sync notice:', e);
   }
@@ -7345,16 +7384,47 @@ document.addEventListener('click',e=>{
     if(!v.name.trim()){toast('A devotee needs a name','⚠️');break}
     const roleKey=v.role||'devotee';
     const roleObj=ROLES[roleKey]||ROLES.devotee;
+    const parsedSkills = v.skills ? (Array.isArray(v.skills) ? v.skills : String(v.skills).split(',').map(s=>s.trim()).filter(Boolean)) : ['Preaching'];
+    const rounds = v.sadhanaRounds !== undefined && v.sadhanaRounds !== '' ? Number(v.sadhanaRounds) : 16;
+    const devLevel = v.level !== undefined && v.level !== '' ? Number(v.level) : 1;
+
     if(ctx.id){const d=dv(ctx.id);
       const prevRole=devoteeRole(d);
-      if(d.dept!==v.dept&&v.dept)d.history.push({type:'Department',from:dept(d.dept)?.name||'—',to:dept(v.dept).name,date:iso(TODAY)});
-      if(d.batch!==v.batch&&v.batch)d.history.push({type:'Batch',from:batch(d.batch)?.name||'—',to:batch(v.batch).name,date:iso(TODAY)});
+      if(d.dept!==v.dept&&v.dept)d.history.push({type:'Department',from:dept(d.dept)?.name||'—',to:dept(v.dept)?.name||v.dept,date:iso(TODAY)});
+      if(d.batch!==v.batch&&v.batch)d.history.push({type:'Batch',from:batch(d.batch)?.name||'—',to:batch(v.batch)?.name||v.batch,date:iso(TODAY)});
       if(prevRole!==roleKey)d.history.push({type:'Role',from:ROLES[prevRole]?.name||prevRole,to:roleObj.name,date:iso(TODAY)});
-      Object.assign(d,{name:v.name,phone:v.phone,email:v.email,dob:v.dob,joined:v.joined,org:v.org,occupation:v.occupation,
-        address:v.address,emergency:v.emergency,dept:v.dept||null,batch:v.batch||null,careGroup:v.careGroup||null,
-        facilitator:v.facilitator||null,availability:v.availability,status:v.status,source:v.source,
-        appointment:roleObj.name,isFacilitator:(roleKey==='facilitator')});
-      if(v.careGroup){const g=group(v.careGroup);if(!g.members.includes(d.id))g.members.push(d.id)}
+      Object.assign(d,{
+        name: v.name.trim(),
+        phone: v.phone.trim(),
+        email: v.email.trim(),
+        dob: v.dob,
+        joined: v.joined,
+        org: v.org.trim(),
+        occupation: v.occupation.trim(),
+        highestEducation: v.highestEducation ? v.highestEducation.trim() : (d.highestEducation || ''),
+        presentStudiesOrJob: v.presentStudiesOrJob ? v.presentStudiesOrJob.trim() : (d.presentStudiesOrJob || ''),
+        residence: v.residence ? v.residence.trim() : (d.residence || v.address || ''),
+        attendanceMode: v.attendanceMode || d.attendanceMode || 'Offline at BACE',
+        batchRole: v.batchRole || d.batchRole || 'Member',
+        level: devLevel,
+        address: v.address,
+        emergency: v.emergency,
+        dept: v.dept||null,
+        batch: v.batch||null,
+        careGroup: v.careGroup||null,
+        facilitator: v.facilitator||null,
+        availability: v.availability,
+        status: v.status,
+        source: v.source,
+        skills: parsedSkills,
+        appointment: roleObj.name,
+        isFacilitator: (roleKey==='facilitator')
+      });
+      if(!d.sadhana) d.sadhana = {};
+      d.sadhana.rounds = rounds;
+      normalizeDevotee(d);
+
+      if(v.careGroup){const g=group(v.careGroup);if(g && !g.members.includes(d.id))g.members.push(d.id)}
       if(roleKey==='dept_head'&&d.dept){const dp=dept(d.dept);if(dp)dp.head=d.id;}
       if(roleKey==='preaching_coord'&&d.batch){const b=batch(d.batch);if(b)b.coordinator=d.id;}
       let u=DB.users.find(x=>x.devotee===d.id);
@@ -7371,18 +7441,51 @@ document.addEventListener('click',e=>{
       }
       syncDevoteeToBackend(d, roleKey);
       logAudit('Devotee updated',`${d.name} (${roleObj.name})`);toast('Profile updated')}
-    else{const d={id:uid('d'),name:v.name,gender:'M',dob:v.dob,phone:v.phone,email:v.email,address:v.address,
-      occupation:v.occupation,org:v.org,emergency:v.emergency,joined:v.joined,status:v.status,level:0,
-      batch:v.batch||null,careGroup:v.careGroup||null,friends:[],facilitator:v.facilitator||null,mentor:null,
-      dept:v.dept||null,service:null,serviceRole:null,serviceStart:null,skills:[],availability:v.availability,
-      appointment:roleObj.name,isFacilitator:(roleKey==='facilitator'),
-      sadhana:{rounds:4,morningProgram:0,lastReported:iso(TODAY)},
-      swabhav:{nature:'Organising',suggested:'Festival and event management',interests:[],engaged:false},
-      careStatus:{emotional:'Doing well',spiritual:'Steady'},firstContact:iso(TODAY),source:v.source,
-      attendancePct:0,timeline:[{date:iso(TODAY),title:'Joined the community',desc:`Profile created with role ${roleObj.name}.`,tone:'green'}],history:[]};
-      DB.devotees.push(d);
+    else{
+      const d = normalizeDevotee({
+        id: uid('d'),
+        name: v.name.trim(),
+        gender: 'M',
+        dob: v.dob || '',
+        phone: v.phone.trim(),
+        email: v.email.trim(),
+        address: v.address || '',
+        residence: v.residence ? v.residence.trim() : (v.address || 'Jia Sarai BACE'),
+        attendanceMode: v.attendanceMode || 'Offline at BACE',
+        batchRole: v.batchRole || 'Member',
+        occupation: v.occupation.trim() || 'Student',
+        org: v.org.trim() || 'IIT Delhi',
+        highestEducation: v.highestEducation ? v.highestEducation.trim() : '',
+        presentStudiesOrJob: v.presentStudiesOrJob ? v.presentStudiesOrJob.trim() : '',
+        emergency: v.emergency || '',
+        joined: v.joined || iso(TODAY),
+        status: v.status || 'Active',
+        level: devLevel,
+        batch: v.batch || null,
+        careGroup: v.careGroup || null,
+        friends: [],
+        facilitator: v.facilitator || null,
+        mentor: null,
+        dept: v.dept || null,
+        service: null,
+        serviceRole: null,
+        serviceStart: null,
+        skills: parsedSkills,
+        availability: v.availability || 'Weekends',
+        appointment: roleObj.name,
+        isFacilitator: (roleKey === 'facilitator'),
+        sadhana: { rounds: rounds, morningProgram: 0, lastReported: iso(TODAY) },
+        swabhav: { nature: 'Teaching', suggested: 'Outreach & classes', interests: [], engaged: false },
+        careStatus: { emotional: 'Doing well', spiritual: 'Steady' },
+        firstContact: iso(TODAY),
+        source: v.source || 'Book distribution',
+        attendancePct: 85,
+        timeline: [{ date: iso(TODAY), title: 'Joined the community', desc: `Profile created with role ${roleObj.name}.`, tone: 'green' }],
+        history: []
+      });
+      DB.devotees.unshift(d);
       if(v.dept)DB.deptMembers.push({id:uid('dm'),dept:v.dept,devotee:d.id,role:'Volunteer',since:iso(TODAY),status:'Active'});
-      if(v.careGroup)group(v.careGroup).members.push(d.id);
+      if(v.careGroup && group(v.careGroup))group(v.careGroup).members.push(d.id);
       if(roleKey==='dept_head'&&d.dept){const dp=dept(d.dept);if(dp)dp.head=d.id;}
       if(roleKey==='preaching_coord'&&d.batch){const b=batch(d.batch);if(b)b.coordinator=d.id;}
       if(roleKey!=='devotee'||d.email){
