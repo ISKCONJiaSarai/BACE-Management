@@ -2,6 +2,32 @@ const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
 const { Devotee, User } = require('../models');
+const { protect, requireDevoteeImportPermission } = require('../middleware/auth');
+
+const getRoleFromAppointment = (appt, isFacilitator) => {
+  const a = (appt || '').toLowerCase();
+  if (a.includes('area leader')) return 'area_leader';
+  if (a.includes('overall coordinator') || (a.includes('coordinator') && !a.includes('batch'))) return 'coordinator';
+  if (a.includes('preaching manager')) return 'preaching_manager';
+  if (a.includes('care manager')) return 'care_manager';
+  if (a.includes('internal manager')) return 'internal_manager';
+  if (a.includes('department head') || a.includes('dept head')) return 'dept_head';
+  if (a.includes('preaching coordinator')) return 'preaching_coord';
+  if (a.includes('facilitator') || isFacilitator) return 'facilitator';
+  return 'devotee';
+};
+
+const requireDeleteDevoteePermission = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({ success: false, message: 'Authentication required' });
+  }
+  const userEmail = (req.user.email || '').toLowerCase().trim();
+  const r = req.user.role || '';
+  const isAllowed = r === 'admin' || r === 'area_leader' || r === 'preaching_manager' || r === 'coordinator' ||
+    userEmail.includes('terkadamba') || userEmail === 'suryakiranjune2@gmail.com';
+  if (isAllowed) return next();
+  return res.status(403).json({ success: false, message: 'Access denied: Requires Admin, Area Leader, or Preaching Head privileges to delete devotee data' });
+};
 
 const getDevoteeQuery = (id) => {
   if (mongoose.Types.ObjectId.isValid(id)) {
@@ -118,10 +144,11 @@ router.put('/:id', async (req, res) => {
       { new: true, runValidators: true }
     );
 
-    if (req.body.role) {
+    const roleToSet = req.body.role || (req.body.appointment ? getRoleFromAppointment(req.body.appointment, devotee.isFacilitator) : null);
+    if (roleToSet && roleToSet !== 'admin') {
       await User.updateMany(
-        { $or: [{ devotee: devotee._id }, ...(devotee.email ? [{ email: devotee.email }] : [])] },
-        { $set: { role: req.body.role } }
+        { $or: [{ devotee: devotee._id }, ...(devotee.email ? [{ email: devotee.email.toLowerCase().trim() }] : [])] },
+        { $set: { role: roleToSet } }
       );
     }
 
@@ -132,8 +159,8 @@ router.put('/:id', async (req, res) => {
 });
 
 // @route   DELETE /api/devotees/:id
-// @desc    Delete a devotee
-router.delete('/:id', async (req, res) => {
+// @desc    Delete a devotee and permanently remove user accounts so devotee must re-register
+router.delete('/:id', protect, requireDeleteDevoteePermission, async (req, res) => {
   try {
     const query = getDevoteeQuery(req.params.id);
     const existing = await Devotee.findOne(query);
@@ -143,10 +170,60 @@ router.delete('/:id', async (req, res) => {
 
     const devotee = await Devotee.findOneAndDelete(query);
 
-    // Unlink or deactivate any user account tied to this devotee
-    await User.updateMany({ devotee: devotee._id }, { $set: { active: false, approvalStatus: 'rejected' } });
+    // Delete associated user account(s) so they cannot login with active session and must re-register
+    await User.deleteMany({
+      $or: [
+        { devotee: devotee._id },
+        ...(devotee.email ? [{ email: devotee.email.toLowerCase().trim() }] : [])
+      ]
+    });
 
-    res.json({ success: true, message: 'Devotee deleted successfully' });
+    res.json({ success: true, message: `Devotee ${devotee.name} deleted successfully` });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// @route   POST /api/devotees/:id/assign-role
+// @desc    Assign hierarchy role to devotee and update user account privileges immediately
+router.post('/:id/assign-role', protect, async (req, res) => {
+  try {
+    const query = getDevoteeQuery(req.params.id);
+    const devotee = await Devotee.findOne(query);
+    if (!devotee || isAdminDevotee(devotee)) {
+      return res.status(404).json({ success: false, message: 'Devotee not found' });
+    }
+    const { role } = req.body;
+    if (!role || role === 'admin') {
+      return res.status(400).json({ success: false, message: 'Invalid role' });
+    }
+    const roleTitles = {
+      area_leader: 'Area Leader',
+      coordinator: 'Overall Coordinator',
+      internal_manager: 'Internal Manager',
+      preaching_manager: 'Preaching Manager',
+      care_manager: 'Devotee Care Manager',
+      dept_head: 'Department Head',
+      preaching_coord: 'Preaching Coordinator',
+      facilitator: 'Facilitator',
+      devotee: 'Devotee'
+    };
+    const title = roleTitles[role] || 'Devotee';
+    devotee.appointment = title;
+    devotee.isFacilitator = (role === 'facilitator');
+    await devotee.save();
+
+    await User.updateMany(
+      { $or: [{ devotee: devotee._id }, ...(devotee.email ? [{ email: devotee.email.toLowerCase().trim() }] : [])] },
+      { $set: { role: role } }
+    );
+
+    res.json({
+      success: true,
+      message: `${devotee.name} is now assigned as ${title}`,
+      devotee,
+      role
+    });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
@@ -175,7 +252,6 @@ const escapeRegex = (str) => String(str || '').replace(/[-[\]{}()*+?.,\\^$|#\s]/
 // @route   POST /api/devotees/import-csv
 // @desc    Import/upload devotees from CSV with upsert (update existing names, add new, no repetitions)
 // @access  Protected: Batch Coordinator (for assigned batch), Area Leader, Admin
-const { protect, requireDevoteeImportPermission } = require('../middleware/auth');
 const { Batch, Department, CareGroup } = require('../models');
 
 router.post('/import-csv', protect, requireDevoteeImportPermission, async (req, res) => {

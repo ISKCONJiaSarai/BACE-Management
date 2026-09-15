@@ -1372,6 +1372,13 @@ const can=(m,role)=>{
 // can this user EDIT this department / batch?
 const ownsDept=id=>['admin','coordinator','area_leader','internal_manager'].includes(APP.user.role)||(APP.user.role==='dept_head'&&APP.user.dept===id);
 const ownsBatch=id=>['admin','coordinator','area_leader','preaching_manager'].includes(APP.user.role)||(APP.user.role==='preaching_coord'&&APP.user.batch===id);
+const canDeleteDevotee=()=>{
+  if(!APP||!APP.user) return false;
+  const curEmail=(APP.user.email||'').toLowerCase().trim();
+  const r=APP.user.role||'';
+  return r==='admin'||r==='area_leader'||r==='preaching_manager'||r==='coordinator'||isBaceAdminEmail(curEmail)||isSuryaEmail(curEmail);
+};
+const canAssignRole=()=>canDeleteDevotee();
 
 /* ---------------- reference data ---------------- */
 // Master department list (blueprint §55). Fully editable at runtime.
@@ -3900,15 +3907,13 @@ function viewDevotees(){
      {h:`Skills ${f.skill?`<span class="badge b-grey" style="padding:1px 5px;font-size:10px">Filtered</span>`:''}`,label:'Skills',c:d=>d.skills.map(s=>badge(s,'grey')).join(' ')},
      {h:`Attendance ${f.attendance?`<span class="badge b-teal" style="padding:1px 5px;font-size:10px">Filtered</span>`:''}`,label:'Attendance',c:d=>`<div style="min-width:90px">${prog(d.attendancePct)}<span class="tiny">${d.attendancePct}%</span></div>`},
      {h:'Actions',label:'Actions',c:d=>`<div style="display:flex;gap:6px;align-items:center;justify-content:flex-end">
-       <button class="btn sm" data-act="assign-role" data-id="${d.id}" title="Assign hierarchy role" style="padding:4px 8px;font-size:12px;display:inline-flex;align-items:center;gap:3px">
+       ${canAssignRole()?`<button class="btn sm" data-act="assign-role" data-id="${d.id}" title="Assign hierarchy role" style="padding:4px 8px;font-size:12.5px;font-weight:600;display:inline-flex;align-items:center;gap:3px">
          🧭 Role
-       </button>
+       </button>`:''}
        <a class="btn sm" href="#/devotee/${d.id}" data-act="open-devotee" data-id="${d.id}" title="View profile" style="padding:4px 10px;text-decoration:none;display:inline-flex;align-items:center;gap:4px;font-weight:600">
          ${ic('user')} View
        </a>
-       <button class="btn sm danger" data-act="delete-devotee" data-id="${d.id}" title="Delete devotee data" style="padding:4px 8px;color:var(--danger);border-color:rgba(220,53,69,0.25);background:rgba(220,53,69,0.06)">
-         🗑 Delete
-       </button>
+       ${canDeleteDevotee()?`<button class="btn sm danger" data-act="delete-devotee" data-id="${d.id}" title="Delete devotee data" style="padding:4px 8px;color:var(--danger);border-color:rgba(220,53,69,0.25);background:rgba(220,53,69,0.06)">\n          🗑 Delete\n        </button>`:''}
      </div>`}
     ],rows,onRow:'open-devotee',
     empty:emptyState('No devotees found','Nothing matches these filters. Clear one, or add a new devotee.','<button class="btn pri" data-act="add-devotee">Add devotee</button>','people')});
@@ -4023,9 +4028,7 @@ function viewDevotee(id){
     <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn" data-act="dm" data-id="${d.id}">${ic('chat')}Message</button>
       <button class="btn" data-act="add-followup">${ic('clock')}Follow-up</button>
-      <button class="btn" data-act="assign-role" data-id="${d.id}" title="Assign role from hierarchy">🧭 Assign role</button>
-      <button class="btn pri" data-act="edit-devotee" data-id="${d.id}">${ic('edit')}Edit profile</button>
-      <button class="btn danger" data-act="delete-devotee" data-id="${d.id}" style="color:var(--danger);border-color:rgba(220,53,69,0.3);background:rgba(220,53,69,0.05)">🗑 Delete Devotee Data</button></div>
+      ${canAssignRole()?`<button class="btn" data-act="assign-role" data-id="${d.id}" title="Assign role from hierarchy">🧭 Assign role</button>`:''}\n      <button class="btn pri" data-act="edit-devotee" data-id="${d.id}">${ic('edit')}Edit profile</button>\n      ${canDeleteDevotee()?`<button class="btn danger" data-act="delete-devotee" data-id="${d.id}" style="color:var(--danger);border-color:rgba(220,53,69,0.3);background:rgba(220,53,69,0.05)">🗑 Delete Devotee Data</button>`:''}</div>
    </div>
    <div class="tabs">${tabs.map(t=>`<button class="${t===tab?'on':''}" data-act="tab" data-k="devotee" data-v="${t}">${t}${t==='Care'&&!careOK?' 🔒':''}</button>`).join('')}</div>
    ${body}`;
@@ -6522,8 +6525,68 @@ async function syncDevoteesFromServer(){
           if(serverDev.batchRole && localDev.batchRole !== serverDev.batchRole) { localDev.batchRole = serverDev.batchRole; changed = true; }
           if(serverDev.status && localDev.status !== serverDev.status) { localDev.status = serverDev.status; changed = true; }
           if(serverDev.level !== undefined && localDev.level !== serverDev.level) { localDev.level = serverDev.level; changed = true; }
+          if(serverDev.appointment && localDev.appointment !== serverDev.appointment) {
+            localDev.appointment = serverDev.appointment;
+            changed = true;
+          }
+
+          // If current logged in devotee's role or appointment was changed on server
+          const isMeSync = APP.user && (
+            APP.user.devotee === localDev.id ||
+            APP.user.devotee === localDev.customId ||
+            (localDev.email && APP.user.email && localDev.email.toLowerCase().trim() === APP.user.email.toLowerCase().trim())
+          );
+          if (isMeSync) {
+            const serverRoleKey = devoteeRole(localDev);
+            if (APP.user.role !== serverRoleKey || (serverDev.appointment && APP.user.appointment !== serverDev.appointment)) {
+              APP.user.role = serverRoleKey;
+              APP.user.appointment = serverDev.appointment || APP.user.appointment;
+              localStorage.setItem('bace_user', JSON.stringify(APP.user));
+              APP.nav.open = {
+                mgmt: can('management', serverRoleKey),
+                preach: can('preaching', serverRoleKey),
+                care: can('care', serverRoleKey)
+              };
+              if(!APP.nav.open.mgmt && !APP.nav.open.preach && !APP.nav.open.care) APP.nav.open.mgmt = true;
+              changed = true;
+            }
+          }
         }
       });
+
+      // Purge devotees that were deleted from the server
+      const serverIds = new Set(json.data.map(s => String(s.customId || s._id || s.id || '')));
+      const serverEmails = new Set(json.data.map(s => (s.email || '').toLowerCase().trim()).filter(Boolean));
+
+      // If current logged-in devotee was deleted from the server database
+      if (APP.user) {
+        const curEmail = (APP.user.email || '').toLowerCase().trim();
+        const isMaster = APP.user.role === 'admin' || APP.user.role === 'area_leader' || isBaceAdminEmail(curEmail) || isSuryaEmail(curEmail);
+        if (!isMaster) {
+          const stillExists = json.data.some(s =>
+            (s.email && curEmail && s.email.toLowerCase().trim() === curEmail) ||
+            (s.customId && APP.user.devotee && s.customId === APP.user.devotee) ||
+            (s._id && APP.user.devotee && String(s._id) === String(APP.user.devotee))
+          );
+          if (!stillExists) {
+            APP.user.approvalStatus = 'pending_profile';
+            APP.user.profileCompleted = false;
+            APP.user.devotee = null;
+            localStorage.setItem('bace_user', JSON.stringify(APP.user));
+            changed = true;
+          }
+        }
+      }
+
+      const initialCount = DB.devotees.length;
+      DB.devotees = DB.devotees.filter(d => {
+        if (isBaceAdminEmail(d.email) || d.appointment === 'BACE Administrator' || d.name === 'ISKCON BACE Admin') return false;
+        const dId = String(d.id || d.customId || d._id || '');
+        const dEmail = (d.email || '').toLowerCase().trim();
+        return serverIds.has(dId) || (dEmail && serverEmails.has(dEmail));
+      });
+      if (DB.devotees.length !== initialCount) changed = true;
+
       if(changed) render();
     }
   } catch(e){
@@ -6936,7 +6999,12 @@ function render(){
   const isMasterOrLeader = APP.user.role === 'admin' || APP.user.role === 'area_leader' || isBaceAdminEmail(APP.user.email) || isSuryaEmail(APP.user.email);
 
   if (!isMasterOrLeader) {
-    if (curDevotee && curDevotee.status === 'Pending Approval') {
+    if (!curDevotee) {
+      // Devotee record was deleted from main database
+      APP.user.approvalStatus = 'pending_profile';
+      APP.user.profileCompleted = false;
+      APP.user.devotee = null;
+    } else if (curDevotee && curDevotee.status === 'Pending Approval') {
       if (APP.user.approvalStatus === 'approved') {
         APP.user.approvalStatus = APP.user.profileCompleted ? 'pending_approval' : 'pending_profile';
       }
@@ -7040,6 +7108,10 @@ async function deleteDevoteeAction(id){
   const token = localStorage.getItem('bace_token');
   const d = dv(id) || DB.devotees.find(x => x.id === id || x.customId === id);
   const name = d ? d.name : 'Devotee';
+  const isMe = APP.user && (
+    APP.user.devotee === id ||
+    (d && (APP.user.devotee === d.id || APP.user.devotee === d.customId || (d.email && APP.user.email && d.email.toLowerCase().trim() === APP.user.email.toLowerCase().trim())))
+  );
   try{
     toast(`Deleting ${name}...`, '⏳');
     if(token){
@@ -7060,8 +7132,21 @@ async function deleteDevoteeAction(id){
     DB.attendance = DB.attendance.filter(a => a.devotee !== id);
     DB.deptMembers = DB.deptMembers.filter(m => m.devotee !== id);
     DB.careGroups.forEach(g => { g.members = (g.members||[]).filter(m => m !== id); });
+    DB.users = (DB.users || []).filter(u => u.devotee !== id && (d && d.email ? u.email !== d.email : true));
 
     logAudit('Devotee Deleted', `${name} deleted from database`);
+
+    if(isMe){
+      localStorage.removeItem('bace_token');
+      localStorage.removeItem('bace_user');
+      APP.user = null;
+      APP.modal = '';
+      APP.deleteDevoteeTarget = null;
+      toast('Your devotee account was deleted. Please register again.', '⚠️');
+      render();
+      return;
+    }
+
     toast(`${name} deleted from database`, '🗑️');
     APP.modal = '';
     APP.deleteDevoteeTarget = null;
@@ -7398,9 +7483,21 @@ document.addEventListener('click',e=>{
     } else {
       DB.users.push({id:uid('u'),role:roleKey,devotee:d.id,dept:roleKey==='dept_head'?d.dept:undefined,batch:roleKey==='preaching_coord'?d.batch:undefined});
     }
-    if(APP.user&&APP.user.devotee===d.id){
+    const isMeRole = APP.user && (
+      APP.user.devotee === d.id ||
+      APP.user.devotee === d.customId ||
+      (d.email && APP.user.email && d.email.toLowerCase().trim() === APP.user.email.toLowerCase().trim())
+    );
+    if(isMeRole){
       APP.user.role=roleKey;
       APP.user.appointment=roleObj.name;
+      localStorage.setItem('bace_user', JSON.stringify(APP.user));
+      APP.nav.open = {
+        mgmt: can('management', roleKey),
+        preach: can('preaching', roleKey),
+        care: can('care', roleKey)
+      };
+      if(!APP.nav.open.mgmt && !APP.nav.open.preach && !APP.nav.open.care) APP.nav.open.mgmt = true;
     }
     syncDevoteeToBackend(d, roleKey);
     logAudit('Role assigned',`${d.name} assigned to ${roleObj.name}${v.reason?' ('+v.reason+')':''}`);
@@ -7462,9 +7559,22 @@ document.addEventListener('click',e=>{
       } else if(roleKey!=='devotee'||d.email){
         DB.users.push({id:uid('u'),role:roleKey,devotee:d.id,dept:roleKey==='dept_head'?d.dept:undefined,batch:roleKey==='preaching_coord'?d.batch:undefined});
       }
-      if(APP.user&&APP.user.devotee===d.id){
+      const isMeEdit = APP.user && (
+        APP.user.devotee === d.id ||
+        APP.user.devotee === d.customId ||
+        (d.email && APP.user.email && d.email.toLowerCase().trim() === APP.user.email.toLowerCase().trim())
+      );
+      if(isMeEdit){
         APP.user.role=roleKey;
         APP.user.appointment=roleObj.name;
+        APP.user.name=d.name;
+        localStorage.setItem('bace_user', JSON.stringify(APP.user));
+        APP.nav.open = {
+          mgmt: can('management', roleKey),
+          preach: can('preaching', roleKey),
+          care: can('care', roleKey)
+        };
+        if(!APP.nav.open.mgmt && !APP.nav.open.preach && !APP.nav.open.care) APP.nav.open.mgmt = true;
       }
       syncDevoteeToBackend(d, roleKey);
       logAudit('Devotee updated',`${d.name} (${roleObj.name})`);toast('Profile updated')}
@@ -8368,9 +8478,61 @@ const bootParams = new URLSearchParams(location.search);
 if (bootParams.get('calView')) APP.filters.calView = bootParams.get('calView');
 if (bootParams.get('attBatch')) APP.filters.attBatch = bootParams.get('attBatch');
 if (bootParams.get('attClass')) APP.filters.attClass = bootParams.get('attClass');
+async function verifyUserSessionFromServer(){
+  const token = localStorage.getItem('bace_token');
+  if (!token || !APP.user) return;
+  const curEmail = (APP.user.email || '').toLowerCase().trim();
+  if (isBaceAdminEmail(curEmail) || isSuryaEmail(curEmail)) return;
+  try {
+    const res = await fetch('/api/auth/me', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (!res.ok) {
+      if (res.status === 401) {
+        localStorage.removeItem('bace_token');
+        localStorage.removeItem('bace_user');
+        APP.user = null;
+        render();
+      }
+      return;
+    }
+    const data = await res.json();
+    if (data.success && data.user) {
+      const u = data.user;
+      let changed = false;
+      if (APP.user.approvalStatus !== u.approvalStatus) {
+        APP.user.approvalStatus = u.approvalStatus;
+        changed = true;
+      }
+      if (APP.user.profileCompleted !== u.profileCompleted) {
+        APP.user.profileCompleted = !!u.profileCompleted;
+        changed = true;
+      }
+      if (u.role && APP.user.role !== u.role) {
+        APP.user.role = u.role;
+        APP.user.appointment = u.appointment || '';
+        changed = true;
+      }
+      if (changed) {
+        localStorage.setItem('bace_user', JSON.stringify(APP.user));
+        APP.nav.open = {
+          mgmt: can('management', APP.user.role),
+          preach: can('preaching', APP.user.role),
+          care: can('care', APP.user.role)
+        };
+        if(!APP.nav.open.mgmt && !APP.nav.open.preach && !APP.nav.open.care) APP.nav.open.mgmt = true;
+        render();
+      }
+    }
+  } catch (err) {
+    console.warn('verifyUserSessionFromServer notice:', err);
+  }
+}
+
 APP.route=location.hash||'#/';
 render();
 syncDevoteesFromServer();
+verifyUserSessionFromServer();
 
 </script>
 </body>

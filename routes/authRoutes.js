@@ -196,10 +196,12 @@ router.post('/google', async (req, res) => {
             user.role = determinedRole;
           }
         } else {
-          // Devotee is Pending Approval or has not completed profile
-          if (devoteeDoc && devoteeDoc.status === 'Pending Approval') {
-            if (!user.profileCompleted) {
+          // Devotee is Pending Approval or was deleted & re-created:
+          // User MUST fill their details afresh and wait for Area Leader approval
+          if (!isEmailInDb || (devoteeDoc && devoteeDoc.status === 'Pending Approval')) {
+            if (!isEmailInDb || !user.profileCompleted) {
               user.approvalStatus = 'pending_profile';
+              user.profileCompleted = false;
             } else if (user.approvalStatus !== 'approved') {
               user.approvalStatus = 'pending_approval';
             }
@@ -323,9 +325,35 @@ router.get('/me', protect, async (req, res) => {
 
     const isDevoteeActive = devoteeDoc && devoteeDoc.status === 'Active';
 
-    if ((isBace || isSurya || isDevoteeActive) && (user.approvalStatus !== 'approved' || !user.profileCompleted)) {
-      user.approvalStatus = 'approved';
-      user.profileCompleted = true;
+    if (!devoteeDoc && !isBace && !isSurya) {
+      // Devotee was deleted from the main database
+      user.approvalStatus = 'pending_profile';
+      user.profileCompleted = false;
+      user.devotee = null;
+      user.role = 'devotee';
+      await user.save();
+    } else if (isBace || isSurya || isDevoteeActive) {
+      if (user.approvalStatus !== 'approved' || !user.profileCompleted) {
+        user.approvalStatus = 'approved';
+        user.profileCompleted = true;
+      }
+      // Sync user role from devotee appointment if assigned
+      if (devoteeDoc && !isBace && !isSurya) {
+        const appt = (devoteeDoc.appointment || '').toLowerCase();
+        let expectedRole = 'devotee';
+        if (appt.includes('area leader')) expectedRole = 'area_leader';
+        else if (appt.includes('overall coordinator') || (appt.includes('coordinator') && !appt.includes('batch'))) expectedRole = 'coordinator';
+        else if (appt.includes('preaching manager')) expectedRole = 'preaching_manager';
+        else if (appt.includes('care manager')) expectedRole = 'care_manager';
+        else if (appt.includes('internal manager')) expectedRole = 'internal_manager';
+        else if (appt.includes('department head') || appt.includes('dept head')) expectedRole = 'dept_head';
+        else if (appt.includes('preaching coordinator')) expectedRole = 'preaching_coord';
+        else if (appt.includes('facilitator') || devoteeDoc.isFacilitator) expectedRole = 'facilitator';
+
+        if (user.role !== expectedRole) {
+          user.role = expectedRole;
+        }
+      }
       await user.save();
     } else if (devoteeDoc && devoteeDoc.status === 'Pending Approval') {
       if (!user.profileCompleted) {
@@ -344,6 +372,7 @@ router.get('/me', protect, async (req, res) => {
         email: user.email,
         name: devoteeDoc?.name || user.username,
         role: user.role,
+        appointment: devoteeDoc?.appointment || user.appointment || '',
         avatar: user.avatar || '',
         approvalStatus: user.approvalStatus,
         profileCompleted: !!user.profileCompleted,
