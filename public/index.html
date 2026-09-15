@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -4177,6 +4177,33 @@ function viewDepts(){
    :emptyState('No departments match','Change the filters, or create a department.',can('manage_departments')?'<button class="btn pri" data-act="add-dept">Create department</button>':'')}`;
 }
 /* reusable department dashboard template (§49) */
+/* ---------- team section helper (batch & dept) ---------- */
+function teamSection(opts){
+  /* opts: { incharge, coordinator (id or id[]), volunteers (id[]), canEdit, editAct, editId } */
+  const roles=[];
+  if(opts.incharge)roles.push({label:'Incharge',ids:[opts.incharge],color:'var(--saffron)'});
+  const coords=[].concat(opts.coordinator||[]).filter(Boolean);
+  if(coords.length)roles.push({label:coords.length>1?'Coordinators':'Coordinator',ids:coords,color:'var(--indigo)'});
+  const vols=[].concat(opts.volunteers||[]).filter(Boolean);
+  if(vols.length)roles.push({label:'Volunteers',ids:vols,color:'var(--teal)'});
+  if(!roles.length)return '';
+  const rows=roles.map(r=>`
+    <div style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--line-2);">
+      <span style="min-width:108px;font-size:11.5px;font-weight:600;color:var(--ink-2);text-transform:uppercase;letter-spacing:.04em;padding-top:6px">${r.label}</span>
+      <div style="display:flex;flex-wrap:wrap;gap:7px;flex:1">
+        ${r.ids.map(did=>{
+          const d=dv(did);if(!d)return '';
+          return `<a href="#/devotee/${did}" style="display:inline-flex;align-items:center;gap:7px;padding:5px 10px 5px 5px;border-radius:20px;background:var(--surface-2);border:1px solid var(--line);text-decoration:none;color:inherit">
+            <span class="av s" style="background:${avc(d.name)}">${initials(d.name)}</span>
+            <span style="font-size:13px;font-weight:600">${esc(d.name)}</span>
+          </a>`;
+        }).join('')}
+      </div>
+    </div>`).join('');
+  const teamPickerAct=opts.editAct?opts.editAct+'-team':null;
+  return section('👥 Team',`<div class="card-b" style="padding:0 4px">${rows}<div style="height:6px"></div></div>`,
+    opts.canEdit?`<button class="btn sm" data-act="${opts.editAct}" data-id="${opts.editId}">${ic('edit')}Edit roles</button><button class="btn sm" data-act="${teamPickerAct}" data-id="${opts.editId}">${ic('people')}Manage volunteers (${vols.length})</button>`:'')
+}
 function deptDashboardBody(dp){
   if(!dp)return emptyState('No department','You are not assigned to a department yet.','');
   const m=deptMetrics(dp.id);
@@ -4196,6 +4223,7 @@ function deptDashboardBody(dp){
     ${stat('Today',today.length,'activities scheduled',{em:'📅',r:'#/today'})}
     ${stat('Pending actions',actions.length,actions.filter(a=>a.due<iso(TODAY)).length+' overdue',{em:'🎯',tint:actions.length>3,r:'#/actions'})}
     ${stat('Budget used',m.util+'%',money(dp.budget.spent)+' of '+money(dp.budget.allocated),{em:'🧾',r:'#/dept-reports'})}</div>
+   ${teamSection({incharge:dp.incharge,coordinator:dp.head,volunteers:(dp.volunteers||[]),canEdit:ownsDept(dp.id),editAct:'edit-dept',editId:dp.id})}
    <div class="grid g-2-1" style="margin-bottom:15px">
     ${section("📅 Today's activities",today.length?`<div class="tbl-wrap">${actTable(today)}</div>`
       :emptyState('Nothing scheduled today','No activities on the roster for today in this department.',ownsDept(dp.id)?`<button class="btn pri" data-act="open-assign" data-type="Seva" data-dept="${dp.id}">Assign seva</button>`:''),
@@ -4842,6 +4870,7 @@ function batchDashboardBody(b){
     ${stat('Events',m.events.length,'special programmes',{em:'✨',r:'#/classes'})}
     ${stat('Follow-ups',m.fus.pending,`${m.fus.overdue} overdue`,{em:'⏰',tint:m.fus.overdue>0,act:'go',r:'#/followups'})}
     ${stat('Budget used',m.util+'%',money(b.budget.spent)+' of '+money(b.budget.allocated),{em:'🧾',r:'#/preaching-reports'})}</div>
+   ${teamSection({incharge:b.incharge,coordinator:b.coordinator,volunteers:(b.volunteers||[]),canEdit:ownsBatch(b.id),editAct:'edit-batch',editId:b.id})}
    <div class="grid g-2-1" style="margin-bottom:15px">
     <div style="display:flex;flex-direction:column;gap:15px">
       ${section('📅 Today & next class',today.length||nextClass?`<div class="list">
@@ -6826,10 +6855,12 @@ function modalHTML(){
 /* ---------------- openers ---------------- */
 function openDeptForm(id){
   const d=id?dept(id):null;
+  const allDevs=DB.devotees.map(x=>[x.id,x.name]);
   openForm(d?'Edit department':'Create department',[
     FLD('name','Department name','text',{v:d?.name,ph:'e.g. Guest Care'}),
     FLD('desc','Description','textarea',{v:d?.desc,ph:'What this department is responsible for'}),
-    FLD('head','Department head','select',{v:d?.head,opts:DB.devotees.map(x=>[x.id,x.name]),half:1}),
+    FLD('head','Department head / Coordinator','select',{v:d?.head,opts:DB.devotees.map(x=>[x.id,x.name]),half:1}),
+    FLD('incharge','Incharge (senior responsible)','select',{v:d?.incharge||'',opts:[['','— None —'],...allDevs],half:1}),
     FLD('category','Category','select',{v:d?.category||'Facilities',opts:[...new Set(DB.departments.map(x=>x.category))],half:1}),
     FLD('icon','Icon','select',{v:d?.icon||'🛠',opts:['🛠','🪔','🍲','🧹','📚','🌅','🧾','🛒','🔧','🎉','🤝','🩺','📿','🌿','📱','📕','✍️','🕉','🧭','🪷','📖','🎓'],half:1}),
     FLD('color','Colour','select',{v:d?.color||'saffron',opts:['saffron','green','indigo','teal','mustard','sky','brown','amber'],half:1}),
@@ -6841,10 +6872,13 @@ function openDeptForm(id){
 }
 function openBatchForm(id){
   const b=id?batch(id):null;
+  const allDevs=DB.devotees.map(x=>[x.id,x.name]);
+  const volIds=(b?.volunteers||[]);
   openForm(b?'Edit batch':'Create batch',[
     FLD('name','Batch name','text',{v:b?.name,ph:'e.g. Sreshtha'}),
     FLD('desc','Description','textarea',{v:b?.desc}),
     FLD('level','Level','select',{v:b?.level||1,opts:[[1,'Level 1'],[2,'Level 2'],[3,'Level 3']],half:1}),
+    FLD('incharge','Incharge (senior responsible)','select',{v:b?.incharge||'',opts:[['','— None —'],...allDevs],half:1}),
     FLD('coordinator','Coordinator','select',{v:b?.coordinator,opts:DB.devotees.map(x=>[x.id,x.name]),half:1}),
     FLD('freq','Meeting frequency','select',{v:b?.freq||'Weekly',opts:['Weekly','Fortnightly','Monthly'],half:1}),
     FLD('day','Meeting day','select',{v:b?.day||'Thu',opts:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],half:1}),
@@ -6853,7 +6887,8 @@ function openBatchForm(id){
     FLD('allocated','Budget allocated (₹)','number',{v:b?.budget.allocated||0,half:1}),
     FLD('spent','Budget spent (₹)','number',{v:b?.budget.spent||0,half:1}),
     FLD('status','Status','select',{v:b?.status||'Active',opts:['Active','Inactive','Archived']})
-  ],'save-batch',{id});
+  ],'save-batch',{id},
+  b?`<div style="margin-top:6px"><b>Volunteers in this batch:</b> <button class="btn sm" data-act="edit-batch-team" data-id="${b.id}">${ic('people')}Manage volunteers (${volIds.length})</button></div>`:null);
 }
 function openGroupForm(id){
   const g=id?group(id):null;
@@ -7423,7 +7458,7 @@ document.addEventListener('click',e=>{
   case 'save-dept':{const v=collect();
     if(!v.name.trim()){toast('A department needs a name','⚠️');break}
     const ctx=APP.modal.ctx;
-    if(ctx.id){const d=dept(ctx.id);Object.assign(d,{name:v.name,desc:v.desc,head:v.head,category:v.category,icon:v.icon,
+    if(ctx.id){const d=dept(ctx.id);Object.assign(d,{name:v.name,desc:v.desc,head:v.head,incharge:v.incharge||'',category:v.category,icon:v.icon,
       color:v.color,reportFreq:v.reportFreq,status:v.status,budget:{allocated:+v.allocated||0,spent:+v.spent||0}});
       logAudit('Department updated',d.name);toast('Department updated')}
     else{DB.departments.push({id:uid('dp'),name:v.name,desc:v.desc,icon:v.icon,color:v.color,category:v.category,
@@ -7446,14 +7481,39 @@ document.addEventListener('click',e=>{
   case 'edit-batch':stop();openBatchForm(id);break;
   case 'save-batch':{const v=collect(),ctx=APP.modal.ctx;
     if(!v.name.trim()){toast('A batch needs a name','⚠️');break}
-    if(ctx.id){const b=batch(ctx.id);Object.assign(b,{name:v.name,desc:v.desc,level:+v.level,coordinator:v.coordinator,
+    if(ctx.id){const b=batch(ctx.id);Object.assign(b,{name:v.name,desc:v.desc,level:+v.level,incharge:v.incharge||'',coordinator:v.coordinator,
       freq:v.freq,day:v.day,time:v.time,start:v.start,status:v.status,budget:{allocated:+v.allocated||0,spent:+v.spent||0}});
+      // Keep facilitators in sync with coordinator
+      if(!b.facilitators)b.facilitators=[];
+      if(b.coordinator&&!b.facilitators.includes(b.coordinator))b.facilitators.unshift(b.coordinator);
       logAudit('Batch updated',b.name);toast('Batch updated')}
     else{const b={id:uid('b'),name:v.name,desc:v.desc,level:+v.level,day:v.day,time:v.time,freq:v.freq,status:v.status,
       coordinator:v.coordinator,facilitators:[],start:v.start,budget:{allocated:+v.allocated||0,spent:+v.spent||0}};
       DB.batches.push(b);
       DB.threads.push({id:uid('th'),type:'batch',name:b.name+' chat',members:[b.coordinator],ref:b.id,messages:[],pinnedNote:null});
       logAudit('Batch created',v.name);toast('Batch created with its own group chat')}
+    APP.modal='';render();break}
+  case 'edit-batch-team':stop();{
+    const b=batch(id);
+    if(!b){toast('Batch not found','⚠️');break}
+    openPicker({title:'Manage volunteers — '+b.name,
+      sub:'Select all volunteers in this batch team. Members are separate from the batch enrolment list.',
+      items:devItems(x=>x.status!=='Inactive'),
+      selected:(b.volunteers||[]),multi:true,save:'save-batch-team',ctx:{id}});
+    break}
+  case 'save-batch-team':{const m=APP.modal;const b=batch(m.ctx.id);
+    if(b){b.volunteers=m.selected;logAudit('Batch team updated',b.name);toast('Team updated — '+m.selected.length+' volunteer(s)');}
+    APP.modal='';render();break}
+  case 'edit-dept-team':stop();{
+    const dp=dept(id);
+    if(!dp){toast('Department not found','⚠️');break}
+    openPicker({title:'Manage volunteers — '+dp.name,
+      sub:'Select all volunteers helping in this department.',
+      items:devItems(x=>x.status!=='Inactive'),
+      selected:(dp.volunteers||[]),multi:true,save:'save-dept-team',ctx:{id}});
+    break}
+  case 'save-dept-team':{const m=APP.modal;const dp=dept(m.ctx.id);
+    if(dp){dp.volunteers=m.selected;logAudit('Dept team updated',dp.name);toast('Team updated — '+m.selected.length+' volunteer(s)');}
     APP.modal='';render();break}
   case 'archive-batch':stop();{const b=batch(id);b.status='Archived';logAudit('Batch archived',b.name);
     toast(b.name+' archived — members and history retained','🗄');render();break}
