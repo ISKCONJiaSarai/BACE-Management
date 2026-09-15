@@ -26,7 +26,7 @@ const DEPT_DATA = [
   ['Social Media','Reels, design, posts and digital outreach','📱','#3C4E7A','Outreach','Weekly'],
   ['BBT Department','Book catalogue, requests, approval, issue and return','📕','#C9601B','Outreach','Weekly'],
   ['Study and Academics','Scriptural study support and academic mentoring','✍️','#1F6F78','Education','Monthly'],
-  ['Saturday Bhagavatam Class','Weekly Bhagavatam class coordination','🕉','#C9601B','Education','Weekly'],
+  ['Saturday Bhagavatam Class','Weekly Bhagavatam class coordination','🛕','#C9601B','Education','Weekly'],
   ['BACE OC','Overall coordination office — cross-department follow-through','🧭','#1F1B16','Administration','Weekly'],
   ['Area Leader Office','Strategic oversight and community direction','🪷','#1F1B16','Administration','Monthly']
 ];

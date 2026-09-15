@@ -3,6 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <meta name="theme-color" content="#C9601B">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1410,7 +1413,7 @@ const DEPT_SEED=[
  ['Social Media','Reels, design, posts and digital outreach','📱','indigo','Outreach','Weekly'],
  ['BBT Department','Book catalogue, requests, approval, issue and return','📕','saffron','Outreach','Weekly','bbt'],
  ['Study and Academics','Scriptural study support and academic mentoring','✍️','teal','Education','Monthly'],
- ['Saturday Bhagavatam Class','Weekly Bhagavatam class coordination','🕉','saffron','Education','Weekly'],
+ ['Saturday Bhagavatam Class','Weekly Bhagavatam class coordination','🛕','saffron','Education','Weekly'],
  ['BACE OC','Overall coordination office — cross-department follow-through','🧭','ink','Administration','Weekly'],
  ['Area Leader Office','Strategic oversight and community direction','🪷','ink','Administration','Monthly']
 ];
@@ -2816,7 +2819,7 @@ const PILLARS=[
    {sub:'Spiritual care'},
    {t:'Sadhana',em:'📿',r:'#/sadhana',m:'care',indent:1},
    {t:'Facilitators',em:'🤝',r:'#/facilitators',m:'care',indent:1},
-   {t:'Spiritual classes',em:'🕉',r:'#/spiritual-classes',m:'care',indent:1},
+   {t:'Spiritual classes',em:'📿',r:'#/spiritual-classes',m:'care',indent:1},
    {t:'Camps',em:'⛺',r:'#/camps',m:'care',indent:1},
    {t:'Temple visits',em:'🛕',r:'#/temple-visits',m:'care',indent:1},
    {t:'Personal meetings',em:'🔒',r:'#/meetings',m:'care_notes',indent:1},
@@ -5405,7 +5408,7 @@ function viewCare(){
         <span class="d">${s.groups} weekly care groups with ${DB.careGroups.reduce((n,g)=>n+g.members.length,0)} members</span></span>${ic('arrow')}</a>
       <a class="li click" href="#/swabhav"><span class="badge b-green">🌿</span><span class="grow"><span class="t">Swabhav engagement</span>
         <span class="d">${DB.devotees.filter(d=>d.swabhav.engaged).length} engaged according to their nature</span></span>${ic('arrow')}</a></div>`)}
-    ${section('🕉 Spiritual care',`<div class="list">
+    ${section('❤️ Spiritual care',`<div class="list">
       <a class="li click" href="#/sadhana"><span class="badge b-teal">📿</span><span class="grow"><span class="t">Sadhana</span><span class="d">${DB.sadhana.length} reports this week</span></span>${ic('arrow')}</a>
       <a class="li click" href="#/facilitators"><span class="badge b-teal">🤝</span><span class="grow"><span class="t">Facilitators</span><span class="d">${s.facilitators} active facilitators</span></span>${ic('arrow')}</a>
       <a class="li click" href="#/camps"><span class="badge b-teal">⛺</span><span class="grow"><span class="t">Camps & yatras</span><span class="d">${DB.camps.length} participations recorded</span></span>${ic('arrow')}</a>
@@ -5555,7 +5558,7 @@ function viewFacilitators(){
 }
 function viewSpiritualClasses(){
   const rows=DB.activities.filter(a=>a.type==='Class'||a.cat==='Classes');
-  return head('🕉 Devotee Care','Spiritual classes','Classes attended as part of somebody\'s spiritual care, not only batch teaching')+
+  return head('❤️ Devotee Care','Spiritual classes','Classes attended as part of somebody\'s spiritual care, not only batch teaching')+
    dataTable({id:'spcls',exportName:'spiritual-classes',cols:[
      {h:'Class',c:a=>`<b>${esc(a.name)}</b><div class="tiny">${esc(a.location)}</div>`},
      {h:'Batch',c:a=>esc(scopeName(a))},{h:'Date',c:a=>fmtD(a.date)},
@@ -7150,7 +7153,7 @@ function openDeptForm(id){
     FLD('head','Department head / Coordinator','select',{v:d?.head,opts:DB.devotees.map(x=>[x.id,x.name]),half:1}),
     FLD('incharge','Incharge (senior responsible)','select',{v:d?.incharge||'',opts:[['','— None —'],...allDevs],half:1}),
     FLD('category','Category','select',{v:d?.category||'Facilities',opts:[...new Set(DB.departments.map(x=>x.category))],half:1}),
-    FLD('icon','Icon','select',{v:d?.icon||'🛠',opts:['🛠','🪔','🍲','🧹','📚','🌅','🧾','🛒','🔧','🎉','🤝','🩺','📿','🌿','📱','📕','✍️','🕉','🧭','🪷','📖','🎓'],half:1}),
+    FLD('icon','Icon','select',{v:d?.icon||'🛠',opts:['🛠','🪔','🍲','🧹','📚','🌅','🧾','🛒','🔧','🎉','🤝','🩺','📿','🌿','📱','📕','✍️','🛕','🧭','🪷','📖','🎓'],half:1}),
     FLD('color','Colour','select',{v:d?.color||'saffron',opts:['saffron','green','indigo','teal','mustard','sky','brown','amber'],half:1}),
     FLD('reportFreq','Default reporting frequency','select',{v:d?.reportFreq||'Weekly',opts:['Daily','Weekly','Monthly','Per request','As required'],half:1}),
     FLD('status','Status','select',{v:d?.status||'Active',opts:['Active','Inactive','Archived'],half:1}),
