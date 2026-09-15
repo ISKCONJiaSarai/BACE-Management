@@ -416,20 +416,18 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
 /* ---------- mobile filter panel ---------- */
 .mob-filter-bar{display:none}
 @media(max-width:760px){
-  .mob-filter-bar{display:block;border-top:1px solid var(--line-2);padding:10px 12px 4px;background:var(--surface-2)}
-  .mob-filter-toggle{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:9px;border:1px solid var(--line);background:var(--surface);font-size:13px;font-weight:500;cursor:pointer;width:100%;justify-content:space-between}
+  .mob-filter-bar{display:block;border-top:1px solid var(--line-2);padding:6px 12px 4px;background:var(--surface-2)}
+  .mob-filter-toggle{display:inline-flex!important;align-items:center;gap:6px;padding:7px 12px;border-radius:9px;border:1px solid var(--line);background:var(--surface);font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;justify-content:space-between}
   .mob-filter-toggle.has-filters{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:600}
-  .mob-filter-toggle .mob-f-count{background:var(--accent);color:#fff;border-radius:20px;font-size:11px;padding:1px 7px;font-weight:700}
-  .mob-filter-toggle .mob-f-arrow{transition:transform .2s ease;font-size:11px;opacity:.6}
+  .mob-filter-toggle .mob-f-count{background:var(--accent);color:#fff;border-radius:20px;font-size:11px;padding:1px 7px;font-weight:700;margin-left:2px}
+  .mob-filter-toggle .mob-f-arrow{transition:transform .2s ease;font-size:10px;opacity:.5;margin-left:4px}
   .mob-filter-toggle.open .mob-f-arrow{transform:rotate(180deg)}
-  .mob-filter-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px 0 6px;animation:drop .15s ease-out}
+  .mob-filter-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:6px 0 4px;animation:drop .15s ease-out}
   .mob-filter-grid.hidden{display:none}
   .mob-filter-item{display:flex;flex-direction:column;gap:3px}
-  .mob-filter-item label{font-size:11px;font-weight:600;color:var(--ink-2);text-transform:uppercase;letter-spacing:.04em}
-  .mob-filter-item select{width:100%;padding:7px 8px;border-radius:8px;border:1px solid var(--line);background:var(--surface);font-size:13px;color:var(--ink);appearance:auto}
+  .mob-filter-item label{font-size:10.5px;font-weight:600;color:var(--ink-2);text-transform:uppercase;letter-spacing:.04em}
+  .mob-filter-item select{width:100%;padding:7px 8px;border-radius:8px;border:1px solid var(--line);background:var(--surface);font-size:13px;color:var(--ink)}
   .mob-filter-item select.active{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:600}
-  .mob-filter-reset{display:flex;justify-content:flex-end;margin-top:4px}
-  .mob-filter-reset button{font-size:12px;color:var(--danger);background:none;border:none;padding:4px 2px;cursor:pointer;font-weight:600}
 }
 
 /* ---------- modal / drawer ---------- */
@@ -3808,7 +3806,7 @@ function viewDevotees(){
   if(f.attendance) activeFilterCount++;
   if(f.sort && f.sort !== 'name_asc') activeFilterCount++;
 
-  const mobFilterOpen = APP.mobFilterOpen || false;
+  const mobFilterOpen = APP.mobFilterOpen ?? false;
   const mobSelect = (key, currentVal, opts, label, isSort = false) => {
     const isActive = !!currentVal && currentVal !== 'name_asc';
     return `<div class="mob-filter-item">
@@ -3829,14 +3827,13 @@ function viewDevotees(){
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         ${activeFilterCount > 0 ? `<button class="btn sm" data-act="clear-dev-filters" title="Reset all filters" style="color:var(--danger);background:rgba(220,53,69,0.06);border-color:rgba(220,53,69,0.25);font-weight:600;display:inline-flex;align-items:center;gap:5px">${ic('x')} Reset (${activeFilterCount})</button>` : ''}
         ${can('directory')?`<button class="btn sm" data-act="export-devotees" title="Export CSV" style="display:inline-flex;align-items:center;gap:4px">${ic('download')}Export CSV</button>`:''}
-        ${canImportCsv()?`<button class="btn sm pri" data-act="open-import-csv" title="Import CSV" style="display:inline-flex;align-items:center;gap:4px">${ic('upload')}Import CSV</button>`:''}
+        <button class="mob-filter-toggle ${activeFilterCount>0?'has-filters':''} ${mobFilterOpen?'open':''}" data-act="toggle-mob-filters" style="display:none">
+          <span>${ic('sliders')} Filters${activeFilterCount>0?` <span class="mob-f-count">${activeFilterCount}</span>`:''}</span>
+          <span class="mob-f-arrow">▼</span>
+        </button>
       </div>
     </div>
-    <div class="mob-filter-bar">
-      <button class="mob-filter-toggle ${activeFilterCount>0?'has-filters':''} ${mobFilterOpen?'open':''}" data-act="toggle-mob-filters">
-        <span>${ic('sliders')} Filters${activeFilterCount>0?` <span class="mob-f-count">${activeFilterCount}</span>`:''}</span>
-        <span class="mob-f-arrow">▼</span>
-      </button>
+    <div class="mob-filter-bar" style="padding-top:8px">
       <div class="mob-filter-grid ${mobFilterOpen?'':'hidden'}">
         ${mobSelect('sort', f.sort, [['name_asc','A→Z'],['name_desc','Z→A'],['date_desc','Newest'],['date_asc','Oldest'],['sadhana_desc','Rounds']], 'Sort by', true)}
         ${mobSelect('role', f.role, Object.entries(ROLES).filter(([k])=>k!=='admin').map(([k,r])=>[k,r.name]), 'Role')}
@@ -3846,7 +3843,7 @@ function viewDevotees(){
         ${mobSelect('careGroup', f.careGroup, [...(DB.careGroups||[]).map(g=>[g.id,g.name]),['none','No group']], 'Care group')}
         ${mobSelect('attendance', f.attendance, [['high','≥80%'],['mid','50-79%'],['low','<50%'],['critical','<30%']], 'Attendance')}
         ${mobSelect('skill', f.skill, SKILLS.map(s=>[s,s]), 'Skill')}
-        ${activeFilterCount>0?'<div class="mob-filter-reset"><button data-act="clear-dev-filters">✕ Clear all filters</button></div>':''}
+        ${activeFilterCount>0?'<div class="mob-filter-grid-reset" style="grid-column:1/-1;display:flex;justify-content:flex-end"><button data-act="clear-dev-filters" style="font-size:12px;color:var(--danger);background:none;border:none;padding:4px 2px;cursor:pointer;font-weight:600">✕ Clear all</button></div>':''}
       </div>
     </div>`;
 
