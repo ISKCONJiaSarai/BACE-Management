@@ -1322,7 +1322,7 @@ const nowTime=()=>{const d=new Date();return `${String(d.getHours()).padStart(2,
 const ROLES={
   area_leader:{name:'Area Leader',emoji:'🪷',scope:'Strategic oversight of the whole community'},
   coordinator:{name:'Overall Coordinator',emoji:'🧭',scope:'Full operational view of all three pillars'},
-  internal_manager:{name:'Internal Manager',emoji:'🕉',scope:'BACE Management — departments and seva'},
+  internal_manager:{name:'Internal Manager',emoji:'🛕',scope:'BACE Management — departments and seva'},
   preaching_manager:{name:'Preaching Manager',emoji:'📖',scope:'All preaching batches, contacts and follow-ups'},
   care_manager:{name:'Devotee Care Manager',emoji:'❤️',scope:'Emotional and spiritual care'},
   dept_head:{name:'Department Head',emoji:'🛠',scope:'One department, its volunteers and seva'},
@@ -2355,7 +2355,7 @@ function devoteePositionTitle(id, role){
   if(isSuryaEmail(curEmail)) return '🪷 Area Leader';
   if(d&&d.appointment){
     const emojiMap={
-      'Area Leader':'🪷','Overall Coordinator':'🧭','Internal Manager':'🕉','Preaching Manager':'📖',
+      'Area Leader':'🪷','Overall Coordinator':'🧭','Internal Manager':'🛕','Preaching Manager':'📖',
       'Devotee Care Manager':'❤️','Department Head':'🛠','Preaching Coordinator':'🎓','Facilitator':'🤝',
       'Senior Devotee':'🪷','Devotee':'🙏','System Administrator':'⚙️','BACE Administrator':'⚙️'
     };
@@ -2778,7 +2778,7 @@ const NAV_TOP=[
   {t:'Devotees',em:'👥',r:'#/devotees',m:'directory'}
 ];
 const PILLARS=[
- {key:'mgmt',t:'BACE Management',em:'🕉',pill:'var(--saffron)',m:'management',items:[
+ {key:'mgmt',t:'BACE Management',em:'🛕',pill:'var(--saffron)',m:'management',items:[
    {t:'Management dashboard',em:'📊',r:'#/mgmt',m:'management'},
    {t:'Departments',em:'🏛',r:'#/depts',m:'management'},
    {t:'Assign Seva',em:'📋',r:'#/assign',m:'assign'},
@@ -3186,7 +3186,7 @@ function viewLogin(){
 
     <div class="pillar-grid">
       <div class="pillar-card">
-        <b>🕉 Management</b>
+        <b>🛕 Management</b>
         <span>Rotas, attendance, inventory & departments</span>
       </div>
       <div class="pillar-card">
@@ -3663,7 +3663,7 @@ function pillarCards(){
   const s=STATS();
   return `<div class="grid g3">
    <a class="card" href="#/mgmt"><div class="card-b">
-     <div style="font-size:22px">🕉</div><h3 style="margin-top:6px">BACE Management</h3>
+     <div style="font-size:22px">🛕</div><h3 style="margin-top:6px">BACE Management</h3>
      <p class="tiny" style="margin:4px 0 12px">${s.depts} departments · ${s.scheduled} scheduled activities</p>
      ${prog(s.svcAtt,'var(--saffron)')}<div class="tiny" style="margin-top:6px">${s.svcAtt}% seva attendance</div></div></a>
    <a class="card" href="#/preaching"><div class="card-b">
@@ -3721,7 +3721,7 @@ function viewToday(){
         <span class="grow"><span class="t">${esc(x.name)}</span><span class="d">${x.start||''}${x.end?'–'+x.end:''} · ${esc(x.location||scopeName(x))}</span></span>
         ${sbadge(a.state)}${['Completed','Completed by Another'].includes(a.state)?'':`<button class="btn sm pri" data-act="open-complete" data-id="${a.id}">I have done it ✓</button>`}</div>`).join('')}</div>`
         :emptyState('No seva assigned to you today','Enjoy the sadhana. Your next assignment will appear here.','','calm'))}
-      ${section('🕉 Community seva today',svc.length?`<div class="tbl-wrap">${actTable(svc)}</div>`:emptyState('No seva scheduled today','Nothing is on the roster for today.','<button class="btn pri" data-act="open-assign" data-type="Seva">Assign seva</button>'))}
+      ${section('🛕 Community seva today',svc.length?`<div class="tbl-wrap">${actTable(svc)}</div>`:emptyState('No seva scheduled today','Nothing is on the roster for today.','<button class="btn pri" data-act="open-assign" data-type="Seva">Assign seva</button>'))}
       ${section('📖 Classes and events today',(cls.length+evs.length)?`<div class="list">${[...cls,...evs].map(x=>`
         <a class="li click" href="#/activity/${x.id}"><span class="badge ${x.type==='Class'?'b-indigo':'b-mustard'}">${x.type==='Class'?'📖':'✨'} ${esc(x.type)}</span>
         <span class="grow"><span class="t">${esc(x.name)}</span><span class="d">${esc(scopeName(x))} · ${x.start}–${x.end} · ${esc(x.location)}</span></span>${sbadge(x.status)}</a>`).join('')}</div>`
@@ -4168,7 +4168,7 @@ function viewDevotee(id){
       <dt>Mentor</dt><dd>${esc(nameOf(d.mentor))}</dd></dl></div></div>
      <div style="display:flex;flex-direction:column;gap:15px">
       ${section('Connected across three pillars',`<div class="list">
-        <a class="li click" href="#/dept/${d.dept||''}"><span class="badge b-saffron">🕉 Seva</span><span class="grow"><span class="t">${esc(d.service||'Not allocated')}</span><span class="d">${esc(dept(d.dept)?.name||'No department')}</span></span></a>
+        <a class="li click" href="#/dept/${d.dept||''}"><span class="badge b-saffron">🛕 Seva</span><span class="grow"><span class="t">${esc(d.service||'Not allocated')}</span><span class="d">${esc(dept(d.dept)?.name||'No department')}</span></span></a>
         <a class="li click" href="#/batch/${d.batch||''}"><span class="badge b-indigo">📖 Preaching</span><span class="grow"><span class="t">${esc(batch(d.batch)?.name||'No batch')}</span><span class="d">First contact ${fmtD(d.firstContact)} via ${esc(d.source)}</span></span></a>
         <a class="li click" href="#/group/${d.careGroup||''}"><span class="badge b-green">❤️ Care</span><span class="grow"><span class="t">${esc(group(d.careGroup)?.name||'No group')}</span><span class="d">Facilitator ${esc(nameOf(d.facilitator))}</span></span></a>
       </div>`)}
@@ -4262,7 +4262,7 @@ function viewDevotee(id){
     ${av(d.name,'l')}
     <div style="min-width:190px"><h1 style="font-size:23px">${esc(d.name)}</h1>
       <div class="tiny" style="margin-top:4px">${esc(d.occupation)} · ${esc(d.org)} · joined ${fmtD(d.joined)}</div>
-      <div class="chips" style="margin-top:10px">${roleBadge}${sbadge(d.status)}${d.batch && batch(d.batch) ? badge('📖 ' + batch(d.batch).name, 'indigo') : ''}${d.dept && dept(d.dept) ? badge('🕉 ' + dept(d.dept).name, 'saffron') : ''}${d.careGroup && group(d.careGroup) ? badge('❤️ ' + group(d.careGroup).name, 'green') : ''}</div></div>
+      <div class="chips" style="margin-top:10px">${roleBadge}${sbadge(d.status)}${d.batch && batch(d.batch) ? badge('📖 ' + batch(d.batch).name, 'indigo') : ''}${d.dept && dept(d.dept) ? badge('🛕 ' + dept(d.dept).name, 'saffron') : ''}${d.careGroup && group(d.careGroup) ? badge('❤️ ' + group(d.careGroup).name, 'green') : ''}</div></div>
     <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn" data-act="dm" data-id="${d.id}">${ic('chat')}Message</button>
       <button class="btn" data-act="add-followup">${ic('clock')}Follow-up</button>
@@ -4286,7 +4286,7 @@ function viewOrg(){
     ${node(find('area_leader'),'🪷 Area Leader','var(--ink)')}<div class="org-line"></div>
     ${node(find('coordinator'),'🧭 Overall Coordinator','var(--ink-2)')}<div class="org-line"></div>
     <div class="org-row">
-      ${node(find('internal_manager'),'🕉 Internal Manager','var(--saffron)')}
+      ${node(find('internal_manager'),'🛕 Internal Manager','var(--saffron)')}
       ${node(find('preaching_manager'),'📖 Preaching Manager','var(--indigo)')}
       ${node(find('care_manager'),'❤️ Devotee Care Manager','var(--green)')}</div>
     <div class="org-line"></div></div>
@@ -4297,7 +4297,7 @@ function viewOrg(){
   </div></div>`;
 }
 /* =========================================================================
-   🕉 BACE MANAGEMENT
+   🛕 BACE MANAGEMENT
    ========================================================================= */
 const typeEmoji=t=>(ACTIVITY_TYPES.find(x=>x[0]===t)||['','📋'])[1];
 function actTable(rows){
@@ -4316,7 +4316,7 @@ function actTable(rows){
 function viewMgmt(){
   const s=STATS();
   const tot=activeDepts().reduce((o,d)=>{const m=deptMetrics(d.id);o.done+=m.done;o.missed+=m.missed;o.pend+=m.pending;o.vol+=m.volunteers;return o},{done:0,missed:0,pend:0,vol:0});
-  return head('🕉 BACE Management','Management dashboard','Departments, seva rotas, attendance, inventory and the weekly reporting cycle',
+  return head('🛕 BACE Management','Management dashboard','Departments, seva rotas, attendance, inventory and the weekly reporting cycle',
     `<button class="btn" data-act="go" data-r="#/depts">🏛 Departments</button><button class="btn pri" data-act="open-assign" data-type="Seva">📋 Assign seva</button>`)+
   `<div class="grid g6" style="margin-bottom:15px">
     ${stat('Departments',s.depts,'active',{em:'🏛',act:'go',r:'#/depts'})}
@@ -4349,7 +4349,7 @@ function viewDepts(){
   const rows=DB.departments.filter(d=>(!f.q||d.name.toLowerCase().includes(f.q.toLowerCase()))
     &&(!f.status||d.status===f.status)&&(!f.cat||d.category===f.cat));
   const cats=[...new Set(DB.departments.map(d=>d.category))];
-  return head('🕉 BACE Management','Departments','Departments are data, not code — create, edit or archive them as the community changes',
+  return head('🛕 BACE Management','Departments','Departments are data, not code — create, edit or archive them as the community changes',
     can('manage_departments')?`<button class="btn pri" data-act="add-dept">${ic('plus')}Create department</button>`:'')+
   `<div class="card" style="margin-bottom:15px"><div class="toolbar">
     <input type="search" placeholder="Search departments" value="${esc(f.q)}" data-act="f" data-k="dept" data-n="q">
@@ -5645,7 +5645,7 @@ function viewMessages(){
   if(!visible.length)return head('💬 Messages','Messages','')+emptyState('No conversations yet','You are not a member of any chat. Batch and department chats appear here automatically.','<button class="btn pri" data-act="new-dm">Start a direct message</button>','chat');
   const cur=visible.find(t=>t.id===APP.chat.thread)||visible[0];
   APP.chat.thread=cur.id;
-  const icon={batch:'📖',dept:'🕉',community:'📣',dm:'💬'};
+  const icon={batch:'📖',dept:'🛕',community:'📣',dm:'💬'};
   return head('💬 Community','Messages','Direct messages, batch groups and department teams — you only see what you are part of',
     `<button class="btn pri" data-act="new-dm">${ic('plus')}New message</button>`)+
   `<div class="chat">
@@ -6156,7 +6156,7 @@ function viewAdmin(){
 
 /* ---------------- mobile "More" menu ---------------- */
 function viewMore(){
-  const groups=[['🕉 BACE Management',PILLARS[0].items],['📖 BACE Preaching',PILLARS[1].items],['❤️ Devotee Care',PILLARS[2].items],
+  const groups=[['🛕 BACE Management',PILLARS[0].items],['📖 BACE Preaching',PILLARS[1].items],['❤️ Devotee Care',PILLARS[2].items],
     ['Community',NAV_BOTTOM.concat(NAV_TOP)]];
   return head('☰ Menu','Everything','All modules, permissions applied')+
    groups.map(([t,items])=>section(t,`<div class="list">${items.filter(i=>i.r&&(!i.m||can(i.m))).map(i=>`
@@ -6982,7 +6982,7 @@ function searchModal(){
      <input type="search" placeholder="Type name, seva, department or keyword…" value="${esc(APP.search)}" data-act="global-search" style="width:100%;padding:10px 14px;border:1px solid var(--line);border-radius:10px;margin-bottom:10px">
      ${total?grp('Devotees',dv_.map(d=>`<a class="li click" href="#/devotee/${d.id}">${av(d.name)}<span class="grow"><span class="t">${esc(d.name)}</span><span class="d">${esc(d.org)}</span></span>${ic('arrow')}</a>`))+
        grp('Contacts',ct.map(c=>`<button class="li click" data-act="open-contact" data-id="${c.id}"><span style="font-size:16px">🌱</span><span class="grow"><span class="t">${esc(c.name)}</span><span class="d">${esc(c.stage)}</span></span>${ic('arrow')}</button>`))+
-       grp('Activities',ac.map(a=>`<button class="li click" data-act="open-activity" data-id="${a.id}"><span style="font-size:16px">🕉</span><span class="grow"><span class="t">${esc(a.name)}</span><span class="d">${esc(a.date)}</span></span>${ic('arrow')}</button>`))+
+       grp('Activities',ac.map(a=>`<button class="li click" data-act="open-activity" data-id="${a.id}"><span style="font-size:16px">🛕</span><span class="grow"><span class="t">${esc(a.name)}</span><span class="d">${esc(a.date)}</span></span>${ic('arrow')}</button>`))+
        grp('Departments',dp.map(d=>`<a class="li click" href="#/dept/${d.id}"><span style="font-size:16px">${d.icon}</span><span class="grow"><span class="t">${esc(d.name)}</span></span>${ic('arrow')}</a>`))+
        grp('Batches',bt.map(b=>`<a class="li click" href="#/batch/${b.id}"><span style="font-size:16px">📖</span><span class="grow"><span class="t">${esc(b.name)}</span></span>${ic('arrow')}</a>`))+
        grp('SOPs',sp.map(s=>`<button class="li click" data-act="open-sop" data-id="${s.id}"><span style="font-size:16px">📜</span><span class="grow"><span class="t">${esc(s.name)}</span></span>${ic('arrow')}</a>`))
@@ -7207,7 +7207,7 @@ function openDevoteeForm(id){
     ['preaching_coord', '🎓 Preaching Coordinator (Batch leadership)'],
     ['care_manager', '❤️ Devotee Care Manager (Pillar leader: Care)'],
     ['preaching_manager', '📖 Preaching Manager (Pillar leader: Preaching)'],
-    ['internal_manager', '🕉 Internal Manager (Pillar leader: BACE & Seva)'],
+    ['internal_manager', '🛕 Internal Manager (Pillar leader: BACE & Seva)'],
     ['coordinator', '🧭 Overall Coordinator (Operational executive)'],
     ['area_leader', '🪷 Area Leader (Strategic leadership & spiritual guidance)']
   ];
@@ -7843,7 +7843,7 @@ document.addEventListener('click',e=>{
       ['preaching_coord', '🎓 Preaching Coordinator — Batch leadership'],
       ['care_manager', '❤️ Devotee Care Manager — Pillar leader: Care'],
       ['preaching_manager', '📖 Preaching Manager — Pillar leader: Preaching'],
-      ['internal_manager', '🕉 Internal Manager — Pillar leader: BACE & Seva'],
+      ['internal_manager', '🛕 Internal Manager — Pillar leader: BACE & Seva'],
       ['coordinator', '🧭 Overall Coordinator — Operational executive'],
       ['area_leader', '🪷 Area Leader — Strategic leadership & spiritual guidance']
     ];
