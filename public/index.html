@@ -366,30 +366,36 @@ a.card:hover,button.card:hover{box-shadow:var(--sh-2);transform:translateY(-2px)
 .people .av:first-child{margin-left:0}
 
 /* ---------- tables (responsive → cards) ---------- */
-.tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;width:100%;max-width:100%;box-sizing:border-box}
-table.tbl{width:100%;border-collapse:collapse;font-size:13.5px}
-.tbl th{text-align:left;font-weight:600;font-size:12px;color:var(--ink);padding:9px 12px;border-bottom:1px solid var(--line);background:var(--surface-2);white-space:nowrap}
-.col-filter-wrap{display:inline-flex;align-items:center;gap:5px}
-.col-filter-select{font-family:inherit;font-size:11px;line-height:1.2;padding:2.5px 5px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink-2);cursor:pointer;outline:none;transition:all 0.15s ease;vertical-align:middle;max-width:115px}
+.tbl-wrap{overflow-x:hidden;width:100%;max-width:100%;box-sizing:border-box}
+table.tbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
+.tbl th{text-align:left;font-weight:600;font-size:11.5px;color:var(--ink);padding:7px 10px;border-bottom:1px solid var(--line);background:var(--surface-2);white-space:nowrap;overflow:hidden}
+.col-filter-wrap{display:inline-flex;align-items:center;gap:4px;width:100%}
+.col-filter-wrap>span{font-size:11.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.col-filter-select{font-family:inherit;font-size:10.5px;line-height:1.2;padding:2px 4px;border-radius:5px;border:1px solid var(--line);background:var(--surface);color:var(--ink-2);cursor:pointer;outline:none;transition:all 0.15s ease;vertical-align:middle;max-width:100px;min-width:0;flex:1}
 .col-filter-select:hover{border-color:var(--ink-3);color:var(--ink)}
 .col-filter-select.active{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:700}
-.tbl td{padding:11px 15px;border-bottom:1px solid var(--line-2);vertical-align:middle}
+.tbl td{padding:8px 10px;border-bottom:1px solid var(--line-2);vertical-align:middle;overflow:hidden;max-width:0}
+.tbl-trunc{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
 .tbl tbody tr:hover{background:var(--surface-2)}
 .tbl tbody tr.click{cursor:pointer}
-.who{display:flex;align-items:center;gap:10px}
-.tbl .who{display:flex;align-items:center;gap:10px}
-.tbl .who b{font-weight:600}
-.tbl .who span:not(.av){display:block;font-size:12px;color:var(--ink-3)}
+.who{display:flex;align-items:center;gap:8px}
+.tbl .who{display:flex;align-items:center;gap:8px;min-width:0}
+.tbl .who>div{min-width:0;overflow:hidden}
+.tbl .who b{font-weight:600;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tbl .who span:not(.av){display:block;font-size:11px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tbl-foot{display:flex;align-items:center;gap:10px;padding:11px 15px;border-top:1px solid var(--line-2);font-size:12.5px;color:var(--ink-2);flex-wrap:wrap}
 .tbl-foot .pg{margin-left:auto;display:flex;gap:5px}
 .toolbar{display:flex;gap:8px;padding:12px 15px;border-bottom:1px solid var(--line-2);flex-wrap:wrap;align-items:center}
 .toolbar input[type=search],.toolbar input[type=text],.toolbar input[type=date]{padding:7px 11px;border:1px solid var(--line);border-radius:9px;min-width:170px;background:var(--surface)}
 .toolbar select{padding:7px 10px;border:1px solid var(--line);border-radius:9px;background:var(--surface);max-width:190px}
+.tbl-act{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:7px;border:1px solid var(--line);background:var(--surface);cursor:pointer;font-size:14px;line-height:1;transition:background 0.12s,border-color 0.12s;flex:none}
+.tbl-act:hover{background:var(--surface-2);border-color:var(--ink-3)}
+.tbl-act.danger:hover{background:var(--danger-soft);border-color:var(--danger)}
 @media(max-width:760px){
   table.tbl thead{display:none}
-  table.tbl,table.tbl tbody,table.tbl tr,table.tbl td{display:block;width:100%}
+  table.tbl,table.tbl tbody,table.tbl tr,table.tbl td{display:block;width:100%;max-width:100%}
   table.tbl tr{border-bottom:1px solid var(--line);padding:9px 2px}
-  table.tbl td{border:0;padding:4px 12px;display:flex;gap:10px;align-items:center}
+  table.tbl td{border:0;padding:4px 12px;display:flex;gap:10px;align-items:center;overflow:visible}
   table.tbl td:before{content:attr(data-l);font-size:11.5px;color:var(--ink-3);min-width:92px;flex:none}
   table.tbl td:first-child:before{display:none}
   table.tbl td:first-child{padding-top:6px;font-weight:600}
@@ -2568,8 +2574,10 @@ function dataTable({id,cols,rows,onRow,per=10,toolbar='',empty,exportName}){
   if(!rows.length)return `<div class="card">${t}${empty||emptyState('Nothing to show','No records match the current filters.','')}</div>`;
   const currentPer=APP.perPage?.[id]||per;
   const pages=Math.ceil(rows.length/currentPer),p=Math.min(APP.page[id]||1,pages),slice=rows.slice((p-1)*currentPer,p*currentPer);
+  const hasWidths=cols.some(c=>c.w);
+  const colgroup=hasWidths?`<colgroup>${cols.map(c=>`<col${c.w?` style="width:${c.w}"`:''}>`).join('')}</colgroup>`:'';
   return `<div class="card">${t}
-   <div class="tbl-wrap"><table class="tbl"><thead><tr>${cols.map(c=>`<th>${c.h}</th>`).join('')}</tr></thead>
+   <div class="tbl-wrap"><table class="tbl">${colgroup}<thead><tr>${cols.map(c=>`<th>${c.h}</th>`).join('')}</tr></thead>
    <tbody>${slice.map(r=>`<tr class="${onRow?'click':''}" ${onRow?`data-act="${onRow}" data-id="${r.id}"`:''}>${cols.map(c=>`<td data-l="${esc(c.label || (typeof c.h==='string'?c.h.replace(/<[^>]*>/g,'').trim():''))}">${c.c(r)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>
    <div class="tbl-foot"><span>${rows.length} record${rows.length!==1?'s':''} · page ${p} of ${pages}</span>
      ${exportName?`<button class="btn sm" data-act="export-table" data-t="${id}">${ic('download')}CSV</button>`:''}
@@ -3807,11 +3815,12 @@ function viewDevotees(){
     (scoped?`<div class="note" style="margin-bottom:14px">You can search and view the whole community directory. You can only <b>edit</b> people inside your own ${APP.user.role==='dept_head'?'department':APP.user.role==='preaching_coord'?'batch':'care list'}.</div>`:'')+
     dataTable({id:'dev',exportName:'devotees',toolbar,cols:[
      {
-       h: `<div class="col-filter-wrap" style="gap:6px">
+       w:'26%',
+       h: `<div class="col-filter-wrap">
          <span>Devotee</span>
          ${colSelect('sort', f.sort, [
-           ['name_asc', 'A → Z'],
-           ['name_desc', 'Z → A'],
+           ['name_asc', 'A→Z'],
+           ['name_desc', 'Z→A'],
            ['date_desc', 'Newest'],
            ['date_asc', 'Oldest'],
            ['sadhana_desc', 'Rounds']
@@ -3825,10 +3834,11 @@ function viewDevotees(){
          const rKey = devoteeRole(d);
          const rObj = ROLES[rKey] || ROLES.devotee;
          const isLeader = rKey !== 'devotee';
-         return `<div class="who">${av(d.name,'m')}<div><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"><b>${esc(d.name)}</b>${isLeader?`<span class="badge ${rKey==='area_leader'?'b-gold':rKey==='admin'?'b-ink':'b-saffron'}" style="font-size:10.5px;padding:1px 6px" title="${esc(rObj.scope)}">${rObj.emoji} ${esc(rObj.name)}</span>`:''}</div><span>${esc(d.org || d.highestEducation || 'BACE')} · joined ${fmtD(d.joined)}</span></div></div>`;
+         return `<div class="who"><div style="flex:none">${av(d.name,'s')}</div><div style="min-width:0;overflow:hidden"><b style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block">${esc(d.name)}${isLeader?` <span style="font-size:10px;font-weight:700;color:var(--accent)">${rObj.emoji}</span>`:''}</b><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(d.org||d.highestEducation||'BACE')}${isLeader?` · <span style="color:var(--accent);font-weight:600">${esc(rObj.name)}</span>`:''}</span></div></div>`;
        }
      },
      {
+       w:'10%',
        h: `<div class="col-filter-wrap">
          <span>Status</span>
          ${colSelect('status', f.status, [
@@ -3842,74 +3852,63 @@ function viewDevotees(){
        c: d => sbadge(d.status)
      },
      {
+       w:'16%',
        h: `<div class="col-filter-wrap">
-         <span>Level / batch</span>
+         <span>Batch</span>
          ${colSelect('batch', f.batch, [
            ...(DB.batches || []).map(b => [b.id, b.name]),
-           ['none', 'Not in a batch']
+           ['none', 'No batch']
          ], 'All')}
        </div>`,
        label: 'Level / batch',
-       c: d => d.batch ? `${badge('L' + d.level, 'indigo')} ${esc(batch(d.batch)?.name || '')}` : '<span class="tiny">Not in a batch</span>'
+       c: d => d.batch ? `<span class="tbl-trunc">${badge('L'+d.level,'indigo')} ${esc(batch(d.batch)?.name||'')}</span>` : '<span class="tiny">—</span>'
      },
      {
+       w:'13%',
        h: `<div class="col-filter-wrap">
-         <span>Department</span>
+         <span>Dept</span>
          ${colSelect('dept', f.dept, [
            ...activeDepts().map(d => [d.id, d.name]),
            ['none', 'No seva']
          ], 'All')}
        </div>`,
        label: 'Department',
-       c: d => d.dept ? esc(dept(d.dept)?.name || '') : '<span class="tiny">No seva</span>'
+       c: d => d.dept ? `<span class="tbl-trunc" title="${esc(dept(d.dept)?.name||'')}">${esc(dept(d.dept)?.name||'')}</span>` : '<span class="tiny">—</span>'
      },
      {
+       w:'13%',
        h: `<div class="col-filter-wrap">
-         <span>Care group</span>
+         <span>Care</span>
          ${colSelect('careGroup', f.careGroup, [
            ...(DB.careGroups || []).map(g => [g.id, g.name]),
            ['none', 'No group']
          ], 'All')}
        </div>`,
        label: 'Care group',
-       c: d => d.careGroup ? esc(group(d.careGroup)?.name || '') : '<span class="tiny">—</span>'
+       c: d => d.careGroup ? `<span class="tbl-trunc" title="${esc(group(d.careGroup)?.name||'')}">${esc(group(d.careGroup)?.name||'')}</span>` : '<span class="tiny">—</span>'
      },
      {
+       w:'11%',
        h: `<div class="col-filter-wrap">
-         <span>Skills</span>
-         ${colSelect('skill', f.skill, [
-           ...SKILLS.map(s => [s, s])
-         ], 'All')}
-       </div>`,
-       label: 'Skills',
-       c: d => d.skills.map(s => badge(s, 'grey')).join(' ')
-     },
-     {
-       h: `<div class="col-filter-wrap">
-         <span>Attendance</span>
+         <span>Att.</span>
          ${colSelect('attendance', f.attendance, [
-           ['high', '≥ 80%'],
-           ['mid', '50%–79%'],
-           ['low', '< 50%'],
-           ['critical', '< 30%']
+           ['high', '≥80%'],
+           ['mid', '50-79%'],
+           ['low', '<50%'],
+           ['critical', '<30%']
          ], 'All')}
        </div>`,
        label: 'Attendance',
-       c: d => `<div style="min-width:90px">${prog(d.attendancePct)}<span class="tiny">${d.attendancePct}%</span></div>`
+       c: d => `<div>${prog(d.attendancePct)}<span class="tiny" style="font-size:10.5px">${d.attendancePct}%</span></div>`
      },
      {
-       h: '<div style="text-align:right;padding-right:4px">Actions</div>',
+       w:'11%',
+       h: `<div style="text-align:right">Actions</div>`,
        label: 'Actions',
-       c: d => `<div style="display:flex;gap:6px;align-items:center;justify-content:flex-end">
-         ${canAssignRole() ? `<button class="btn sm" data-act="assign-role" data-id="${d.id}" title="Assign hierarchy role" style="padding:4px 8px;font-size:12.5px;font-weight:600;display:inline-flex;align-items:center;gap:3px">
-           🧭 Role
-         </button>` : ''}
-         <a class="btn sm" href="#/devotee/${d.id}" data-act="open-devotee" data-id="${d.id}" title="View profile" style="padding:4px 10px;text-decoration:none;display:inline-flex;align-items:center;gap:4px;font-weight:600">
-           ${ic('user')} View
-         </a>
-         ${canDeleteDevotee() ? `<button class="btn sm danger" data-act="delete-devotee" data-id="${d.id}" title="Delete devotee data" style="padding:4px 8px;color:var(--danger);border-color:rgba(220,53,69,0.25);background:rgba(220,53,69,0.06)">
-           🗑 Delete
-         </button>` : ''}
+       c: d => `<div style="display:flex;gap:4px;align-items:center;justify-content:flex-end">
+         ${canAssignRole() ? `<button class="tbl-act" data-act="assign-role" data-id="${d.id}" title="Assign hierarchy role">🧭</button>` : ''}
+         <a class="tbl-act" href="#/devotee/${d.id}" data-act="open-devotee" data-id="${d.id}" title="View profile" style="text-decoration:none">${ic('user')}</a>
+         ${canDeleteDevotee() ? `<button class="tbl-act danger" data-act="delete-devotee" data-id="${d.id}" title="Delete devotee record">🗑</button>` : ''}
        </div>`
      }
     ],rows,onRow:'open-devotee',
