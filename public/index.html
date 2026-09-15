@@ -368,7 +368,11 @@ a.card:hover,button.card:hover{box-shadow:var(--sh-2);transform:translateY(-2px)
 /* ---------- tables (responsive → cards) ---------- */
 .tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;width:100%;max-width:100%;box-sizing:border-box}
 table.tbl{width:100%;border-collapse:collapse;font-size:13.5px}
-.tbl th{text-align:left;font-weight:500;font-size:12px;color:var(--ink-3);padding:10px 15px;border-bottom:1px solid var(--line);background:var(--surface-2);white-space:nowrap}
+.tbl th{text-align:left;font-weight:600;font-size:12px;color:var(--ink);padding:9px 12px;border-bottom:1px solid var(--line);background:var(--surface-2);white-space:nowrap}
+.col-filter-wrap{display:inline-flex;align-items:center;gap:5px}
+.col-filter-select{font-family:inherit;font-size:11px;line-height:1.2;padding:2.5px 5px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink-2);cursor:pointer;outline:none;transition:all 0.15s ease;vertical-align:middle;max-width:115px}
+.col-filter-select:hover{border-color:var(--ink-3);color:var(--ink)}
+.col-filter-select.active{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:700}
 .tbl td{padding:11px 15px;border-bottom:1px solid var(--line-2);vertical-align:middle}
 .tbl tbody tr:hover{background:var(--surface-2)}
 .tbl tbody tr.click{cursor:pointer}
@@ -914,24 +918,6 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13.5px}
     align-items:center!important;
     border-bottom:1px solid var(--line-2)!important;
     padding-bottom:6px!important;
-  }
-
-  /* Devotee directory filter grid on mobile */
-  .dev-col-filters{
-    display:grid!important;
-    grid-template-columns:1fr 1fr!important;
-    gap:8px!important;
-    width:100%!important;
-    overflow-x:hidden!important;
-    flex-wrap:wrap!important;
-  }
-  .dev-col-filters > span{
-    grid-column:1 / -1;
-  }
-  .dev-col-filters select{
-    width:100%!important;
-    max-width:100%!important;
-    min-width:0!important;
   }
 
   /* Table cards and footers on mobile */
@@ -3795,126 +3781,137 @@ function viewDevotees(){
   if(f.sort && f.sort !== 'name_asc') activeFilterCount++;
 
   const toolbar=`
-    <div style="display:flex;flex-direction:column;gap:10px;width:100%">
-      <!-- Primary Search & Sort Row -->
-      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;width:100%">
-        <div style="position:relative;flex:1;min-width:240px">
-          <input type="search" placeholder="🔍 Search name, phone, email, college, job, skills..." value="${esc(f.q)}" data-act="f" data-k="dev" data-n="q" style="width:100%;padding:8px 12px 8px 32px;border-radius:9px;border:1px solid var(--line);font-size:13.5px">
-          <span style="position:absolute;left:10px;top:9px;font-size:13px;opacity:0.6;pointer-events:none">🔍</span>
-        </div>
-        <div style="display:flex;align-items:center;gap:6px">
-          <span class="tiny" style="font-weight:600;color:var(--ink-2);flex:none">Sort:</span>
-          <select data-act="f" data-k="dev" data-n="sort" style="min-width:145px;padding:7px 10px;border-radius:8px;border:1px solid var(--line);font-size:13px">
-            <option value="name_asc" ${f.sort==='name_asc'?'selected':''}>Name (A → Z)</option>
-            <option value="name_desc" ${f.sort==='name_desc'?'selected':''}>Name (Z → A)</option>
-            <option value="date_desc" ${f.sort==='date_desc'?'selected':''}>Joined (Newest)</option>
-            <option value="date_asc" ${f.sort==='date_asc'?'selected':''}>Joined (Oldest)</option>
-            <option value="level_desc" ${f.sort==='level_desc'?'selected':''}>Level (High to Low)</option>
-            <option value="att_desc" ${f.sort==='att_desc'?'selected':''}>Attendance (High to Low)</option>
-            <option value="att_asc" ${f.sort==='att_asc'?'selected':''}>Attendance (Low to High)</option>
-            <option value="sadhana_desc" ${f.sort==='sadhana_desc'?'selected':''}>Sadhana rounds</option>
-          </select>
-          <div style="display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)">
-            <button type="button" class="btn sm ${f.sort==='name_asc'?'pri':''}" data-act="set-dev-sort" data-v="name_asc" style="border:none;border-radius:0;padding:6px 11px;font-size:12.5px;font-weight:600;display:inline-flex;align-items:center;gap:4px" title="Sort Name A to Z">
-              <span>A → Z</span> ${f.sort==='name_asc'?'▲':''}
-            </button>
-            <button type="button" class="btn sm ${f.sort==='name_desc'?'pri':''}" data-act="set-dev-sort" data-v="name_desc" style="border:none;border-radius:0;padding:6px 11px;font-size:12.5px;font-weight:600;border-left:1px solid var(--line);display:inline-flex;align-items:center;gap:4px" title="Sort Name Z to A">
-              <span>Z → A</span> ${f.sort==='name_desc'?'▼':''}
-            </button>
-          </div>
-        </div>
-        ${activeFilterCount > 0 ? `<button class="btn sm" data-act="clear-dev-filters" title="Reset all filters" style="color:var(--danger);border-color:var(--danger-soft);font-weight:600">${ic('x')} Reset Filters (${activeFilterCount})</button>` : ''}
-        ${can('directory')?`<button class="btn sm" data-act="export-devotees" style="margin-left:auto">${ic('download')}Export CSV</button>`:''}
-        ${canImportCsv()?`<button class="btn sm pri" data-act="open-import-csv" style="${can('directory')?'margin-left:6px':'margin-left:auto'}">${ic('upload')}Import CSV</button>`:''}
+    <div style="display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;width:100%">
+      <div style="position:relative;flex:1;min-width:260px;max-width:440px">
+        <input type="search" placeholder="🔍 Search devotees by name, phone, email, college, job..." value="${esc(f.q)}" data-act="f" data-k="dev" data-n="q" style="width:100%;padding:8px 12px 8px 34px;border-radius:9px;border:1px solid var(--line);font-size:13.5px;background:var(--surface)">
+        <span style="position:absolute;left:11px;top:9px;font-size:13px;opacity:0.55;pointer-events:none">🔍</span>
       </div>
-
-      <!-- Column Filters Row (Responsive wrap, no horizontal scroll) -->
-      <div class="dev-col-filters" style="display:flex;gap:8px;align-items:center;background:var(--surface-2);padding:9px 12px;border-radius:10px;border:1px solid var(--line-2);flex-wrap:wrap">
-        <span class="tiny" style="font-weight:700;color:var(--ink);margin-right:2px;display:flex;align-items:center;gap:4px;flex-shrink:0;white-space:nowrap">
-          ${ic('filter')} Filter by:
-        </span>
-
-        <!-- 0. Hierarchy Role Filter -->
-        <select data-act="f" data-k="dev" data-n="role" title="Filter by Hierarchy Role" style="padding:6px 9px;border-radius:8px;border:1px solid ${f.role?'var(--accent)':'var(--line)'};font-size:12.5px;background:${f.role?'var(--accent-soft)':'var(--surface)'};color:${f.role?'var(--accent)':'var(--ink)'};${f.role?'font-weight:700':''};flex-shrink:0;min-width:130px;max-width:165px">
-          <option value="">🧭 All Roles</option>
-          ${Object.entries(ROLES).filter(([k])=>k!=='admin').map(([k,r])=>`<option value="${k}" ${f.role===k?'selected':''}>${r.emoji} ${esc(r.name)}</option>`).join('')}
-        </select>
-
-        <!-- 1. Department Filter -->
-        <select data-act="f" data-k="dev" data-n="dept" title="Filter by Department / Seva" style="padding:6px 9px;border-radius:8px;border:1px solid ${f.dept?'var(--accent)':'var(--line)'};font-size:12.5px;background:${f.dept?'var(--accent-soft)':'var(--surface)'};color:${f.dept?'var(--accent)':'var(--ink)'};${f.dept?'font-weight:700':''};flex-shrink:0;min-width:130px;max-width:165px">
-          <option value="">🏢 All Departments</option>
-          ${activeDepts().map(d=>`<option value="${d.id}" ${f.dept===d.id?'selected':''}>Dept: ${esc(d.name)}</option>`).join('')}
-          <option value="none" ${f.dept==='none'?'selected':''}>No seva / Unallocated</option>
-        </select>
-
-        <!-- 2. Batch Filter -->
-        <select data-act="f" data-k="dev" data-n="batch" title="Filter by Batch" style="padding:6px 9px;border-radius:8px;border:1px solid ${f.batch?'var(--accent)':'var(--line)'};font-size:12.5px;background:${f.batch?'var(--accent-soft)':'var(--surface)'};color:${f.batch?'var(--accent)':'var(--ink)'};${f.batch?'font-weight:700':''};flex-shrink:0;min-width:120px;max-width:155px">
-          <option value="">📖 All Batches</option>
-          ${(DB.batches||[]).map(b=>`<option value="${b.id}" ${f.batch===b.id?'selected':''}>Batch: ${esc(b.name)}</option>`).join('')}
-          <option value="none" ${f.batch==='none'?'selected':''}>Not in a batch</option>
-        </select>
-
-        <!-- 3. Care Group Filter -->
-        <select data-act="f" data-k="dev" data-n="careGroup" title="Filter by Care Group" style="padding:6px 9px;border-radius:8px;border:1px solid ${f.careGroup?'var(--accent)':'var(--line)'};font-size:12.5px;background:${f.careGroup?'var(--accent-soft)':'var(--surface)'};color:${f.careGroup?'var(--accent)':'var(--ink)'};${f.careGroup?'font-weight:700':''};flex-shrink:0;min-width:130px;max-width:160px">
-          <option value="">❤️ All Care Groups</option>
-          ${(DB.careGroups||[]).map(g=>`<option value="${g.id}" ${f.careGroup===g.id?'selected':''}>Care: ${esc(g.name)}</option>`).join('')}
-          <option value="none" ${f.careGroup==='none'?'selected':''}>No care group</option>
-        </select>
-
-        <!-- 4. Status Filter -->
-        <select data-act="f" data-k="dev" data-n="status" title="Filter by Status" style="padding:6px 9px;border-radius:8px;border:1px solid ${f.status?'var(--accent)':'var(--line)'};font-size:12.5px;background:${f.status?'var(--accent-soft)':'var(--surface)'};color:${f.status?'var(--accent)':'var(--ink)'};${f.status?'font-weight:700':''};flex-shrink:0;min-width:115px;max-width:145px">
-          <option value="">✨ All Statuses</option>
-          ${['Active','Pending Approval','New','Inactive'].map(s=>`<option value="${s}" ${f.status===s?'selected':''}>Status: ${s}</option>`).join('')}
-        </select>
-
-        <!-- 5. Skills Filter -->
-        <select data-act="f" data-k="dev" data-n="skill" title="Filter by Skill" style="padding:6px 9px;border-radius:8px;border:1px solid ${f.skill?'var(--accent)':'var(--line)'};font-size:12.5px;background:${f.skill?'var(--accent-soft)':'var(--surface)'};color:${f.skill?'var(--accent)':'var(--ink)'};${f.skill?'font-weight:700':''};flex-shrink:0;min-width:110px;max-width:140px">
-          <option value="">🛠️ All Skills</option>
-          ${SKILLS.map(s=>`<option value="${s}" ${f.skill===s?'selected':''}>Skill: ${s}</option>`).join('')}
-        </select>
-
-        <!-- 6. Attendance Filter -->
-        <select data-act="f" data-k="dev" data-n="attendance" title="Filter by Attendance %" style="padding:6px 9px;border-radius:8px;border:1px solid ${f.attendance?'var(--accent)':'var(--line)'};font-size:12.5px;background:${f.attendance?'var(--accent-soft)':'var(--surface)'};color:${f.attendance?'var(--accent)':'var(--ink)'};${f.attendance?'font-weight:700':''};flex-shrink:0;min-width:125px;max-width:155px">
-          <option value="">📊 All Attendance</option>
-          <option value="high" ${f.attendance==='high'?'selected':''}>Att: ≥ 80%</option>
-          <option value="mid" ${f.attendance==='mid'?'selected':''}>Att: 50%–79%</option>
-          <option value="low" ${f.attendance==='low'?'selected':''}>Att: &lt; 50%</option>
-          <option value="critical" ${f.attendance==='critical'?'selected':''}>Att: &lt; 30%</option>
-        </select>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        ${activeFilterCount > 0 ? `<button class="btn sm" data-act="clear-dev-filters" title="Reset all column filters and sort" style="color:var(--danger);background:rgba(220,53,69,0.06);border-color:rgba(220,53,69,0.25);font-weight:600;display:inline-flex;align-items:center;gap:5px">${ic('x')} Reset Filters (${activeFilterCount})</button>` : ''}
+        ${can('directory')?`<button class="btn sm" data-act="export-devotees" title="Export current devotees as CSV" style="display:inline-flex;align-items:center;gap:4px">${ic('download')}Export CSV</button>`:''}
+        ${canImportCsv()?`<button class="btn sm pri" data-act="open-import-csv" title="Import devotees from CSV" style="display:inline-flex;align-items:center;gap:4px">${ic('upload')}Import CSV</button>`:''}
       </div>
     </div>`;
+
+  const colSelect = (key, currentVal, opts, defaultLabel, isSort = false) => {
+    const isFiltered = !!currentVal && currentVal !== 'name_asc';
+    return `<select data-act="f" data-k="dev" data-n="${key}" title="Filter by ${esc(defaultLabel)}" class="col-filter-select ${isFiltered ? 'active' : ''}">
+      <option value="${isSort ? 'name_asc' : ''}">${esc(defaultLabel)}${isFiltered ? ' ✓' : ''}</option>
+      ${opts.map(([val, label]) => `<option value="${val}" ${currentVal === val ? 'selected' : ''}>${esc(label)}</option>`).join('')}
+    </select>`;
+  };
 
    return head('👥 One devotee, one record','Devotee directory',
      `${rows.length} devotee${rows.length!==1?'s':''} matching filters — searchable by everyone with an operational role; sensitive care information stays restricted`,
      `${canImportCsv()?`<button class="btn" data-act="open-import-csv" style="margin-right:8px">${ic('upload')}Import CSV</button>`:''}<button class="btn pri" data-act="add-devotee">${ic('plus')}Add devotee</button>`)+
     (scoped?`<div class="note" style="margin-bottom:14px">You can search and view the whole community directory. You can only <b>edit</b> people inside your own ${APP.user.role==='dept_head'?'department':APP.user.role==='preaching_coord'?'batch':'care list'}.</div>`:'')+
     dataTable({id:'dev',exportName:'devotees',toolbar,cols:[
-     {h:`<div style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;user-select:none" data-act="toggle-dev-sort" title="Click to sort A to Z or Z to A">
-       <span style="font-weight:600">Devotee</span>
-       <span style="display:inline-flex;align-items:center;padding:1px 6px;border-radius:5px;font-size:11px;font-weight:700;background:${f.sort==='name_asc'||f.sort==='name_desc'?'var(--accent-soft)':'var(--surface-2)'};color:${f.sort==='name_asc'||f.sort==='name_desc'?'var(--accent)':'var(--ink-3)'};border:1px solid ${f.sort==='name_asc'||f.sort==='name_desc'?'var(--accent)':'var(--line)'}">
-         ${f.sort==='name_asc'?'A → Z ▲':f.sort==='name_desc'?'Z → A ▼':'↕ A–Z'}
-       </span>
-     </div>`,label:'Devotee',c:d=>{
-       const rKey=devoteeRole(d);
-       const rObj=ROLES[rKey]||ROLES.devotee;
-       const isLeader=rKey!=='devotee';
-       return `<div class="who">${av(d.name,'m')}<div><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"><b>${esc(d.name)}</b>${isLeader?`<span class="badge ${rKey==='area_leader'?'b-gold':rKey==='admin'?'b-ink':'b-saffron'}" style="font-size:10.5px;padding:1px 6px" title="${esc(rObj.scope)}">${rObj.emoji} ${esc(rObj.name)}</span>`:''}</div><span>${esc(d.org || d.highestEducation || 'BACE')} · joined ${fmtD(d.joined)}</span></div></div>`;
-     }},
-     {h:`Status ${f.status?`<span class="badge b-grey" style="padding:1px 5px;font-size:10px">Filtered</span>`:''}`,label:'Status',c:d=>sbadge(d.status)},
-     {h:`Level / batch ${f.batch?`<span class="badge b-indigo" style="padding:1px 5px;font-size:10px">Filtered</span>`:''}`,label:'Level / batch',c:d=>d.batch?`${badge('L'+d.level,'indigo')} ${esc(batch(d.batch)?.name||'')}`:'<span class="tiny">Not in a batch</span>'},
-     {h:`Department ${f.dept?`<span class="badge b-saffron" style="padding:1px 5px;font-size:10px">Filtered</span>`:''}`,label:'Department',c:d=>d.dept?esc(dept(d.dept)?.name||''):'<span class="tiny">No seva</span>'},
-     {h:`Care group ${f.careGroup?`<span class="badge b-green" style="padding:1px 5px;font-size:10px">Filtered</span>`:''}`,label:'Care group',c:d=>d.careGroup?esc(group(d.careGroup)?.name||''):'<span class="tiny">—</span>'},
-     {h:`Skills ${f.skill?`<span class="badge b-grey" style="padding:1px 5px;font-size:10px">Filtered</span>`:''}`,label:'Skills',c:d=>d.skills.map(s=>badge(s,'grey')).join(' ')},
-     {h:`Attendance ${f.attendance?`<span class="badge b-teal" style="padding:1px 5px;font-size:10px">Filtered</span>`:''}`,label:'Attendance',c:d=>`<div style="min-width:90px">${prog(d.attendancePct)}<span class="tiny">${d.attendancePct}%</span></div>`},
-     {h:'Actions',label:'Actions',c:d=>`<div style="display:flex;gap:6px;align-items:center;justify-content:flex-end">
-       ${canAssignRole()?`<button class="btn sm" data-act="assign-role" data-id="${d.id}" title="Assign hierarchy role" style="padding:4px 8px;font-size:12.5px;font-weight:600;display:inline-flex;align-items:center;gap:3px">
-         🧭 Role
-       </button>`:''}
-       <a class="btn sm" href="#/devotee/${d.id}" data-act="open-devotee" data-id="${d.id}" title="View profile" style="padding:4px 10px;text-decoration:none;display:inline-flex;align-items:center;gap:4px;font-weight:600">
-         ${ic('user')} View
-       </a>
-       ${canDeleteDevotee()?`<button class="btn sm danger" data-act="delete-devotee" data-id="${d.id}" title="Delete devotee data" style="padding:4px 8px;color:var(--danger);border-color:rgba(220,53,69,0.25);background:rgba(220,53,69,0.06)">\n          🗑 Delete\n        </button>`:''}
-     </div>`}
+     {
+       h: `<div class="col-filter-wrap" style="gap:6px">
+         <span>Devotee</span>
+         ${colSelect('sort', f.sort, [
+           ['name_asc', 'A → Z'],
+           ['name_desc', 'Z → A'],
+           ['date_desc', 'Newest'],
+           ['date_asc', 'Oldest'],
+           ['sadhana_desc', 'Rounds']
+         ], '↕ Sort', true)}
+         ${colSelect('role', f.role, [
+           ...Object.entries(ROLES).filter(([k]) => k !== 'admin').map(([k, r]) => [k, r.name])
+         ], 'Role')}
+       </div>`,
+       label: 'Devotee',
+       c: d => {
+         const rKey = devoteeRole(d);
+         const rObj = ROLES[rKey] || ROLES.devotee;
+         const isLeader = rKey !== 'devotee';
+         return `<div class="who">${av(d.name,'m')}<div><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"><b>${esc(d.name)}</b>${isLeader?`<span class="badge ${rKey==='area_leader'?'b-gold':rKey==='admin'?'b-ink':'b-saffron'}" style="font-size:10.5px;padding:1px 6px" title="${esc(rObj.scope)}">${rObj.emoji} ${esc(rObj.name)}</span>`:''}</div><span>${esc(d.org || d.highestEducation || 'BACE')} · joined ${fmtD(d.joined)}</span></div></div>`;
+       }
+     },
+     {
+       h: `<div class="col-filter-wrap">
+         <span>Status</span>
+         ${colSelect('status', f.status, [
+           ['Active', 'Active'],
+           ['Pending Approval', 'Pending'],
+           ['New', 'New'],
+           ['Inactive', 'Inactive']
+         ], 'All')}
+       </div>`,
+       label: 'Status',
+       c: d => sbadge(d.status)
+     },
+     {
+       h: `<div class="col-filter-wrap">
+         <span>Level / batch</span>
+         ${colSelect('batch', f.batch, [
+           ...(DB.batches || []).map(b => [b.id, b.name]),
+           ['none', 'Not in a batch']
+         ], 'All')}
+       </div>`,
+       label: 'Level / batch',
+       c: d => d.batch ? `${badge('L' + d.level, 'indigo')} ${esc(batch(d.batch)?.name || '')}` : '<span class="tiny">Not in a batch</span>'
+     },
+     {
+       h: `<div class="col-filter-wrap">
+         <span>Department</span>
+         ${colSelect('dept', f.dept, [
+           ...activeDepts().map(d => [d.id, d.name]),
+           ['none', 'No seva']
+         ], 'All')}
+       </div>`,
+       label: 'Department',
+       c: d => d.dept ? esc(dept(d.dept)?.name || '') : '<span class="tiny">No seva</span>'
+     },
+     {
+       h: `<div class="col-filter-wrap">
+         <span>Care group</span>
+         ${colSelect('careGroup', f.careGroup, [
+           ...(DB.careGroups || []).map(g => [g.id, g.name]),
+           ['none', 'No group']
+         ], 'All')}
+       </div>`,
+       label: 'Care group',
+       c: d => d.careGroup ? esc(group(d.careGroup)?.name || '') : '<span class="tiny">—</span>'
+     },
+     {
+       h: `<div class="col-filter-wrap">
+         <span>Skills</span>
+         ${colSelect('skill', f.skill, [
+           ...SKILLS.map(s => [s, s])
+         ], 'All')}
+       </div>`,
+       label: 'Skills',
+       c: d => d.skills.map(s => badge(s, 'grey')).join(' ')
+     },
+     {
+       h: `<div class="col-filter-wrap">
+         <span>Attendance</span>
+         ${colSelect('attendance', f.attendance, [
+           ['high', '≥ 80%'],
+           ['mid', '50%–79%'],
+           ['low', '< 50%'],
+           ['critical', '< 30%']
+         ], 'All')}
+       </div>`,
+       label: 'Attendance',
+       c: d => `<div style="min-width:90px">${prog(d.attendancePct)}<span class="tiny">${d.attendancePct}%</span></div>`
+     },
+     {
+       h: '<div style="text-align:right;padding-right:4px">Actions</div>',
+       label: 'Actions',
+       c: d => `<div style="display:flex;gap:6px;align-items:center;justify-content:flex-end">
+         ${canAssignRole() ? `<button class="btn sm" data-act="assign-role" data-id="${d.id}" title="Assign hierarchy role" style="padding:4px 8px;font-size:12.5px;font-weight:600;display:inline-flex;align-items:center;gap:3px">
+           🧭 Role
+         </button>` : ''}
+         <a class="btn sm" href="#/devotee/${d.id}" data-act="open-devotee" data-id="${d.id}" title="View profile" style="padding:4px 10px;text-decoration:none;display:inline-flex;align-items:center;gap:4px;font-weight:600">
+           ${ic('user')} View
+         </a>
+         ${canDeleteDevotee() ? `<button class="btn sm danger" data-act="delete-devotee" data-id="${d.id}" title="Delete devotee data" style="padding:4px 8px;color:var(--danger);border-color:rgba(220,53,69,0.25);background:rgba(220,53,69,0.06)">
+           🗑 Delete
+         </button>` : ''}
+       </div>`
+     }
     ],rows,onRow:'open-devotee',
     empty:emptyState('No devotees found','Nothing matches these filters. Clear one, or add a new devotee.','<button class="btn pri" data-act="add-devotee">Add devotee</button>','people')});
 }
@@ -7279,7 +7276,7 @@ document.addEventListener('click',e=>{
     break;}
   case 'download-csv-template':{stop();downloadDevoteeCsvTemplate();break;}
   case 'confirm-import-csv':{stop();executeDevoteeCsvImport();break;}
-  case 'clear-dev-filters':{stop();APP.filters.dev={q:'',status:'',dept:'',batch:'',careGroup:'',skill:'',attendance:'',sort:'name_asc'};APP.page.dev=1;toast('Filters reset');render();break}
+  case 'clear-dev-filters':{stop();APP.filters.dev={q:'',role:'',status:'',dept:'',batch:'',careGroup:'',skill:'',attendance:'',sort:'name_asc'};APP.page.dev=1;toast('Filters reset');render();break}
   case 'set-dev-sort':{stop();APP.filters.dev=APP.filters.dev||{};APP.filters.dev.sort=t.dataset.v;APP.page.dev=1;render();break}
   case 'toggle-dev-sort':{stop();APP.filters.dev=APP.filters.dev||{};APP.filters.dev.sort=APP.filters.dev.sort==='name_asc'?'name_desc':'name_asc';APP.page.dev=1;render();break}
   case 'set-per-page':{stop();const tId=t.dataset.t;const n=parseInt(t.dataset.n,10)||10;APP.perPage=APP.perPage||{};APP.perPage[tId]=n;APP.page[tId]=1;render();break}
