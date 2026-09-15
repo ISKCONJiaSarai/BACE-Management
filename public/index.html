@@ -5897,8 +5897,8 @@ function fieldHTML(f){
   if(f.t==='textarea')return `<div class="field"><label>${esc(f.l)}</label><textarea name="${f.n}" placeholder="${esc(f.ph||'')}">${esc(v)}</textarea>${f.hint?`<div class="hint">${esc(f.hint)}</div>`:''}</div>`;
   return `<div class="field"><label>${esc(f.l)}</label><input type="${f.t}" name="${f.n}" value="${esc(v)}" placeholder="${esc(f.ph||'')}">${f.hint?`<div class="hint">${esc(f.hint)}</div>`:''}</div>`;
 }
-function openForm(title,fields,save,ctx={},sub=''){
-  APP.fabOpen=false;APP.modal={kind:'form',title,fields,save,ctx,sub};render();
+function openForm(title,fields,save,ctx={},sub='',extra=''){
+  APP.fabOpen=false;APP.modal={kind:'form',title,fields,save,ctx,sub,extra};render();
 }
 function formModal(){
   const m=APP.modal;
@@ -5911,7 +5911,7 @@ function formModal(){
    <div class="modal-h"><div><h2 style="font-size:18px">${esc(m.title)}</h2>${m.sub?`<div class="tiny">${esc(m.sub)}</div>`:''}</div>
      <button class="icon-btn" style="margin-left:auto" data-act="close-scrim">${ic('x')}</button></div>
    <form class="modal-b" id="modalform" onsubmit="return false">${rows.join('')}</form>
-   <div class="modal-f"><button class="btn" data-act="close-scrim">Cancel</button>
+   <div class="modal-f">${m.extra||''}<button class="btn" data-act="close-scrim">Cancel</button>
      <button class="btn pri" data-act="${m.save}">${ic('check')}Save</button></div></div></div>`;
 }
 function collect(){
@@ -6887,8 +6887,8 @@ function openBatchForm(id){
     FLD('allocated','Budget allocated (₹)','number',{v:b?.budget.allocated||0,half:1}),
     FLD('spent','Budget spent (₹)','number',{v:b?.budget.spent||0,half:1}),
     FLD('status','Status','select',{v:b?.status||'Active',opts:['Active','Inactive','Archived']})
-  ],'save-batch',{id},
-  b?`<div style="margin-top:6px"><b>Volunteers in this batch:</b> <button class="btn sm" data-act="edit-batch-team" data-id="${b.id}">${ic('people')}Manage volunteers (${volIds.length})</button></div>`:null);
+  ],'save-batch',{id},'',
+  b?`<button class="btn sm" data-act="edit-batch-team" data-id="${b.id}" style="margin-right:auto">${ic('people')}Volunteers (${volIds.length})</button>`:null);
 }
 function openGroupForm(id){
   const g=id?group(id):null;
