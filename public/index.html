@@ -7140,6 +7140,12 @@ function getDefaultDressingSchedule() {
   ];
 }
 
+
+window.changeDressingMonth = function(val) {
+  APP.dressingSelectedMonth = val;
+  render();
+};
+
 window.addDevoteeToDressingInput = function(name) {
   if (!name) return;
   const input = document.getElementById('edit-dressing-devotees');
@@ -7442,6 +7448,15 @@ function renderDeityDressingScheduleCard() {
     saveStoredRoster('deity', roster);
   }
 
+  // Ensure strictly 2 rows per month (15-day cadence: 1st and 15th) and clean up any test slots
+  if (roster.dressingSchedule) {
+    const originalLen = roster.dressingSchedule.length;
+    roster.dressingSchedule = roster.dressingSchedule.filter(s => s.date !== '2026-09-12');
+    if (roster.dressingSchedule.length !== originalLen) {
+      saveStoredRoster('deity', roster);
+    }
+  }
+
   const selectedMonth = APP.dressingSelectedMonth || '2026-09';
   const allSchedule = roster.dressingSchedule.slice().sort((a, b) => a.date.localeCompare(b.date));
 
@@ -7490,7 +7505,7 @@ function renderDeityDressingScheduleCard() {
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
           <div style="display:flex;align-items:center;gap:6px">
             <span class="tiny" style="font-weight:600;color:var(--ink-2)">Month:</span>
-            <select class="sel sm" style="font-weight:600;border:1.5px solid var(--line);background:var(--surface);border-radius:6px;padding:5px 8px" data-act="dressing-filter-month">
+            <select class="sel sm" id="dressing-month-select" style="font-weight:600;border:1.5px solid var(--line);background:var(--surface);border-radius:6px;padding:6px 10px;cursor:pointer" data-act="dressing-filter-month" onchange="window.changeDressingMonth(this.value)">
               ${allMonths.map(m => `
                 <option value="${m}" ${selectedMonth === m ? 'selected' : ''}>${monthNames[m] || m}${m === '2026-09' ? ' (Current)' : ''}</option>
               `).join('')}
@@ -12132,11 +12147,7 @@ document.addEventListener('click',e=>{
     window.open(url, '_blank');
     break;
   }
-  case 'dressing-filter-month':stop();{
-    APP.dressingSelectedMonth = t.value;
-    render();
-    break;
-  }
+  
   case 'add-dressing-slot':stop();{
     openEditDressingSlotModal(null);
     break;
