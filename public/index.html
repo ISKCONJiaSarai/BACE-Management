@@ -6023,9 +6023,17 @@ function generateRosterCanvas(deptKey) {
       textToDraw = todayDevs + ' ' + statusEmoji;
     }
 
-    if (textToDraw.includes('❌') && textToDraw.includes('Aman Pr')) {
-      ctx.fillText('Suraj Pr ❌', col0W + (col1W / 2), y + (rowH / 2) - 10);
-      ctx.fillText('Aman Pr ✅', col0W + (col1W / 2), y + (rowH / 2) + 11);
+    if (textToDraw.includes('❌')) {
+      const parts = textToDraw.split('❌');
+      const orig = parts[0].trim() + ' ❌';
+      let sub = (parts[1] || '').trim();
+      if (sub) {
+        if (!sub.includes('✅') && !sub.includes('❌')) sub += ' ✅';
+        ctx.fillText(orig, col0W + (col1W / 2), y + (rowH / 2) - 10);
+        ctx.fillText(sub, col0W + (col1W / 2), y + (rowH / 2) + 11);
+      } else {
+        ctx.fillText(orig, col0W + (col1W / 2), y + (rowH / 2));
+      }
     } else if (textToDraw.includes('&')) {
       const parts = textToDraw.split('&');
       ctx.fillText(parts[0].trim() + ' &', col0W + (col1W / 2), y + (rowH / 2) - 10);
@@ -6185,6 +6193,75 @@ function openShareRosterModal(deptKey) {
   render();
 }
 
+function openMissedSubstituteModal(deptKey, dateStr, sId) {
+  initDepartmentRosters();
+  const isDeity = deptKey === 'deity';
+  const roster = isDeity ? APP.deityRoster : APP.cleaningRoster;
+  const service = roster.services.find(s => s.id === sId) || { name: 'Seva', time: '04:30 AM' };
+  const slot = getRosterSlot(roster, dateStr, sId);
+
+  let origDev = slot.devotees || '';
+  let existingSub = '';
+  if (origDev.includes('❌')) {
+    const parts = origDev.split('❌');
+    origDev = parts[0].trim();
+    existingSub = (parts[1] || '').trim();
+  }
+
+  APP.missedPromptData = {
+    deptKey,
+    dateStr,
+    sId,
+    originalDev: origDev,
+    serviceName: service.name,
+    serviceTime: service.time
+  };
+
+  const modalHtml = `
+    <div class="modal" data-stop="1" style="max-width:440px;width:95%">
+      <div class="modal-h" style="display:flex;align-items:center;justify-content:space-between">
+        <h3 style="margin:0;display:flex;align-items:center;gap:8px;font-size:15.5px">
+          <span>⚠️</span> Seva Missed: ${esc(service.name)}
+        </h3>
+        <button class="icon-btn" style="margin-left:auto" data-act="close-scrim">${ic('x')}</button>
+      </div>
+      <div class="modal-b" style="padding:16px;display:flex;flex-direction:column;gap:12px">
+        <div style="background:var(--surface-2);border-radius:8px;padding:10px 12px;font-size:13px;display:flex;justify-content:space-between;align-items:center">
+          <span>Scheduled: <b style="color:var(--ink)">${esc(origDev || 'Unassigned')}</b></span>
+          <span style="color:var(--err);font-weight:700">❌ Missed</span>
+        </div>
+        <div>
+          <label style="display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:var(--ink)">
+            Who did this service instead? (Replacement Devotee)
+          </label>
+          <input type="text" id="missed-substitute-name" value="${esc(existingSub)}" placeholder="e.g. Aman Pr" autofocus style="width:100%;box-sizing:border-box;padding:9px 12px;border:1.5px solid var(--pri);border-radius:8px;font-size:14px;background:var(--surface)">
+          <div class="tiny" style="color:var(--ink-3);margin-top:5px">
+            Enter the substitute devotee who stepped in to do the seva, or click below:
+          </div>
+          <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:8px">
+            ${(DB.devotees || []).slice(0, 8).map(d => `
+              <button type="button" class="btn sm" style="padding:3px 8px;font-size:11.5px;background:var(--surface-2)" onclick="const el=document.getElementById('missed-substitute-name');if(el){el.value='${esc(d.name)}';el.focus();}">
+                + ${esc(d.name.split(' ')[0])}
+              </button>
+            `).join('')}
+          </div>
+        </div>
+      </div>
+      <div class="modal-f" style="display:flex;justify-content:space-between;gap:8px;padding:12px 16px;border-top:1px solid var(--line-2);background:var(--surface-2)">
+        <button class="btn" data-act="save-missed-nobody" style="color:var(--err);border-color:var(--line)">❌ No One Did It</button>
+        <div style="display:flex;gap:8px">
+          <button class="btn" data-act="close-scrim">Cancel</button>
+          <button class="btn pri" data-act="save-missed-substitute">✅ Save Replacement</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  APP.modal = 'custom';
+  APP.customModalHtml = modalHtml;
+  render();
+}
+
 function openEditRosterSlotModal(deptKey, dateStr, sId) {
   initDepartmentRosters();
   const isDeity = deptKey === 'deity';
@@ -6196,13 +6273,22 @@ function openEditRosterSlotModal(deptKey, dateStr, sId) {
   const isTomorrow = dateStr === iso(dayOff(1)) || dateStr > iso(TODAY);
   const dayTitle = isToday ? "Today's Report" : (isTomorrow ? "Tomorrow's Schedule" : fmtD(dateStr));
 
+  let origDev = slot.devotees || '';
+  let existingSub = '';
+  if (origDev.includes('❌')) {
+    const parts = origDev.split('❌');
+    origDev = parts[0].trim();
+    existingSub = (parts[1] || '').trim();
+  }
+
   APP.editingSlot = {
     deptKey,
     dateStr,
     sId,
-    devotees: slot.devotees || '',
+    devotees: origDev,
+    substituteDev: existingSub,
     time: service.time || '04:30 AM',
-    status: slot.status || (isTomorrow ? 'pending' : 'done')
+    status: slot.status || (isTomorrow ? 'pending' : (existingSub ? 'missed' : 'done'))
   };
 
   const modalHtml = `
@@ -6228,10 +6314,19 @@ function openEditRosterSlotModal(deptKey, dateStr, sId) {
         ${!isTomorrow ? `
         <div>
           <label style="display:block;font-size:12.5px;font-weight:600;margin-bottom:5px;color:var(--ink)">Service Completion Status</label>
-          <select id="edit-slot-status" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:var(--surface)">
-            <option value="done" ${APP.editingSlot.status !== 'missed' ? 'selected' : ''}>✅ Done / Completed</option>
-            <option value="missed" ${APP.editingSlot.status === 'missed' ? 'selected' : ''}>❌ Not Done / Missed</option>
+          <select id="edit-slot-status" onchange="const subWrap = document.getElementById('edit-substitute-wrap'); if(subWrap) subWrap.style.display = this.value === 'missed' ? 'block' : 'none';" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:var(--surface)">
+            <option value="done" ${APP.editingSlot.status !== 'missed' && !APP.editingSlot.substituteDev ? 'selected' : ''}>✅ Done / Completed</option>
+            <option value="missed" ${APP.editingSlot.status === 'missed' || APP.editingSlot.substituteDev ? 'selected' : ''}>❌ Not Done / Missed</option>
           </select>
+        </div>
+        <div id="edit-substitute-wrap" style="display:${APP.editingSlot.status === 'missed' || APP.editingSlot.substituteDev ? 'block' : 'none'};background:var(--surface-2);padding:10px 12px;border-radius:8px;border:1px dashed var(--line)">
+          <label style="display:block;font-size:12px;font-weight:600;margin-bottom:4px;color:var(--ink)">
+            Who did this service instead? (Replacement Devotee)
+          </label>
+          <input type="text" id="edit-slot-substitute" value="${esc(APP.editingSlot.substituteDev || '')}" placeholder="e.g. Aman Pr (Leave blank if no one performed it)" style="width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid var(--line);border-radius:6px;font-size:13.5px;background:var(--surface)">
+          <div class="tiny" style="color:var(--ink-3);margin-top:4px">
+            If missed but another devotee stepped in, their name will appear with ✅ (e.g. <b>${esc(APP.editingSlot.devotees || 'Devotee')} ❌ Aman Pr ✅</b>)
+          </div>
         </div>` : ''}
       </div>
       <div class="modal-f" style="display:flex;justify-content:flex-end;gap:8px;padding:12px 16px;border-top:1px solid var(--line-2)">
@@ -10240,9 +10335,70 @@ document.addEventListener('click',e=>{
     initDepartmentRosters();
     const roster = deptK === 'deity' ? APP.deityRoster : APP.cleaningRoster;
     const slot = getRosterSlot(roster, dateStr, sId);
+    const isToday = dateStr === iso(TODAY);
+
+    // If it's today's report and currently done (or has replacement), toggling to missed prompts who did it
+    if (isToday) {
+      if (slot.status === 'missed') {
+        // Toggle back to done
+        slot.status = 'done';
+        if (slot.devotees && slot.devotees.includes('❌')) {
+          const parts = slot.devotees.split('❌');
+          slot.devotees = parts[0].trim();
+        }
+        saveStoredRoster(deptK, roster);
+        toast('Updated seva status to ✅ Done', '✨');
+        render();
+      } else {
+        // Selecting missed toggle button -> open option to fill who did that service
+        openMissedSubstituteModal(deptK, dateStr, sId);
+      }
+      break;
+    }
+
+    // Default 7-day matrix toggle
     slot.status = slot.status === 'done' ? 'missed' : (slot.status === 'missed' ? 'pending' : 'done');
     saveStoredRoster(deptK, roster);
     toast(`Updated seva status to ${slot.status === 'done' ? '✅ Done' : (slot.status === 'missed' ? '❌ Missed' : '⏳ Pending')}`, '✨');
+    render();
+    break;
+  }
+  case 'save-missed-substitute':stop();{
+    if (!APP.missedPromptData) break;
+    const { deptKey, dateStr, sId, originalDev } = APP.missedPromptData;
+    const subInput = document.getElementById('missed-substitute-name');
+    const subName = subInput ? subInput.value.trim() : '';
+
+    initDepartmentRosters();
+    const roster = deptKey === 'deity' ? APP.deityRoster : APP.cleaningRoster;
+    const slot = getRosterSlot(roster, dateStr, sId);
+
+    if (subName) {
+      slot.devotees = `${originalDev} ❌ ${subName}`;
+      slot.status = 'done'; // The replacement devotee performed it
+      saveStoredRoster(deptKey, roster);
+      toast(`Updated: ${originalDev} ❌ ${subName} ✅`, '✅');
+    } else {
+      slot.devotees = originalDev;
+      slot.status = 'missed';
+      saveStoredRoster(deptKey, roster);
+      toast(`Marked ${originalDev} as missed ❌`, '⚠️');
+    }
+    APP.modal = '';
+    render();
+    break;
+  }
+  case 'save-missed-nobody':stop();{
+    if (!APP.missedPromptData) break;
+    const { deptKey, dateStr, sId, originalDev } = APP.missedPromptData;
+    initDepartmentRosters();
+    const roster = deptKey === 'deity' ? APP.deityRoster : APP.cleaningRoster;
+    const slot = getRosterSlot(roster, dateStr, sId);
+    slot.devotees = originalDev;
+    slot.status = 'missed';
+    saveStoredRoster(deptKey, roster);
+    toast(`Marked ${originalDev} as missed ❌`, '⚠️');
+    APP.modal = '';
     render();
     break;
   }
@@ -10259,12 +10415,23 @@ document.addEventListener('click',e=>{
     const devInput = document.getElementById('edit-slot-devotees');
     const timeInput = document.getElementById('edit-slot-time');
     const statusSelect = document.getElementById('edit-slot-status');
+    const subInput = document.getElementById('edit-slot-substitute');
+
     initDepartmentRosters();
     const roster = deptKey === 'deity' ? APP.deityRoster : APP.cleaningRoster;
     const slot = getRosterSlot(roster, dateStr, sId);
-    if (devInput) slot.devotees = devInput.value.trim();
+    const dev = devInput ? devInput.value.trim() : (slot.devotees || '');
+    const status = statusSelect ? statusSelect.value : (slot.status || 'pending');
+    const sub = subInput ? subInput.value.trim() : '';
+
+    if (status === 'missed' && sub) {
+      slot.devotees = `${dev} ❌ ${sub}`;
+      slot.status = 'done'; // The replacement devotee performed it
+    } else {
+      slot.devotees = dev;
+      if (statusSelect) slot.status = status;
+    }
     if (timeInput) slot.time = timeInput.value.trim();
-    if (statusSelect) slot.status = statusSelect.value;
     saveStoredRoster(deptKey, roster);
     APP.modal = '';
     toast('Seva slot updated successfully', '✅');
