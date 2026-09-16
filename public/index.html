@@ -1526,6 +1526,7 @@ const ACCESS={
   manage_departments:['coordinator','internal_manager','admin','area_leader'],
   assign:['area_leader','coordinator','internal_manager','preaching_manager','care_manager','dept_head','preaching_coord','admin'],
   preaching:['area_leader','coordinator','preaching_manager','preaching_coord','admin'],
+  'batch-attendance':['area_leader','coordinator','preaching_manager','preaching_coord','internal_manager','dept_head','facilitator','admin'],
   manage_batches:['coordinator','preaching_manager','admin','area_leader'],
   care:['area_leader','coordinator','care_manager','facilitator','admin'],
   care_notes:['coordinator','care_manager','facilitator','area_leader','admin'],
@@ -3141,7 +3142,7 @@ function botnav(){
 }
 function fab(){
   const acts=[['Assign seva','📋','open-assign','assign'],['Schedule class','🗓️','open-schedule','preaching'],['Add devotee','👥','add-devotee','directory'],
-   ['Add contact','🌱','add-contact','preaching'],['Mark attendance','✅','go-attendance','management'],
+   ['Add contact','🌱','add-contact','preaching'],['Mark attendance','✅','go-attendance','batch-attendance'],
    ['Create follow-up','⏰','add-followup','preaching'],['Create group','🫂','add-group','care'],
    ['New message','💬','go-messages','messages'],['Submit report','📄','add-report','reports']].filter(a=>can(a[3]));
   if(!acts.length)return'';
@@ -11219,7 +11220,7 @@ function routeView(){
       case 'contacts':return guard('preaching',viewContacts);
       case 'followups':return guard('preaching',viewFollowups);
       case 'classes':return guard('preaching',viewClasses);
-      case 'batch-attendance':return guard('preaching',viewBatchAttendance);
+      case 'batch-attendance':return guard('batch-attendance',viewBatchAttendance);
       case 'preaching-reports':return guard('reports',viewPreachingReports);
       case 'care':return guard('care',viewCare);
       case 'friends':return guard('care',viewFriends);
@@ -12947,7 +12948,7 @@ document.addEventListener('click',e=>{
   }
   case 'save-attendance':{logAudit('Attendance marked','Attendance saved by '+nameOf(APP.user.devotee));
     toast('Attendance saved','✅');render();break}
-  case 'go-attendance':APP.fabOpen=false;go('#/attendance');break;
+  case 'go-attendance':APP.fabOpen=false;go('#/batch-attendance');break;
   case 'go-attendance-act':stop();{const a=act(id);APP.modal='';
     if(a.type==='Class'){APP.filters.attBatch=a.batch;APP.filters.attClass=a.id;go('#/batch-attendance')}
     else{APP.tab.att='Seva & activities';APP.filters.attDept=a.dept;APP.filters.attAct=a.id;go('#/attendance')}
