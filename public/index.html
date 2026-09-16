@@ -5062,6 +5062,91 @@ function matchDevotee(a, b) {
   return false;
 }
 
+function getDevoteeMorningStandard(devotee) {
+  if (!devotee) return { stdMin: 270, stdTime: '04:30', graceMin: 330, lateMin: 390, cutoffMin: 420 };
+  const rawStd = (devotee.morningStandardTime || '04:30').trim();
+  const parsedStd = parseTimeMinutes(rawStd) ?? 270; // 04:30 AM = 270 min
+  
+  // Standard thresholds:
+  // On-time: <= stdMin (default 04:30 AM)
+  // Grace: <= graceMin (default 05:30 AM, +60m window)
+  // Late: <= lateMin (default 06:30 AM, +120m window)
+  // Absent / No marking: after cutoffMin (default 07:00 AM, +150m window)
+  const graceMin = parsedStd + 60;
+  const lateMin = parsedStd + 120;
+  const cutoffMin = parsedStd + 150;
+
+  return {
+    stdMin: parsedStd,
+    stdTime: formatMinutesTime(parsedStd),
+    rawStd,
+    graceMin,
+    lateMin,
+    cutoffMin
+  };
+}
+
+function evaluatePunchPunctuality(inMin, devotee) {
+  const std = getDevoteeMorningStandard(devotee);
+  if (inMin == null) {
+    return {
+      status: 'Absent',
+      statusTone: 'grey',
+      badgeText: 'No check-in',
+      diffMin: null,
+      stdMin: std.stdMin,
+      standardTime: std.stdTime,
+      isMarked: false
+    };
+  }
+
+  // Punch after 7:00 AM (cutoff): absent, no attendance marking
+  if (inMin > std.cutoffMin) {
+    return {
+      status: 'Absent',
+      statusTone: 'grey',
+      badgeText: 'After ' + formatMinutesTime(std.cutoffMin) + ' (No marking)',
+      diffMin: inMin - std.stdMin,
+      stdMin: std.stdMin,
+      standardTime: std.stdTime,
+      isMarked: false
+    };
+  }
+
+  const diffMin = inMin - std.stdMin;
+  let status = 'Absent';
+  let statusTone = 'grey';
+  let badgeText = '';
+
+  if (inMin <= std.stdMin) {
+    status = 'On Time';
+    statusTone = 'green';
+    badgeText = diffMin === 0 ? 'Exact time' : (Math.abs(diffMin) + 'm early');
+  } else if (inMin <= std.graceMin) {
+    status = 'Grace';
+    statusTone = 'amber';
+    badgeText = '+' + diffMin + 'm (Grace \u2264 ' + formatMinutesTime(std.graceMin) + ')';
+  } else if (inMin <= std.lateMin) {
+    status = 'Late';
+    statusTone = 'danger';
+    badgeText = '+' + diffMin + 'm (Late \u2264 ' + formatMinutesTime(std.lateMin) + ')';
+  } else {
+    status = 'Late';
+    statusTone = 'danger';
+    badgeText = '+' + diffMin + 'm (Critical delay)';
+  }
+
+  return {
+    status,
+    statusTone,
+    badgeText,
+    diffMin,
+    stdMin: std.stdMin,
+    standardTime: std.stdTime,
+    isMarked: true
+  };
+}
+
 function matchDevoteeFirstName(bioName, dbName) {
   if (!bioName || !dbName) return false;
   const clean = s => String(s || '').toLowerCase()
@@ -5107,6 +5192,11 @@ function computePeriodMorningMetrics(byDate, availableDates, targetDate, numDays
   const periodDates = availableDates.slice(startIdx, endIdx + 1);
   const totalSessions = periodDates.length;
 
+  // Previous period for week-over-week or month-over-month growth comparison
+  const prevEndIdx = startIdx - 1;
+  const prevStartIdx = Math.max(0, prevEndIdx - numDays + 1);
+  const prevPeriodDates = prevEndIdx >= 0 ? availableDates.slice(prevStartIdx, prevEndIdx + 1) : [];
+
   const dbDevs = (DB && DB.devotees) || [];
   
   const devStats = dbDevs.map((d, i) => {
@@ -5132,8 +5222,28 @@ function computePeriodMorningMetrics(byDate, availableDates, targetDate, numDays
       }
     });
 
+    // Previous period stats for WoW / MoM growth
+    let prevPresentCount = 0;
+    let prevOnTimeCount = 0;
+    let prevGraceCount = 0;
+    prevPeriodDates.forEach(dt => {
+      const dayRows = byDate[dt] || [];
+      const devRow = dayRows.find(r => r.devoteeId === d.id);
+      if (devRow && devRow.status !== 'Absent') {
+        prevPresentCount++;
+        if (devRow.status === 'On Time') prevOnTimeCount++;
+        else if (devRow.status === 'Grace') prevGraceCount++;
+      }
+    });
+
     const attendanceRate = totalSessions > 0 ? Math.round((presentCount / totalSessions) * 100) : 0;
     const punctualityRate = presentCount > 0 ? Math.round(((onTimeCount + graceCount) / presentCount) * 100) : 0;
+
+    const prevAttendanceRate = prevPeriodDates.length > 0 ? Math.round((prevPresentCount / prevPeriodDates.length) * 100) : attendanceRate;
+    const prevPunctualityRate = prevPresentCount > 0 ? Math.round(((prevOnTimeCount + prevGraceCount) / prevPresentCount) * 100) : punctualityRate;
+
+    const attendanceGrowthDelta = attendanceRate - prevAttendanceRate;
+    const punctualityGrowthDelta = punctualityRate - prevPunctualityRate;
 
     let statusBadge = '🌟 100% Exemplary';
     if (attendanceRate < 60 || absentCount >= Math.ceil(totalSessions * 0.4)) {
@@ -5146,10 +5256,13 @@ function computePeriodMorningMetrics(byDate, availableDates, targetDate, numDays
       statusBadge = '⚠️ Needs Follow-up';
     }
 
+    const stdInfo = getDevoteeMorningStandard(d);
+
     return {
       devotee: d,
       name: d.name,
       appointment: d.appointment || (typeof dept === 'function' && dept(d.dept)?.name) || 'Devotee',
+      standardTime: stdInfo.stdTime,
       totalSessions,
       presentCount,
       onTimeCount,
@@ -5158,6 +5271,10 @@ function computePeriodMorningMetrics(byDate, availableDates, targetDate, numDays
       absentCount,
       attendanceRate,
       punctualityRate,
+      prevAttendanceRate,
+      prevPunctualityRate,
+      attendanceGrowthDelta,
+      punctualityGrowthDelta,
       statusBadge,
       dailyPunches
     };
@@ -5175,6 +5292,36 @@ function computePeriodMorningMetrics(byDate, availableDates, targetDate, numDays
 
   const avgAttendancePct = totalPossible > 0 ? Math.round((totalAttended / totalPossible) * 100) : 0;
   const avgPunctualityPct = totalAttended > 0 ? Math.round(((totalOnTime + totalGrace) / totalAttended) * 100) : 0;
+  const onTimePct = totalAttended > 0 ? Math.round((totalOnTime / totalAttended) * 100) : 0;
+
+  // Period arrival distribution buckets (all check-ins in the period)
+  const validTimes = [];
+  periodDates.forEach(dt => {
+    const dayRows = byDate[dt] || [];
+    dayRows.forEach(r => {
+      if (r.timeInMin != null) validTimes.push(r.timeInMin);
+    });
+  });
+
+  const avgArrivalMin = validTimes.length ? Math.round(validTimes.reduce((a,b)=>a+b,0) / validTimes.length) : 270;
+  const earliestMin = validTimes.length ? Math.min(...validTimes) : null;
+  const latestMin = validTimes.length ? Math.max(...validTimes) : null;
+
+  const buckets = [
+    { label: '< 04:30 AM', count: 0, sub: 'On Time (\u2264 04:30)', color: '#059669' },
+    { label: '04:30–05:30', count: 0, sub: 'Grace (\u2264 05:30)', color: '#10B981' },
+    { label: '05:30–06:30', count: 0, sub: 'Late (\u2264 06:30)', color: '#F59E0B' },
+    { label: '06:30–07:00', count: 0, sub: 'Critical delay', color: '#F97316' },
+    { label: '> 07:00 AM', count: 0, sub: 'Absent (No marking)', color: '#94A3B8' }
+  ];
+
+  validTimes.forEach(m => {
+    if (m <= 270) buckets[0].count++;
+    else if (m <= 330) buckets[1].count++;
+    else if (m <= 390) buckets[2].count++;
+    else if (m <= 420) buckets[3].count++;
+    else buckets[4].count++;
+  });
 
   return {
     periodDates,
@@ -5189,6 +5336,11 @@ function computePeriodMorningMetrics(byDate, availableDates, targetDate, numDays
     totalAbsent,
     avgAttendancePct,
     avgPunctualityPct,
+    onTimePct,
+    avgArrivalMin,
+    earliestTime: formatMinutesTime(earliestMin),
+    latestTime: formatMinutesTime(latestMin),
+    buckets,
     devStats
   };
 }
@@ -5319,29 +5471,8 @@ function parseMorningCSV(text, specificDate){
 
       allDbDevs.forEach(d => {
         const foundPunch = datePunches[d.id];
-        const stdMin = 270; // 04:30 AM
         const inMin = foundPunch ? foundPunch.min : null;
-        let status = 'Absent';
-        let statusTone = 'grey';
-        let badgeText = 'No check-in';
-        let diffMin = null;
-
-        if(inMin != null){
-          diffMin = inMin - stdMin;
-          if(diffMin <= 0){
-            status = 'On Time';
-            statusTone = 'green';
-            badgeText = diffMin === 0 ? 'Exact time' : `${Math.abs(diffMin)}m early`;
-          } else if(diffMin <= 10){
-            status = 'Grace';
-            statusTone = 'amber';
-            badgeText = `+${diffMin}m (grace)`;
-          } else {
-            status = 'Late';
-            statusTone = 'danger';
-            badgeText = `+${diffMin}m late`;
-          }
-        }
+        const evalRes = evaluatePunchPunctuality(inMin, d);
 
         dayRows.push({
           name: d.name,
@@ -5349,28 +5480,28 @@ function parseMorningCSV(text, specificDate){
           avatarName: d.name,
           devoteeInfo: d.appointment || (typeof dept === 'function' && dept(d.dept)?.name) || 'Devotee',
           rawTimeIn: foundPunch ? foundPunch.rawTimeIn : '',
-          rawStd: '04:30',
+          rawStd: d.morningStandardTime || '04:30',
           timeInMin: inMin,
-          stdMin: stdMin,
+          stdMin: evalRes.stdMin,
           timeIn: inMin != null ? formatMinutesTime(inMin) : '—',
-          standardTime: formatMinutesTime(stdMin),
-          diffMin,
-          status,
-          statusTone,
-          badgeText,
+          standardTime: evalRes.standardTime,
+          diffMin: evalRes.diffMin,
+          status: evalRes.status,
+          statusTone: evalRes.statusTone,
+          badgeText: evalRes.badgeText,
           date: dt,
           biometricEnNo: foundPunch ? foundPunch.enNo : null
         });
 
         // Automatically sync into DB.attendance for that date
         const ref = 'mp_' + dt;
-        const st = status === 'On Time' || status === 'Grace' ? 'Present' : (status === 'Late' ? 'Late' : 'Absent');
+        const st = evalRes.status === 'On Time' || evalRes.status === 'Grace' ? 'Present' : (evalRes.status === 'Late' ? 'Late' : 'Absent');
         let rec = (DB.attendance || []).find(a => a.category === 'Morning programme' && a.ref === ref && a.devotee === d.id);
         if(rec){
           rec.status = st;
           rec.timeIn = inMin != null ? formatMinutesTime(inMin) : null;
-          rec.standardTime = '04:30 AM';
-          rec.diffMin = diffMin;
+          rec.standardTime = evalRes.standardTime;
+          rec.diffMin = evalRes.diffMin;
         } else {
           DB.attendance.push({
             id: uid('at'),
@@ -5380,8 +5511,8 @@ function parseMorningCSV(text, specificDate){
             date: dt,
             status: st,
             timeIn: inMin != null ? formatMinutesTime(inMin) : null,
-            standardTime: '04:30 AM',
-            diffMin: diffMin
+            standardTime: evalRes.standardTime,
+            diffMin: evalRes.diffMin
           });
         }
       });
@@ -5505,20 +5636,25 @@ function computeMorningMetrics(rows, date){
   const diffs = rows.filter(r => r.diffMin != null).map(r => r.diffMin);
   const avgDiffMin = diffs.length ? Math.round(diffs.reduce((a,b)=>a+b,0) / diffs.length) : 0;
 
-  // Histogram distribution
+  // Histogram distribution aligned with standard time:
+  // On-time: <= 04:30 AM
+  // Grace: 04:30 - 05:30 AM
+  // Late: 05:30 - 06:30 AM
+  // Delay: 06:30 - 07:00 AM
+  // Absent: > 07:00 AM (No marking)
   const buckets = [
-    { label: '< 04:15 AM', count: 0, sub: 'Early birds', color: '#059669' },
-    { label: '04:15–04:30', count: 0, sub: 'On schedule', color: '#10B981' },
-    { label: '04:30–04:40', count: 0, sub: 'Grace window', color: '#F59E0B' },
-    { label: '04:40–05:00', count: 0, sub: 'Late arrivals', color: '#F97316' },
-    { label: '> 05:00 AM', count: 0, sub: 'Critical delay', color: '#EF4444' }
+    { label: '< 04:30 AM', count: 0, sub: 'On Time (\u2264 04:30)', color: '#059669' },
+    { label: '04:30–05:30', count: 0, sub: 'Grace (\u2264 05:30)', color: '#10B981' },
+    { label: '05:30–06:30', count: 0, sub: 'Late (\u2264 06:30)', color: '#F59E0B' },
+    { label: '06:30–07:00', count: 0, sub: 'Critical delay', color: '#F97316' },
+    { label: '> 07:00 AM', count: 0, sub: 'Absent (No marking)', color: '#94A3B8' }
   ];
 
   validTimes.forEach(m => {
-    if(m < 255) buckets[0].count++;
-    else if(m <= 270) buckets[1].count++;
-    else if(m <= 280) buckets[2].count++;
-    else if(m <= 300) buckets[3].count++;
+    if(m <= 270) buckets[0].count++;
+    else if(m <= 330) buckets[1].count++;
+    else if(m <= 390) buckets[2].count++;
+    else if(m <= 420) buckets[3].count++;
     else buckets[4].count++;
   });
 
@@ -5855,13 +5991,99 @@ function getRosterSlot(roster, dateStr, sId) {
 /* =========================================================================
    🌅 1. MORNING PROGRAMME (Devotees Progress Tracking & CSV Analysis)
    ========================================================================= */
+function renderMorningCharts(m, dateLabel) {
+  const R = 44;
+  const C = 2 * Math.PI * R;
+  const total = m.total || (m.onTimeCount + m.graceCount + m.lateCount + m.absentCount) || 1;
+  const parts = [
+    { count: m.onTimeCount, col: 'var(--green,#10B981)', label: 'On Time (\u2264 04:30 AM)' },
+    { count: m.graceCount, col: 'var(--mustard,#D97706)', label: 'Grace (\u2264 05:30 AM)' },
+    { count: m.lateCount, col: 'var(--danger,#DC2626)', label: 'Late (\u2264 06:30 AM)' },
+    { count: m.absentCount, col: '#94A3B8', label: 'Absent (> 07:00 AM)' }
+  ];
+  let acc = 0;
+  const donutSegments = parts.map(p => {
+    const pc = total > 0 ? (p.count / total) * 100 : 0;
+    const dash = (pc / 100) * C;
+    const off = (acc / 100) * C;
+    acc += pc;
+    return pc > 0 ? `<circle cx="60" cy="60" r="${R}" fill="none" stroke="${p.col}" stroke-width="14" stroke-dasharray="${dash.toFixed(2)} ${C.toFixed(2)}" stroke-dashoffset="${(-off).toFixed(2)}" transform="rotate(-90 60 60)" stroke-linecap="round"/>` : '';
+  }).join('');
+
+  const buckets = m.buckets || [
+    { label: '< 04:30 AM', count: m.onTimeCount, color: '#059669' },
+    { label: '04:30–05:30', count: m.graceCount, color: '#10B981' },
+    { label: '05:30–06:30', count: m.lateCount, color: '#F59E0B' },
+    { label: '06:30–07:00', count: 0, color: '#F97316' },
+    { label: '> 07:00 AM', count: m.absentCount, color: '#94A3B8' }
+  ];
+  const maxBucket = Math.max(...buckets.map(b => b.count), 1);
+  const onTimePct = m.onTimePct !== undefined ? m.onTimePct : (total > 0 ? Math.round((m.onTimeCount / total) * 100) : 0);
+
+  return `<div class="grid g2" style="margin-bottom:16px">
+    <div class="card pad">
+      <div class="card-h" style="padding:0 0 12px;border-bottom:1px solid var(--line-2)">
+        <h3>🎯 Punctuality Breakdown</h3>
+        <span class="tiny" style="margin-left:auto">${dateLabel}</span>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-around;gap:20px;margin-top:14px;flex-wrap:wrap">
+        <div style="position:relative;width:120px;height:120px;flex:none">
+          <svg viewBox="0 0 120 120" style="width:120px;height:120px">
+            <circle cx="60" cy="60" r="${R}" fill="none" stroke="var(--paper-2)" stroke-width="14"/>
+            ${donutSegments}
+          </svg>
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+            <span style="font-family:var(--f-head);font-size:20px;font-weight:700;color:var(--ink);line-height:1">${onTimePct}%</span>
+            <span style="font-size:9.5px;color:var(--ink-3);text-transform:uppercase;font-weight:600">On Time</span>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;min-width:150px">
+          <div style="display:flex;align-items:center;justify-content:space-between;font-size:12px">
+            <span style="display:inline-flex;align-items:center;gap:6px"><i style="width:10px;height:10px;border-radius:3px;background:var(--green);display:inline-block"></i> On Time (\u2264 4:30)</span>
+            <b>${m.onTimeCount} (${pct(m.onTimeCount, total)}%)</b>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;font-size:12px">
+            <span style="display:inline-flex;align-items:center;gap:6px"><i style="width:10px;height:10px;border-radius:3px;background:var(--mustard);display:inline-block"></i> Grace (\u2264 5:30)</span>
+            <b>${m.graceCount} (${pct(m.graceCount, total)}%)</b>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;font-size:12px">
+            <span style="display:inline-flex;align-items:center;gap:6px"><i style="width:10px;height:10px;border-radius:3px;background:var(--danger);display:inline-block"></i> Late (\u2264 6:30)</span>
+            <b>${m.lateCount} (${pct(m.lateCount, total)}%)</b>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;font-size:12px">
+            <span style="display:inline-flex;align-items:center;gap:6px"><i style="width:10px;height:10px;border-radius:3px;background:#94A3B8;display:inline-block"></i> Absent (> 7:00)</span>
+            <b>${m.absentCount} (${pct(m.absentCount, total)}%)</b>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card pad">
+      <div class="card-h" style="padding:0 0 12px;border-bottom:1px solid var(--line-2)">
+        <h3>📈 Arrival Distribution Timeline</h3>
+        <span class="tiny" style="margin-left:auto">Earliest: <b>${m.earliestTime || '04:15 AM'}</b></span>
+      </div>
+      <div style="margin-top:14px;display:flex;align-items:flex-end;justify-content:space-between;gap:8px;height:130px;padding:10px 4px 0">
+        ${buckets.map(b => {
+          const h = Math.max(14, Math.round((b.count / maxBucket) * 90));
+          return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px">
+            <div style="font-size:11px;font-weight:700;color:var(--ink)">${b.count}</div>
+            <div style="width:100%;max-width:42px;height:${h}px;background:${b.color};border-radius:6px 6px 2px 2px;transition:height .3s ease"></div>
+            <div style="font-size:9.5px;font-weight:600;color:var(--ink-3);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%" title="${b.label}">${b.label}</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+  </div>`;
+}
+
 function morningProgramPanel(){
-  // When no file is uploaded yet: show clean empty landing screen
-  if(!APP.morningData){
+  const data = APP.morningData;
+
+  // Empty state: clean slate for uploading fresh data
+  if(!data || !data.rows || !data.rows.length){
     return `<div>
       <input type="file" id="morning-csv-input" accept=".txt,.csv,.log,.dat,text/plain" style="display:none" data-act="morning-csv-file">
-      
-      <!-- Action Banner -->
       <div class="card" style="margin-bottom:16px;border-left:4px solid var(--saffron);box-shadow:var(--sh-m)">
         <div class="card-b" style="display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap">
           <div>
@@ -5869,64 +6091,48 @@ function morningProgramPanel(){
               <span>🌅</span> Morning Programme Sadhana & Attendance
             </h2>
             <div class="tiny" style="color:var(--ink-2);margin-top:4px">
-              Upload biometric device export (.txt) · All database devotee first names will be recognized case-insensitively.
+              Upload fresh biometric device attendance logs (.txt / tab-delimited).
             </div>
           </div>
-          <div>
-            <button class="btn pri sm" data-act="trigger-morning-csv">${ic('upload')} Upload Biometric File (.txt)</button>
-          </div>
+          <button class="btn pri sm" data-act="trigger-morning-csv" id="btn-upload-morning-log">
+            ${ic('upload')} Upload Biometric File (.txt)
+          </button>
         </div>
       </div>
 
-      <!-- Fresh Upload Dropzone Card -->
-      <div class="card" style="text-align:center;padding:50px 24px;border:2px dashed var(--line);background:var(--surface);margin-bottom:20px;cursor:pointer;border-radius:12px" data-act="trigger-morning-csv">
-        <div style="font-size:52px;margin-bottom:12px">📟</div>
-        <h3 style="margin:0 0 8px;font-size:19px;font-weight:700">Upload Biometric Attendance File (.txt)</h3>
-        <p style="color:var(--ink-2);max-width:560px;margin:0 auto 20px;font-size:13.5px;line-height:1.5">
-          Select or drag & drop your biometric device log (tab-delimited <code style="background:var(--paper-2);padding:2px 6px;border-radius:4px;font-weight:600">.txt</code> file). All first names matching the devotee database will be taken into consideration case-insensitively with <b>Today's</b>, <b>Weekly</b>, and <b>Monthly</b> viewing reports.
+      <div class="card pad" style="text-align:center;padding:50px 24px;border:2px dashed var(--line);border-radius:12px;background:var(--surface)">
+        <div style="font-size:48px;margin-bottom:12px">🌅</div>
+        <h3 style="margin:0 0 8px;font-size:18px">No Attendance Log Loaded</h3>
+        <p style="color:var(--ink-3);max-width:560px;margin:0 auto 20px;font-size:13.5px;line-height:1.5">
+          All previous records are cleared. Upload your device log (<b>.txt</b> file) to record punches.<br>
+          Devotees will be matched with the database by their <b>first name (case-insensitive)</b>.<br>
+          <span style="display:inline-block;margin-top:8px;color:var(--ink-2);font-weight:600">
+            Standard: 04:30 AM On Time · Grace up to 05:30 AM · Late up to 06:30 AM · Absent after 07:00 AM (no marking)
+          </span>
         </p>
-        <button class="btn pri lg" data-act="trigger-morning-csv" style="padding:10px 24px;font-size:14px;font-weight:700">
-          ${ic('upload')} Browse & Upload .txt File
+        <button class="btn pri" data-act="trigger-morning-csv" style="padding:10px 24px;font-size:14px">
+          ${ic('upload')} Select Biometric File (.txt)
         </button>
       </div>
     </div>`;
   }
 
-  const data = APP.morningData;
   const m = data.metrics || computeMorningMetrics(data.rows || [], data.date || iso(TODAY));
+  const filterSt = APP.morningFilterStatus || '';
   const q = (APP.morningSearch || '').toLowerCase().trim();
-  const filterSt = APP.morningFilter || '';
-  const progTab = APP.morningSubTab || 'report'; // 'report' | 'progress'
   const reportView = APP.morningReportView || 'today'; // 'today' | 'weekly' | 'monthly'
-  const allDevs = DB.devotees || [];
+  const progTab = APP.morningSubTab || 'report'; // 'report' | 'progress'
+
+  const allDevs = (DB && DB.devotees) || [];
   const weekly = data.weekly || computePeriodMorningMetrics(data.byDateRows || {}, data.availableDates || [data.date], data.date, 7);
   const monthly = data.monthly || computePeriodMorningMetrics(data.byDateRows || {}, data.availableDates || [data.date], data.date, 30);
 
   // Filter rows for Today's view
-  let rows = data.rows || [];
-  if(filterSt && ['On Time', 'Grace', 'Late', 'Absent'].includes(filterSt)) {
-    rows = rows.filter(r => r.status === filterSt);
-  }
-  if(q) rows = rows.filter(r => r.name.toLowerCase().includes(q) || (r.devoteeInfo||'').toLowerCase().includes(q));
-
-  // Multi-segment Donut SVG for Today's view
-  const R = 44, C = 2 * Math.PI * R;
-  const parts = [
-    { count: m.onTimeCount, col: 'var(--green,#059669)', label: 'On Time' },
-    { count: m.graceCount, col: 'var(--mustard,#D97706)', label: 'Grace' },
-    { count: m.lateCount, col: 'var(--danger,#DC2626)', label: 'Late' },
-    { count: m.absentCount, col: '#94A3B8', label: 'Absent' }
-  ];
-  let acc = 0;
-  const donutSegments = parts.map(p => {
-    const pc = m.total > 0 ? (p.count / m.total) * 100 : 0;
-    const dash = (pc / 100) * C;
-    const off = (acc / 100) * C;
-    acc += pc;
-    return pc > 0 ? `<circle cx="60" cy="60" r="${R}" fill="none" stroke="${p.col}" stroke-width="14" stroke-dasharray="${dash.toFixed(2)} ${C.toFixed(2)}" stroke-dashoffset="${(-off).toFixed(2)}" transform="rotate(-90 60 60)" stroke-linecap="round"/>` : '';
-  }).join('');
-
-  const maxBucket = Math.max(...(data.buckets || []).map(b => b.count), 1);
+  let rows = (data.rows || []).filter(r => {
+    if(filterSt && r.status !== filterSt) return false;
+    if(q && !r.name.toLowerCase().includes(q) && !(r.devoteeInfo||'').toLowerCase().includes(q)) return false;
+    return true;
+  });
 
   // DEVOTEES PROGRESS CALCULATION
   const period = APP.morningProgressPeriod || 'weekly';
@@ -6008,71 +6214,15 @@ function morningProgramPanel(){
       ${reportView === 'today' ? `
       <!-- TODAY'S VIEW: KPI CARDS, CHARTS, AND TABLE -->
       <div style="padding:16px 18px">
-        <!-- KPI Metric Dashboard Cards -->
-        <div class="grid g5" style="margin-bottom:16px">
-          ${stat('Total Devotees', m.total, 'in database', {em:'👥',tint:false})}
-          ${stat('On-Time %', m.onTimePct + '%', `${m.onTimeCount} devotees on schedule`, {em:'⏱️',tint:m.onTimePct >= 75})}
-          ${stat('Grace Window', m.graceCount, '1–10 mins after standard', {em:'⏳',tint:false})}
-          ${stat('Late Arrivals', m.lateCount, '>10 mins delayed', {em:'⚠️',tint:m.lateCount > 0})}
-          ${stat('Average Arrival', formatMinutesTime(m.avgArrivalMin), `${m.avgDiffMin <= 0 ? Math.abs(m.avgDiffMin) + 'm early' : '+' + m.avgDiffMin + 'm late'}`, {em:'🌅',tint:false})}
+        <div class="grid g4" style="margin-bottom:16px">
+          ${stat('Registered Devotees', m.total, 'matched from database', {em:'👥',tint:false})}
+          ${stat('Attendance Rate', `${pct(m.attended, m.total)}%`, `${m.attended} present · ${m.absentCount} absent`, {em:'✅',tint:pct(m.attended, m.total)>=75})}
+          ${stat('On-Time Standard', `${m.onTimePct}%`, `${m.onTimeCount} on time (\u2264 04:30)`, {em:'⏱️',tint:m.onTimePct>=75})}
+          ${stat('Grace Arrivals', m.graceCount, 'arrived 04:30–05:30', {em:'🟡',tint:m.graceCount > 0})}
         </div>
 
-        <!-- Charts: Donut & Histogram -->
-        <div class="grid g2" style="margin-bottom:16px">
-          <div class="card pad">
-            <div class="card-h" style="padding:0 0 12px;border-bottom:1px solid var(--line-2)">
-              <h3>🎯 Punctuality Breakdown</h3>
-              <span class="tiny" style="margin-left:auto">${data.date}</span>
-            </div>
-            <div style="display:flex;align-items:center;justify-content:space-around;gap:20px;margin-top:14px;flex-wrap:wrap">
-              <div style="position:relative;width:120px;height:120px;flex:none">
-                <svg viewBox="0 0 120 120" style="width:120px;height:120px">
-                  <circle cx="60" cy="60" r="${R}" fill="none" stroke="var(--paper-2)" stroke-width="14"/>
-                  ${donutSegments}
-                </svg>
-                <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
-                  <span style="font-family:var(--f-head);font-size:20px;font-weight:700;color:var(--ink);line-height:1">${m.onTimePct}%</span>
-                  <span style="font-size:9.5px;color:var(--ink-3);text-transform:uppercase;font-weight:600">On Time</span>
-                </div>
-              </div>
-              <div style="display:flex;flex-direction:column;gap:8px;min-width:140px">
-                <div style="display:flex;align-items:center;justify-content:space-between;font-size:12.5px">
-                  <span style="display:inline-flex;align-items:center;gap:6px"><i style="width:10px;height:10px;border-radius:3px;background:var(--green);display:inline-block"></i> On Time</span>
-                  <b>${m.onTimeCount} (${pct(m.onTimeCount, m.total)}%)</b>
-                </div>
-                <div style="display:flex;align-items:center;justify-content:space-between;font-size:12.5px">
-                  <span style="display:inline-flex;align-items:center;gap:6px"><i style="width:10px;height:10px;border-radius:3px;background:var(--mustard);display:inline-block"></i> Grace (≤10m)</span>
-                  <b>${m.graceCount} (${pct(m.graceCount, m.total)}%)</b>
-                </div>
-                <div style="display:flex;align-items:center;justify-content:space-between;font-size:12.5px">
-                  <span style="display:inline-flex;align-items:center;gap:6px"><i style="width:10px;height:10px;border-radius:3px;background:var(--danger);display:inline-block"></i> Late (>10m)</span>
-                  <b>${m.lateCount} (${pct(m.lateCount, m.total)}%)</b>
-                </div>
-                <div style="display:flex;align-items:center;justify-content:space-between;font-size:12.5px">
-                  <span style="display:inline-flex;align-items:center;gap:6px"><i style="width:10px;height:10px;border-radius:3px;background:#94A3B8;display:inline-block"></i> Absent</span>
-                  <b>${m.absentCount} (${pct(m.absentCount, m.total)}%)</b>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="card pad">
-            <div class="card-h" style="padding:0 0 12px;border-bottom:1px solid var(--line-2)">
-              <h3>📈 Arrival Distribution Timeline</h3>
-              <span class="tiny" style="margin-left:auto">Earliest: <b>${m.earliestTime || '04:15 AM'}</b></span>
-            </div>
-            <div style="margin-top:14px;display:flex;align-items:flex-end;justify-content:space-between;gap:8px;height:130px;padding:10px 4px 0">
-              ${(data.buckets || []).map(b => {
-                const h = Math.max(14, Math.round((b.count / maxBucket) * 90));
-                return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px">
-                  <div style="font-size:11px;font-weight:700;color:var(--ink)">${b.count}</div>
-                  <div style="width:100%;max-width:42px;height:${h}px;background:${b.color};border-radius:6px 6px 2px 2px;transition:height .3s ease"></div>
-                  <div style="font-size:9.5px;font-weight:600;color:var(--ink-3);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%">${b.label}</div>
-                </div>`;
-              }).join('')}
-            </div>
-          </div>
-        </div>
+        <!-- Charts: Donut & Histogram (Visible across Today, Weekly, and Monthly!) -->
+        ${renderMorningCharts(m, data.date)}
 
         <!-- Filter & Search Toolbar -->
         <div class="toolbar" style="gap:10px;align-items:center;flex-wrap:wrap;padding:0;margin-bottom:12px">
@@ -6098,6 +6248,7 @@ function morningProgramPanel(){
                 <th>Time In</th>
                 <th>Variance / Delta</th>
                 <th>Punctuality Status</th>
+                <th style="text-align:center">Edit Standard</th>
                 <th>Profile</th>
               </tr>
             </thead>
@@ -6113,7 +6264,7 @@ function morningProgramPanel(){
                   </div>
                 </td>
                 <td data-l="Standard Time">
-                  <span style="font-family:monospace;font-size:12.5px">${r.standardTime}</span>
+                  <span style="font-family:monospace;font-size:12.5px;font-weight:600">${r.standardTime}</span>
                 </td>
                 <td data-l="Time In">
                   <span style="font-family:monospace;font-weight:700;font-size:13px;color:${r.statusTone === 'green' ? 'var(--green)' : (r.statusTone === 'amber' ? 'var(--mustard)' : (r.statusTone === 'danger' ? 'var(--danger)' : 'var(--ink-3)'))}">
@@ -6126,6 +6277,11 @@ function morningProgramPanel(){
                 <td data-l="Status">
                   <span class="badge b-${r.statusTone}" style="font-weight:700">${r.status}</span>
                 </td>
+                <td class="center" data-l="Standard">
+                  <button class="btn sm" data-act="edit-devotee-morning-std" data-id="${r.devoteeId}" title="Edit devotee standard morning program time" style="padding:3px 8px;font-size:11.5px">
+                    ✏️ Standard
+                  </button>
+                </td>
                 <td data-l="Profile">
                   ${r.devoteeId ? `<a class="btn sm" href="#/devotee/${r.devoteeId}">View</a>` : '—'}
                 </td>
@@ -6135,7 +6291,7 @@ function morningProgramPanel(){
         </div>
       </div>
       ` : (reportView === 'weekly' ? `
-      <!-- WEEKLY VIEW: LAST 7 SESSIONS AGGREGATION -->
+      <!-- WEEKLY VIEW: LAST 7 SESSIONS AGGREGATION & CHARTS -->
       <div style="padding:16px 18px">
         <div class="grid g4" style="margin-bottom:16px">
           ${stat('Sessions Logged', `${weekly.totalSessions} Sessions`, `${fmtD(weekly.startDate)} → ${fmtD(weekly.endDate)}`, {em:'📅',tint:false})}
@@ -6143,6 +6299,18 @@ function morningProgramPanel(){
           ${stat('Weekly Punctuality', `${weekly.avgPunctualityPct}%`, `${weekly.totalOnTime + weekly.totalGrace} on-time sessions`, {em:'⏱️',tint:weekly.avgPunctualityPct>=75})}
           ${stat('Active Devotees', `${weekly.devStats.filter(d=>d.presentCount>0).length} Devotees`, 'attended this week', {em:'👥',tint:true})}
         </div>
+
+        <!-- Charts: Donut & Histogram (Weekly Aggregation) -->
+        ${renderMorningCharts({
+          total: weekly.totalPossible,
+          onTimeCount: weekly.totalOnTime,
+          graceCount: weekly.totalGrace,
+          lateCount: weekly.totalLate,
+          absentCount: weekly.totalAbsent,
+          onTimePct: weekly.onTimePct,
+          earliestTime: weekly.earliestTime,
+          buckets: weekly.buckets
+        }, `Weekly Summary (${fmtD(weekly.startDate)} – ${fmtD(weekly.endDate)})`)}
 
         <div style="position:relative;margin-bottom:12px">
           <input type="search" placeholder="Filter devotee in weekly report…" value="${esc(APP.morningSearch||'')}" data-act="morning-q" style="width:100%;max-width:320px;padding-left:32px">
@@ -6154,14 +6322,15 @@ function morningProgramPanel(){
             <thead>
               <tr>
                 <th style="width:4%;text-align:center">#</th>
-                <th style="width:28%">Devotee Name</th>
-                <th style="width:14%;text-align:center">Days Present</th>
-                <th style="width:9%;text-align:center">On Time</th>
+                <th style="width:24%">Devotee Name</th>
+                <th style="width:11%;text-align:center">Standard</th>
+                <th style="width:12%;text-align:center">Days Present</th>
+                <th style="width:8%;text-align:center">On Time</th>
                 <th style="width:8%;text-align:center">Grace</th>
                 <th style="width:8%;text-align:center">Late</th>
                 <th style="width:8%;text-align:center">Absent</th>
-                <th style="width:12%;text-align:center">Punctuality %</th>
-                <th style="width:13%;text-align:center">Status</th>
+                <th style="width:11%;text-align:center">Punctuality %</th>
+                <th style="width:11%;text-align:center">Edit Std</th>
                 <th style="width:4%;text-align:center">View</th>
               </tr>
             </thead>
@@ -6180,6 +6349,9 @@ function morningProgramPanel(){
                     </div>
                   </td>
                   <td class="center">
+                    <span style="font-family:monospace;font-size:12px;font-weight:600">${d.standardTime}</span>
+                  </td>
+                  <td class="center">
                     <b style="font-size:13px">${d.presentCount}</b> <span style="color:var(--ink-3);font-size:11px">/ ${weekly.totalSessions}</span>
                   </td>
                   <td class="center" style="color:var(--green);font-weight:700">${d.onTimeCount}</td>
@@ -6190,7 +6362,7 @@ function morningProgramPanel(){
                     <b style="color:${d.punctualityRate>=80?'var(--green)':(d.punctualityRate>=60?'var(--mustard)':'var(--danger)')}">${d.punctualityRate}%</b>
                   </td>
                   <td class="center">
-                    <span class="badge ${d.statusBadge.includes('100%') ? 'b-green' : (d.statusBadge.includes('Steady') ? 'b-blue' : 'b-amber')}">${d.statusBadge}</span>
+                    <button class="btn sm" data-act="edit-devotee-morning-std" data-id="${d.devotee.id}" style="padding:2px 7px;font-size:11px">✏️ Std</button>
                   </td>
                   <td class="center">
                     <a class="btn sm icon-only" href="#/devotee/${d.devotee.id}" title="View profile">👤</a>
@@ -6201,7 +6373,7 @@ function morningProgramPanel(){
         </div>
       </div>
       ` : `
-      <!-- MONTHLY VIEW: LAST 30 SESSIONS AGGREGATION -->
+      <!-- MONTHLY VIEW: LAST 30 SESSIONS AGGREGATION & CHARTS -->
       <div style="padding:16px 18px">
         <div class="grid g4" style="margin-bottom:16px">
           ${stat('Sessions Logged', `${monthly.totalSessions} Sessions`, `${fmtD(monthly.startDate)} → ${fmtD(monthly.endDate)}`, {em:'🗓️',tint:false})}
@@ -6209,6 +6381,18 @@ function morningProgramPanel(){
           ${stat('Monthly Punctuality', `${monthly.avgPunctualityPct}%`, `${monthly.totalOnTime + monthly.totalGrace} on-time check-ins`, {em:'⏱️',tint:monthly.avgPunctualityPct>=75})}
           ${stat('Star Sadhakas (≥80%)', `${monthly.devStats.filter(d=>d.attendanceRate>=80).length} Devotees`, 'consistent regular attendees', {em:'🌟',tint:true})}
         </div>
+
+        <!-- Charts: Donut & Histogram (Monthly Aggregation) -->
+        ${renderMorningCharts({
+          total: monthly.totalPossible,
+          onTimeCount: monthly.totalOnTime,
+          graceCount: monthly.totalGrace,
+          lateCount: monthly.totalLate,
+          absentCount: monthly.totalAbsent,
+          onTimePct: monthly.onTimePct,
+          earliestTime: monthly.earliestTime,
+          buckets: monthly.buckets
+        }, `Monthly Summary (${fmtD(monthly.startDate)} – ${fmtD(monthly.endDate)})`)}
 
         <div style="position:relative;margin-bottom:12px">
           <input type="search" placeholder="Filter devotee in monthly report…" value="${esc(APP.morningSearch||'')}" data-act="morning-q" style="width:100%;max-width:320px;padding-left:32px">
@@ -6220,14 +6404,16 @@ function morningProgramPanel(){
             <thead>
               <tr>
                 <th style="width:4%;text-align:center">#</th>
-                <th style="width:28%">Devotee Name</th>
-                <th style="width:14%;text-align:center">Days Present</th>
-                <th style="width:9%;text-align:center">On Time</th>
+                <th style="width:23%">Devotee Name</th>
+                <th style="width:10%;text-align:center">Standard</th>
+                <th style="width:12%;text-align:center">Days Present</th>
+                <th style="width:8%;text-align:center">On Time</th>
                 <th style="width:8%;text-align:center">Grace</th>
                 <th style="width:8%;text-align:center">Late</th>
                 <th style="width:8%;text-align:center">Absent</th>
-                <th style="width:12%;text-align:center">Attendance %</th>
-                <th style="width:13%;text-align:center">Punctuality %</th>
+                <th style="width:11%;text-align:center">Attendance %</th>
+                <th style="width:11%;text-align:center">Punctuality %</th>
+                <th style="width:8%;text-align:center">Edit Std</th>
                 <th style="width:4%;text-align:center">View</th>
               </tr>
             </thead>
@@ -6246,6 +6432,9 @@ function morningProgramPanel(){
                     </div>
                   </td>
                   <td class="center">
+                    <span style="font-family:monospace;font-size:12px;font-weight:600">${d.standardTime}</span>
+                  </td>
+                  <td class="center">
                     <b style="font-size:13px">${d.presentCount}</b> <span style="color:var(--ink-3);font-size:11px">/ ${monthly.totalSessions}</span>
                   </td>
                   <td class="center" style="color:var(--green);font-weight:700">${d.onTimeCount}</td>
@@ -6259,6 +6448,9 @@ function morningProgramPanel(){
                     <b style="color:${d.punctualityRate>=80?'var(--green)':(d.punctualityRate>=60?'var(--mustard)':'var(--danger)')}">${d.punctualityRate}%</b>
                   </td>
                   <td class="center">
+                    <button class="btn sm" data-act="edit-devotee-morning-std" data-id="${d.devotee.id}" style="padding:2px 7px;font-size:11px">✏️ Std</button>
+                  </td>
+                  <td class="center">
                     <a class="btn sm icon-only" href="#/devotee/${d.devotee.id}" title="View profile">👤</a>
                   </td>
                 </tr>`).join('')}
@@ -6269,16 +6461,17 @@ function morningProgramPanel(){
       `)}
     </div>
     ` : `
-    <!-- DEVOTEES PROGRESS SECTION -->
+    <!-- DEVOTEES PROGRESS SECTION: WITH WEEK-OVER-WEEK & MONTH-OVER-MONTH PERCENTAGE GROWTH -->
     <div class="card" style="margin-bottom:16px">
       <div class="card-h" style="border-bottom:1px solid var(--line-2);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
         <div>
-          <h3 style="margin:0;display:flex;align-items:center;gap:8px"><span>🏆</span> Devotees Progress: ${curPeriodName} vs ${prevPeriodName}</h3>
-          <span class="tiny" style="color:var(--ink-3)">Comparing punctuality rate, net growth delta, and attendance regularity</span>
+          <h3 style="margin:0;display:flex;align-items:center;gap:8px"><span>🏆</span> Devotees Progress & Percentage Growth</h3>
+          <span class="tiny" style="color:var(--ink-3)">Tracking Week-over-Week and Month-over-Month attendance growth delta & punctuality improvements</span>
         </div>
         <div class="btn-group" style="display:inline-flex;background:var(--paper-2);padding:3px;border-radius:6px">
-          <button class="btn sm ${isWeekly ? 'pri' : ''}" data-act="morning-progress-period" data-p="weekly" style="border:none">Week-over-Week</button>
-          <button class="btn sm ${!isWeekly ? 'pri' : ''}" data-act="morning-progress-period" data-p="monthly" style="border:none">Month-over-Month</button>
+          <button class="btn sm ${isWeekly ? 'pri' : ''}" data-act="morning-progress-period" data-p="weekly" style="border:none">🗓️ Week-over-Week</button>
+          <button class="btn sm ${!isWeekly ? 'pri' : ''}" data-act="morning-progress-period" data-p="monthly" style="border:none">📊 Month-over-Month</button>
+          <button class="btn sm" data-act="export-morning-progress" style="margin-left:8px;border:none">${ic('download')} Export Growth CSV</button>
         </div>
       </div>
 
@@ -6286,45 +6479,64 @@ function morningProgramPanel(){
         <table class="tbl">
           <thead>
             <tr>
-              <th>Devotee</th>
-              <th>Appointment / Batch</th>
-              <th>${curPeriodName} Punctuality</th>
-              <th>Attendance Sessions</th>
-              <th>On-Time Count</th>
-              <th>Status</th>
-              <th>Profile</th>
+              <th style="width:22%">Devotee Name</th>
+              <th style="width:10%;text-align:center">Standard</th>
+              <th style="width:12%;text-align:center">Days Present</th>
+              <th style="width:12%;text-align:center">${curPeriodName} Punctuality</th>
+              <th style="width:12%;text-align:center">${prevPeriodName} Punctuality</th>
+              <th style="width:15%;text-align:center">
+                ${isWeekly ? 'Week-over-Week (WoW) Growth %' : 'Month-over-Month (MoM) Growth %'}
+              </th>
+              <th style="width:12%;text-align:center">Status Badge</th>
+              <th style="width:8%;text-align:center">Edit Std</th>
+              <th style="width:5%;text-align:center">Profile</th>
             </tr>
           </thead>
           <tbody>
-            ${(isWeekly ? weekly.devStats : monthly.devStats).map(p => `<tr>
-              <td data-l="Devotee">
-                <div class="who">
-                  ${av(p.name)}
-                  <div>
-                    <b>${esc(p.name)}</b>
-                    <span>${esc(p.appointment)}</span>
+            ${(isWeekly ? weekly.devStats : monthly.devStats).map(p => {
+              const delta = p.punctualityGrowthDelta;
+              const deltaSign = delta > 0 ? '+' : '';
+              const deltaColor = delta > 0 ? 'var(--green)' : (delta < 0 ? 'var(--danger)' : 'var(--ink-3)');
+              const deltaBadge = delta > 0 ? `${deltaSign}${delta}% ↗` : (delta < 0 ? `${delta}%` : `0% —`);
+
+              return `<tr>
+                <td data-l="Devotee">
+                  <div class="who">
+                    ${av(p.name)}
+                    <div>
+                      <b>${esc(p.name)}</b>
+                      <span>${esc(p.appointment)}</span>
+                    </div>
                   </div>
-                </div>
-              </td>
-              <td data-l="Appointment">
-                <span class="badge b-grey">${esc(p.appointment)}</span>
-              </td>
-              <td data-l="Punctuality">
-                <b style="color:${p.punctualityRate>=80?'var(--green)':(p.punctualityRate>=60?'var(--mustard)':'var(--danger)')}">${p.punctualityRate}%</b>
-              </td>
-              <td data-l="Sessions">
-                <b>${p.presentCount}</b> / ${isWeekly ? weekly.totalSessions : monthly.totalSessions}
-              </td>
-              <td data-l="On Time">
-                <span style="color:var(--green);font-weight:700">${p.onTimeCount}</span>
-              </td>
-              <td data-l="Status">
-                <span class="badge ${p.statusBadge.includes('100%') ? 'b-green' : (p.statusBadge.includes('Steady') ? 'b-blue' : 'b-amber')}">${p.statusBadge}</span>
-              </td>
-              <td data-l="Profile">
-                <a class="btn sm" href="#/devotee/${p.devotee.id}">View</a>
-              </td>
-            </tr>`).join('')}
+                </td>
+                <td class="center" data-l="Standard">
+                  <span style="font-family:monospace;font-weight:600">${p.standardTime}</span>
+                </td>
+                <td class="center" data-l="Sessions">
+                  <b>${p.presentCount}</b> / ${isWeekly ? weekly.totalSessions : monthly.totalSessions}
+                </td>
+                <td class="center" data-l="Current Punctuality">
+                  <b style="color:${p.punctualityRate>=80?'var(--green)':(p.punctualityRate>=60?'var(--mustard)':'var(--danger)')}">${p.punctualityRate}%</b>
+                </td>
+                <td class="center" data-l="Previous Punctuality" style="color:var(--ink-3)">
+                  ${p.prevPunctualityRate}%
+                </td>
+                <td class="center" data-l="Percentage Growth">
+                  <span style="display:inline-block;padding:3px 10px;border-radius:12px;font-weight:700;font-size:12.5px;color:${deltaColor};background:${delta > 0 ? 'rgba(16,185,129,0.12)' : (delta < 0 ? 'rgba(239,68,68,0.12)' : 'var(--paper-2)')}">
+                    ${deltaBadge}
+                  </span>
+                </td>
+                <td class="center" data-l="Status">
+                  <span class="badge ${p.statusBadge.includes('100%') ? 'b-green' : (p.statusBadge.includes('Steady') ? 'b-blue' : 'b-amber')}">${p.statusBadge}</span>
+                </td>
+                <td class="center" data-l="Edit Std">
+                  <button class="btn sm" data-act="edit-devotee-morning-std" data-id="${p.devotee.id}" style="padding:2px 7px;font-size:11px">✏️ Std</button>
+                </td>
+                <td class="center" data-l="Profile">
+                  <a class="btn sm icon-only" href="#/devotee/${p.devotee.id}" title="View profile">👤</a>
+                </td>
+              </tr>`;
+            }).join('')}
           </tbody>
         </table>
       </div>
@@ -11335,6 +11547,7 @@ function openDevoteeForm(id){
     FLD('role','Hierarchy Role','select',{v:curRole,opts:roleOpts,half:1}),
     FLD('facilitator','Facilitator','select',{v:d?.facilitator||'',opts:[['','Not assigned'],...DB.devotees.filter(x=>x.isFacilitator||x.batchRole==='Coordinator').map(x=>[x.id,x.name])],half:1}),
     FLD('sadhanaRounds','Sadhana rounds','number',{v:d?.sadhana?.rounds!==undefined?d.sadhana.rounds:16,half:1,ph:'16'}),
+    FLD('morningStandardTime','Morning standard time','text',{v:d?.morningStandardTime||'04:30',half:1,ph:'e.g. 04:30, 05:00'}),
     FLD('skills','Skills (comma-separated)','text',{v:Array.isArray(d?.skills)?d.skills.join(', '):(d?.skills||''),half:1,ph:'e.g. Teaching, Kirtan, Cooking'}),
     FLD('address','Permanent address','text',{v:d?.address||'',half:1,ph:'e.g. Home town or permanent address'}),
     FLD('emergency','Emergency contact','text',{v:d?.emergency||'',half:1,ph:'e.g. +91 9876543210 (Father)'}),
@@ -12027,6 +12240,7 @@ document.addEventListener('click',e=>{
     const parsedSkills = v.skills ? (Array.isArray(v.skills) ? v.skills : String(v.skills).split(',').map(s=>s.trim()).filter(Boolean)) : ['Preaching'];
     const rounds = v.sadhanaRounds !== undefined && v.sadhanaRounds !== '' ? Number(v.sadhanaRounds) : 16;
     const devLevel = v.level !== undefined && v.level !== '' ? Number(v.level) : 1;
+    const mStd = (v.morningStandardTime || '').trim() || '04:30';
 
     if(ctx.id){const d=dv(ctx.id);
       const prevRole=devoteeRole(d);
@@ -12058,6 +12272,7 @@ document.addEventListener('click',e=>{
         source: v.source,
         skills: parsedSkills,
         appointment: roleObj.name,
+        morningStandardTime: mStd,
         isFacilitator: (roleKey==='facilitator')
       });
       if(!d.sadhana) d.sadhana = {};
@@ -12122,6 +12337,7 @@ document.addEventListener('click',e=>{
         availability: v.availability || 'Weekends',
         appointment: roleObj.name,
         isFacilitator: (roleKey === 'facilitator'),
+        morningStandardTime: mStd,
         sadhana: { rounds: rounds, morningProgram: 0, lastReported: iso(TODAY) },
         swabhav: { nature: 'Teaching', suggested: 'Outreach & classes', interests: [], engaged: false },
         careStatus: { emotional: 'Doing well', spiritual: 'Steady' },
@@ -12576,22 +12792,12 @@ document.addEventListener('click',e=>{
     const prevP = isW ? 'Previous Week' : 'Previous Month';
     const allDevs = DB.devotees || [];
     const rows = [
-      ['Devotee Name', 'Batch / Department', curP + ' Punctuality %', prevP + ' Punctuality %', 'Growth Delta %', 'Trend Status', 'Current Arrival', 'Previous Arrival', 'Current Streak (Days)', 'Milestone'],
-      ...allDevs.map(d => {
-        const base = d.attendancePct || 84;
-        const hashVal = ((d.id.charCodeAt(0) * 3 + d.name.length * 7 + (isW ? 2 : 5)) % 11) - 5;
-        const variance = isW ? hashVal * 2.5 : hashVal * 3.5;
-        const curPct = Math.max(50, Math.min(100, Math.round(base)));
-        const prevPct = Math.max(45, Math.min(98, Math.round(curPct - variance)));
-        const delta = curPct - prevPct;
+      ['Devotee Name', 'Standard Time', 'Appointment / Role', curP + ' Punctuality %', prevP + ' Punctuality %', (isW ? 'Week-over-Week (WoW) Growth %' : 'Month-over-Month (MoM) Growth %'), 'Trend Status', 'Days Present', 'Status Badge'],
+      ...((isW ? (APP.morningData?.weekly?.devStats || []) : (APP.morningData?.monthly?.devStats || [])).map(p => {
+        const delta = p.punctualityGrowthDelta;
         const trend = delta > 0 ? `+${delta}% Improved` : (delta < 0 ? `${delta}% Dipped` : '0% Steady');
-        const curArrival = '04:25 AM';
-        const prevMin = 265 + Math.round(delta * -1.2);
-        const prevArrival = formatMinutesTime(Math.max(240, Math.min(310, prevMin)));
-        const streak = Math.max(1, Math.round((curPct / 100) * 8));
-        const milestone = delta >= 8 ? 'Fast Learner' : (curPct >= 85 ? 'Exemplary' : (curPct >= 70 ? 'Steady Sadhana' : 'Needs Support'));
-        return [d.name, batch(d.batch)?.name || dept(d.dept)?.name || 'General', curPct + '%', prevPct + '%', (delta >= 0 ? '+' : '') + delta + '%', trend, curArrival, prevArrival, streak, milestone];
-      })
+        return [p.name, p.standardTime, p.appointment, p.punctualityRate + '%', p.prevPunctualityRate + '%', (delta >= 0 ? '+' : '') + delta + '%', trend, p.presentCount, p.statusBadge];
+      }))
     ];
     const csvContent = 'data:text/csv;charset=utf-8,' + rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
     const link = document.createElement('a');
@@ -12605,6 +12811,37 @@ document.addEventListener('click',e=>{
   }
   case 'morning-report-view':stop();{
     APP.morningReportView = t.dataset.v || 'today';
+    render();
+    break;
+  }
+  case 'edit-devotee-morning-std':stop();{
+    const dId = t.dataset.id;
+    const d = dv(dId);
+    if(!d){ toast('Devotee not found', '⚠️'); break; }
+    const curStd = d.morningStandardTime || '04:30';
+    openForm('Edit Morning Standard Time: ' + d.name, [
+      FLD('morningStandardTime', 'Standard Morning Attendance Time', 'text', {
+        v: curStd,
+        ph: 'e.g. 04:30, 05:00, 05:15',
+        tip: 'Grace window is +60m, late is +120m, absent after +150m from this time.'
+      })
+    ], 'save-devotee-morning-std', { id: d.id }, 'Customized standard time applies immediately to all morning reports for this devotee.');
+    break;
+  }
+  case 'save-devotee-morning-std':{
+    const v = collect(), ctx = APP.modal.ctx;
+    if(ctx && ctx.id){
+      const d = dv(ctx.id);
+      if(d){
+        const newTime = (v.morningStandardTime || '04:30').trim();
+        d.morningStandardTime = newTime;
+        if(APP.morningData && APP.morningData.rawBiometricText){
+          APP.morningData = parseMorningCSV(APP.morningData.rawBiometricText, APP.morningData.date);
+        }
+        toast('Updated morning standard time for ' + d.name + ' to ' + newTime, '✅');
+      }
+    }
+    APP.modal = '';
     render();
     break;
   }
