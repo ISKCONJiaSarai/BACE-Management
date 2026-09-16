@@ -5317,18 +5317,18 @@ function saveMorningAttendanceToDB(){
    🛕 DEITY & CLEANING OPERATIONAL ROSTERS (Persistent State & Defaults)
    ========================================================================= */
 const DEFAULT_DEITY_SERVICES = [
-  { id: 'd1', name: 'Temple Hall Cleaning ( till 4:30 am )', time: '04:00 AM', sort: 1 },
-  { id: 'd2', name: 'Deity Wake-up', time: '04:15 AM', sort: 2 },
-  { id: 'd3', name: 'Deity Worship', time: '04:30 AM', sort: 3 },
+  { id: 'd1', name: 'Temple Hall Cleaning', time: '04:30 AM', sort: 1 },
+  { id: 'd2', name: 'Deity Wake-up', time: '05:15 AM', sort: 2 },
+  { id: 'd3', name: 'Deity Worship', time: '06:30 AM', sort: 3 },
   { id: 'd4', name: 'Mangla Aarti singing', time: '04:30 AM', sort: 4 },
   { id: 'd5', name: 'Narsimha Aarti singing', time: '05:00 AM', sort: 5 },
-  { id: 'd6', name: 'Morning Bhoga offering', time: '05:15 AM', sort: 6 },
-  { id: 'd7', name: 'Evening Bhoga offering', time: '07:00 PM', sort: 7 },
-  { id: 'd8', name: 'Deity Rest', time: '08:30 PM', sort: 8 }
+  { id: 'd6', name: 'Morning Bhoga offering', time: '07:30 AM', sort: 6 },
+  { id: 'd7', name: 'Evening Bhoga offering', time: '05:30 PM', sort: 7 },
+  { id: 'd8', name: 'Deity Rest', time: '08:45 PM', sort: 8 }
 ];
 
 const DEFAULT_CLEANING_SERVICES = [
-  { id: 'c1', name: 'Temple Hall Mopping & Dusting ( till 4:30 am )', time: '04:00 AM', sort: 1 },
+  { id: 'c1', name: 'Temple Hall Mopping & Dusting', time: '04:30 AM', sort: 1 },
   { id: 'c2', name: 'Altar & Deity Area Floor Cleaning', time: '05:30 AM', sort: 2 },
   { id: 'c3', name: 'Prasadam Hall & Dining Cleaning', time: '08:00 AM', sort: 3 },
   { id: 'c4', name: 'Kitchen Floor & Slab Cleaning', time: '09:30 AM', sort: 4 },
@@ -5343,7 +5343,26 @@ function getStoredRoster(key, defaultServices, defaultToday, defaultTomorrow) {
     const raw = localStorage.getItem('bace_roster_' + key);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (parsed && parsed.services && parsed.services.length) return parsed;
+      if (parsed && parsed.services && parsed.services.length) {
+        // Automatically sync updated names and times from temple schedule
+        defaultServices.forEach(defS => {
+          const s = parsed.services.find(x => x.id === defS.id);
+          if (s) {
+            s.name = defS.name;
+            s.time = defS.time;
+          }
+        });
+        if (parsed.slots) {
+          Object.values(parsed.slots).forEach(daySlots => {
+            defaultServices.forEach(defS => {
+              if (daySlots[defS.id]) {
+                daySlots[defS.id].time = defS.time;
+              }
+            });
+          });
+        }
+        return parsed;
+      }
     }
   } catch (e) {}
   return {
@@ -5364,29 +5383,29 @@ function saveStoredRoster(key, data) {
 function initDepartmentRosters() {
   if (!APP.deityRoster) {
     APP.deityRoster = getStoredRoster('deity', DEFAULT_DEITY_SERVICES, {
-      d1: { devotees: 'Sai Sriram Pr & Neetesh', time: '04:00 AM', status: 'done' },
-      d2: { devotees: 'Dhirendra Pr', time: '04:15 AM', status: 'done' },
-      d3: { devotees: 'HG Janardan Shyam Pr', time: '04:30 AM', status: 'done' },
+      d1: { devotees: 'Sai Sriram Pr & Neetesh', time: '04:30 AM', status: 'done' },
+      d2: { devotees: 'Dhirendra Pr', time: '05:15 AM', status: 'done' },
+      d3: { devotees: 'HG Janardan Shyam Pr', time: '06:30 AM', status: 'done' },
       d4: { devotees: 'Sameer Pr', time: '04:30 AM', status: 'done' },
       d5: { devotees: 'Sumit Pr', time: '05:00 AM', status: 'done' },
-      d6: { devotees: 'Mayank Pr', time: '05:15 AM', status: 'done' },
-      d7: { devotees: 'Sumit Pr', time: '07:00 PM', status: 'done' },
-      d8: { devotees: 'Suraj Pr ❌ Aman Pr', time: '08:30 PM', status: 'done' }
+      d6: { devotees: 'Mayank Pr', time: '07:30 AM', status: 'done' },
+      d7: { devotees: 'Sumit Pr', time: '05:30 PM', status: 'done' },
+      d8: { devotees: 'Suraj Pr ❌ Aman Pr', time: '08:45 PM', status: 'done' }
     }, {
-      d1: { devotees: 'Suraj Pr & Sumit Pr', time: '04:00 AM', status: 'pending' },
-      d2: { devotees: 'Neetesh', time: '04:15 AM', status: 'pending' },
-      d3: { devotees: 'Neetesh', time: '04:30 AM', status: 'pending' },
+      d1: { devotees: 'Suraj Pr & Sumit Pr', time: '04:30 AM', status: 'pending' },
+      d2: { devotees: 'Neetesh', time: '05:15 AM', status: 'pending' },
+      d3: { devotees: 'Neetesh', time: '06:30 AM', status: 'pending' },
       d4: { devotees: 'Mayank Pr', time: '04:30 AM', status: 'pending' },
       d5: { devotees: 'Rajesh Roy Pr', time: '05:00 AM', status: 'pending' },
-      d6: { devotees: 'Himanshu Pr', time: '05:15 AM', status: 'pending' },
-      d7: { devotees: 'Mayank Pr', time: '07:00 PM', status: 'pending' },
-      d8: { devotees: 'Suresh Pr', time: '08:30 PM', status: 'pending' }
+      d6: { devotees: 'Himanshu Pr', time: '07:30 AM', status: 'pending' },
+      d7: { devotees: 'Mayank Pr', time: '05:30 PM', status: 'pending' },
+      d8: { devotees: 'Suresh Pr', time: '08:45 PM', status: 'pending' }
     });
   }
 
   if (!APP.cleaningRoster) {
     APP.cleaningRoster = getStoredRoster('cleaning', DEFAULT_CLEANING_SERVICES, {
-      c1: { devotees: 'Ankit Pr & Rahul Pr', time: '04:00 AM', status: 'done' },
+      c1: { devotees: 'Ankit Pr & Rahul Pr', time: '04:30 AM', status: 'done' },
       c2: { devotees: 'Sai Sriram Pr', time: '05:30 AM', status: 'done' },
       c3: { devotees: 'Mayank Pr', time: '08:00 AM', status: 'done' },
       c4: { devotees: 'Dhirendra Pr', time: '09:30 AM', status: 'done' },
@@ -5395,7 +5414,7 @@ function initDepartmentRosters() {
       c7: { devotees: 'Neetesh', time: '06:00 PM', status: 'done' },
       c8: { devotees: 'Himanshu Pr', time: '09:00 PM', status: 'done' }
     }, {
-      c1: { devotees: 'Suraj Pr & Suresh Pr', time: '04:00 AM', status: 'pending' },
+      c1: { devotees: 'Suraj Pr & Suresh Pr', time: '04:30 AM', status: 'pending' },
       c2: { devotees: 'Dhirendra Pr', time: '05:30 AM', status: 'pending' },
       c3: { devotees: 'Sameer Pr', time: '08:00 AM', status: 'pending' },
       c4: { devotees: 'Sumit Pr', time: '09:30 AM', status: 'pending' },
