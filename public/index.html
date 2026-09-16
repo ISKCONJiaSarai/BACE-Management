@@ -6805,17 +6805,24 @@ function exportDevoteeReportPDF(deptKey, period) {
   <style>
     @page {
       size: A4 portrait;
-      margin: 12mm 10mm;
+      margin: 12mm;
     }
     * { box-sizing: border-box; }
+    html {
+      background: #525659;
+    }
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       color: #111;
-      margin: 0;
-      padding: 16px;
+      width: 210mm;
+      max-width: 210mm;
+      min-height: 297mm;
+      margin: 20px auto;
+      padding: 14mm 14mm 16mm 14mm;
       background: #fff;
       font-size: 11.5px;
       line-height: 1.4;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.25);
     }
     .no-print-bar {
       background: #222;
@@ -6824,7 +6831,7 @@ function exportDevoteeReportPDF(deptKey, period) {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin: -16px -16px 16px -16px;
+      margin: -14mm -14mm 16px -14mm;
       font-size: 13px;
     }
     .no-print-bar button {
@@ -6944,8 +6951,16 @@ function exportDevoteeReportPDF(deptKey, period) {
       color: #777;
     }
     @media print {
+      html, body {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-height: auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #fff !important;
+        box-shadow: none !important;
+      }
       .no-print-bar { display: none !important; }
-      body { padding: 0 !important; }
     }
   </style>
 </head>
@@ -6993,14 +7008,13 @@ function exportDevoteeReportPDF(deptKey, period) {
   <table>
     <thead>
       <tr>
-        <th style="width:4%;text-align:center">#</th>
-        <th style="width:28%">Devotee Name</th>
-        <th style="width:18%">Phone / BACE</th>
-        <th style="width:11%;text-align:center">Services Taken</th>
-        <th style="width:11%;text-align:center">Completed</th>
-        <th style="width:8%;text-align:center">Missed</th>
-        <th style="width:9%;text-align:center">Substitutions</th>
-        <th style="width:11%;text-align:center">Reliability</th>
+        <th style="width:5%;text-align:center">#</th>
+        <th style="width:35%">Devotee Name</th>
+        <th style="width:12%;text-align:center">Services Taken</th>
+        <th style="width:12%;text-align:center">Completed</th>
+        <th style="width:10%;text-align:center">Missed</th>
+        <th style="width:11%;text-align:center">Substitutions</th>
+        <th style="width:15%;text-align:center">Reliability</th>
       </tr>
     </thead>
     <tbody>
@@ -7016,7 +7030,6 @@ function exportDevoteeReportPDF(deptKey, period) {
         return `<tr>
           <td class="center" style="font-weight:600;color:#666">${i + 1}</td>
           <td><b>${esc(d.name)}</b></td>
-          <td style="color:#555">${esc(d.phone || d.bace || 'Member')}</td>
           <td class="center" style="font-weight:600">${d.assigned}</td>
           <td class="center" style="font-weight:700;color:#059669">${d.completed}</td>
           <td class="center" style="color:${d.missed > 0 ? '#DC2626' : '#888'};font-weight:${d.missed > 0 ? '700' : 'normal'}">${d.missed}</td>
@@ -7029,7 +7042,7 @@ function exportDevoteeReportPDF(deptKey, period) {
 
   <div class="footer">
     <div>ISKCON BACE Jia Sarai · Community Operating System</div>
-    <div>Department In-Charge Signature: _______________________</div>
+    <div>Official Temple Seva Record</div>
   </div>
 </body>
 </html>`;
