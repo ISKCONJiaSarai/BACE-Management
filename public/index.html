@@ -6401,17 +6401,25 @@ function openMissedSubstituteModal(deptKey, dateStr, sId) {
   render();
 }
 
-function openEditRosterSlotModal(deptKey, dateStr, sId) {
+function openEditRosterSlotModal(deptKey, dateStr, sId, source) {
   initDepartmentRosters();
   const isDeity = deptKey === 'deity';
   const roster = isDeity ? APP.deityRoster : APP.cleaningRoster;
   const service = roster.services.find(s => s.id === sId) || { name: 'Seva', time: '04:30 AM' };
   const slot = getRosterSlot(roster, dateStr, sId);
 
+  const currentView = source || (APP.rosterViewMode && APP.rosterViewMode[deptKey]) || 'photo';
+  const isWeeklyChart = currentView === 'weekly';
   const isToday = dateStr === iso(TODAY);
   const isTomorrow = dateStr === iso(dayOff(1));
-  const isWeeklySchedule = !isToday && !isTomorrow;
-  const dayTitle = isToday ? "Today's Report" : (isTomorrow ? "Tomorrow's Schedule" : `Weekly Schedule (${fmtD(dateStr)})`);
+
+  // Service Completion Status dropdown is strictly for Today's Report in Today & Tomorrow view.
+  // In the Weekly Service Chart, status option/dropdown is completely removed for all days.
+  const showStatusDropdown = isToday && !isWeeklyChart;
+
+  const dayTitle = isWeeklyChart
+    ? `Weekly Chart (${fmtD(dateStr)})`
+    : (isToday ? "Today's Report" : (isTomorrow ? "Tomorrow's Schedule" : fmtD(dateStr)));
 
   let origDev = slot.devotees || '';
   let existingSub = '';
@@ -6425,10 +6433,11 @@ function openEditRosterSlotModal(deptKey, dateStr, sId) {
     deptKey,
     dateStr,
     sId,
+    source: currentView,
     devotees: origDev,
     substituteDev: existingSub,
     time: service.time || '04:30 AM',
-    status: slot.status || (isToday ? (existingSub ? 'missed' : 'done') : 'pending')
+    status: slot.status || (isToday && !isWeeklyChart ? (existingSub ? 'missed' : 'done') : 'pending')
   };
 
   const modalHtml = `
@@ -6484,7 +6493,7 @@ function openEditRosterSlotModal(deptKey, dateStr, sId) {
           </div>
         </div>
 
-        ${isToday ? `
+        ${showStatusDropdown ? `
         <div>
           <label style="display:block;font-size:12.5px;font-weight:600;margin-bottom:5px;color:var(--ink)">Service Completion Status</label>
           <select id="edit-slot-status" onchange="const subWrap = document.getElementById('edit-substitute-wrap'); if(subWrap) subWrap.style.display = this.value === 'missed' ? 'block' : 'none';" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:var(--surface)">
@@ -6674,24 +6683,24 @@ function renderDepartmentRosterPanel(deptKey) {
                 <!-- Today's Report Column (Pale Lavender #E5DCF7) -->
                 <td style="background:#E5DCF7;padding:10px 12px;border-right:1.5px solid #000;color:#111;text-align:center">
                   <div style="display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap">
-                    <span style="font-weight:700;font-size:14.5px;cursor:pointer" data-act="edit-roster-slot" data-dept="${deptKey}" data-dt="${todayStr}" data-s="${s.id}" title="Click to edit devotees">
+                    <span style="font-weight:700;font-size:14.5px;cursor:pointer" data-act="edit-roster-slot" data-dept="${deptKey}" data-dt="${todayStr}" data-s="${s.id}" data-src="today" title="Click to edit devotees">
                       ${esc(tSlot.devotees || 'Unassigned')}
                     </span>
                     <!-- One click toggle: Tick ✅ or Cross ❌ -->
                     <button type="button" style="border:none;background:transparent;cursor:pointer;font-size:17px;padding:2px 4px" data-act="toggle-roster-status" data-dept="${deptKey}" data-dt="${todayStr}" data-s="${s.id}" title="Click to toggle Done/Missed">
                       ${tSlot.status === 'done' ? '✅' : (tSlot.status === 'missed' ? '❌' : '⏳')}
                     </button>
-                    <button class="btn sm icon-only" data-act="edit-roster-slot" data-dept="${deptKey}" data-dt="${todayStr}" data-s="${s.id}" style="padding:2px 6px;height:24px;font-size:11px" title="Edit slot details">✏️</button>
+                    <button class="btn sm icon-only" data-act="edit-roster-slot" data-dept="${deptKey}" data-dt="${todayStr}" data-s="${s.id}" data-src="today" style="padding:2px 6px;height:24px;font-size:11px" title="Edit slot details">✏️</button>
                   </div>
                 </td>
 
                 <!-- Tomorrow's Chart Column (Pale Lavender #E5DCF7) -->
                 <td style="background:#E5DCF7;padding:10px 12px;color:#111;text-align:center">
                   <div style="display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap">
-                    <span style="font-size:14.5px;cursor:pointer" data-act="edit-roster-slot" data-dept="${deptKey}" data-dt="${tomorrowStr}" data-s="${s.id}" title="Click to edit devotees">
+                    <span style="font-size:14.5px;cursor:pointer" data-act="edit-roster-slot" data-dept="${deptKey}" data-dt="${tomorrowStr}" data-s="${s.id}" data-src="tomorrow" title="Click to edit devotees">
                       ${esc(tmSlot.devotees || 'Unassigned')}
                     </span>
-                    <button class="btn sm icon-only" data-act="edit-roster-slot" data-dept="${deptKey}" data-dt="${tomorrowStr}" data-s="${s.id}" style="padding:2px 6px;height:24px;font-size:11px" title="Edit slot details">✏️</button>
+                    <button class="btn sm icon-only" data-act="edit-roster-slot" data-dept="${deptKey}" data-dt="${tomorrowStr}" data-s="${s.id}" data-src="tomorrow" style="padding:2px 6px;height:24px;font-size:11px" title="Edit slot details">✏️</button>
                   </div>
                 </td>
               </tr>`;
@@ -6732,9 +6741,9 @@ function renderDepartmentRosterPanel(deptKey) {
               ${days.map(d => {
                 const sl = getRosterSlot(roster, d, s.id);
                 return `<td data-l="${fmtD(d)}" style="text-align:center;min-width:130px;background:${d === todayStr ? 'rgba(245,168,105,0.08)' : 'transparent'}">
-                  <div style="font-size:12.5px;font-weight:600;margin-bottom:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px" data-act="edit-roster-slot" data-dept="${deptKey}" data-dt="${d}" data-s="${s.id}" title="Click to assign devotee">
+                  <div style="font-size:12.5px;font-weight:600;margin-bottom:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px" data-act="edit-roster-slot" data-dept="${deptKey}" data-dt="${d}" data-s="${s.id}" data-src="weekly" title="Click to assign devotee">
                     <span>${esc(sl.devotees || '—')}</span>
-                    <button class="btn sm icon-only" style="height:22px;padding:1px 5px;font-size:11px" data-act="edit-roster-slot" data-dept="${deptKey}" data-dt="${d}" data-s="${s.id}" title="Edit devotee">✏️</button>
+                    <button class="btn sm icon-only" style="height:22px;padding:1px 5px;font-size:11px" data-act="edit-roster-slot" data-dept="${deptKey}" data-dt="${d}" data-s="${s.id}" data-src="weekly" title="Edit devotee">✏️</button>
                   </div>
                 </td>`;
               }).join('')}
@@ -10742,7 +10751,8 @@ document.addEventListener('click',e=>{
     const deptK = t.dataset.dept || 'deity';
     const dateStr = t.dataset.dt || iso(TODAY);
     const sId = t.dataset.s;
-    openEditRosterSlotModal(deptK, dateStr, sId);
+    const src = t.dataset.src || (APP.rosterViewMode && APP.rosterViewMode[deptK]);
+    openEditRosterSlotModal(deptK, dateStr, sId, src);
     break;
   }
   case 'save-roster-slot-modal':stop();{
