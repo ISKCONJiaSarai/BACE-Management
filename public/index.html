@@ -7108,56 +7108,34 @@ function getDefaultDressingSchedule() {
     {
       id: 'dress-2026-09-01',
       date: '2026-09-01',
-      title: 'Fortnightly Altar & Deity Dressing',
+      title: 'Fortnightly Deity Dressing',
       cadence: '15 Days',
       devotees: 'HG Janardan Shyam Pr & Suraj Pr',
-      status: 'done',
-      notes: 'Purnima / Pratipada Poshaak & Altar Dressing'
+      status: 'done'
     },
     {
       id: 'dress-2026-09-15',
       date: '2026-09-15',
-      title: 'Fortnightly Altar & Deity Dressing',
+      title: 'Fortnightly Deity Dressing',
       cadence: '15 Days',
-      devotees: 'Sai Sriram Pr & Neetesh',
-      status: 'done',
-      notes: 'Ekadashi / Fortnightly Special Dressing'
+      devotees: 'Neteesh pr & Suresh pr',
+      status: 'done'
     },
     {
       id: 'dress-2026-10-01',
       date: '2026-10-01',
-      title: 'Fortnightly Altar & Deity Dressing',
+      title: 'Fortnightly Deity Dressing',
       cadence: '15 Days',
       devotees: 'Dhirendra Pr & Sameer Pr',
-      status: 'pending',
-      notes: 'Purnima Special Shringar'
+      status: 'pending'
     },
     {
       id: 'dress-2026-10-15',
       date: '2026-10-15',
-      title: 'Fortnightly Altar & Deity Dressing',
+      title: 'Fortnightly Deity Dressing',
       cadence: '15 Days',
       devotees: 'Achyuta Deenabandu pr & Mayank Pr',
-      status: 'pending',
-      notes: 'Ekadashi Fortnightly Dressing'
-    },
-    {
-      id: 'dress-2026-10-30',
-      date: '2026-10-30',
-      title: 'Fortnightly Altar & Deity Dressing',
-      cadence: '15 Days',
-      devotees: 'Suraj Pr & Sumit Pr',
-      status: 'pending',
-      notes: 'Kartik Damodara Special Shringar'
-    },
-    {
-      id: 'dress-2026-11-15',
-      date: '2026-11-15',
-      title: 'Fortnightly Altar & Deity Dressing',
-      cadence: '15 Days',
-      devotees: 'Sai Sriram Pr & Suresh Pr',
-      status: 'pending',
-      notes: 'Utthana Ekadashi Special Shringar'
+      status: 'pending'
     }
   ];
 }
@@ -7218,6 +7196,243 @@ window.filterDressingDevoteeDropdown = function(query) {
     </div>
   `).join('');
 };
+
+
+/* =========================================================================
+   📸 DEITY DRESSING SCHEDULE SCREENSHOT / CANVAS PHOTO GENERATOR
+   ========================================================================= */
+function generateDressingScheduleCanvas(selectedMonth = '2026-09') {
+  initDepartmentRosters();
+  const roster = APP.deityRoster;
+  const allSchedule = (roster && roster.dressingSchedule ? roster.dressingSchedule : getDefaultDressingSchedule())
+    .slice()
+    .sort((a, b) => a.date.localeCompare(b.date));
+
+  const schedule = selectedMonth === 'all'
+    ? allSchedule
+    : allSchedule.filter(s => s.date.startsWith(selectedMonth));
+
+  const monthNames = {
+    '2026-08': 'August 2026',
+    '2026-09': 'September 2026',
+    '2026-10': 'October 2026',
+    '2026-11': 'November 2026',
+    '2026-12': 'December 2026',
+    '2027-01': 'January 2027'
+  };
+  const monthTitle = selectedMonth === 'all' ? 'All Scheduled Dates' : (monthNames[selectedMonth] || selectedMonth);
+
+  const col0W = 280; // Date & Day column
+  const col1W = 440; // Responsible Devotee column
+  const totalW = col0W + col1W;
+
+  const headerH = 90;
+  const subHeaderH = 46;
+  const rowCount = Math.max(schedule.length, 1);
+  const rowH = 54;
+  const footerH = 42;
+  const totalH = headerH + subHeaderH + (rowCount * rowH) + footerH;
+
+  const canvas = document.createElement('canvas');
+  const scale = 2; // 2x Retina
+  canvas.width = totalW * scale;
+  canvas.height = totalH * scale;
+
+  const ctx = canvas.getContext('2d');
+  ctx.scale(scale, scale);
+
+  // Background
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fillRect(0, 0, totalW, totalH);
+
+  // Banner Header (Deep saffron gradient / solid)
+  if (ctx.createLinearGradient) {
+    const grad = ctx.createLinearGradient(0, 0, totalW, 0);
+    grad.addColorStop(0, '#C9601B');
+    grad.addColorStop(1, '#E06012');
+    ctx.fillStyle = grad;
+  } else {
+    ctx.fillStyle = '#C9601B';
+  }
+  ctx.fillRect(0, 0, totalW, headerH);
+
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = 'bold 22px "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+  ctx.fillText('ISKCON Jia Sarai · Deity Department', totalW / 2, 34);
+
+  ctx.font = 'bold 15px "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+  ctx.fillText('🥻 Deity Dressing Schedule (Every 15 Days)', totalW / 2, 58);
+
+  ctx.font = 'normal 13px "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+  ctx.fillText('Monthly Schedule · ' + monthTitle, totalW / 2, 78);
+
+  // Table Headers Bar (#F5A869 Peach)
+  const subY = headerH;
+  ctx.fillStyle = '#F5A869';
+  ctx.fillRect(0, subY, totalW, subHeaderH);
+
+  ctx.fillStyle = '#111111';
+  ctx.font = 'bold 15px "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('Date & Day', col0W / 2, subY + 28);
+  ctx.fillText('Responsible Devotee', col0W + (col1W / 2), subY + 28);
+
+  // Header border
+  ctx.strokeStyle = '#000000';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(0, subY, totalW, subHeaderH);
+  ctx.beginPath();
+  ctx.moveTo(col0W, subY);
+  ctx.lineTo(col0W, subY + subHeaderH);
+  ctx.stroke();
+
+  // Rows
+  let curY = subY + subHeaderH;
+  if (schedule.length === 0) {
+    ctx.fillStyle = '#FBF8F3';
+    ctx.fillRect(0, curY, totalW, rowH);
+    ctx.fillStyle = '#777777';
+    ctx.font = 'italic 14px "Inter", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('No dressing schedule slots set for this month', totalW / 2, curY + 32);
+
+    ctx.strokeStyle = '#222222';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(0, curY, totalW, rowH);
+    curY += rowH;
+  } else {
+    schedule.forEach((item, idx) => {
+      const isAlt = idx % 2 === 1;
+      const dayStr = fullDayName(item.date);
+      const isToday = item.date === iso(TODAY);
+
+      // Col 0: Date & Day (Pale Golden Yellow #FFE5A3)
+      ctx.fillStyle = isToday ? '#FFD479' : (isAlt ? '#FFF0C7' : '#FFE5A3');
+      ctx.fillRect(0, curY, col0W, rowH);
+
+      // Col 1: Responsible Devotee (Pale Lavender #E5DCF7)
+      ctx.fillStyle = isAlt ? '#EDE6FB' : '#E5DCF7';
+      ctx.fillRect(col0W, curY, col1W, rowH);
+
+      // Text Col 0: Date
+      ctx.fillStyle = '#111111';
+      ctx.textAlign = 'center';
+      ctx.font = 'bold 14.5px "Inter", sans-serif';
+      ctx.fillText(fmtD(item.date) + ' (' + dayStr + ')' + (isToday ? ' ★' : ''), col0W / 2, curY + (rowH / 2) + 5);
+
+      // Text Col 1: Devotee
+      ctx.font = 'bold 15px "Inter", sans-serif';
+      const devName = item.devotees && item.devotees.trim() && item.devotees !== 'Unassigned' && item.devotees !== '—'
+        ? item.devotees
+        : 'Unassigned';
+      ctx.fillStyle = devName === 'Unassigned' ? '#666666' : '#111111';
+      ctx.fillText(devName, col0W + (col1W / 2), curY + (rowH / 2) + 5);
+
+      // Borders
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(0, curY, totalW, rowH);
+      ctx.beginPath();
+      ctx.moveTo(col0W, curY);
+      ctx.lineTo(col0W, curY + rowH);
+      ctx.stroke();
+
+      curY += rowH;
+    });
+  }
+
+  // Footer bar
+  ctx.fillStyle = '#222222';
+  ctx.fillRect(0, curY, totalW, footerH);
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = 'normal 12px "Inter", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('ISKCON BACE Jia Sarai · Sacred Deity Dressing Seva Schedule', totalW / 2, curY + 26);
+
+  return canvas;
+}
+
+function openShareDressingModal() {
+  const selectedMonth = APP.dressingSelectedMonth || '2026-09';
+  const canvas = generateDressingScheduleCanvas(selectedMonth);
+  const dataUrl = canvas.toDataURL('image/png');
+
+  APP.dressingModalData = {
+    selectedMonth,
+    dataUrl,
+    canvas
+  };
+
+  const monthNames = {
+    '2026-08': 'August 2026',
+    '2026-09': 'September 2026',
+    '2026-10': 'October 2026',
+    '2026-11': 'November 2026',
+    '2026-12': 'December 2026',
+    '2027-01': 'January 2027'
+  };
+  const monthTitle = selectedMonth === 'all' ? 'All Months' : (monthNames[selectedMonth] || selectedMonth);
+
+  const modalHtml = `
+    <div class="modal wide" data-stop="1" style="max-width:800px;max-height:92vh;overflow-y:auto">
+      <div class="modal-h" style="display:flex;align-items:center;justify-content:space-between">
+        <h3 style="margin:0;display:flex;align-items:center;gap:8px">
+          <span>📸</span> Share Deity Dressing Schedule (${monthTitle})
+        </h3>
+        <button class="icon-btn" style="margin-left:auto" data-act="close-scrim">${ic('x')}</button>
+      </div>
+      <div class="modal-b" style="padding:16px;text-align:center">
+        <div style="margin-bottom:14px;display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap">
+          <button class="btn pri" data-act="download-dressing-canvas">${ic('download')} Download Photo (PNG)</button>
+          <button class="btn" data-act="copy-dressing-canvas">📋 Copy Photo to Clipboard</button>
+          <button class="btn" style="background:#25D366;color:#fff;border:none" data-act="whatsapp-dressing-canvas">📱 Share to WhatsApp</button>
+        </div>
+        <div class="tiny" style="color:var(--ink-3);margin-bottom:12px">
+          💡 Click "Copy Photo to Clipboard" and then directly press <b>Ctrl+V</b> inside WhatsApp to send the high-resolution photo!
+        </div>
+        <div style="border:1.5px solid var(--line);border-radius:8px;overflow:hidden;background:#fff;display:inline-block;box-shadow:var(--sh-2);max-width:100%">
+          <img src="${dataUrl}" alt="Deity Dressing Schedule" style="width:100%;max-width:720px;display:block;height:auto">
+        </div>
+      </div>
+      <div class="modal-f" style="display:flex;justify-content:flex-end">
+        <button class="btn" data-act="close-scrim">Close</button>
+      </div>
+    </div>
+  `;
+
+  APP.modal = 'custom';
+  APP.customModalHtml = modalHtml;
+  render();
+}
+
+function shareDressingPhotoDirectly() {
+  const selectedMonth = APP.dressingSelectedMonth || '2026-09';
+  const canvas = generateDressingScheduleCanvas(selectedMonth);
+  const dataUrl = canvas.toDataURL('image/png');
+
+  APP.dressingModalData = {
+    selectedMonth,
+    dataUrl,
+    canvas
+  };
+
+  openShareDressingModal();
+
+  canvas.toBlob(async blob => {
+    if (!blob) return;
+    const file = new File([blob], `deity_dressing_schedule_${selectedMonth}.png`, { type: 'image/png' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({
+          files: [file],
+          title: 'Deity Dressing Schedule',
+          text: 'Hare Krishna! Please find attached the Deity Dressing Schedule (Every 15 Days) for ' + selectedMonth + '.'
+        });
+      } catch (err) {}
+    }
+  });
+}
 
 function renderDeityDressingScheduleCard() {
   initDepartmentRosters();
@@ -7282,38 +7497,32 @@ function renderDeityDressingScheduleCard() {
               <option value="all" ${selectedMonth === 'all' ? 'selected' : ''}>View All Months</option>
             </select>
           </div>
-          <button class="btn pri sm" data-act="add-dressing-slot" title="Schedule an upcoming dressing date">
-            <span>➕</span> Schedule Dressing Date
+          <button class="btn pri sm" data-act="share-dressing-photo" title="Generate & Share Photo screenshot for WhatsApp">
+            <span>📸</span> Generate & Share Photo
           </button>
-          <button class="btn sm" data-act="auto-generate-15day" title="Auto-create 1st & 15th slots for selected month">
-            <span>✨</span> Auto 15-Day Cadence
+          <button class="btn sm" data-act="add-dressing-slot" title="Schedule an upcoming dressing date">
+            <span>➕</span> Schedule Dressing Date
           </button>
         </div>
       </div>
 
-      <!-- Dressing Schedule Table / List -->
+      <!-- Dressing Schedule Table (Strictly 2 Columns: Date & Day, Responsible Devotee) -->
       <div class="tbl-wrap">
         <table class="tbl">
           <thead>
             <tr>
-              <th style="min-width:140px">Date & Day</th>
-              <th style="min-width:110px">Cadence</th>
-              <th style="min-width:200px">Occasion / Seva</th>
-              <th style="min-width:220px">Responsible Devotee</th>
-              <th style="min-width:110px;text-align:center">Status</th>
-              <th style="min-width:100px;text-align:center">Actions</th>
+              <th style="width:40%;min-width:180px">Date & Day</th>
+              <th style="width:60%;min-width:240px">Responsible Devotee</th>
             </tr>
           </thead>
           <tbody>
             ${schedule.length === 0 ? `
               <tr>
-                <td colspan="6" style="text-align:center;padding:26px 16px;color:var(--ink-3)">
+                <td colspan="2" style="text-align:center;padding:26px 16px;color:var(--ink-3)">
                   <div style="font-size:24px;margin-bottom:6px">🥻</div>
                   <div style="font-weight:600;color:var(--ink-2);font-size:14px">No dressing slots scheduled for ${monthNames[selectedMonth] || selectedMonth}</div>
-                  <div class="tiny" style="margin-top:4px;color:var(--ink-3)">Deity dressing takes place every 15 days (fortnightly). Click below to auto-generate the 15-day dates.</div>
-                  <div style="margin-top:12px;display:flex;justify-content:center;gap:8px">
-                    <button class="btn pri sm" data-act="auto-generate-15day">✨ Auto-Generate 15-Day Cadence (1st & 15th)</button>
-                    <button class="btn sm" data-act="add-dressing-slot">+ Add Custom Date</button>
+                  <div style="margin-top:12px">
+                    <button class="btn pri sm" data-act="add-dressing-slot">+ Schedule Dressing Date</button>
                   </div>
                 </td>
               </tr>
@@ -7321,48 +7530,30 @@ function renderDeityDressingScheduleCard() {
               const isToday = item.date === todayStr;
               const isPast = item.date < todayStr;
               const dayStr = fullDayName(item.date);
-              const isDone = item.status === 'done';
+              const hasDev = item.devotees && item.devotees.trim() && item.devotees !== 'Unassigned' && item.devotees !== '—';
 
               return `
                 <tr style="${isToday ? 'background:rgba(245,168,105,0.08)' : ''}">
-                  <!-- Date & Day -->
-                  <td data-l="Date & Day">
-                    <div style="font-weight:700;color:var(--ink);font-size:13.5px">${fmtD(item.date)}</div>
-                    <div class="tiny" style="color:var(--ink-3);font-weight:500">${dayStr}</div>
-                    ${isToday ? '<span class="badge" style="background:var(--saffron);color:#fff;font-size:10px;padding:1px 6px;margin-top:2px">Today</span>' : ''}
-                    ${!isToday && isPast ? '<span class="badge" style="background:var(--surface-2);color:var(--ink-3);font-size:10px;padding:1px 6px;margin-top:2px">Past</span>' : ''}
+                  <!-- Column 1: Date & Day -->
+                  <td data-l="Date & Day" style="padding:12px 16px;vertical-align:middle">
+                    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                      <span style="font-weight:700;color:var(--ink);font-size:14px">${fmtD(item.date)}</span>
+                      <span style="color:var(--ink-3);font-size:12.5px;font-weight:500">${dayStr}</span>
+                      ${isToday ? '<span class="badge" style="background:var(--saffron);color:#fff;font-size:10px;padding:1px 6px">Today</span>' : ''}
+                      ${!isToday && isPast ? '<span class="badge" style="background:var(--surface-2);color:var(--ink-3);font-size:10px;padding:1px 6px">Past</span>' : ''}
+                    </div>
                   </td>
 
-                  <!-- Cadence -->
-                  <td data-l="Cadence">
-                    <span class="badge" style="background:var(--saffron-soft);color:var(--saffron);font-weight:600;font-size:11px;border-radius:10px;padding:2px 8px">
-                      Every 15 Days
-                    </span>
-                  </td>
-
-                  <!-- Occasion / Seva -->
-                  <td data-l="Occasion / Seva">
-                    <div style="font-weight:600;color:var(--ink)">${esc(item.title || 'Fortnightly Altar & Deity Dressing')}</div>
-                    ${item.notes ? `<div class="tiny" style="color:var(--ink-3);margin-top:2px">${esc(item.notes)}</div>` : ''}
-                  </td>
-
-                  <!-- Responsible Devotee -->
-                  <td data-l="Responsible Devotee">
-                    ${item.devotees && item.devotees.trim() && item.devotees !== 'Unassigned' && item.devotees !== '—'
-                      ? `<span style="font-size:13.5px;font-weight:700;color:var(--ink)">${esc(item.devotees)}</span>`
-                      : `<span style="font-size:13px;color:var(--ink-3);font-style:italic">Unassigned</span>`}
-                  </td>
-
-                  <!-- Status -->
-                  <td data-l="Status" style="text-align:center">
-                    <button type="button" class="btn sm" data-act="toggle-dressing-status" data-id="${item.id}" style="border:none;background:${isDone ? 'var(--green-soft)' : 'var(--saffron-soft)'};color:${isDone ? 'var(--green)' : 'var(--saffron)'};font-weight:700;padding:3px 8px;border-radius:6px;cursor:pointer;font-size:11.5px" title="Click to toggle status">
-                      ${isDone ? '✅ Completed' : '⏳ Scheduled'}
-                    </button>
-                  </td>
-
-                  <!-- Actions -->
-                  <td data-l="Actions" style="text-align:center">
-                    <button class="btn sm icon-only" data-act="edit-dressing-modal" data-id="${item.id}" title="Edit dressing schedule slot">✏️</button>
+                  <!-- Column 2: Responsible Devotee (with ✏️ edit button) -->
+                  <td data-l="Responsible Devotee" style="padding:12px 16px;vertical-align:middle">
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+                      <div>
+                        ${hasDev
+                          ? `<span style="font-size:14px;font-weight:700;color:var(--ink)">${esc(item.devotees)}</span>`
+                          : `<span style="font-size:13px;color:var(--ink-3);font-style:italic">Unassigned</span>`}
+                      </div>
+                      <button class="btn sm icon-only" data-act="edit-dressing-modal" data-id="${item.id}" title="Edit dressing schedule slot" style="height:26px;width:26px;padding:0;display:inline-flex;align-items:center;justify-content:center;font-size:12px">✏️</button>
+                    </div>
                   </td>
                 </tr>
               `;
@@ -7374,7 +7565,7 @@ function renderDeityDressingScheduleCard() {
       <!-- Table Footer Note -->
       <div class="tbl-foot" style="background:var(--surface-2);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;padding:10px 18px">
         <span class="tiny" style="color:var(--ink-2)">
-          💡 <b>15-Day Cadence:</b> Deity dressing occurs fortnightly. Click ✏️ in Actions to assign or change responsible devotee.
+          💡 <b>15-Day Cadence:</b> Deity dressing occurs fortnightly. Click ✏️ to assign or edit responsible devotee.
         </span>
         <span class="tiny" style="color:var(--ink-3);font-weight:600">
           Total ${schedule.length} scheduled in ${selectedMonth === 'all' ? 'All Months' : (monthNames[selectedMonth] || selectedMonth)}
@@ -11895,6 +12086,50 @@ document.addEventListener('click',e=>{
   case 'share-roster-photo':stop();{
     const deptK = t.dataset.dept || 'deity';
     shareRosterPhotoDirectly(deptK);
+    break;
+  }
+  case 'share-dressing-photo':stop();{
+    shareDressingPhotoDirectly();
+    break;
+  }
+  case 'download-dressing-canvas':stop();{
+    if (!APP.dressingModalData) break;
+    const link = document.createElement('a');
+    link.download = `deity_dressing_schedule_${APP.dressingModalData.selectedMonth}.png`;
+    link.href = APP.dressingModalData.dataUrl;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast('Dressing schedule photo downloaded!', '📥');
+    break;
+  }
+  case 'copy-dressing-canvas':stop();{
+    if (!APP.dressingModalData || !APP.dressingModalData.canvas) break;
+    APP.dressingModalData.canvas.toBlob(async blob => {
+      try {
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+        toast('Dressing schedule photo copied! Paste in WhatsApp with Ctrl+V', '📋');
+      } catch (err) {
+        toast('Failed to copy to clipboard', '⚠️');
+      }
+    });
+    break;
+  }
+  case 'whatsapp-dressing-canvas':stop();{
+    if (!APP.dressingModalData) break;
+    const month = APP.dressingModalData.selectedMonth;
+    const roster = APP.deityRoster;
+    const schedule = (roster && roster.dressingSchedule ? roster.dressingSchedule : [])
+      .filter(s => month === 'all' || s.date.startsWith(month));
+
+    let msg = `*Hare Krishna! 🙏*\n*ISKCON Jia Sarai — Deity Dressing Schedule (Every 15 Days)*\n📅 *Month:* ${month}\n\n*DRESSING SEVA SCHEDULE:*\n`;
+    schedule.forEach(s => {
+      msg += `• *${fmtD(s.date)}* (${fullDayName(s.date)}): *${s.devotees || 'Unassigned'}*\n`;
+    });
+    msg += `\n_Your servant,_\n_BACE Management_`;
+
+    const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
+    window.open(url, '_blank');
     break;
   }
   case 'dressing-filter-month':stop();{
