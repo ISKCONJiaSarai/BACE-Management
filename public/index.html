@@ -5062,12 +5062,182 @@ function matchDevotee(a, b) {
   return false;
 }
 
+function matchDevoteeFirstName(bioName, dbName) {
+  if (!bioName || !dbName) return false;
+  const clean = s => String(s || '').toLowerCase()
+    .replace(/\b(pr|prabhu|das|dasa|ji|brahmachari)\b/gi, '')
+    .replace(/[^a-z0-9\s]/gi, '')
+    .trim();
+  const getFirst = s => clean(s).split(/\s+/).filter(Boolean)[0] || '';
+  
+  const f1 = getFirst(bioName);
+  const f2 = getFirst(dbName);
+  if (!f1 || !f2) return false;
+  if (f1 === f2) return true;
+  
+  // Normalization for common phonetic and transliteration variations
+  const norm = s => s
+    .replace(/ee/g, 'e')
+    .replace(/i/g, 'e')
+    .replace(/y/g, 'i')
+    .replace(/w/g, 'v')
+    .replace(/sh/g, 's')
+    .replace(/dh/g, 'd')
+    .replace(/bh/g, 'b')
+    .replace(/(.)\1+/g, '$1')
+    .replace(/a+$/g, '');
+  
+  const n1 = norm(f1);
+  const n2 = norm(f2);
+  if (n1 === n2) return true;
+  if ((n1.length >= 4 && n2.startsWith(n1)) || (n2.length >= 4 && n1.startsWith(n2))) return true;
+  
+  // Consonant skeleton match
+  const n1NoV = n1.replace(/[aeiou]/g, '');
+  const n2NoV = n2.replace(/[aeiou]/g, '');
+  if (n1NoV && n1NoV === n2NoV && n1NoV.length >= 3) return true;
+  
+  return false;
+}
+
+function computePeriodMorningMetrics(byDate, availableDates, targetDate, numDays) {
+  const targetIdx = availableDates.indexOf(targetDate);
+  const endIdx = targetIdx >= 0 ? targetIdx : availableDates.length - 1;
+  const startIdx = Math.max(0, endIdx - numDays + 1);
+  const periodDates = availableDates.slice(startIdx, endIdx + 1);
+  const totalSessions = periodDates.length;
+
+  const dbDevs = (DB && DB.devotees) || [];
+  
+  const devStats = dbDevs.map((d, i) => {
+    let presentCount = 0;
+    let onTimeCount = 0;
+    let graceCount = 0;
+    let lateCount = 0;
+    let absentCount = 0;
+    const dailyPunches = [];
+
+    periodDates.forEach(dt => {
+      const dayRows = byDate[dt] || [];
+      const devRow = dayRows.find(r => r.devoteeId === d.id);
+      if (devRow && devRow.status !== 'Absent') {
+        presentCount++;
+        if (devRow.status === 'On Time') onTimeCount++;
+        else if (devRow.status === 'Grace') graceCount++;
+        else if (devRow.status === 'Late') lateCount++;
+        dailyPunches.push({ date: dt, status: devRow.status, time: devRow.timeIn });
+      } else {
+        absentCount++;
+        dailyPunches.push({ date: dt, status: 'Absent', time: '—' });
+      }
+    });
+
+    const attendanceRate = totalSessions > 0 ? Math.round((presentCount / totalSessions) * 100) : 0;
+    const punctualityRate = presentCount > 0 ? Math.round(((onTimeCount + graceCount) / presentCount) * 100) : 0;
+
+    let statusBadge = '🌟 100% Exemplary';
+    if (attendanceRate < 60 || absentCount >= Math.ceil(totalSessions * 0.4)) {
+      statusBadge = '⚠️ Needs Follow-up';
+    } else if (punctualityRate >= 85) {
+      statusBadge = '🌟 100% Exemplary';
+    } else if (punctualityRate >= 65) {
+      statusBadge = '✅ Steady Regular';
+    } else {
+      statusBadge = '⚠️ Needs Follow-up';
+    }
+
+    return {
+      devotee: d,
+      name: d.name,
+      appointment: d.appointment || (typeof dept === 'function' && dept(d.dept)?.name) || 'Devotee',
+      totalSessions,
+      presentCount,
+      onTimeCount,
+      graceCount,
+      lateCount,
+      absentCount,
+      attendanceRate,
+      punctualityRate,
+      statusBadge,
+      dailyPunches
+    };
+  });
+
+  // Sort by attendanceRate desc, then punctualityRate desc
+  devStats.sort((a, b) => b.attendanceRate - a.attendanceRate || b.punctualityRate - a.punctualityRate);
+
+  const totalPossible = totalSessions * dbDevs.length;
+  const totalAttended = devStats.reduce((acc, d) => acc + d.presentCount, 0);
+  const totalOnTime = devStats.reduce((acc, d) => acc + d.onTimeCount, 0);
+  const totalGrace = devStats.reduce((acc, d) => acc + d.graceCount, 0);
+  const totalLate = devStats.reduce((acc, d) => acc + d.lateCount, 0);
+  const totalAbsent = devStats.reduce((acc, d) => acc + d.absentCount, 0);
+
+  const avgAttendancePct = totalPossible > 0 ? Math.round((totalAttended / totalPossible) * 100) : 0;
+  const avgPunctualityPct = totalAttended > 0 ? Math.round(((totalOnTime + totalGrace) / totalAttended) * 100) : 0;
+
+  return {
+    periodDates,
+    totalSessions,
+    startDate: periodDates[0] || targetDate,
+    endDate: periodDates[periodDates.length - 1] || targetDate,
+    totalPossible,
+    totalAttended,
+    totalOnTime,
+    totalGrace,
+    totalLate,
+    totalAbsent,
+    avgAttendancePct,
+    avgPunctualityPct,
+    devStats
+  };
+}
+
+function exportMorningPeriodCSV(periodType) {
+  if (!APP.morningData) {
+    toast('No morning program data loaded', '⚠️');
+    return;
+  }
+  const isWeekly = periodType === 'weekly';
+  const pData = isWeekly ? APP.morningData.weekly : APP.morningData.monthly;
+  if (!pData || !pData.devStats || !pData.devStats.length) {
+    toast('No period statistics available', '⚠️');
+    return;
+  }
+
+  const rows = [
+    ['#', 'Devotee Name', 'Appointment / Role', `Days Present (out of ${pData.totalSessions})`, 'On Time Sessions', 'Grace Sessions', 'Late Sessions', 'Absent Sessions', isWeekly ? 'Weekly Punctuality %' : 'Monthly Attendance %', 'Status Badge', 'Period Range'],
+    ...pData.devStats.map((d, i) => [
+      i + 1,
+      d.name,
+      d.appointment,
+      `="${d.presentCount}/${pData.totalSessions}"`,
+      d.onTimeCount,
+      d.graceCount,
+      d.lateCount,
+      d.absentCount,
+      (isWeekly ? d.punctualityRate : d.attendanceRate) + '%',
+      d.statusBadge,
+      `${pData.startDate} to ${pData.endDate}`
+    ])
+  ];
+
+  const csvContent = '\uFEFF' + rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `morning_programme_${isWeekly ? 'weekly' : 'monthly'}_report_${pData.startDate}_${pData.endDate}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  toast(`Exported ${isWeekly ? 'Weekly' : 'Monthly'} Morning Seva Report CSV`, '📥');
+}
+
 function parseMorningCSV(text, specificDate){
   if(!text || !text.trim()) return null;
-  // Clean null bytes from UTF-16LE and strip BOM
-  const cleaned = text.replace(/\0/g, '').replace(/^\uFEFF/, '').trim();
-  const rawLines = cleaned.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-  if(rawLines.length < 2) return null;
+  const cleaned = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  const rawLines = cleaned.split('\n').map(l => l.trim()).filter(Boolean);
+  if(!rawLines.length) return null;
 
   const firstLine = rawLines[0];
   const delim = firstLine.includes('\t') ? '\t' : (firstLine.includes(',') ? ',' : (firstLine.includes(';') ? ';' : '\t'));
@@ -5089,9 +5259,8 @@ function parseMorningCSV(text, specificDate){
     const inOutCol = findCol(['inout', 'in/out', 'duty', 'direction']);
     const enNoCol = findCol(['enno', 'enroll', 'enrollno', 'empno', 'badgeno', 'userid']);
 
-    const normName = (s) => String(s || '').toLowerCase().replace(/\b(pr|prabhu|das|dasa|ji)\b/g, '').replace(/[^a-z0-9]/g, '').trim();
-
-    const byDate = {};
+    const allDbDevs = (DB && DB.devotees) || [];
+    const byDatePunches = {};
 
     for(let i=1; i<rawLines.length; i++){
       const cols = rawLines[i].split(delim);
@@ -5113,16 +5282,20 @@ function parseMorningCSV(text, specificDate){
       const min = parseInt(timeM[2], 10);
       const totalMin = h * 60 + min;
 
-      const displayName = rawName || (rawEnNo ? `Devotee #${parseInt(rawEnNo, 10) || rawEnNo}` : 'Devotee');
-      const devKey = normName(displayName) || displayName;
+      // Case-insensitive first name matching with database
+      const matchedDev = allDbDevs.find(d => matchDevoteeFirstName(rawName, d.name));
+      if(!matchedDev) {
+        // Only devotees matching the database are taken into consideration
+        continue;
+      }
 
-      byDate[dateStr] = byDate[dateStr] || {};
-      const cur = byDate[dateStr][devKey];
+      byDatePunches[dateStr] = byDatePunches[dateStr] || {};
+      const cur = byDatePunches[dateStr][matchedDev.id];
 
-      // Prefer DutyOn or earliest punch of that day
+      // Prefer DutyOn or earliest morning punch
       if(!cur || totalMin < cur.min || (rawInOut.toLowerCase().includes('on') && !cur.inOut.toLowerCase().includes('on'))){
-        byDate[dateStr][devKey] = {
-          name: displayName,
+        byDatePunches[dateStr][matchedDev.id] = {
+          devotee: matchedDev,
           rawTimeIn: `${String(h).padStart(2,'0')}:${String(min).padStart(2,'0')}`,
           min: totalMin,
           inOut: rawInOut,
@@ -5132,106 +5305,100 @@ function parseMorningCSV(text, specificDate){
       }
     }
 
-    const availableDates = Object.keys(byDate).sort();
+    const availableDates = Object.keys(byDatePunches).sort();
     if(!availableDates.length) return null;
 
     // Use requested date or default to the most recent date present in the file
-    const targetDate = (specificDate && byDate[specificDate]) ? specificDate : availableDates[availableDates.length - 1];
-    const punchesForDate = byDate[targetDate] || {};
+    const targetDate = (specificDate && byDatePunches[specificDate]) ? specificDate : availableDates[availableDates.length - 1];
 
-    const rows = [];
-    const matchedDevKeys = new Set();
-    const allDbDevs = (DB && DB.devotees) || [];
+    // Build rows for ALL available dates for all DB devotees
+    const byDateRows = {};
+    availableDates.forEach(dt => {
+      const datePunches = byDatePunches[dt] || {};
+      const dayRows = [];
 
-    allDbDevs.forEach(d => {
-      const dNorm = normName(d.name);
-      let foundPunch = null;
-      for(const [k, p] of Object.entries(punchesForDate)){
-        if(k === dNorm || matchDevotee(d.name, p.name)){
-          foundPunch = p;
-          matchedDevKeys.add(k);
-          break;
+      allDbDevs.forEach(d => {
+        const foundPunch = datePunches[d.id];
+        const stdMin = 270; // 04:30 AM
+        const inMin = foundPunch ? foundPunch.min : null;
+        let status = 'Absent';
+        let statusTone = 'grey';
+        let badgeText = 'No check-in';
+        let diffMin = null;
+
+        if(inMin != null){
+          diffMin = inMin - stdMin;
+          if(diffMin <= 0){
+            status = 'On Time';
+            statusTone = 'green';
+            badgeText = diffMin === 0 ? 'Exact time' : `${Math.abs(diffMin)}m early`;
+          } else if(diffMin <= 10){
+            status = 'Grace';
+            statusTone = 'amber';
+            badgeText = `+${diffMin}m (grace)`;
+          } else {
+            status = 'Late';
+            statusTone = 'danger';
+            badgeText = `+${diffMin}m late`;
+          }
         }
-      }
 
-      const stdMin = 270; // 04:30 AM default
-      const inMin = foundPunch ? foundPunch.min : null;
-      let status = 'Absent';
-      let statusTone = 'grey';
-      let badgeText = 'No check-in';
-      let diffMin = null;
-
-      if(inMin != null){
-        diffMin = inMin - stdMin;
-        if(diffMin <= 0){
-          status = 'On Time';
-          statusTone = 'green';
-          badgeText = diffMin === 0 ? 'Exact time' : `${Math.abs(diffMin)}m early`;
-        } else if(diffMin <= 10){
-          status = 'Grace';
-          statusTone = 'amber';
-          badgeText = `+${diffMin}m (grace)`;
-        } else {
-          status = 'Late';
-          statusTone = 'danger';
-          badgeText = `+${diffMin}m late`;
-        }
-      }
-
-      rows.push({
-        name: d.name,
-        devoteeId: d.id,
-        avatarName: d.name,
-        devoteeInfo: d.appointment || (typeof dept === 'function' && dept(d.dept)?.name) || 'Devotee',
-        rawTimeIn: foundPunch ? foundPunch.rawTimeIn : '',
-        rawStd: '04:30',
-        timeInMin: inMin,
-        stdMin: stdMin,
-        timeIn: inMin != null ? formatMinutesTime(inMin) : '—',
-        standardTime: formatMinutesTime(stdMin),
-        diffMin,
-        status,
-        statusTone,
-        badgeText,
-        date: targetDate,
-        biometricEnNo: foundPunch ? foundPunch.enNo : null
-      });
-    });
-
-    // Add extra attendees found in the biometric file who are not registered in DB.devotees
-    for(const [k, p] of Object.entries(punchesForDate)){
-      if(!matchedDevKeys.has(k)){
-        const inMin = p.min;
-        const stdMin = 270;
-        const diffMin = inMin - stdMin;
-        let status = diffMin <= 0 ? 'On Time' : (diffMin <= 10 ? 'Grace' : 'Late');
-        let statusTone = diffMin <= 0 ? 'green' : (diffMin <= 10 ? 'amber' : 'danger');
-        let badgeText = diffMin <= 0 ? (diffMin === 0 ? 'Exact time' : `${Math.abs(diffMin)}m early`) : `+${diffMin}m late`;
-        rows.push({
-          name: p.name,
-          devoteeId: null,
-          avatarName: p.name,
-          devoteeInfo: 'Guest / Visiting Devotee',
-          rawTimeIn: p.rawTimeIn,
+        dayRows.push({
+          name: d.name,
+          devoteeId: d.id,
+          avatarName: d.name,
+          devoteeInfo: d.appointment || (typeof dept === 'function' && dept(d.dept)?.name) || 'Devotee',
+          rawTimeIn: foundPunch ? foundPunch.rawTimeIn : '',
           rawStd: '04:30',
           timeInMin: inMin,
           stdMin: stdMin,
-          timeIn: formatMinutesTime(inMin),
+          timeIn: inMin != null ? formatMinutesTime(inMin) : '—',
           standardTime: formatMinutesTime(stdMin),
           diffMin,
           status,
           statusTone,
           badgeText,
-          date: targetDate,
-          biometricEnNo: p.enNo
+          date: dt,
+          biometricEnNo: foundPunch ? foundPunch.enNo : null
         });
-      }
-    }
 
-    const metrics = computeMorningMetrics(rows, targetDate);
+        // Automatically sync into DB.attendance for that date
+        const ref = 'mp_' + dt;
+        const st = status === 'On Time' || status === 'Grace' ? 'Present' : (status === 'Late' ? 'Late' : 'Absent');
+        let rec = (DB.attendance || []).find(a => a.category === 'Morning programme' && a.ref === ref && a.devotee === d.id);
+        if(rec){
+          rec.status = st;
+          rec.timeIn = inMin != null ? formatMinutesTime(inMin) : null;
+          rec.standardTime = '04:30 AM';
+          rec.diffMin = diffMin;
+        } else {
+          DB.attendance.push({
+            id: uid('at'),
+            category: 'Morning programme',
+            ref,
+            devotee: d.id,
+            date: dt,
+            status: st,
+            timeIn: inMin != null ? formatMinutesTime(inMin) : null,
+            standardTime: '04:30 AM',
+            diffMin: diffMin
+          });
+        }
+      });
+
+      byDateRows[dt] = dayRows;
+    });
+
+    const targetRows = byDateRows[targetDate] || [];
+    const metrics = computeMorningMetrics(targetRows, targetDate);
     metrics.isBiometric = true;
     metrics.availableDates = availableDates;
     metrics.rawBiometricText = text;
+    metrics.date = targetDate;
+    metrics.byDateRows = byDateRows;
+    metrics.weekly = computePeriodMorningMetrics(byDateRows, availableDates, targetDate, 7);
+    metrics.monthly = computePeriodMorningMetrics(byDateRows, availableDates, targetDate, 30);
+    metrics.rows = targetRows;
     return metrics;
   }
 
@@ -5242,7 +5409,7 @@ function parseMorningCSV(text, specificDate){
   const headers = lines[0].map(h => String(h).toLowerCase().trim().replace(/[^a-z0-9]/g, ''));
   const findCsvCol = (keys) => {
     for(let i=0; i<headers.length; i++){
-      if(keys.some(k => headers[i].includes(k))) return i;
+      if(keys.some(k => headerCols[i].includes(k))) return i;
     }
     return -1;
   };
@@ -5252,16 +5419,17 @@ function parseMorningCSV(text, specificDate){
   const stdIdx = findCsvCol(['standard', 'target', 'benchmark', 'expected', 'std']);
   const dateIdx = findCsvCol(['date', 'day']);
 
+  const allDbDevs = (DB && DB.devotees) || [];
   const rows = [];
   for(let i=1; i<lines.length; i++){
     const row = lines[i];
     if(!row || !row.length || !row.some(c => c && c.trim())) continue;
-    const name = (nameIdx >= 0 ? row[nameIdx] : row[0])?.trim() || 'Unknown Devotee';
+    const rawName = (nameIdx >= 0 ? row[nameIdx] : row[0])?.trim() || 'Unknown Devotee';
     const rawTimeIn = inIdx >= 0 ? row[inIdx]?.trim() : (row[1]?.trim() || '');
     const rawStd = stdIdx >= 0 ? row[stdIdx]?.trim() : (row[2]?.trim() || '04:30');
     const rDate = (dateIdx >= 0 ? row[dateIdx]?.trim() : '') || iso(TODAY);
 
-    const stdMin = parseTimeMinutes(rawStd) ?? 270; // default 04:30 AM
+    const stdMin = parseTimeMinutes(rawStd) ?? 270;
     const inMin = parseTimeMinutes(rawTimeIn);
 
     let status = 'Absent';
@@ -5286,18 +5454,15 @@ function parseMorningCSV(text, specificDate){
       }
     }
 
-    // Match with DB.devotees
-    const matched = DB.devotees.find(d => 
-      d.name.toLowerCase().trim() === name.toLowerCase().trim() ||
-      d.name.toLowerCase().includes(name.toLowerCase()) ||
-      name.toLowerCase().includes(d.name.toLowerCase())
-    );
+    // Match with DB.devotees by first name case-insensitively
+    const matched = allDbDevs.find(d => matchDevoteeFirstName(rawName, d.name));
+    if(!matched) continue;
 
     rows.push({
-      name,
-      devoteeId: matched ? matched.id : null,
-      avatarName: matched ? matched.name : name,
-      devoteeInfo: matched ? (matched.appointment || dept(matched.dept)?.name || 'Devotee') : 'Guest / Visitor',
+      name: matched.name,
+      devoteeId: matched.id,
+      avatarName: matched.name,
+      devoteeInfo: matched.appointment || (typeof dept === 'function' && dept(matched.dept)?.name) || 'Devotee',
       rawTimeIn,
       rawStd,
       timeInMin: inMin,
@@ -5312,7 +5477,13 @@ function parseMorningCSV(text, specificDate){
     });
   }
 
-  return computeMorningMetrics(rows, rows[0]?.date || iso(TODAY));
+  const metrics = computeMorningMetrics(rows, rows[0]?.date || iso(TODAY));
+  metrics.rows = rows;
+  metrics.byDateRows = { [rows[0]?.date || iso(TODAY)]: rows };
+  metrics.availableDates = [rows[0]?.date || iso(TODAY)];
+  metrics.weekly = computePeriodMorningMetrics(metrics.byDateRows, metrics.availableDates, metrics.availableDates[0], 7);
+  metrics.monthly = computePeriodMorningMetrics(metrics.byDateRows, metrics.availableDates, metrics.availableDates[0], 30);
+  return metrics;
 }
 
 function computeMorningMetrics(rows, date){
@@ -5685,26 +5856,60 @@ function getRosterSlot(roster, dateStr, sId) {
    🌅 1. MORNING PROGRAMME (Devotees Progress Tracking & CSV Analysis)
    ========================================================================= */
 function morningProgramPanel(){
-  if(!APP.morningData) APP.morningData = getSampleMorningData();
+  // When no file is uploaded yet: show clean empty landing screen
+  if(!APP.morningData){
+    return `<div>
+      <input type="file" id="morning-csv-input" accept=".txt,.csv,.log,.dat,text/plain" style="display:none" data-act="morning-csv-file">
+      
+      <!-- Action Banner -->
+      <div class="card" style="margin-bottom:16px;border-left:4px solid var(--saffron);box-shadow:var(--sh-m)">
+        <div class="card-b" style="display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap">
+          <div>
+            <h2 style="font-size:18.5px;display:flex;align-items:center;gap:8px;margin:0">
+              <span>🌅</span> Morning Programme Sadhana & Attendance
+            </h2>
+            <div class="tiny" style="color:var(--ink-2);margin-top:4px">
+              Upload biometric device export (.txt) · All database devotee first names will be recognized case-insensitively.
+            </div>
+          </div>
+          <div>
+            <button class="btn pri sm" data-act="trigger-morning-csv">${ic('upload')} Upload Biometric File (.txt)</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Fresh Upload Dropzone Card -->
+      <div class="card" style="text-align:center;padding:50px 24px;border:2px dashed var(--line);background:var(--surface);margin-bottom:20px;cursor:pointer;border-radius:12px" data-act="trigger-morning-csv">
+        <div style="font-size:52px;margin-bottom:12px">📟</div>
+        <h3 style="margin:0 0 8px;font-size:19px;font-weight:700">Upload Biometric Attendance File (.txt)</h3>
+        <p style="color:var(--ink-2);max-width:560px;margin:0 auto 20px;font-size:13.5px;line-height:1.5">
+          Select or drag & drop your biometric device log (tab-delimited <code style="background:var(--paper-2);padding:2px 6px;border-radius:4px;font-weight:600">.txt</code> file). All first names matching the devotee database will be taken into consideration case-insensitively with <b>Today's</b>, <b>Weekly</b>, and <b>Monthly</b> viewing reports.
+        </p>
+        <button class="btn pri lg" data-act="trigger-morning-csv" style="padding:10px 24px;font-size:14px;font-weight:700">
+          ${ic('upload')} Browse & Upload .txt File
+        </button>
+      </div>
+    </div>`;
+  }
 
   const data = APP.morningData;
-  const m = data.metrics;
+  const m = data.metrics || computeMorningMetrics(data.rows || [], data.date || iso(TODAY));
   const q = (APP.morningSearch || '').toLowerCase().trim();
   const filterSt = APP.morningFilter || '';
   const progTab = APP.morningSubTab || 'report'; // 'report' | 'progress'
-  const period = APP.morningProgressPeriod || 'weekly'; // 'weekly' | 'monthly'
-  const isWeekly = period === 'weekly';
-  const curPeriodName = isWeekly ? 'This Week' : 'This Month';
-  const prevPeriodName = isWeekly ? 'Previous Week' : 'Previous Month';
+  const reportView = APP.morningReportView || 'today'; // 'today' | 'weekly' | 'monthly'
+  const allDevs = DB.devotees || [];
+  const weekly = data.weekly || computePeriodMorningMetrics(data.byDateRows || {}, data.availableDates || [data.date], data.date, 7);
+  const monthly = data.monthly || computePeriodMorningMetrics(data.byDateRows || {}, data.availableDates || [data.date], data.date, 30);
 
-  // Filter rows for Today's CSV report tab
+  // Filter rows for Today's view
   let rows = data.rows || [];
   if(filterSt && ['On Time', 'Grace', 'Late', 'Absent'].includes(filterSt)) {
     rows = rows.filter(r => r.status === filterSt);
   }
   if(q) rows = rows.filter(r => r.name.toLowerCase().includes(q) || (r.devoteeInfo||'').toLowerCase().includes(q));
 
-  // Multi-segment Donut SVG
+  // Multi-segment Donut SVG for Today's view
   const R = 44, C = 2 * Math.PI * R;
   const parts = [
     { count: m.onTimeCount, col: 'var(--green,#059669)', label: 'On Time' },
@@ -5721,108 +5926,18 @@ function morningProgramPanel(){
     return pc > 0 ? `<circle cx="60" cy="60" r="${R}" fill="none" stroke="${p.col}" stroke-width="14" stroke-dasharray="${dash.toFixed(2)} ${C.toFixed(2)}" stroke-dashoffset="${(-off).toFixed(2)}" transform="rotate(-90 60 60)" stroke-linecap="round"/>` : '';
   }).join('');
 
-  // Histogram calculation
-  const maxBucket = Math.max(...data.buckets.map(b => b.count), 1);
+  const maxBucket = Math.max(...(data.buckets || []).map(b => b.count), 1);
 
-  // =========================================================================
-  // 📈 DEVOTEES PROGRESS: Previous Month / Week vs Current Comparison Engine
-  // =========================================================================
-  const allDevs = DB.devotees || [];
-  
-  // Date windows
-  const curStart = isWeekly ? dayOff(-6) : dayOff(-29);
-  const curEnd = TODAY;
-  const prevStart = isWeekly ? dayOff(-13) : dayOff(-59);
-  const prevEnd = isWeekly ? dayOff(-7) : dayOff(-30);
-
-  const progressList = allDevs.map((d, idx) => {
-    const curRow = (data.rows || []).find(r => r.devoteeId === d.id || r.name.toLowerCase() === d.name.toLowerCase());
-    const mpRecs = (DB.attendance || []).filter(a => (a.devotee === d.id || a.devotee === d.name) && (a.category === 'Morning programme' || String(a.ref).startsWith('mp_')));
-    
-    // Real records if present in DB
-    const curWindowRecs = mpRecs.filter(a => a.date >= iso(curStart) && a.date <= iso(curEnd));
-    const prevWindowRecs = mpRecs.filter(a => a.date >= iso(prevStart) && a.date <= iso(prevEnd));
-
-    let curPct, prevPct;
-    if (curWindowRecs.length >= 2) {
-      const onTime = curWindowRecs.filter(r => r.status === 'On Time' || (r.status === 'Present' && (!r.diffMin || r.diffMin <= 0))).length;
-      curPct = pct(onTime, curWindowRecs.length);
-    } else {
-      // Deterministic baseline from devotee profile
-      const base = d.attendancePct || 84;
-      const curBoost = curRow && curRow.status === 'On Time' ? 4 : (curRow && curRow.status === 'Late' ? -6 : 0);
-      curPct = Math.max(50, Math.min(100, Math.round(base + curBoost)));
-    }
-
-    if (prevWindowRecs.length >= 2) {
-      const onTimePrev = prevWindowRecs.filter(r => r.status === 'On Time' || (r.status === 'Present' && (!r.diffMin || r.diffMin <= 0))).length;
-      prevPct = pct(onTimePrev, prevWindowRecs.length);
-    } else {
-      // Meaningful previous period baseline with realistic variation
-      const hashVal = ((d.id.charCodeAt(0) * 3 + d.name.length * 7 + (isWeekly ? 2 : 5)) % 11) - 5;
-      const variance = isWeekly ? hashVal * 2.5 : hashVal * 3.5;
-      prevPct = Math.max(45, Math.min(98, Math.round(curPct - variance)));
-    }
-
-    const delta = curPct - prevPct;
-    const isImproved = delta > 0;
-    const isDipped = delta < 0;
-    const isSteady = delta === 0;
-
-    // Arrival time comparison
-    const curArrival = curRow && curRow.timeIn !== '—' ? curRow.timeIn : '04:25 AM';
-    let curMin = parseTimeMinutes(curArrival) || 265; // ~04:25 AM
-    let prevMin = curMin + Math.round(delta * -1.2); // positive delta means earlier arrival now!
-    if (prevMin < 240) prevMin = 240; // minimum 04:00 AM
-    if (prevMin > 310) prevMin = 310; // maximum 05:10 AM
-    const prevArrival = formatMinutesTime(prevMin);
-    const shiftMins = prevMin - curMin; // positive means earlier arrival today
-
-    // Streaks
-    const curStreak = curRow && curRow.status === 'On Time' ? Math.max(3, Math.min(15, Math.round((curPct / 100) * 9))) : (curRow && curRow.status === 'Grace' ? 2 : 0);
-    const prevStreak = Math.max(1, Math.min(12, Math.round((prevPct / 100) * 7)));
-
-    return {
-      devotee: d,
-      name: d.name,
-      appointment: d.appointment || dept(d.dept)?.name || 'Devotee',
-      batch: batch(d.batch)?.name || 'General',
-      curPct,
-      prevPct,
-      delta,
-      isImproved,
-      isDipped,
-      isSteady,
-      curArrival,
-      prevArrival,
-      shiftMins,
-      curStreak,
-      prevStreak,
-      todayStatus: curRow ? curRow.status : 'On Time'
-    };
-  }).sort((a, b) => b.delta - a.delta || b.curPct - a.curPct);
-
-  // Growth aggregates for KPI cards
-  const improvedCount = progressList.filter(p => p.delta > 0).length;
-  const steadyCount = progressList.filter(p => Math.abs(p.delta) <= 2).length;
-  const dippedCount = progressList.filter(p => p.delta < -2).length;
-  const totalDelta = progressList.reduce((acc, p) => acc + p.delta, 0);
-  const avgDelta = allDevs.length ? Math.round((totalDelta / allDevs.length) * 10) / 10 : 0;
-  const topImprover = progressList.find(p => p.delta > 0) || progressList[0];
-
-  const filteredProgress = progressList.filter(p => {
-    if (q && !p.name.toLowerCase().includes(q) && !p.batch.toLowerCase().includes(q)) return false;
-    if (filterSt === 'improved' && p.delta <= 0) return false;
-    if (filterSt === 'steady' && Math.abs(p.delta) > 2) return false;
-    if (filterSt === 'dipped' && p.delta >= 0) return false;
-    if (filterSt === 'streak' && p.curStreak < 5) return false;
-    return true;
-  });
+  // DEVOTEES PROGRESS CALCULATION
+  const period = APP.morningProgressPeriod || 'weekly';
+  const isWeekly = period === 'weekly';
+  const curPeriodName = isWeekly ? 'This Week' : 'This Month';
+  const prevPeriodName = isWeekly ? 'Previous Week' : 'Previous Month';
 
   return `<div>
-    <!-- Action Banner & Upload Control Bar -->
     <input type="file" id="morning-csv-input" accept=".txt,.csv,.log,.dat,text/plain" style="display:none" data-act="morning-csv-file">
     
+    <!-- Action Banner & Mode Navigation -->
     <div class="card" style="margin-bottom:16px;border-left:4px solid var(--saffron);box-shadow:var(--sh-m)">
       <div class="card-b" style="display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap">
         <div>
@@ -5830,72 +5945,340 @@ function morningProgramPanel(){
             <span>🌅</span> Morning Programme Sadhana & Attendance
           </h2>
           <div class="tiny" style="color:var(--ink-2);margin-top:4px">
-            Upload biometric device export (.txt) · Track week-over-week & month-over-month punctuality progress, arrival shifts, and streaks.
+            Biometric Log Active · ${data.availableDates ? `${data.availableDates.length} sessions (${fmtD(data.availableDates[0])} → ${fmtD(data.date)})` : data.date} · Database first names matched
           </div>
         </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn pri sm" data-act="trigger-morning-csv">${ic('upload')}Upload Biometric File (.txt)</button>
-          <button class="btn sm ${progTab === 'progress' ? 'pri' : ''}" data-act="morning-subtab" data-v="progress">📈 Devotees Progress (${allDevs.length})</button>
-          <button class="btn sm ${progTab === 'report' ? 'pri' : ''}" data-act="morning-subtab" data-v="report">📋 Today's Attendance Report</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <button class="btn sm" data-act="clear-morning-data" title="Clear all loaded data to upload a fresh file" style="color:var(--danger);border-color:var(--danger-soft)">
+            🗑️ Clear Data
+          </button>
+          <button class="btn sm" data-act="trigger-morning-csv" title="Upload a new biometric .txt file">
+            ${ic('upload')} Upload New File
+          </button>
+          <button class="btn sm ${progTab === 'report' ? 'pri' : ''}" data-act="morning-subtab" data-v="report">
+            📋 Attendance Report
+          </button>
+          <button class="btn sm ${progTab === 'progress' ? 'pri' : ''}" data-act="morning-subtab" data-v="progress">
+            📈 Devotees Progress (${allDevs.length})
+          </button>
         </div>
       </div>
     </div>
 
-    <!-- Drag & Drop Zone -->
-    <div class="mp-dropzone" style="border:2px dashed var(--line);border-radius:var(--r-m);padding:18px 20px;text-align:center;background:var(--surface);margin-bottom:16px;cursor:pointer;transition:border-color .2s ease" data-act="trigger-morning-csv">
-      <div style="font-size:24px;margin-bottom:4px">📟</div>
-      <div style="font-weight:600;font-size:13.5px;color:var(--ink)">Click to browse or drop your Biometrics Log (.txt / .csv) file here</div>
-      <div class="tiny" style="color:var(--ink-3);margin-top:2px">Supports biometric device exports (tab-delimited with <b>Name</b> and <b>DateTime</b>) and attendance files</div>
-    </div>
+    ${progTab === 'report' ? `
+    <!-- ATTENDANCE REPORT: TODAY, WEEKLY, AND MONTHLY VIEW -->
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-h" style="border-bottom:1px solid var(--line-2);padding:12px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+        <div>
+          <h3 style="margin:0;display:flex;align-items:center;gap:8px">
+            <span>📋</span> Morning Programme Attendance Report
+          </h3>
+          <div class="tiny" style="color:var(--ink-2);margin-top:2px">
+            ${reportView === 'today' ? `Single-day check-ins & punctuality (${fmtD(data.date)})` : (reportView === 'weekly' ? `Last 7 Sessions (${fmtD(weekly.startDate)} – ${fmtD(weekly.endDate)})` : `Last 30 Sessions (${fmtD(monthly.startDate)} – ${fmtD(monthly.endDate)})`)}
+          </div>
+        </div>
 
-    <!-- KPI Metric Dashboard Cards -->
-    <div class="grid g5" style="margin-bottom:16px">
-      ${stat('Total Devotees', m.total, 'logged in session', {em:'👥',tint:false})}
-      ${stat('On-Time %', m.onTimePct + '%', `${m.onTimeCount} devotees on schedule`, {em:'⏱️',tint:m.onTimePct >= 75})}
-      ${stat('Grace Window', m.graceCount, '1–10 mins after standard', {em:'⏳',tint:false})}
-      ${stat('Late Arrivals', m.lateCount, '>10 mins delayed', {em:'⚠️',tint:m.lateCount > 0})}
-      ${stat('Average Arrival', formatMinutesTime(m.avgArrivalMin), `${m.avgDiffMin <= 0 ? Math.abs(m.avgDiffMin) + 'm early' : '+' + m.avgDiffMin + 'm late'}`, {em:'🌅',tint:false})}
-    </div>
+        <!-- Today, Weekly, and Monthly View Switcher Controls -->
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <div style="display:inline-flex;border:1.5px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)">
+            <button type="button" class="btn sm ${reportView === 'today' ? 'pri' : ''}" data-act="morning-report-view" data-v="today" style="border-radius:0;border:none;padding:5px 12px;font-weight:600">
+              📅 Today's View
+            </button>
+            <button type="button" class="btn sm ${reportView === 'weekly' ? 'pri' : ''}" data-act="morning-report-view" data-v="weekly" style="border-radius:0;border:none;padding:5px 12px;font-weight:600">
+              🗓️ Weekly View
+            </button>
+            <button type="button" class="btn sm ${reportView === 'monthly' ? 'pri' : ''}" data-act="morning-report-view" data-v="monthly" style="border-radius:0;border:none;padding:5px 12px;font-weight:600">
+              📊 Monthly View
+            </button>
+          </div>
 
-    ${progTab === 'progress' ? `
-    <!-- DEVOTEES PROGRESS SECTION (Previous Week / Month Comparison) -->
+          ${reportView === 'today' && data.availableDates && data.availableDates.length > 1 ? `
+          <select data-act="morning-change-date" style="padding:5px 10px;font-size:12.5px;border:1px solid var(--line);border-radius:6px;background:var(--surface)">
+            ${data.availableDates.slice().reverse().map(dt => `<option value="${dt}" ${dt === data.date ? 'selected' : ''}>${fmtD(dt)} ${dt === data.availableDates[data.availableDates.length-1] ? '(Latest)' : ''}</option>`).join('')}
+          </select>` : ''}
+
+          ${reportView === 'today' ? `
+          <button class="btn sm" data-act="export-morning-report">${ic('download')} Export CSV</button>
+          ` : `
+          <button class="btn sm" data-act="export-morning-period-csv" data-period="${reportView}">${ic('download')} Export ${reportView === 'weekly' ? 'Weekly' : 'Monthly'} CSV</button>
+          `}
+        </div>
+      </div>
+
+      ${reportView === 'today' ? `
+      <!-- TODAY'S VIEW: KPI CARDS, CHARTS, AND TABLE -->
+      <div style="padding:16px 18px">
+        <!-- KPI Metric Dashboard Cards -->
+        <div class="grid g5" style="margin-bottom:16px">
+          ${stat('Total Devotees', m.total, 'in database', {em:'👥',tint:false})}
+          ${stat('On-Time %', m.onTimePct + '%', `${m.onTimeCount} devotees on schedule`, {em:'⏱️',tint:m.onTimePct >= 75})}
+          ${stat('Grace Window', m.graceCount, '1–10 mins after standard', {em:'⏳',tint:false})}
+          ${stat('Late Arrivals', m.lateCount, '>10 mins delayed', {em:'⚠️',tint:m.lateCount > 0})}
+          ${stat('Average Arrival', formatMinutesTime(m.avgArrivalMin), `${m.avgDiffMin <= 0 ? Math.abs(m.avgDiffMin) + 'm early' : '+' + m.avgDiffMin + 'm late'}`, {em:'🌅',tint:false})}
+        </div>
+
+        <!-- Charts: Donut & Histogram -->
+        <div class="grid g2" style="margin-bottom:16px">
+          <div class="card pad">
+            <div class="card-h" style="padding:0 0 12px;border-bottom:1px solid var(--line-2)">
+              <h3>🎯 Punctuality Breakdown</h3>
+              <span class="tiny" style="margin-left:auto">${data.date}</span>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-around;gap:20px;margin-top:14px;flex-wrap:wrap">
+              <div style="position:relative;width:120px;height:120px;flex:none">
+                <svg viewBox="0 0 120 120" style="width:120px;height:120px">
+                  <circle cx="60" cy="60" r="${R}" fill="none" stroke="var(--paper-2)" stroke-width="14"/>
+                  ${donutSegments}
+                </svg>
+                <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+                  <span style="font-family:var(--f-head);font-size:20px;font-weight:700;color:var(--ink);line-height:1">${m.onTimePct}%</span>
+                  <span style="font-size:9.5px;color:var(--ink-3);text-transform:uppercase;font-weight:600">On Time</span>
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:8px;min-width:140px">
+                <div style="display:flex;align-items:center;justify-content:space-between;font-size:12.5px">
+                  <span style="display:inline-flex;align-items:center;gap:6px"><i style="width:10px;height:10px;border-radius:3px;background:var(--green);display:inline-block"></i> On Time</span>
+                  <b>${m.onTimeCount} (${pct(m.onTimeCount, m.total)}%)</b>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;font-size:12.5px">
+                  <span style="display:inline-flex;align-items:center;gap:6px"><i style="width:10px;height:10px;border-radius:3px;background:var(--mustard);display:inline-block"></i> Grace (≤10m)</span>
+                  <b>${m.graceCount} (${pct(m.graceCount, m.total)}%)</b>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;font-size:12.5px">
+                  <span style="display:inline-flex;align-items:center;gap:6px"><i style="width:10px;height:10px;border-radius:3px;background:var(--danger);display:inline-block"></i> Late (>10m)</span>
+                  <b>${m.lateCount} (${pct(m.lateCount, m.total)}%)</b>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;font-size:12.5px">
+                  <span style="display:inline-flex;align-items:center;gap:6px"><i style="width:10px;height:10px;border-radius:3px;background:#94A3B8;display:inline-block"></i> Absent</span>
+                  <b>${m.absentCount} (${pct(m.absentCount, m.total)}%)</b>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card pad">
+            <div class="card-h" style="padding:0 0 12px;border-bottom:1px solid var(--line-2)">
+              <h3>📈 Arrival Distribution Timeline</h3>
+              <span class="tiny" style="margin-left:auto">Earliest: <b>${m.earliestTime || '04:15 AM'}</b></span>
+            </div>
+            <div style="margin-top:14px;display:flex;align-items:flex-end;justify-content:space-between;gap:8px;height:130px;padding:10px 4px 0">
+              ${(data.buckets || []).map(b => {
+                const h = Math.max(14, Math.round((b.count / maxBucket) * 90));
+                return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px">
+                  <div style="font-size:11px;font-weight:700;color:var(--ink)">${b.count}</div>
+                  <div style="width:100%;max-width:42px;height:${h}px;background:${b.color};border-radius:6px 6px 2px 2px;transition:height .3s ease"></div>
+                  <div style="font-size:9.5px;font-weight:600;color:var(--ink-3);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%">${b.label}</div>
+                </div>`;
+              }).join('')}
+            </div>
+          </div>
+        </div>
+
+        <!-- Filter & Search Toolbar -->
+        <div class="toolbar" style="gap:10px;align-items:center;flex-wrap:wrap;padding:0;margin-bottom:12px">
+          <div style="position:relative;min-width:200px;flex:1">
+            <input type="search" placeholder="Search devotee in report…" value="${esc(APP.morningSearch||'')}" data-act="morning-q" style="width:100%;padding-left:32px">
+            <span style="position:absolute;left:10px;top:8px;color:var(--ink-3)">${ic('search')}</span>
+          </div>
+          <div class="chips">
+            ${['','On Time','Grace','Late','Absent'].map(st => {
+              const cnt = !st ? m.total : (st==='On Time'?m.onTimeCount : (st==='Grace'?m.graceCount : (st==='Late'?m.lateCount : m.absentCount)));
+              return `<button class="chip ${filterSt===st?'on':''}" data-act="morning-filter-status" data-s="${st}">${st||'All'} (${cnt})</button>`;
+            }).join('')}
+          </div>
+        </div>
+
+        <!-- Devotee Rows Table -->
+        <div class="tbl-wrap">
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th>Devotee</th>
+                <th>Standard Time</th>
+                <th>Time In</th>
+                <th>Variance / Delta</th>
+                <th>Punctuality Status</th>
+                <th>Profile</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows.map(r => `<tr>
+                <td data-l="Devotee">
+                  <div class="who">
+                    ${av(r.avatarName || r.name)}
+                    <div>
+                      <b>${esc(r.name)}</b>
+                      <span>${esc(r.devoteeInfo)}</span>
+                    </div>
+                  </div>
+                </td>
+                <td data-l="Standard Time">
+                  <span style="font-family:monospace;font-size:12.5px">${r.standardTime}</span>
+                </td>
+                <td data-l="Time In">
+                  <span style="font-family:monospace;font-weight:700;font-size:13px;color:${r.statusTone === 'green' ? 'var(--green)' : (r.statusTone === 'amber' ? 'var(--mustard)' : (r.statusTone === 'danger' ? 'var(--danger)' : 'var(--ink-3)'))}">
+                    ${r.timeIn}
+                  </span>
+                </td>
+                <td data-l="Variance">
+                  <span class="badge b-${r.statusTone}">${r.badgeText}</span>
+                </td>
+                <td data-l="Status">
+                  <span class="badge b-${r.statusTone}" style="font-weight:700">${r.status}</span>
+                </td>
+                <td data-l="Profile">
+                  ${r.devoteeId ? `<a class="btn sm" href="#/devotee/${r.devoteeId}">View</a>` : '—'}
+                </td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      ` : (reportView === 'weekly' ? `
+      <!-- WEEKLY VIEW: LAST 7 SESSIONS AGGREGATION -->
+      <div style="padding:16px 18px">
+        <div class="grid g4" style="margin-bottom:16px">
+          ${stat('Sessions Logged', `${weekly.totalSessions} Sessions`, `${fmtD(weekly.startDate)} → ${fmtD(weekly.endDate)}`, {em:'📅',tint:false})}
+          ${stat('Weekly Attendance', `${weekly.avgAttendancePct}%`, `${weekly.totalAttended} / ${weekly.totalPossible} check-ins`, {em:'✅',tint:weekly.avgAttendancePct>=75})}
+          ${stat('Weekly Punctuality', `${weekly.avgPunctualityPct}%`, `${weekly.totalOnTime + weekly.totalGrace} on-time sessions`, {em:'⏱️',tint:weekly.avgPunctualityPct>=75})}
+          ${stat('Active Devotees', `${weekly.devStats.filter(d=>d.presentCount>0).length} Devotees`, 'attended this week', {em:'👥',tint:true})}
+        </div>
+
+        <div style="position:relative;margin-bottom:12px">
+          <input type="search" placeholder="Filter devotee in weekly report…" value="${esc(APP.morningSearch||'')}" data-act="morning-q" style="width:100%;max-width:320px;padding-left:32px">
+          <span style="position:absolute;left:10px;top:8px;color:var(--ink-3)">${ic('search')}</span>
+        </div>
+
+        <div class="tbl-wrap">
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th style="width:4%;text-align:center">#</th>
+                <th style="width:28%">Devotee Name</th>
+                <th style="width:14%;text-align:center">Days Present</th>
+                <th style="width:9%;text-align:center">On Time</th>
+                <th style="width:8%;text-align:center">Grace</th>
+                <th style="width:8%;text-align:center">Late</th>
+                <th style="width:8%;text-align:center">Absent</th>
+                <th style="width:12%;text-align:center">Punctuality %</th>
+                <th style="width:13%;text-align:center">Status</th>
+                <th style="width:4%;text-align:center">View</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${weekly.devStats
+                .filter(d => !q || d.name.toLowerCase().includes(q) || d.appointment.toLowerCase().includes(q))
+                .map((d, i) => `<tr>
+                  <td class="center" style="color:var(--ink-3);font-weight:600">${i + 1}</td>
+                  <td>
+                    <div class="who">
+                      ${av(d.name)}
+                      <div>
+                        <b>${esc(d.name)}</b>
+                        <span>${esc(d.appointment)}</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="center">
+                    <b style="font-size:13px">${d.presentCount}</b> <span style="color:var(--ink-3);font-size:11px">/ ${weekly.totalSessions}</span>
+                  </td>
+                  <td class="center" style="color:var(--green);font-weight:700">${d.onTimeCount}</td>
+                  <td class="center" style="color:var(--mustard);font-weight:600">${d.graceCount}</td>
+                  <td class="center" style="color:${d.lateCount>0?'var(--danger)':'var(--ink-3)'};font-weight:${d.lateCount>0?'700':'normal'}">${d.lateCount}</td>
+                  <td class="center" style="color:${d.absentCount>0?'var(--danger)':'var(--ink-3)'};font-weight:${d.absentCount>0?'700':'normal'}">${d.absentCount}</td>
+                  <td class="center">
+                    <b style="color:${d.punctualityRate>=80?'var(--green)':(d.punctualityRate>=60?'var(--mustard)':'var(--danger)')}">${d.punctualityRate}%</b>
+                  </td>
+                  <td class="center">
+                    <span class="badge ${d.statusBadge.includes('100%') ? 'b-green' : (d.statusBadge.includes('Steady') ? 'b-blue' : 'b-amber')}">${d.statusBadge}</span>
+                  </td>
+                  <td class="center">
+                    <a class="btn sm icon-only" href="#/devotee/${d.devotee.id}" title="View profile">👤</a>
+                  </td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      ` : `
+      <!-- MONTHLY VIEW: LAST 30 SESSIONS AGGREGATION -->
+      <div style="padding:16px 18px">
+        <div class="grid g4" style="margin-bottom:16px">
+          ${stat('Sessions Logged', `${monthly.totalSessions} Sessions`, `${fmtD(monthly.startDate)} → ${fmtD(monthly.endDate)}`, {em:'🗓️',tint:false})}
+          ${stat('Monthly Attendance', `${monthly.avgAttendancePct}%`, `${monthly.totalAttended} / ${monthly.totalPossible} check-ins`, {em:'✅',tint:monthly.avgAttendancePct>=75})}
+          ${stat('Monthly Punctuality', `${monthly.avgPunctualityPct}%`, `${monthly.totalOnTime + monthly.totalGrace} on-time check-ins`, {em:'⏱️',tint:monthly.avgPunctualityPct>=75})}
+          ${stat('Star Sadhakas (≥80%)', `${monthly.devStats.filter(d=>d.attendanceRate>=80).length} Devotees`, 'consistent regular attendees', {em:'🌟',tint:true})}
+        </div>
+
+        <div style="position:relative;margin-bottom:12px">
+          <input type="search" placeholder="Filter devotee in monthly report…" value="${esc(APP.morningSearch||'')}" data-act="morning-q" style="width:100%;max-width:320px;padding-left:32px">
+          <span style="position:absolute;left:10px;top:8px;color:var(--ink-3)">${ic('search')}</span>
+        </div>
+
+        <div class="tbl-wrap">
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th style="width:4%;text-align:center">#</th>
+                <th style="width:28%">Devotee Name</th>
+                <th style="width:14%;text-align:center">Days Present</th>
+                <th style="width:9%;text-align:center">On Time</th>
+                <th style="width:8%;text-align:center">Grace</th>
+                <th style="width:8%;text-align:center">Late</th>
+                <th style="width:8%;text-align:center">Absent</th>
+                <th style="width:12%;text-align:center">Attendance %</th>
+                <th style="width:13%;text-align:center">Punctuality %</th>
+                <th style="width:4%;text-align:center">View</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${monthly.devStats
+                .filter(d => !q || d.name.toLowerCase().includes(q) || d.appointment.toLowerCase().includes(q))
+                .map((d, i) => `<tr>
+                  <td class="center" style="color:var(--ink-3);font-weight:600">${i + 1}</td>
+                  <td>
+                    <div class="who">
+                      ${av(d.name)}
+                      <div>
+                        <b>${esc(d.name)}</b>
+                        <span>${esc(d.appointment)}</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="center">
+                    <b style="font-size:13px">${d.presentCount}</b> <span style="color:var(--ink-3);font-size:11px">/ ${monthly.totalSessions}</span>
+                  </td>
+                  <td class="center" style="color:var(--green);font-weight:700">${d.onTimeCount}</td>
+                  <td class="center" style="color:var(--mustard);font-weight:600">${d.graceCount}</td>
+                  <td class="center" style="color:${d.lateCount>0?'var(--danger)':'var(--ink-3)'};font-weight:${d.lateCount>0?'700':'normal'}">${d.lateCount}</td>
+                  <td class="center" style="color:${d.absentCount>0?'var(--danger)':'var(--ink-3)'};font-weight:${d.absentCount>0?'700':'normal'}">${d.absentCount}</td>
+                  <td class="center">
+                    <b style="color:${d.attendanceRate>=80?'var(--green)':(d.attendanceRate>=60?'var(--mustard)':'var(--danger)')}">${d.attendanceRate}%</b>
+                  </td>
+                  <td class="center">
+                    <b style="color:${d.punctualityRate>=80?'var(--green)':(d.punctualityRate>=60?'var(--mustard)':'var(--danger)')}">${d.punctualityRate}%</b>
+                  </td>
+                  <td class="center">
+                    <a class="btn sm icon-only" href="#/devotee/${d.devotee.id}" title="View profile">👤</a>
+                  </td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      `)}
+    </div>
+    ` : `
+    <!-- DEVOTEES PROGRESS SECTION -->
     <div class="card" style="margin-bottom:16px">
       <div class="card-h" style="border-bottom:1px solid var(--line-2);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
         <div>
           <h3 style="margin:0;display:flex;align-items:center;gap:8px"><span>🏆</span> Devotees Progress: ${curPeriodName} vs ${prevPeriodName}</h3>
-          <span class="tiny" style="color:var(--ink-3)">Comparing punctuality rate, net growth delta, arrival time shift, and sadhana streaks against the previous period</span>
+          <span class="tiny" style="color:var(--ink-3)">Comparing punctuality rate, net growth delta, and attendance regularity</span>
         </div>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-          <!-- Timeframe selector -->
-          <div class="btn-group" style="display:inline-flex;background:var(--paper-2);padding:3px;border-radius:6px">
-            <button class="btn sm ${isWeekly ? 'pri' : ''}" data-act="morning-progress-period" data-p="weekly" style="border:none;padding:5px 12px">📅 Week-over-Week</button>
-            <button class="btn sm ${!isWeekly ? 'pri' : ''}" data-act="morning-progress-period" data-p="monthly" style="border:none;padding:5px 12px">🗓️ Month-over-Month</button>
-          </div>
-          <button class="btn sm" data-act="export-morning-progress">${ic('download')}Export Comparison CSV</button>
-        </div>
-      </div>
-
-      <!-- Growth Summary KPI Cards -->
-      <div class="grid g4" style="padding:14px 18px 0;margin-bottom:12px">
-        ${stat(isWeekly ? 'Weekly Growth' : 'Monthly Growth', (avgDelta >= 0 ? '+' : '') + avgDelta + '%', `${improvedCount} devotees improved vs ${prevPeriodName.toLowerCase()}`, {em: avgDelta >= 0 ? '🚀' : '📉', tint: avgDelta >= 0})}
-        ${stat('Top Improver', topImprover ? topImprover.name : '—', topImprover ? `+${topImprover.delta}% (${topImprover.prevPct}% → ${topImprover.curPct}%)` : 'Consistent', {em:'⭐', tint:true})}
-        ${stat('Steadfast / Consistent', steadyCount, 'consistent punctuality (±2%)', {em:'🌿', tint:false})}
-        ${stat('Needs Follow-up', dippedCount, `dipped vs ${prevPeriodName.toLowerCase()}`, {em:'⚠️', tint: dippedCount > 0})}
-      </div>
-
-      <div class="toolbar" style="gap:10px;align-items:center;flex-wrap:wrap;padding:12px 18px">
-        <div style="position:relative;min-width:220px;flex:1">
-          <input type="search" placeholder="Search devotee or batch…" value="${esc(APP.morningSearch||'')}" data-act="morning-q" style="width:100%;padding-left:32px">
-          <span style="position:absolute;left:10px;top:8px;color:var(--ink-3)">${ic('search')}</span>
-        </div>
-        <div class="chips">
-          ${[
-            ['', `All Devotees (${allDevs.length})`],
-            ['improved', `🚀 Improved (${improvedCount})`],
-            ['steady', `🌿 Steady (${steadyCount})`],
-            ['dipped', `⚠️ Dipped (${dippedCount})`],
-            ['streak', `🔥 High Streaks`]
-          ].map(([k, label]) => `<button class="chip ${filterSt === k ? 'on' : ''}" data-act="morning-filter-status" data-s="${k}">${label}</button>`).join('')}
+        <div class="btn-group" style="display:inline-flex;background:var(--paper-2);padding:3px;border-radius:6px">
+          <button class="btn sm ${isWeekly ? 'pri' : ''}" data-act="morning-progress-period" data-p="weekly" style="border:none">Week-over-Week</button>
+          <button class="btn sm ${!isWeekly ? 'pri' : ''}" data-act="morning-progress-period" data-p="monthly" style="border:none">Month-over-Month</button>
         </div>
       </div>
 
@@ -5904,219 +6287,46 @@ function morningProgramPanel(){
           <thead>
             <tr>
               <th>Devotee</th>
-              <th>Batch / Dept</th>
-              <th>${curPeriodName} %</th>
-              <th>${prevPeriodName} %</th>
-              <th>Progress Delta</th>
-              <th>Arrival Shift</th>
-              <th>Streak Evolution</th>
-              <th>Milestone</th>
+              <th>Appointment / Batch</th>
+              <th>${curPeriodName} Punctuality</th>
+              <th>Attendance Sessions</th>
+              <th>On-Time Count</th>
+              <th>Status</th>
               <th>Profile</th>
             </tr>
           </thead>
           <tbody>
-            ${filteredProgress.length ? filteredProgress.map(p => {
-              const deltaColor = p.delta > 0 ? 'var(--green)' : (p.delta < 0 ? 'var(--danger)' : 'var(--ink-3)');
-              const deltaBg = p.delta > 0 ? 'rgba(5,150,105,0.1)' : (p.delta < 0 ? 'rgba(220,38,38,0.1)' : 'var(--paper-2)');
-              const deltaIcon = p.delta > 0 ? '▲ +' : (p.delta < 0 ? '▼ ' : '― ');
-              
-              return `<tr>
-                <td data-l="Devotee">
-                  <div class="who">
-                    ${av(p.name)}
-                    <div>
-                      <b>${esc(p.name)}</b>
-                      <span>${esc(p.appointment)}</span>
-                    </div>
-                  </div>
-                </td>
-                <td data-l="Batch / Dept">
-                  <span class="badge b-grey" style="font-size:12px">${esc(p.batch)}</span>
-                </td>
-                <td data-l="${curPeriodName} %" style="min-width:130px">
-                  <div style="display:flex;align-items:center;gap:8px">
-                    <div style="flex:1;background:var(--paper-2);height:8px;border-radius:4px;overflow:hidden">
-                      <div style="width:${p.curPct}%;height:100%;background:${p.curPct >= 80 ? 'var(--green)' : (p.curPct >= 60 ? 'var(--mustard)' : 'var(--danger)')};border-radius:4px"></div>
-                    </div>
-                    <b style="font-size:12.5px;min-width:32px;color:${p.curPct >= 80 ? 'var(--green)' : (p.curPct >= 60 ? 'var(--mustard)' : 'var(--danger)')}">${p.curPct}%</b>
-                  </div>
-                </td>
-                <td data-l="${prevPeriodName} %" style="min-width:110px">
-                  <span style="font-family:monospace;font-size:12.5px;color:var(--ink-2);font-weight:600">${p.prevPct}%</span>
-                  <span class="tiny" style="color:var(--ink-3);display:block">${prevPeriodName}</span>
-                </td>
-                <td data-l="Progress Delta">
-                  <span style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:12px;font-size:12.5px;font-weight:700;color:${deltaColor};background:${deltaBg}">
-                    ${deltaIcon}${Math.abs(p.delta)}% ${p.delta > 0 ? 'Improved' : (p.delta < 0 ? 'Dipped' : 'Steady')}
-                  </span>
-                </td>
-                <td data-l="Arrival Shift">
-                  <div style="font-size:12px">
-                    <span style="font-family:monospace;color:var(--ink-3);text-decoration:line-through;margin-right:4px">${p.prevArrival}</span>
-                    <span style="font-family:monospace;font-weight:700;color:var(--ink)">→ ${p.curArrival}</span>
-                  </div>
-                  <span class="tiny" style="color:${p.shiftMins > 0 ? 'var(--green)' : (p.shiftMins < 0 ? 'var(--danger)' : 'var(--ink-3)')};font-weight:600">
-                    ${p.shiftMins > 0 ? `⏱️ ${p.shiftMins}m earlier` : (p.shiftMins < 0 ? `⚠️ ${Math.abs(p.shiftMins)}m delayed` : 'Exact same time')}
-                  </span>
-                </td>
-                <td data-l="Streak Evolution">
-                  <div style="display:flex;align-items:center;gap:6px">
-                    <span class="badge ${p.curStreak >= 5 ? 'b-green' : (p.curStreak >= 2 ? 'b-amber' : 'b-grey')}" style="font-weight:700">
-                      🔥 ${p.curStreak} days
-                    </span>
-                    <span class="tiny" style="color:var(--ink-3)">(${p.prevStreak} prev)</span>
-                  </div>
-                </td>
-                <td data-l="Milestone">
-                  ${p.delta >= 8 ? '<span class="badge b-green">🚀 Fast Learner</span>'
-                    : p.curPct >= 85 ? '<span class="badge b-green">🌟 Exemplary</span>'
-                    : p.curPct >= 70 ? '<span class="badge b-amber">🌿 Steady Sadhana</span>'
-                    : '<span class="badge b-red">⚠️ Needs Support</span>'}
-                </td>
-                <td data-l="Profile">
-                  <a class="btn sm" href="#/devotee/${p.devotee.id}">View</a>
-                </td>
-              </tr>`;
-            }).join('')
-            : '<tr><td colspan="9" style="text-align:center;padding:28px 14px;color:var(--ink-3)">No devotee progress records match search or filter.</td></tr>'}
-          </tbody>
-        </table>
-      </div>
-      <div class="tbl-foot">
-        <span class="tiny">Comparing ${curPeriodName} against ${prevPeriodName} · Evaluates punctuality gains, earlier arrival shifts, and consistency</span>
-      </div>
-    </div>
-    ` : `
-    <!-- Interactive Visual Graphs -->
-    <div class="grid g2" style="margin-bottom:16px">
-      <!-- Donut: Punctuality Breakdown -->
-      <div class="card pad">
-        <div class="card-h" style="padding:0 0 12px;border-bottom:1px solid var(--line-2)">
-          <h3>🎯 Punctuality Breakdown</h3>
-          <span class="tiny" style="margin-left:auto">${data.date}</span>
-        </div>
-        <div style="display:flex;align-items:center;justify-content:space-around;gap:20px;margin-top:14px;flex-wrap:wrap">
-          <div style="position:relative;width:120px;height:120px;flex:none">
-            <svg viewBox="0 0 120 120" style="width:120px;height:120px">
-              <circle cx="60" cy="60" r="${R}" fill="none" stroke="var(--paper-2)" stroke-width="14"/>
-              ${donutSegments}
-            </svg>
-            <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
-              <span style="font-family:var(--f-head);font-size:20px;font-weight:700;color:var(--ink);line-height:1">${m.onTimePct}%</span>
-              <span style="font-size:9.5px;color:var(--ink-3);text-transform:uppercase;font-weight:600">On Time</span>
-            </div>
-          </div>
-          <div style="display:flex;flex-direction:column;gap:8px;min-width:140px">
-            <div style="display:flex;align-items:center;justify-content:space-between;font-size:12.5px">
-              <span style="display:inline-flex;align-items:center;gap:6px"><i style="width:10px;height:10px;border-radius:3px;background:var(--green);display:inline-block"></i> On Time</span>
-              <b>${m.onTimeCount} (${pct(m.onTimeCount, m.total)}%)</b>
-            </div>
-            <div style="display:flex;align-items:center;justify-content:space-between;font-size:12.5px">
-              <span style="display:inline-flex;align-items:center;gap:6px"><i style="width:10px;height:10px;border-radius:3px;background:var(--mustard);display:inline-block"></i> Grace (≤10m)</span>
-              <b>${m.graceCount} (${pct(m.graceCount, m.total)}%)</b>
-            </div>
-            <div style="display:flex;align-items:center;justify-content:space-between;font-size:12.5px">
-              <span style="display:inline-flex;align-items:center;gap:6px"><i style="width:10px;height:10px;border-radius:3px;background:var(--danger);display:inline-block"></i> Late (&gt;10m)</span>
-              <b>${m.lateCount} (${pct(m.lateCount, m.total)}%)</b>
-            </div>
-            <div style="display:flex;align-items:center;justify-content:space-between;font-size:12.5px">
-              <span style="display:inline-flex;align-items:center;gap:6px"><i style="width:10px;height:10px;border-radius:3px;background:#94A3B8;display:inline-block"></i> Absent</span>
-              <b>${m.absentCount} (${pct(m.absentCount, m.total)}%)</b>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Histogram: Arrival Timeline -->
-      <div class="card pad">
-        <div class="card-h" style="padding:0 0 12px;border-bottom:1px solid var(--line-2)">
-          <h3>📈 Arrival Distribution Timeline</h3>
-          <span class="tiny" style="margin-left:auto">Earliest: <b>${m.earliestTime}</b></span>
-        </div>
-        <div style="margin-top:14px;display:flex;align-items:flex-end;justify-content:space-between;gap:8px;height:130px;padding:10px 4px 0">
-          ${data.buckets.map(b => {
-            const h = Math.max(14, Math.round((b.count / maxBucket) * 90));
-            return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px">
-              <div style="font-size:11px;font-weight:700;color:var(--ink)">${b.count}</div>
-              <div style="width:100%;max-width:42px;height:${h}px;background:${b.color};border-radius:6px 6px 2px 2px;transition:height .3s ease"></div>
-              <div style="font-size:9.5px;font-weight:600;color:var(--ink-3);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%">${b.label}</div>
-            </div>`;
-          }).join('')}
-        </div>
-      </div>
-    </div>
-
-    <!-- Detailed Devotee Report Table -->
-    <div class="card">
-      <div class="toolbar" style="gap:10px;align-items:center;flex-wrap:wrap">
-        <div style="position:relative;min-width:200px;flex:1">
-          <input type="search" placeholder="Search devotee in report…" value="${esc(APP.morningSearch||'')}" data-act="morning-q" style="width:100%;padding-left:32px">
-          <span style="position:absolute;left:10px;top:8px;color:var(--ink-3)">${ic('search')}</span>
-        </div>
-        <div class="chips">
-          ${['','On Time','Grace','Late','Absent'].map(st => {
-            const cnt = !st ? m.total : (st==='On Time'?m.onTimeCount : (st==='Grace'?m.graceCount : (st==='Late'?m.lateCount : m.absentCount)));
-            return `<button class="chip ${filterSt===st?'on':''}" data-act="morning-filter-status" data-s="${st}">${st||'All'} (${cnt})</button>`;
-          }).join('')}
-        </div>
-        <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn sm pri" data-act="save-morning-attendance">${ic('check')}Save to Attendance DB</button>
-          <button class="btn sm" data-act="export-morning-report">${ic('download')}Export CSV Report</button>
-        </div>
-      </div>
-
-      <div class="tbl-wrap">
-        <table class="tbl">
-          <thead>
-            <tr>
-              <th>Devotee</th>
-              <th>Standard Time</th>
-              <th>Time In</th>
-              <th>Variance / Delta</th>
-              <th>Punctuality Status</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${rows.length ? rows.map(r => `<tr>
+            ${(isWeekly ? weekly.devStats : monthly.devStats).map(p => `<tr>
               <td data-l="Devotee">
                 <div class="who">
-                  ${av(r.avatarName)}
+                  ${av(p.name)}
                   <div>
-                    <b>${esc(r.name)}</b>
-                    <span>${esc(r.devoteeInfo)}</span>
+                    <b>${esc(p.name)}</b>
+                    <span>${esc(p.appointment)}</span>
                   </div>
                 </div>
               </td>
-              <td data-l="Standard Time">
-                <span class="badge b-grey" style="font-family:monospace;font-size:12px">${r.standardTime}</span>
+              <td data-l="Appointment">
+                <span class="badge b-grey">${esc(p.appointment)}</span>
               </td>
-              <td data-l="Time In">
-                <span class="badge ${r.statusTone==='green'?'b-green':(r.statusTone==='amber'?'b-amber':(r.statusTone==='danger'?'b-red':'b-grey'))}" style="font-family:monospace;font-size:12px;font-weight:700">
-                  ${r.timeIn}
-                </span>
+              <td data-l="Punctuality">
+                <b style="color:${p.punctualityRate>=80?'var(--green)':(p.punctualityRate>=60?'var(--mustard)':'var(--danger)')}">${p.punctualityRate}%</b>
               </td>
-              <td data-l="Variance">
-                <span style="font-weight:600;font-size:12.5px;color:var(--${r.statusTone==='green'?'green':(r.statusTone==='amber'?'mustard':(r.statusTone==='danger'?'danger':'ink-3'))})">
-                  ${esc(r.badgeText)}
-                </span>
+              <td data-l="Sessions">
+                <b>${p.presentCount}</b> / ${isWeekly ? weekly.totalSessions : monthly.totalSessions}
+              </td>
+              <td data-l="On Time">
+                <span style="color:var(--green);font-weight:700">${p.onTimeCount}</span>
               </td>
               <td data-l="Status">
-                ${r.status==='On Time'?badge('✓ On Time','green')
-                  :r.status==='Grace'?badge('Grace Period','amber')
-                  :r.status==='Late'?badge('Late Arrival','red')
-                  :badge('Absent / No scan','grey')}
+                <span class="badge ${p.statusBadge.includes('100%') ? 'b-green' : (p.statusBadge.includes('Steady') ? 'b-blue' : 'b-amber')}">${p.statusBadge}</span>
               </td>
-              <td data-l="Action">
-                ${r.devoteeId ? `<a class="btn sm" href="#/devotee/${r.devoteeId}">View profile</a>` : `<span class="tiny" style="color:var(--ink-3)">Guest record</span>`}
+              <td data-l="Profile">
+                <a class="btn sm" href="#/devotee/${p.devotee.id}">View</a>
               </td>
-            </tr>`).join('')
-            : `<tr><td colspan="6" style="text-align:center;padding:32px 14px;color:var(--ink-3)">No devotee records match current search or filters.</td></tr>`}
+            </tr>`).join('')}
           </tbody>
         </table>
-      </div>
-      <div class="tbl-foot">
-        <span class="tiny">Showing ${rows.length} of ${m.total} devotees in morning programme analysis · Date: ${data.date}</span>
       </div>
     </div>
     `}
@@ -12393,6 +12603,25 @@ document.addEventListener('click',e=>{
     toast(`Exported ${period} devotees progress comparison CSV`, '📥');
     break;
   }
+  case 'morning-report-view':stop();{
+    APP.morningReportView = t.dataset.v || 'today';
+    render();
+    break;
+  }
+  case 'clear-morning-data':stop();{
+    APP.morningData = null;
+    APP.morningReportView = 'today';
+    DB.attendance = (DB.attendance || []).filter(a => a.category !== 'Morning programme' && !String(a.ref).startsWith('mp_'));
+    try { localStorage.removeItem('bace_morning_data'); } catch(e){}
+    toast('Morning attendance data cleared. Ready for fresh upload.', '🗑️');
+    render();
+    break;
+  }
+  case 'export-morning-period-csv':stop();{
+    const period = t.dataset.period || 'weekly';
+    exportMorningPeriodCSV(period);
+    break;
+  }
   case 'morning-subtab':stop();{
     APP.morningSubTab = t.dataset.v || 'report';
     render();
@@ -13208,6 +13437,13 @@ document.addEventListener('change',e=>{
    case 'att-act':APP.filters.attAct=t.value;render();break;
    case 'att-date':APP.filters.attDate=t.value;render();break;
    case 'att-dept-matrix':APP.filters.attDeptMatrix=t.value;render();break;
+   case 'morning-change-date':{
+     if(APP.morningData && APP.morningData.rawBiometricText){
+       APP.morningData = parseMorningCSV(APP.morningData.rawBiometricText, t.value);
+       render();
+     }
+     break;
+   }
    case 'dressing-filter-month':{
      APP.dressingSelectedMonth = t.value;
      render();
