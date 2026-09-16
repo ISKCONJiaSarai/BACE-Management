@@ -6076,15 +6076,15 @@ function openShareRosterModal(deptKey) {
   };
 
   const modalHtml = `
-    <div class="modal-card" style="max-width:820px;width:95%;max-height:92vh;overflow-y:auto">
+    <div class="modal wide" data-stop="1" style="max-width:820px;max-height:92vh;overflow-y:auto">
       <div class="modal-h" style="display:flex;align-items:center;justify-content:space-between">
         <h3 style="margin:0;display:flex;align-items:center;gap:8px">
           <span>📸</span> Share ${deptTitle} Services Chart
         </h3>
-        <button class="modal-x" data-act="modal-close">×</button>
+        <button class="icon-btn" style="margin-left:auto" data-act="close-scrim">${ic('x')}</button>
       </div>
       <div class="modal-b" style="padding:16px;text-align:center">
-        <div style="margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap">
+        <div style="margin-bottom:14px;display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap">
           <button class="btn pri" data-act="download-roster-canvas">${ic('download')} Download Photo (PNG)</button>
           <button class="btn" data-act="copy-roster-canvas">📋 Copy Photo to Clipboard</button>
           <button class="btn" data-act="whatsapp-roster-canvas" style="background:#25D366;color:#fff;border-color:#25D366">💬 Share to WhatsApp</button>
@@ -6093,11 +6093,11 @@ function openShareRosterModal(deptKey) {
           <img id="roster-preview-img" src="${dataUrl}" alt="${deptTitle} Services" style="max-width:100%;height:auto;box-shadow:0 4px 14px rgba(0,0,0,0.15);border-radius:4px">
         </div>
         <div class="tiny" style="color:var(--ink-3);margin-top:10px">
-          High-resolution 2× PNG ready to share with temple ashram group and individual devotees.
+          High-resolution 2× PNG matching official temple service spreadsheet. Ready to share.
         </div>
       </div>
       <div class="modal-f" style="display:flex;justify-content:flex-end;gap:8px">
-        <button class="btn" data-act="modal-close">Close</button>
+        <button class="btn" data-act="close-scrim">Close</button>
       </div>
     </div>
   `;
@@ -6128,30 +6128,36 @@ function openEditRosterSlotModal(deptKey, dateStr, sId) {
   const dayTitle = isToday ? "Today's Schedule" : (isTomorrow ? "Tomorrow's Schedule" : fmtD(dateStr));
 
   const modalHtml = `
-    <div class="modal-card" style="max-width:480px;width:92%">
-      <div class="modal-h">
+    <div class="modal" data-stop="1" style="max-width:500px;width:95%">
+      <div class="modal-h" style="display:flex;align-items:center;justify-content:space-between">
         <h3 style="margin:0;display:flex;align-items:center;gap:8px">
           <span>✏️</span> Edit Seva Slot: ${esc(service.name)}
         </h3>
-        <button class="modal-x" data-act="modal-close">×</button>
+        <button class="icon-btn" style="margin-left:auto" data-act="close-scrim">${ic('x')}</button>
       </div>
       <div class="modal-b" style="padding:16px;display:flex;flex-direction:column;gap:14px">
-        <div class="tiny" style="color:var(--ink-2);background:var(--surface-2);padding:8px 12px;border-radius:6px">
-          Date: <b>${dayTitle} (${dateStr})</b> · Service: <b>${esc(service.name)}</b>
+        <div class="tiny" style="color:var(--ink-2);background:var(--surface-2);padding:10px 12px;border-radius:8px;display:flex;justify-content:space-between;align-items:center">
+          <span>Date: <b>${dayTitle} (${fmtD(dateStr)})</b></span>
+          <span>Service: <b>${esc(service.name)}</b></span>
         </div>
         <div>
-          <label style="display:block;font-size:12.5px;font-weight:600;margin-bottom:4px;color:var(--ink)">Responsible Devotee(s)</label>
-          <input type="text" id="edit-slot-devotees" value="${esc(APP.editingSlot.devotees)}" placeholder="e.g. Sai Sriram Pr & Neetesh" style="width:100%;padding:8px 10px;font-size:14px">
-          <span class="tiny" style="color:var(--ink-3);display:block;margin-top:2px">Tip: Enter multiple devotees separated by & or commas</span>
+          <label style="display:block;font-size:12.5px;font-weight:600;margin-bottom:5px;color:var(--ink)">Responsible Devotee(s)</label>
+          <input type="text" id="edit-slot-devotees" value="${esc(APP.editingSlot.devotees)}" placeholder="e.g. Sai Sriram Pr & Neetesh" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:var(--surface)">
+          <div class="tiny" style="color:var(--ink-3);margin-top:4px">
+            Tip: Type devotee names separated by <b>&</b> or comma, or click below:
+          </div>
+          <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:6px">
+            ${(DB.devotees || []).slice(0, 7).map(d => `<button type="button" class="btn sm" style="padding:2px 8px;font-size:11px" onclick="const el = document.getElementById('edit-slot-devotees'); if (el) { el.value = el.value ? el.value + ' & ' + '${esc(d.name)}' : '${esc(d.name)}'; }">${esc(d.name.split(' ')[0])}</button>`).join('')}
+          </div>
         </div>
         <div class="grid g2" style="gap:10px">
           <div>
-            <label style="display:block;font-size:12.5px;font-weight:600;margin-bottom:4px;color:var(--ink)">Service Time</label>
-            <input type="text" id="edit-slot-time" value="${esc(APP.editingSlot.time)}" placeholder="e.g. 04:30 AM" style="width:100%;padding:8px 10px;font-size:14px">
+            <label style="display:block;font-size:12.5px;font-weight:600;margin-bottom:5px;color:var(--ink)">Service Time</label>
+            <input type="text" id="edit-slot-time" value="${esc(APP.editingSlot.time)}" placeholder="e.g. 04:30 AM" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:var(--surface)">
           </div>
           <div>
-            <label style="display:block;font-size:12.5px;font-weight:600;margin-bottom:4px;color:var(--ink)">Status</label>
-            <select id="edit-slot-status" style="width:100%;padding:8px 10px;font-size:14px">
+            <label style="display:block;font-size:12.5px;font-weight:600;margin-bottom:5px;color:var(--ink)">Status</label>
+            <select id="edit-slot-status" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:var(--surface)">
               <option value="done" ${APP.editingSlot.status === 'done' ? 'selected' : ''}>✅ Done / Completed</option>
               <option value="missed" ${APP.editingSlot.status === 'missed' ? 'selected' : ''}>❌ Not Done / Missed</option>
               <option value="pending" ${APP.editingSlot.status === 'pending' ? 'selected' : ''}>⏳ Scheduled / Pending</option>
@@ -6159,8 +6165,8 @@ function openEditRosterSlotModal(deptKey, dateStr, sId) {
           </div>
         </div>
       </div>
-      <div class="modal-f" style="display:flex;justify-content:flex-end;gap:8px">
-        <button class="btn" data-act="modal-close">Cancel</button>
+      <div class="modal-f" style="display:flex;justify-content:flex-end;gap:8px;padding:12px 16px;border-top:1px solid var(--line-2)">
+        <button class="btn" data-act="close-scrim">Cancel</button>
         <button class="btn pri" data-act="save-roster-slot-modal">Save Slot</button>
       </div>
     </div>
@@ -6179,25 +6185,25 @@ function openAddRosterServiceModal(deptKey) {
   };
 
   const modalHtml = `
-    <div class="modal-card" style="max-width:440px;width:92%">
-      <div class="modal-h">
+    <div class="modal" data-stop="1" style="max-width:440px;width:92%">
+      <div class="modal-h" style="display:flex;align-items:center;justify-content:space-between">
         <h3 style="margin:0;display:flex;align-items:center;gap:8px">
           <span>➕</span> Add Service to ${deptKey === 'deity' ? 'Deity' : 'Cleaning'} Roster
         </h3>
-        <button class="modal-x" data-act="modal-close">×</button>
+        <button class="icon-btn" style="margin-left:auto" data-act="close-scrim">${ic('x')}</button>
       </div>
       <div class="modal-b" style="padding:16px;display:flex;flex-direction:column;gap:14px">
         <div>
           <label style="display:block;font-size:12.5px;font-weight:600;margin-bottom:4px;color:var(--ink)">Service Name</label>
-          <input type="text" id="add-service-name" placeholder="e.g. Afternoon Altar Cleaning" style="width:100%;padding:8px 10px;font-size:14px">
+          <input type="text" id="add-service-name" placeholder="e.g. Afternoon Altar Cleaning" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:var(--surface)">
         </div>
         <div>
           <label style="display:block;font-size:12.5px;font-weight:600;margin-bottom:4px;color:var(--ink)">Scheduled Time</label>
-          <input type="text" id="add-service-time" value="04:30 AM" placeholder="04:30 AM" style="width:100%;padding:8px 10px;font-size:14px">
+          <input type="text" id="add-service-time" value="04:30 AM" placeholder="04:30 AM" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:var(--surface)">
         </div>
       </div>
-      <div class="modal-f" style="display:flex;justify-content:flex-end;gap:8px">
-        <button class="btn" data-act="modal-close">Cancel</button>
+      <div class="modal-f" style="display:flex;justify-content:flex-end;gap:8px;padding:12px 16px;border-top:1px solid var(--line-2)">
+        <button class="btn" data-act="close-scrim">Cancel</button>
         <button class="btn pri" data-act="save-add-service-modal">Add Service</button>
       </div>
     </div>
@@ -8763,6 +8769,7 @@ function calendarProgramModal(){
 
 function modalHTML(){
   const m=APP.modal;if(!m)return'';
+  if(m==='custom')return `<div class="scrim" data-act="close-scrim">${APP.customModalHtml || ''}</div>`;
   if(m==='assign')return assignModal();
   if(m==='calendar-program')return calendarProgramModal();
   if(m==='account'||m==='switch')return accountModal();
