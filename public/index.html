@@ -5007,18 +5007,653 @@ function qrPanel(){
       ${APP.user.role==='admin'?`<button class="btn" style="margin-top:12px" data-act="qr-correct">${ic('edit')}Correct a record (admin)</button>`:''}
     </div></div>`,`<span class="tiny">Advanced attendance is used here only — batch attendance stays simple</span>`);
 }
-function viewAttendance(){
-  const tab=APP.tab.att||'Batch classes';
-  const tabs=['Batch classes','Seva & activities','Morning programme','Matrix'];
-  const bid=APP.filters.attBatch||(APP.user.batch||DB.batches[0].id);
-  return head('✅ Attendance','Attendance','One engine for classes, seva, the morning programme, camps and meetings',
-    `<button class="btn pri" data-act="open-schedule" data-batch="${bid}" data-type="Class">${ic('plus')}Schedule class</button>`)+
-   `<div class="tabs">${tabs.map(t=>`<button class="${t===tab?'on':''}" data-act="tab" data-k="att" data-v="${t}">${t}</button>`).join('')}</div>`+
-   (tab==='Batch classes'?batchAttendancePanel()
-   :tab==='Seva & activities'?sevaAttendancePanel()
-   :tab==='Morning programme'?qrPanel()
-   :attendanceMatrix());
+/* =========================================================================
+   🌅 MORNING PROGRAMME CSV ANALYSIS, GRAPHS & ATTENDANCE ENGINE
+   ========================================================================= */
+function parseTimeMinutes(s){
+  if(!s) return null;
+  const m = String(s).trim().match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(am|pm)?$/i);
+  if(!m) return null;
+  let h = parseInt(m[1],10), min = parseInt(m[2],10), mer = (m[4]||'').toLowerCase();
+  if(mer === 'pm' && h < 12) h += 12;
+  if(mer === 'am' && h === 12) h = 0;
+  return h * 60 + min;
 }
+
+function formatMinutesTime(mins){
+  if(mins == null || isNaN(mins)) return '—';
+  let h = Math.floor(mins / 60) % 24;
+  const m = Math.floor(mins % 60);
+  const mer = h >= 12 ? 'PM' : 'AM';
+  const dh = h % 12 === 0 ? 12 : h % 12;
+  return `${String(dh).padStart(2,'0')}:${String(m).padStart(2,'0')} ${mer}`;
+}
+
+function parseMorningCSV(text){
+  if(!text || !text.trim()) return null;
+  const lines = parseCSV(text);
+  if(!lines || lines.length < 2) return null;
+  
+  const headers = lines[0].map(h => String(h).toLowerCase().trim().replace(/[^a-z0-9]/g, ''));
+  const findCol = (keys) => {
+    for(let i=0; i<headers.length; i++){
+      if(keys.some(k => headers[i].includes(k))) return i;
+    }
+    return -1;
+  };
+
+  const nameIdx = findCol(['name', 'devotee', 'fullname', 'person']);
+  const inIdx = findCol(['timein', 'intime', 'time', 'actual', 'arrival']);
+  const stdIdx = findCol(['standard', 'target', 'benchmark', 'expected', 'std']);
+  const dateIdx = findCol(['date', 'day']);
+
+  const rows = [];
+  for(let i=1; i<lines.length; i++){
+    const row = lines[i];
+    if(!row || !row.length || !row.some(c => c && c.trim())) continue;
+    const name = (nameIdx >= 0 ? row[nameIdx] : row[0])?.trim() || 'Unknown Devotee';
+    const rawTimeIn = inIdx >= 0 ? row[inIdx]?.trim() : (row[1]?.trim() || '');
+    const rawStd = stdIdx >= 0 ? row[stdIdx]?.trim() : (row[2]?.trim() || '04:30');
+    const rDate = (dateIdx >= 0 ? row[dateIdx]?.trim() : '') || iso(TODAY);
+
+    const stdMin = parseTimeMinutes(rawStd) ?? 270; // default 04:30 AM
+    const inMin = parseTimeMinutes(rawTimeIn);
+
+    let status = 'Absent';
+    let statusTone = 'grey';
+    let badgeText = 'No check-in';
+    let diffMin = null;
+
+    if(inMin != null){
+      diffMin = inMin - stdMin;
+      if(diffMin <= 0){
+        status = 'On Time';
+        statusTone = 'green';
+        badgeText = diffMin === 0 ? 'Exact time' : `${Math.abs(diffMin)}m early`;
+      } else if(diffMin <= 10){
+        status = 'Grace';
+        statusTone = 'amber';
+        badgeText = `+${diffMin}m (grace)`;
+      } else {
+        status = 'Late';
+        statusTone = 'danger';
+        badgeText = `+${diffMin}m late`;
+      }
+    }
+
+    // Match with DB.devotees
+    const matched = DB.devotees.find(d => 
+      d.name.toLowerCase().trim() === name.toLowerCase().trim() ||
+      d.name.toLowerCase().includes(name.toLowerCase()) ||
+      name.toLowerCase().includes(d.name.toLowerCase())
+    );
+
+    rows.push({
+      name,
+      devoteeId: matched ? matched.id : null,
+      avatarName: matched ? matched.name : name,
+      devoteeInfo: matched ? (matched.appointment || dept(matched.dept)?.name || 'Devotee') : 'Guest / Visitor',
+      rawTimeIn,
+      rawStd,
+      timeInMin: inMin,
+      stdMin: stdMin,
+      timeIn: inMin != null ? formatMinutesTime(inMin) : '—',
+      standardTime: formatMinutesTime(stdMin),
+      diffMin,
+      status,
+      statusTone,
+      badgeText,
+      date: rDate
+    });
+  }
+
+  return computeMorningMetrics(rows, rows[0]?.date || iso(TODAY));
+}
+
+function computeMorningMetrics(rows, date){
+  const total = rows.length;
+  const onTimeCount = rows.filter(r => r.status === 'On Time').length;
+  const graceCount = rows.filter(r => r.status === 'Grace').length;
+  const lateCount = rows.filter(r => r.status === 'Late').length;
+  const absentCount = rows.filter(r => r.status === 'Absent').length;
+  const attended = total - absentCount;
+
+  const onTimePct = attended > 0 ? pct(onTimeCount, attended) : 0;
+  const punctualityScore = attended > 0 ? pct(onTimeCount + graceCount, attended) : 0;
+
+  const validTimes = rows.filter(r => r.timeInMin != null).map(r => r.timeInMin);
+  const avgArrivalMin = validTimes.length ? Math.round(validTimes.reduce((a,b)=>a+b,0) / validTimes.length) : 270;
+  const earliestMin = validTimes.length ? Math.min(...validTimes) : null;
+  const latestMin = validTimes.length ? Math.max(...validTimes) : null;
+
+  const diffs = rows.filter(r => r.diffMin != null).map(r => r.diffMin);
+  const avgDiffMin = diffs.length ? Math.round(diffs.reduce((a,b)=>a+b,0) / diffs.length) : 0;
+
+  // Histogram distribution
+  const buckets = [
+    { label: '< 04:15 AM', count: 0, sub: 'Early birds', color: '#059669' },
+    { label: '04:15–04:30', count: 0, sub: 'On schedule', color: '#10B981' },
+    { label: '04:30–04:40', count: 0, sub: 'Grace window', color: '#F59E0B' },
+    { label: '04:40–05:00', count: 0, sub: 'Late arrivals', color: '#F97316' },
+    { label: '> 05:00 AM', count: 0, sub: 'Critical delay', color: '#EF4444' }
+  ];
+
+  validTimes.forEach(m => {
+    if(m < 255) buckets[0].count++;
+    else if(m <= 270) buckets[1].count++;
+    else if(m <= 280) buckets[2].count++;
+    else if(m <= 300) buckets[3].count++;
+    else buckets[4].count++;
+  });
+
+  return {
+    date: date || iso(TODAY),
+    rows,
+    metrics: {
+      total,
+      attended,
+      onTimeCount,
+      graceCount,
+      lateCount,
+      absentCount,
+      onTimePct,
+      punctualityScore,
+      avgArrivalMin,
+      earliestTime: formatMinutesTime(earliestMin),
+      latestTime: formatMinutesTime(latestMin),
+      avgDiffMin
+    },
+    buckets
+  };
+}
+
+function getSampleMorningData(){
+  const devs = DB.devotees && DB.devotees.length ? DB.devotees : [
+    {id:'d1', name:'Sundar Gopal Das', appointment:'Area Leader'},
+    {id:'d2', name:'Surya Kiran', appointment:'BACE Preaching Coordinator'},
+    {id:'d3', name:'Radha Raman Das', appointment:'Deity Department Head'},
+    {id:'d4', name:'Madhav Das', appointment:'Kitchen Head'},
+    {id:'d5', name:'Keshav Das', appointment:'Volunteer'},
+    {id:'d6', name:'Ananda Krishna Das', appointment:'Audio Visual Head'},
+    {id:'d7', name:'Govinda Das', appointment:'Volunteer'}
+  ];
+
+  const times = [
+    ['04:15', '04:30'], ['04:18', '04:30'], ['04:22', '04:30'], ['04:25', '04:30'],
+    ['04:28', '04:30'], ['04:30', '04:30'], ['04:32', '04:30'], ['04:35', '04:30'],
+    ['04:38', '04:30'], ['04:44', '04:30'], ['04:48', '04:30'], ['05:02', '04:30'],
+    ['', '04:30'],      ['04:20', '04:30']
+  ];
+
+  const rawRows = devs.slice(0, 14).map((d, i) => {
+    const t = times[i % times.length];
+    return {
+      name: d.name,
+      devoteeId: d.id,
+      avatarName: d.name,
+      devoteeInfo: d.appointment || dept(d.dept)?.name || 'Devotee',
+      rawTimeIn: t[0],
+      rawStd: t[1],
+      timeInMin: parseTimeMinutes(t[0]),
+      stdMin: parseTimeMinutes(t[1]),
+      timeIn: t[0] ? formatMinutesTime(parseTimeMinutes(t[0])) : '—',
+      standardTime: formatMinutesTime(parseTimeMinutes(t[1])),
+      diffMin: t[0] ? parseTimeMinutes(t[0]) - parseTimeMinutes(t[1]) : null,
+      status: !t[0] ? 'Absent' : (parseTimeMinutes(t[0]) <= 270 ? 'On Time' : (parseTimeMinutes(t[0]) <= 280 ? 'Grace' : 'Late')),
+      statusTone: !t[0] ? 'grey' : (parseTimeMinutes(t[0]) <= 270 ? 'green' : (parseTimeMinutes(t[0]) <= 280 ? 'amber' : 'danger')),
+      badgeText: !t[0] ? 'No check-in' : (parseTimeMinutes(t[0]) <= 270 ? (270 - parseTimeMinutes(t[0]) === 0 ? 'Exact time' : `${270 - parseTimeMinutes(t[0])}m early`) : `+${parseTimeMinutes(t[0]) - 270}m late`),
+      date: iso(TODAY)
+    };
+  });
+
+  return computeMorningMetrics(rawRows, iso(TODAY));
+}
+
+function handleMorningCsvFile(file){
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const text = e.target.result;
+    const parsed = parseMorningCSV(text);
+    if(parsed && parsed.rows && parsed.rows.length){
+      APP.morningData = parsed;
+      APP.morningView = 'csv';
+      toast(`Imported ${parsed.rows.length} morning check-in records!`, '🌅');
+      render();
+    } else {
+      toast('Could not parse valid devotee times. Please use the template.', '⚠️');
+    }
+  };
+  reader.readAsText(file);
+}
+
+function downloadMorningTemplate(){
+  const sampleDevs = DB.devotees.slice(0, 8).map(d => d.name);
+  const rows = [
+    ['Devotee Name', 'Time In', 'Standard Time', 'Date'],
+    [sampleDevs[0] || 'Sundar Gopal Das', '04:22', '04:30', iso(TODAY)],
+    [sampleDevs[1] || 'Surya Kiran', '04:18', '04:30', iso(TODAY)],
+    [sampleDevs[2] || 'Radha Raman Das', '04:35', '04:30', iso(TODAY)],
+    [sampleDevs[3] || 'Keshav Das', '04:48', '04:30', iso(TODAY)],
+    [sampleDevs[4] || 'Madhav Das', '04:28', '04:30', iso(TODAY)],
+    [sampleDevs[5] || 'Ananda Krishna Das', '04:15', '04:30', iso(TODAY)]
+  ];
+  const csvContent = 'data:text/csv;charset=utf-8,' + rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement('a');
+  link.setAttribute('href', encodedUri);
+  link.setAttribute('download', `morning_programme_template_${iso(TODAY)}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  toast('Sample CSV template downloaded', '📄');
+}
+
+function exportMorningReport(){
+  if(!APP.morningData || !APP.morningData.rows || !APP.morningData.rows.length){
+    toast('No morning program data to export', '⚠️');
+    return;
+  }
+  const rows = [
+    ['Devotee Name', 'Standard Time', 'Time In', 'Variance (Minutes)', 'Status', 'Date'],
+    ...APP.morningData.rows.map(r => [
+      r.name,
+      r.standardTime,
+      r.timeIn || '—',
+      r.diffMin != null ? (r.diffMin <= 0 ? `${Math.abs(r.diffMin)} min early` : `+${r.diffMin} min late`) : 'No check-in',
+      r.status,
+      r.date || iso(TODAY)
+    ])
+  ];
+  const csvContent = 'data:text/csv;charset=utf-8,' + rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement('a');
+  link.setAttribute('href', encodedUri);
+  link.setAttribute('download', `morning_programme_report_${APP.morningData.date || iso(TODAY)}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  toast('Morning report exported to CSV', '📥');
+}
+
+function saveMorningAttendanceToDB(){
+  if(!APP.morningData || !APP.morningData.rows || !APP.morningData.rows.length){
+    toast('No records to save', '⚠️');
+    return;
+  }
+  const date = APP.morningData.date || iso(TODAY);
+  let savedCount = 0;
+  APP.morningData.rows.forEach(r => {
+    const devId = r.devoteeId || r.name;
+    const ref = 'mp_' + date;
+    const st = r.status === 'On Time' || r.status === 'Grace' ? 'Present' : (r.status === 'Late' ? 'Late' : 'Absent');
+    let rec = DB.attendance.find(a => a.category === 'Morning programme' && a.ref === ref && a.devotee === devId);
+    if(rec){
+      rec.status = st;
+      rec.timeIn = r.timeIn;
+      rec.standardTime = r.standardTime;
+      rec.diffMin = r.diffMin;
+    } else {
+      DB.attendance.push({
+        id: uid('at'),
+        category: 'Morning programme',
+        ref,
+        devotee: devId,
+        date,
+        status: st,
+        timeIn: r.timeIn,
+        standardTime: r.standardTime,
+        diffMin: r.diffMin
+      });
+      savedCount++;
+    }
+  });
+  logAudit('Morning programme attendance', `Recorded ${APP.morningData.rows.length} morning check-ins for ${date}`);
+  toast(`Saved ${APP.morningData.rows.length} morning records to Attendance database!`, '✅');
+  render();
+}
+
+function morningProgramPanel(){
+  if(APP.morningView === 'qr') return qrPanel();
+  if(!APP.morningData) APP.morningData = getSampleMorningData();
+
+  const data = APP.morningData;
+  const m = data.metrics;
+  const q = (APP.morningSearch || '').toLowerCase().trim();
+  const filterSt = APP.morningFilter || '';
+
+  // Filter rows
+  let rows = data.rows || [];
+  if(filterSt) rows = rows.filter(r => r.status === filterSt);
+  if(q) rows = rows.filter(r => r.name.toLowerCase().includes(q) || r.devoteeInfo.toLowerCase().includes(q));
+
+  // Multi-segment Donut SVG
+  const R = 44, C = 2 * Math.PI * R;
+  const parts = [
+    { count: m.onTimeCount, col: 'var(--green,#059669)', label: 'On Time' },
+    { count: m.graceCount, col: 'var(--mustard,#D97706)', label: 'Grace' },
+    { count: m.lateCount, col: 'var(--danger,#DC2626)', label: 'Late' },
+    { count: m.absentCount, col: '#94A3B8', label: 'Absent' }
+  ];
+  let acc = 0;
+  const donutSegments = parts.map(p => {
+    const pc = m.total > 0 ? (p.count / m.total) * 100 : 0;
+    const dash = (pc / 100) * C;
+    const off = (acc / 100) * C;
+    acc += pc;
+    return pc > 0 ? `<circle cx="60" cy="60" r="${R}" fill="none" stroke="${p.col}" stroke-width="14" stroke-dasharray="${dash.toFixed(2)} ${C.toFixed(2)}" stroke-dashoffset="${(-off).toFixed(2)}" transform="rotate(-90 60 60)" stroke-linecap="round"/>` : '';
+  }).join('');
+
+  // Histogram calculation
+  const maxBucket = Math.max(...data.buckets.map(b => b.count), 1);
+
+  return `<div>
+    <!-- Action Banner & Upload Control Bar -->
+    <input type="file" id="morning-csv-input" accept=".csv" style="display:none" data-act="morning-csv-file">
+    
+    <div class="card" style="margin-bottom:16px;border-left:4px solid var(--saffron)">
+      <div class="card-b" style="display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap">
+        <div>
+          <h2 style="font-size:18px;display:flex;align-items:center;gap:8px">
+            <span>🌅</span> Morning Programme Attendance & Punctuality
+          </h2>
+          <div class="tiny" style="color:var(--ink-2);margin-top:3px">
+            Upload arrival CSV (Devotee Name, Time In, Standard Time) to evaluate sadhana punctuality, time variances, and trends.
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn pri sm" data-act="trigger-morning-csv">${ic('upload')}Upload CSV File</button>
+          <button class="btn sm" data-act="download-morning-template">${ic('download')}Template</button>
+          <button class="btn sm" data-act="load-morning-demo">${ic('repeat')}Demo Data</button>
+          <button class="btn sm" data-act="toggle-morning-view">📱 Live QR Code</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Drag & Drop Zone -->
+    <div class="mp-dropzone" style="border:2px dashed var(--line);border-radius:var(--r-m);padding:18px 20px;text-align:center;background:var(--surface);margin-bottom:16px;cursor:pointer" data-act="trigger-morning-csv">
+      <div style="font-size:22px;margin-bottom:4px">📂</div>
+      <div style="font-weight:600;font-size:13.5px;color:var(--ink)">Click to browse or drop your Morning Program CSV file here</div>
+      <div class="tiny" style="color:var(--ink-3);margin-top:2px">Columns required: <b>Devotee Name</b>, <b>Time In</b> (e.g. 04:25 AM), <b>Standard Time</b> (e.g. 04:30 AM)</div>
+    </div>
+
+    <!-- KPI Metric Dashboard Cards -->
+    <div class="grid g5" style="margin-bottom:16px">
+      ${stat('Total Logged', m.total, 'devotees in report', {em:'👥',tint:false})}
+      ${stat('On-Time %', m.onTimePct + '%', `${m.onTimeCount} devotees on schedule`, {em:'⏱️',tint:m.onTimePct >= 75})}
+      ${stat('Grace Window', m.graceCount, '1–10 mins after standard', {em:'⏳',tint:false})}
+      ${stat('Late Arrivals', m.lateCount, '>10 mins delayed', {em:'⚠️',tint:m.lateCount > 0})}
+      ${stat('Average Arrival', formatMinutesTime(m.avgArrivalMin), `${m.avgDiffMin <= 0 ? Math.abs(m.avgDiffMin) + 'm early' : '+' + m.avgDiffMin + 'm late'}`, {em:'🌅',tint:false})}
+    </div>
+
+    <!-- Interactive Visual Graphs -->
+    <div class="grid g2" style="margin-bottom:16px">
+      <!-- Donut: Punctuality Breakdown -->
+      <div class="card pad">
+        <div class="card-h" style="padding:0 0 12px;border-bottom:1px solid var(--line-2)">
+          <h3>🎯 Punctuality Breakdown</h3>
+          <span class="tiny" style="margin-left:auto">${data.date}</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-around;gap:20px;margin-top:14px;flex-wrap:wrap">
+          <div style="position:relative;width:120px;height:120px;flex:none">
+            <svg viewBox="0 0 120 120" style="width:120px;height:120px">
+              <circle cx="60" cy="60" r="${R}" fill="none" stroke="var(--paper-2)" stroke-width="14"/>
+              ${donutSegments}
+            </svg>
+            <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+              <span style="font-family:var(--f-head);font-size:20px;font-weight:700;color:var(--ink);line-height:1">${m.onTimePct}%</span>
+              <span style="font-size:9.5px;color:var(--ink-3);text-transform:uppercase;font-weight:600">On Time</span>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px;min-width:140px">
+            <div style="display:flex;align-items:center;justify-content:space-between;font-size:12.5px">
+              <span style="display:inline-flex;align-items:center;gap:6px"><i style="width:10px;height:10px;border-radius:3px;background:var(--green);display:inline-block"></i> On Time</span>
+              <b>${m.onTimeCount} (${pct(m.onTimeCount, m.total)}%)</b>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;font-size:12.5px">
+              <span style="display:inline-flex;align-items:center;gap:6px"><i style="width:10px;height:10px;border-radius:3px;background:var(--mustard);display:inline-block"></i> Grace (≤10m)</span>
+              <b>${m.graceCount} (${pct(m.graceCount, m.total)}%)</b>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;font-size:12.5px">
+              <span style="display:inline-flex;align-items:center;gap:6px"><i style="width:10px;height:10px;border-radius:3px;background:var(--danger);display:inline-block"></i> Late (&gt;10m)</span>
+              <b>${m.lateCount} (${pct(m.lateCount, m.total)}%)</b>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;font-size:12.5px">
+              <span style="display:inline-flex;align-items:center;gap:6px"><i style="width:10px;height:10px;border-radius:3px;background:#94A3B8;display:inline-block"></i> Absent</span>
+              <b>${m.absentCount} (${pct(m.absentCount, m.total)}%)</b>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Histogram: Arrival Timeline -->
+      <div class="card pad">
+        <div class="card-h" style="padding:0 0 12px;border-bottom:1px solid var(--line-2)">
+          <h3>📈 Arrival Distribution Timeline</h3>
+          <span class="tiny" style="margin-left:auto">Earliest: <b>${m.earliestTime}</b></span>
+        </div>
+        <div style="margin-top:14px;display:flex;align-items:flex-end;justify-content:space-between;gap:8px;height:130px;padding:10px 4px 0">
+          ${data.buckets.map(b => {
+            const h = Math.max(14, Math.round((b.count / maxBucket) * 90));
+            return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px">
+              <div style="font-size:11px;font-weight:700;color:var(--ink)">${b.count}</div>
+              <div style="width:100%;max-width:42px;height:${h}px;background:${b.color};border-radius:6px 6px 2px 2px;transition:height .3s ease"></div>
+              <div style="font-size:9.5px;font-weight:600;color:var(--ink-3);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%">${b.label}</div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+    </div>
+
+    <!-- Detailed Devotee Report Table -->
+    <div class="card">
+      <div class="toolbar" style="gap:10px;align-items:center;flex-wrap:wrap">
+        <div style="position:relative;min-width:200px;flex:1">
+          <input type="search" placeholder="Search devotee in report…" value="${esc(APP.morningSearch||'')}" data-act="morning-q" style="width:100%;padding-left:32px">
+          <span style="position:absolute;left:10px;top:8px;color:var(--ink-3)">${ic('search')}</span>
+        </div>
+        <div class="chips">
+          ${['','On Time','Grace','Late','Absent'].map(st => {
+            const cnt = !st ? m.total : (st==='On Time'?m.onTimeCount : (st==='Grace'?m.graceCount : (st==='Late'?m.lateCount : m.absentCount)));
+            return `<button class="chip ${filterSt===st?'on':''}" data-act="morning-filter-status" data-s="${st}">${st||'All'} (${cnt})</button>`;
+          }).join('')}
+        </div>
+        <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn sm pri" data-act="save-morning-attendance">${ic('check')}Save to Attendance DB</button>
+          <button class="btn sm" data-act="export-morning-report">${ic('download')}Export CSV Report</button>
+        </div>
+      </div>
+
+      <div class="tbl-wrap">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th>Devotee</th>
+              <th>Standard Time</th>
+              <th>Time In</th>
+              <th>Variance / Delta</th>
+              <th>Punctuality Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.length ? rows.map(r => `<tr>
+              <td data-l="Devotee">
+                <div class="who">
+                  ${av(r.avatarName)}
+                  <div>
+                    <b>${esc(r.name)}</b>
+                    <span>${esc(r.devoteeInfo)}</span>
+                  </div>
+                </div>
+              </td>
+              <td data-l="Standard Time">
+                <span class="badge b-grey" style="font-family:monospace;font-size:12px">${r.standardTime}</span>
+              </td>
+              <td data-l="Time In">
+                <span class="badge ${r.statusTone==='green'?'b-green':(r.statusTone==='amber'?'b-amber':(r.statusTone==='danger'?'b-red':'b-grey'))}" style="font-family:monospace;font-size:12px;font-weight:700">
+                  ${r.timeIn}
+                </span>
+              </td>
+              <td data-l="Variance">
+                <span style="font-weight:600;font-size:12.5px;color:var(--${r.statusTone==='green'?'green':(r.statusTone==='amber'?'mustard':(r.statusTone==='danger'?'danger':'ink-3'))})">
+                  ${esc(r.badgeText)}
+                </span>
+              </td>
+              <td data-l="Status">
+                ${r.status==='On Time'?badge('✓ On Time','green')
+                  :r.status==='Grace'?badge('Grace Period','amber')
+                  :r.status==='Late'?badge('Late Arrival','red')
+                  :badge('Absent / No scan','grey')}
+              </td>
+              <td data-l="Action">
+                ${r.devoteeId ? `<a class="btn sm" href="#/devotee/${r.devoteeId}">View profile</a>` : `<span class="tiny" style="color:var(--ink-3)">Guest record</span>`}
+              </td>
+            </tr>`).join('')
+            : `<tr><td colspan="6" style="text-align:center;padding:32px 14px;color:var(--ink-3)">No devotee records match current search or filters.</td></tr>`}
+          </tbody>
+        </table>
+      </div>
+      <div class="tbl-foot">
+        <span class="tiny">Showing ${rows.length} of ${m.total} devotees in morning programme analysis · Date: ${data.date}</span>
+      </div>
+    </div>
+  </div>`;
+}
+
+
+/* =========================================================================
+   🛕 BACE MANAGEMENT ATTENDANCE HUB (Seva, Morning Programme, Dept Matrix)
+   ========================================================================= */
+function viewAttendance(){
+  let tab = APP.tab.att || 'Seva & activities';
+  if (tab === 'Batch classes') tab = 'Seva & activities';
+  const tabs = ['Seva & activities', 'Morning programme', 'Department Matrix'];
+  const curDeptId = APP.filters.attDept || (activeDepts()[0] ? activeDepts()[0].id : '');
+  
+  return head('✅ Attendance', 'Attendance & Seva', 'Department seva attendance, morning programme punctuality tracking, and service matrix',
+    `<button class="btn pri" data-act="open-assign" data-type="Seva" data-dept="${curDeptId}">${ic('plus')}Assign seva</button>`)+
+   `<div class="tabs">${tabs.map(t=>`<button class="${t===tab?'on':''}" data-act="tab" data-k="att" data-v="${t}">${t}</button>`).join('')}</div>`+
+   (tab === 'Morning programme' ? morningProgramPanel()
+   : tab === 'Department Matrix' ? deptAttendanceMatrix()
+   : sevaAttendancePanel());
+}
+
+function sevaAttendancePanel(){
+  const depts = activeDepts();
+  const curDeptId = APP.filters.attDept || (depts[0] ? depts[0].id : '');
+  const curDept = dept(curDeptId) || depts[0] || { id:'', name:'General', icon:'🪔' };
+  
+  // Activities for this department within recent window (last 14 days to tomorrow)
+  const deptActs = DB.activities.filter(a => a.type !== 'Task' && (!curDeptId || a.dept === curDeptId) && a.date >= iso(dayOff(-14)) && a.date <= iso(dayOff(1))).sort((a,b) => a.date < b.date ? 1 : -1);
+  const aid = APP.filters.attAct && deptActs.some(a => a.id === APP.filters.attAct) ? APP.filters.attAct : (deptActs[0] ? deptActs[0].id : '');
+  const selectedAct = act(aid);
+
+  // Department active registered volunteers
+  const deptVols = DB.devotees.filter(d => (!curDeptId || d.dept === curDeptId) && d.status !== 'Inactive');
+  const deptHead = dv(curDept.head);
+  
+  // Devotees for attendance
+  let people = [];
+  if (aid && assignsFor(aid).length > 0) {
+    people = assignsFor(aid).map(x => dv(x.devotee)).filter(Boolean);
+  } else {
+    people = deptVols;
+  }
+
+  // Attendance ref key
+  const refKey = aid || ('dept_' + curDept.id + '_' + (APP.filters.attDate || iso(TODAY)));
+  const cur = id => (DB.attendance.find(a => a.ref === refKey && a.devotee === id) || {}).status || '';
+  const presentCount = people.filter(p => cur(p.id) === 'Present').length;
+  const attDate = selectedAct ? selectedAct.date : (APP.filters.attDate || iso(TODAY));
+
+  return section(`${curDept.icon || '🪔'} ${esc(curDept.name)} — Seva attendance`, `
+    <div class="toolbar att-toolbar">
+      <div class="att-toolbar-row">
+        <select class="att-select" data-act="att-dept" style="font-weight:600">
+          ${depts.map(d => `<option value="${d.id}" ${d.id === curDeptId ? 'selected' : ''}>${d.icon} ${esc(d.name)}</option>`).join('')}
+        </select>
+        <select class="att-select" data-act="att-act">
+          ${deptActs.length ? deptActs.map(a => `<option value="${a.id}" ${a.id === aid ? 'selected' : ''}>${esc(a.name)} — ${fmtD(a.date)}</option>`).join('') : ''}
+          <option value="" ${!aid ? 'selected' : ''}>👥 Department Volunteer Roster (${deptVols.length} devotees)</option>
+        </select>
+        <input type="date" value="${attDate}" data-act="att-date" class="att-select" style="max-width:160px">
+      </div>
+      <div class="att-toolbar-row att-actions-row">
+        <button class="btn sm pri" data-act="save-attendance">${ic('check')}Save attendance</button>
+        <button class="btn sm" data-act="mark-all-act" data-ref="${refKey}">Mark all present</button>
+        <button class="btn sm" data-act="open-assign" data-type="Seva" data-dept="${curDept.id}" style="border-color:var(--saffron-soft);color:var(--saffron)">${ic('plus')}Assign seva</button>
+        <a class="btn sm" href="#/dept/${curDept.id}">🏛 Department page</a>
+      </div>
+    </div>
+    <div class="card-b att-summary-bar" style="padding:10px 14px;background:var(--surface-2);border-bottom:1px solid var(--line-2);display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+      <div class="tiny" style="flex:1;min-width:180px">
+        Department Head: <b>${esc(deptHead ? deptHead.name : '—')}</b> · 
+        <b>${presentCount} of ${people.length}</b> marked present (${pct(presentCount, people.length)}%)
+      </div>
+      <div class="tiny" style="color:var(--ink-3)">
+        ${selectedAct ? `Activity: <b>${esc(selectedAct.name)}</b> (${selectedAct.start ? selectedAct.start + '–' + selectedAct.end : 'Daily'})` : `Roster for <b>${fmtD(attDate)}</b>`}
+      </div>
+    </div>
+    ${people.length ? `<div class="list">${people.map(d => {
+      const st = cur(d.id);
+      return `<div class="li att-row">
+        <div class="att-row-top">
+          ${av(d.name)}
+          <div class="att-info grow">
+            <span class="t">${esc(d.name)}</span>
+            <span class="d">${esc(d.appointment || curDept.name + ' Seva Volunteer')}</span>
+          </div>
+          ${st ? `<span class="att-tag ${st.toLowerCase()}">${st === 'Present' ? '✓ ' : ''}${st}</span>` : ''}
+        </div>
+        <div class="att-chips">
+          ${['Present','Late','Excused','Absent'].map(s => `<button type="button" class="chip att-btn ${s.toLowerCase()} ${st === s ? 'on' : ''}" data-act="mark" data-ref="${refKey}" data-d="${d.id}" data-s="${s}" data-cat="Seva">${s === 'Present' ? '✓ ' : ''}${s}</button>`).join('')}
+        </div>
+      </div>`;
+    }).join('')}</div>`
+    : emptyState('No volunteers assigned', `Assign devotees to ${esc(curDept.name)} or create a seva activity.`, `<button class="btn pri" data-act="open-assign" data-type="Seva" data-dept="${curDept.id}">Assign seva</button>`)}
+  `, `<span class="tiny">Department-wise seva attendance · Tap once per devotee</span>`);
+}
+
+function deptAttendanceMatrix(){
+  const depts = activeDepts();
+  const curDeptId = APP.filters.attDeptMatrix || (depts[0] ? depts[0].id : '');
+  const curDept = dept(curDeptId) || depts[0] || { id:'', name:'General', icon:'🪔' };
+  
+  // Last 7 days
+  const days = Array.from({length: 7}, (_, i) => dayOff(-6 + i));
+  const vols = DB.devotees.filter(d => (!curDeptId || d.dept === curDeptId) && d.status !== 'Inactive');
+  
+  const cell = (d, dt) => {
+    const dStr = iso(dt);
+    const r = DB.attendance.find(a => a.devotee === d.id && a.date === dStr && (a.category === 'Seva' || String(a.ref).includes(curDept.id)));
+    const s = r ? r.status : '—';
+    const col = { Present: 'var(--green)', Absent: 'var(--danger)', Late: 'var(--amber)', Excused: 'var(--sky)' }[s] || 'var(--ink-3)';
+    return `<td data-l="${fmtD(dStr)}" style="text-align:center"><span style="color:${col};font-weight:600" ${tipAttr(`${d.name}\n${fmtD(dStr)}\n${s}`)}>${s==='Present'?'✓':s==='Absent'?'✗':s==='Late'?'L':s==='Excused'?'E':'—'}</span></td>`;
+  };
+
+  return section(`📊 ${curDept.icon || '🏛'} ${esc(curDept.name)} — Seva Regularity Matrix`, `
+    <div class="toolbar">
+      <select class="att-select" data-act="att-dept-matrix" style="font-weight:600;min-width:200px">
+        ${depts.map(d => `<option value="${d.id}" ${d.id === curDeptId ? 'selected' : ''}>${d.icon} ${esc(d.name)}</option>`).join('')}
+      </select>
+      <button class="btn sm" data-act="export-dept-matrix" data-dept="${curDept.id}" style="margin-left:auto">${ic('download')}Export CSV</button>
+    </div>
+    ${vols.length ? `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Volunteer</th>${days.map(d => `<th>${fmtD(d)}</th>`).join('')}<th>Regularity</th></tr></thead><tbody>
+      ${vols.map(d => {
+        const rec = days.map(dt => DB.attendance.find(a => a.devotee === d.id && a.date === iso(dt) && (a.category === 'Seva' || String(a.ref).includes(curDept.id)))).filter(Boolean);
+        const p = rec.length ? pct(rec.filter(r => r.status === 'Present').length, rec.length) : (d.attendancePct || 85);
+        return `<tr><td data-l="Volunteer"><div class="who">${av(d.name)}<b>${esc(d.name)}</b></div></td>
+          ${days.map(dt => cell(d, dt)).join('')}
+          <td data-l="Regularity"><b style="color:${p < 60 ? 'var(--danger)' : 'var(--green)'}">${p}%</b></td>
+        </tr>`;
+      }).join('')}
+    </tbody></table></div>`
+    : emptyState('No volunteers in this department', 'Volunteers can be assigned from the Departments page.', `<a class="btn pri" href="#/dept/${curDept.id}">Manage department</a>`)}
+  `);
+}
+
+
 function batchAttendancePanel(){
   const bid=APP.filters.attBatch||(APP.user.batch||DB.batches[0].id);
   const classes=batchActs(bid).filter(a=>a.type==='Class').sort((a,b)=>a.date<b.date?1:-1);
@@ -5053,41 +5688,10 @@ function batchAttendancePanel(){
        ${['Present','Late','Excused','Absent'].map(s=>`<button type="button" class="chip att-btn ${s.toLowerCase()} ${st===s?'on':''}" data-act="mark" data-ref="${cid}" data-d="${d.id}" data-s="${s}" data-cat="Preaching batch">${s==='Present'?'✓ ':''}${s}</button>`).join('')}
      </div>
    </div>`}).join('')}</div>`
-   :emptyState('No members in this batch','Add members from batch management.','<a class="btn pri" href="#/batches">Batch management</a>','people')}`,
-   `<span class="tiny">Tap once per devotee</span>`);
+   :emptyState('No members in this batch','Add members from batch management.','<a class="btn pri" href="#/batches">Batch management</a>','people')}`,`
+   <span class="tiny">Tap once per devotee</span>`);
 }
-function sevaAttendancePanel(){
-  const acts=DB.activities.filter(a=>a.type!=='Task'&&a.date>=iso(dayOff(-7))&&a.date<=iso(TODAY)).sort((a,b)=>a.date<b.date?1:-1);
-  const aid=APP.filters.attAct&&acts.some(a=>a.id===APP.filters.attAct)?APP.filters.attAct:(acts[0]||{}).id;
-  const people=assignsFor(aid).map(x=>dv(x.devotee)).filter(Boolean);
-  const cur=id=>(DB.attendance.find(a=>a.ref===aid&&a.devotee===id)||{}).status||'';
-  return section('🪔 Seva attendance',`
-    <div class="toolbar att-toolbar">
-      <div class="att-toolbar-row">
-        <select class="att-select" data-act="att-act">${acts.slice(0,40).map(a=>`<option value="${a.id}" ${a.id===aid?'selected':''}>${esc(a.name)} — ${fmtD(a.date)}</option>`).join('')||'<option value="">No activities</option>'}</select>
-      </div>
-      <div class="att-toolbar-row att-actions-row">
-        <button class="btn sm pri" data-act="save-attendance">${ic('check')}Save attendance</button>
-        <button class="btn sm" data-act="mark-all-act" data-ref="${aid}">Mark all present</button>
-        <button class="btn sm" data-act="open-assign" data-type="Seva">${ic('plus')}Assign seva</button>
-      </div>
-    </div>
-    ${people.length?`<div class="list">${people.map(d=>{const st=cur(d.id);return `<div class="li att-row">
-      <div class="att-row-top">
-        ${av(d.name)}
-        <div class="att-info grow">
-          <span class="t">${esc(d.name)}</span>
-          <span class="d">${esc(dept(d.dept)?.name||'Volunteer')}</span>
-        </div>
-        ${st?`<span class="att-tag ${st.toLowerCase()}">${st==='Present'?'✓ ':''}${st}</span>`:''}
-      </div>
-      <div class="att-chips">
-        ${['Present','Late','Excused','Absent'].map(s=>`<button type="button" class="chip att-btn ${s.toLowerCase()} ${st===s?'on':''}" data-act="mark" data-ref="${aid}" data-d="${d.id}" data-s="${s}" data-cat="Seva">${s==='Present'?'✓ ':''}${s}</button>`).join('')}
-      </div>
-    </div>`}).join('')}</div>`
-    :emptyState('Nobody assigned','Assign volunteers to this activity first.','<button class="btn pri" data-act="open-assign" data-type="Seva">Assign seva</button>')}`,
-    `<span class="tiny">Tap once per devotee</span>`);
-}
+
 function attendanceMatrix(){
   const bid=APP.filters.attBatch||DB.batches[0].id;
   const classes=batchActs(bid).filter(a=>a.type==='Class'&&a.status==='Completed').sort((a,b)=>a.date<b.date?-1:1).slice(-6);
@@ -5105,6 +5709,7 @@ function attendanceMatrix(){
        <td data-l="Regularity"><b style="color:${p<60?'var(--danger)':'var(--green)'}">${p}%</b></td></tr>`}).join('')}</tbody></table></div>`
    :emptyState('No completed classes','The matrix fills in as classes are held and attendance is marked.','')}`);
 }
+
 
 /* =========================================================================
    📦 INVENTORY & BBT
@@ -8613,16 +9218,81 @@ document.addEventListener('click',e=>{
       if(rec)rec.status='Present';else DB.attendance.push({id:uid('at'),category:'Preaching batch',ref,devotee:d.id,date:(act(ref)||{}).date||iso(TODAY),status:'Present'})});
     toast('All marked present — remember to save');render();break}
   case 'mark-all-act':stop();{const ref=t.dataset.ref;
-    assignsFor(ref).forEach(x=>{let rec=DB.attendance.find(y=>y.ref===ref&&y.devotee===x.devotee);
-      if(rec)rec.status='Present';else DB.attendance.push({id:uid('at'),category:'Seva',ref,devotee:x.devotee,date:(act(ref)||{}).date||iso(TODAY),status:'Present'})});
+    if(ref && ref.startsWith('dept_')){
+      const dId = ref.split('_')[1];
+      const vols = DB.devotees.filter(d => (!dId || d.dept === dId) && d.status !== 'Inactive');
+      vols.forEach(x => {
+        let rec = DB.attendance.find(y => y.ref === ref && y.devotee === x.id);
+        if(rec) rec.status = 'Present';
+        else DB.attendance.push({id:uid('at'), category:'Seva', ref, devotee:x.id, date:iso(TODAY), status:'Present'});
+      });
+    } else {
+      assignsFor(ref).forEach(x=>{let rec=DB.attendance.find(y=>y.ref===ref&&y.devotee===x.devotee);
+        if(rec)rec.status='Present';else DB.attendance.push({id:uid('at'),category:'Seva',ref,devotee:x.devotee,date:(act(ref)||{}).date||iso(TODAY),status:'Present'})});
+    }
     toast('All marked present — remember to save');render();break}
+  case 'trigger-morning-csv':stop();{
+    const fi = document.getElementById('morning-csv-input');
+    if(fi) fi.click();
+    break;
+  }
+  case 'download-morning-template':stop();downloadMorningTemplate();break;
+  case 'export-morning-report':stop();exportMorningReport();break;
+  case 'save-morning-attendance':stop();saveMorningAttendanceToDB();break;
+  case 'load-morning-demo':stop();{
+    APP.morningData = getSampleMorningData();
+    APP.morningView = 'csv';
+    toast('Loaded sample morning programme attendance session', '✨');
+    render();
+    break;
+  }
+  case 'toggle-morning-view':stop();{
+    APP.morningView = APP.morningView === 'qr' ? 'csv' : 'qr';
+    render();
+    break;
+  }
+  case 'morning-filter-status':stop();{
+    APP.morningFilter = t.dataset.s || '';
+    render();
+    break;
+  }
+  case 'export-dept-matrix':stop();{
+    const dId = t.dataset.dept;
+    const dp = dept(dId);
+    const vols = DB.devotees.filter(d => (!dId || d.dept === dId) && d.status !== 'Inactive');
+    const days = Array.from({length: 7}, (_, i) => dayOff(-6 + i));
+    const rows = [
+      ['Volunteer', ...days.map(d => fmtD(d)), 'Regularity %'],
+      ...vols.map(d => {
+        const rec = days.map(dt => DB.attendance.find(a => a.devotee === d.id && a.date === iso(dt) && (a.category === 'Seva' || String(a.ref).includes(dId)))).filter(Boolean);
+        const p = rec.length ? pct(rec.filter(r => r.status === 'Present').length, rec.length) : (d.attendancePct || 85);
+        return [
+          d.name,
+          ...days.map(dt => {
+            const r = DB.attendance.find(a => a.devotee === d.id && a.date === iso(dt) && (a.category === 'Seva' || String(a.ref).includes(dId)));
+            return r ? r.status : '—';
+          }),
+          p + '%'
+        ];
+      })
+    ];
+    const csvContent = 'data:text/csv;charset=utf-8,' + rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const link = document.createElement('a');
+    link.href = encodeURI(csvContent);
+    link.download = `${dp ? dp.name.toLowerCase().replace(/\s+/g,'_') : 'dept'}_seva_matrix_${iso(TODAY)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast('Department matrix exported', '📊');
+    break;
+  }
   case 'save-attendance':{logAudit('Attendance marked','Attendance saved by '+nameOf(APP.user.devotee));
     toast('Attendance saved','✅');render();break}
   case 'go-attendance':APP.fabOpen=false;go('#/attendance');break;
   case 'go-attendance-act':stop();{const a=act(id);APP.modal='';
-    if(a.type==='Class'){APP.tab.att='Batch classes';APP.filters.attBatch=a.batch;APP.filters.attClass=a.id}
-    else{APP.tab.att='Seva & activities';APP.filters.attAct=a.id}
-    go('#/attendance');break}
+    if(a.type==='Class'){APP.filters.attBatch=a.batch;APP.filters.attClass=a.id;go('#/batch-attendance')}
+    else{APP.tab.att='Seva & activities';APP.filters.attDept=a.dept;APP.filters.attAct=a.id;go('#/attendance')}
+    break}
   case 'go-batch-attendance':stop();APP.filters.attBatch=t.dataset.b;go('#/batch-attendance');break;
   case 'rotate-qr':stop();{const s=DB.qrSessions[DB.qrSessions.length-1];s.code=String(ri(100000,999999));
     toast('QR rotated — the old code is now invalid','🔄');render();break}
@@ -8874,7 +9544,15 @@ document.addEventListener('change',e=>{
    case 'range':APP.range[t.dataset.n]=t.value;render();break;
    case 'att-batch':APP.filters.attBatch=t.value;APP.filters.attClass=null;render();break;
    case 'att-class':APP.filters.attClass=t.value;render();break;
+   case 'att-dept':APP.filters.attDept=t.value;APP.filters.attAct=null;render();break;
    case 'att-act':APP.filters.attAct=t.value;render();break;
+   case 'att-date':APP.filters.attDate=t.value;render();break;
+   case 'att-dept-matrix':APP.filters.attDeptMatrix=t.value;render();break;
+   case 'morning-csv-file':{
+     const file = e.target.files && e.target.files[0];
+     if(file) handleMorningCsvFile(file);
+     break;
+   }
    case 'cal-cat':APP.filters.calCat=t.value;render();break;
    case 'rep-batch':APP.filters.repBatch=t.value;render();break;
    case 'vol-f':{syncAssign();assignDraft()[t.dataset.n]=t.value;render();break}
@@ -8902,6 +9580,7 @@ document.addEventListener('input',e=>{
     render();refocus(`[data-act="f"][data-k="${k}"][data-n="${n}"]`);}
   else if(a==='vol-q'){syncAssign();assignDraft().q=t.value;render();refocus('[data-act="vol-q"]')}
   else if(a==='pick-q'){APP.modal.q=t.value;render();refocus('#pickq')}
+  else if(a==='morning-q'){APP.morningSearch=t.value;render();refocus('[data-act="morning-q"]')}
   else if(a==='global-search'){APP.search=t.value}
 });
 document.addEventListener('keydown',e=>{
