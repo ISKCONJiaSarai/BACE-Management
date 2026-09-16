@@ -6072,6 +6072,274 @@ function generateRosterCanvas(deptKey) {
   return canvas;
 }
 
+
+function generateWeeklyChartCanvas(deptKey) {
+  initDepartmentRosters();
+  const isDeity = deptKey === 'deity';
+  const roster = isDeity ? APP.deityRoster : APP.cleaningRoster;
+  const deptTitle = isDeity ? 'Deity Department' : 'Cleaning Department';
+  const services = roster.services;
+
+  const todayStr = iso(TODAY);
+  const days = Array.from({ length: 7 }, (_, i) => iso(dayOff(i - 1))); // yesterday to +5 days
+
+  const col0W = 210; // Service name column
+  const colDayW = 135; // Each of the 7 days
+  const totalW = col0W + (colDayW * 7);
+
+  const headerH = 68;
+  const rowH = 60;
+  const totalH = headerH + (services.length * rowH);
+
+  const canvas = document.createElement('canvas');
+  const scale = 2; // 2x Retina
+  canvas.width = totalW * scale;
+  canvas.height = totalH * scale;
+
+  const ctx = canvas.getContext('2d');
+  ctx.scale(scale, scale);
+
+  // Background
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fillRect(0, 0, totalW, totalH);
+
+  // Colors matching official spreadsheet style
+  const peachCol = '#F5A869';
+  const todayPeachCol = '#F2994A';
+  const yellowCol = '#FFE5A3';
+  const lavenderCol = '#E5DCF7';
+  const borderCol = '#000000';
+
+  ctx.strokeStyle = borderCol;
+  ctx.lineWidth = 1.5;
+
+  // 1. Draw Headers
+  ctx.fillStyle = peachCol;
+  ctx.fillRect(0, 0, totalW, headerH);
+
+  // Header Texts
+  ctx.fillStyle = '#111111';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  // Col 0 Header: Services (Y-axis)
+  ctx.font = 'bold 16px "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+  ctx.fillText('Services (Y-axis)', col0W / 2, (headerH / 2) - 8);
+  ctx.font = 'normal 12px "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+  ctx.fillText(deptTitle, col0W / 2, (headerH / 2) + 11);
+
+  // 7 Day Headers
+  days.forEach((d, i) => {
+    const x = col0W + (i * colDayW);
+    const isCur = d === todayStr;
+
+    if (isCur) {
+      ctx.fillStyle = todayPeachCol;
+      ctx.fillRect(x, 0, colDayW, headerH);
+      ctx.fillStyle = '#111111';
+    }
+
+    ctx.font = 'bold 15px "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+    ctx.fillText(fmtD(d), x + (colDayW / 2), (headerH / 2) - 8);
+    ctx.font = 'normal 12px "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+    ctx.fillText(isCur ? '(Today)' : dayName(d), x + (colDayW / 2), (headerH / 2) + 11);
+  });
+
+  // Vertical divider lines across the canvas
+  ctx.beginPath();
+  ctx.moveTo(col0W, 0); ctx.lineTo(col0W, totalH);
+  days.forEach((_, i) => {
+    const x = col0W + ((i + 1) * colDayW);
+    ctx.moveTo(x, 0); ctx.lineTo(x, totalH);
+  });
+  ctx.stroke();
+
+  // Header bottom border
+  ctx.beginPath();
+  ctx.moveTo(0, headerH); ctx.lineTo(totalW, headerH);
+  ctx.stroke();
+
+  // 2. Draw Rows
+  services.forEach((s, idx) => {
+    const y = headerH + (idx * rowH);
+
+    // Row bottom border
+    ctx.beginPath();
+    ctx.moveTo(0, y + rowH); ctx.lineTo(totalW, y + rowH);
+    ctx.stroke();
+
+    // Col 0: Service Name (Pale Golden Yellow #FFE5A3)
+    ctx.fillStyle = yellowCol;
+    ctx.fillRect(0, y, col0W, rowH);
+
+    ctx.fillStyle = '#111111';
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 14px "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+    ctx.fillText(s.name, col0W / 2, y + (rowH / 2) - 8);
+    ctx.font = 'normal 11.5px "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+    ctx.fillStyle = '#444444';
+    ctx.fillText(s.time, col0W / 2, y + (rowH / 2) + 11);
+
+    // 7 Days Cells (Pale Lavender #E5DCF7)
+    days.forEach((d, i) => {
+      const x = col0W + (i * colDayW);
+      const isCur = d === todayStr;
+
+      ctx.fillStyle = isCur ? '#DED4F5' : lavenderCol;
+      ctx.fillRect(x, y, colDayW, rowH);
+
+      const sl = getRosterSlot(roster, d, s.id);
+      const devs = (sl.devotees || '—').trim();
+
+      ctx.fillStyle = '#111111';
+      ctx.textAlign = 'center';
+      ctx.font = 'bold 13px "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+
+      if (devs.includes('&')) {
+        const parts = devs.split('&');
+        ctx.fillText(parts[0].trim() + ' &', x + (colDayW / 2), y + (rowH / 2) - 8);
+        ctx.fillText((parts[1] || '').trim(), x + (colDayW / 2), y + (rowH / 2) + 11);
+      } else if (devs.includes('❌')) {
+        const parts = devs.split('❌');
+        ctx.fillText(parts[0].trim() + ' ❌', x + (colDayW / 2), y + (rowH / 2) - 8);
+        ctx.fillText((parts[1] || '').trim() + ' ✅', x + (colDayW / 2), y + (rowH / 2) + 11);
+      } else if (devs.length > 18) {
+        const parts = devs.split(' ');
+        const mid = Math.ceil(parts.length / 2);
+        ctx.fillText(parts.slice(0, mid).join(' '), x + (colDayW / 2), y + (rowH / 2) - 8);
+        ctx.fillText(parts.slice(mid).join(' '), x + (colDayW / 2), y + (rowH / 2) + 11);
+      } else {
+        ctx.fillText(devs, x + (colDayW / 2), y + (rowH / 2));
+      }
+    });
+  });
+
+  // Outer border
+  ctx.strokeRect(0, 0, totalW, totalH);
+
+  return canvas;
+}
+
+function dayName(dStr) {
+  try {
+    const d = new Date(dStr + 'T12:00:00');
+    return ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()] || '';
+  } catch(e) { return ''; }
+}
+
+async function shareWeeklyChartPhotoDirectly(deptKey) {
+  initDepartmentRosters();
+  const isDeity = deptKey === 'deity';
+  const roster = isDeity ? APP.deityRoster : APP.cleaningRoster;
+  const deptTitle = isDeity ? 'Deity Department' : 'Cleaning Department';
+  const days = Array.from({ length: 7 }, (_, i) => iso(dayOff(i - 1)));
+
+  const canvas = generateWeeklyChartCanvas(deptKey);
+  const dataUrl = canvas.toDataURL('image/png');
+
+  APP.weeklyModalData = {
+    deptKey,
+    dataUrl,
+    canvas
+  };
+
+  // Build WhatsApp report text for the week
+  let msg = `*Hare Krishna! 🙏*\n*ISKCON Jia Sarai — ${deptTitle} Weekly Service Chart*\n📅 Period: ${fmtD(days[0])} to ${fmtD(days[6])}\n\n*WEEKLY SERVICES OVERVIEW:*\n`;
+  roster.services.forEach(s => {
+    const todaySlot = getRosterSlot(roster, iso(TODAY), s.id);
+    const tmSlot = getRosterSlot(roster, iso(dayOff(1)), s.id);
+    msg += `• *${s.name}* (${s.time}): Today [${todaySlot.devotees || 'Unassigned'}], Tomorrow [${tmSlot.devotees || 'Unassigned'}]\n`;
+  });
+  msg += `\n_Please find attached the official Weekly Service Chart photo._\n_Your servant,_\n_BACE Management_`;
+
+  openShareWeeklyModal(deptKey);
+
+  canvas.toBlob(async blob => {
+    if (!blob) return;
+
+    const file = new File([blob], `${deptKey}_weekly_chart_${days[0]}_to_${days[6]}.png`, { type: 'image/png' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({
+          files: [file],
+          title: `${deptTitle} Weekly Service Chart`,
+          text: msg
+        });
+        toast('Weekly service chart photo shared to WhatsApp!', '📸');
+        return;
+      } catch (err) {
+        if (err.name === 'AbortError') return;
+      }
+    }
+
+    // Fallback: copy PNG blob to clipboard + download PNG + launch WhatsApp
+    let copied = false;
+    try {
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+      copied = true;
+    } catch(e) {}
+
+    const link = document.createElement('a');
+    link.download = `${deptKey}_weekly_service_chart_${days[0]}_to_${days[6]}.png`;
+    link.href = dataUrl;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
+    window.open(waUrl, '_blank');
+
+    if (copied) {
+      toast('Weekly chart copied to clipboard! In WhatsApp, press Ctrl+V to paste & send.', '📸');
+    } else {
+      toast('Weekly chart downloaded & WhatsApp opened! Send the picture in chat.', '💬');
+    }
+  }, 'image/png');
+}
+
+function openShareWeeklyModal(deptKey) {
+  const canvas = generateWeeklyChartCanvas(deptKey);
+  const dataUrl = canvas.toDataURL('image/png');
+  const deptTitle = deptKey === 'deity' ? 'Deity Department' : 'Cleaning Department';
+
+  APP.weeklyModalData = {
+    deptKey,
+    dataUrl,
+    canvas
+  };
+
+  const modalHtml = `
+    <div class="modal wide" data-stop="1" style="max-width:880px;max-height:92vh;overflow-y:auto">
+      <div class="modal-h" style="display:flex;align-items:center;justify-content:space-between">
+        <h3 style="margin:0;display:flex;align-items:center;gap:8px">
+          <span>📸</span> Share ${deptTitle} Weekly Service Chart
+        </h3>
+        <button class="icon-btn" style="margin-left:auto" data-act="close-scrim">${ic('x')}</button>
+      </div>
+      <div class="modal-b" style="padding:16px;text-align:center">
+        <div style="margin-bottom:14px;display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap">
+          <button class="btn pri" data-act="download-weekly-canvas">${ic('download')} Download Photo (PNG)</button>
+          <button class="btn" data-act="copy-weekly-canvas">📋 Copy Photo to Clipboard</button>
+          <button class="btn" data-act="whatsapp-weekly-canvas" style="background:#25D366;color:#fff;border-color:#25D366">💬 Share to WhatsApp</button>
+        </div>
+        <div style="background:var(--paper-2);padding:12px;border-radius:8px;overflow-x:auto;display:flex;justify-content:center">
+          <img src="${dataUrl}" alt="${deptTitle} Weekly Chart" style="max-width:100%;height:auto;box-shadow:0 4px 14px rgba(0,0,0,0.15);border-radius:4px">
+        </div>
+        <div class="tiny" style="color:var(--ink-3);margin-top:10px">
+          High-resolution 2× Retina PNG of the entire Weekly Service Chart. Ready to share.
+        </div>
+      </div>
+      <div class="modal-f" style="display:flex;justify-content:flex-end;gap:8px">
+        <button class="btn" data-act="close-scrim">Close</button>
+      </div>
+    </div>
+  `;
+
+  APP.modal = 'custom';
+  APP.customModalHtml = modalHtml;
+  render();
+}
+
 async function shareRosterPhotoDirectly(deptKey) {
   initDepartmentRosters();
   const isDeity = deptKey === 'deity';
@@ -6717,6 +6985,7 @@ function renderDepartmentRosterPanel(deptKey) {
           <span>📅</span> Weekly ${isDeity ? 'Deity' : 'Cleaning'} Department Service Chart
         </h3>
         <div style="display:flex;gap:8px">
+          <button class="btn pri sm" data-act="share-weekly-photo" data-dept="${deptKey}">📸 Generate & Share Photo</button>
           <button class="btn sm" data-act="export-roster-csv" data-dept="${deptKey}">${ic('download')}Export CSV</button>
         </div>
       </div>
@@ -10671,6 +10940,40 @@ document.addEventListener('click',e=>{
   case 'share-roster-photo':stop();{
     const deptK = t.dataset.dept || 'deity';
     shareRosterPhotoDirectly(deptK);
+    break;
+  }
+  case 'share-weekly-photo':stop();{
+    const deptK = t.dataset.dept || 'deity';
+    shareWeeklyChartPhotoDirectly(deptK);
+    break;
+  }
+  case 'download-weekly-canvas':stop();{
+    if (!APP.weeklyModalData) break;
+    const link = document.createElement('a');
+    link.download = `${APP.weeklyModalData.deptKey}_weekly_service_chart_${iso(TODAY)}.png`;
+    link.href = APP.weeklyModalData.dataUrl;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast('Weekly service chart PNG downloaded!', '📥');
+    break;
+  }
+  case 'copy-weekly-canvas':stop();{
+    if (!APP.weeklyModalData || !APP.weeklyModalData.canvas) break;
+    APP.weeklyModalData.canvas.toBlob(async blob => {
+      try {
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+        toast('Weekly chart copied to clipboard! Paste in WhatsApp with Ctrl+V', '📋');
+      } catch (err) {
+        toast('Failed to copy to clipboard', '⚠️');
+      }
+    });
+    break;
+  }
+  case 'whatsapp-weekly-canvas':stop();{
+    if (!APP.weeklyModalData) break;
+    const deptK = APP.weeklyModalData.deptKey;
+    shareWeeklyChartPhotoDirectly(deptK);
     break;
   }
   case 'toggle-roster-status':stop();{
