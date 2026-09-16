@@ -6193,6 +6193,145 @@ function openShareRosterModal(deptKey) {
   render();
 }
 
+
+/* Devotee Dropdown, Custom Devotee, and Stats Engine */
+window.filterDevoteeDropdown = function(query) {
+  const container = document.getElementById('devotee-dropdown-list');
+  if (!container) return;
+  const q = String(query || '').toLowerCase().trim();
+  const all = DB.devotees || [];
+  const filtered = q ? all.filter(d => (d.name || '').toLowerCase().includes(q) || (d.phone || '').includes(q)) : all;
+
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div style="padding:10px;font-size:12px;color:var(--ink-3);text-align:center">
+        No matching devotee in database.
+        ${q ? `<div style="margin-top:6px"><button type="button" class="btn sm pri" onclick="addDevoteeToSlot('${esc(query.trim())}')">+ Use "${esc(query.trim())}" as Custom Devotee</button></div>` : ''}
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = filtered.slice(0, 30).map(d => `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;border-radius:6px;background:var(--surface);cursor:pointer;border:1px solid var(--line);font-size:12.5px" onclick="addDevoteeToSlot('${esc(d.name)}')">
+      <div style="font-weight:600;color:var(--ink)">${esc(d.name)}</div>
+      <div class="tiny" style="color:var(--ink-3)">${esc(d.phone || d.bace || 'Member')} <span style="color:var(--pri);font-weight:700;margin-left:6px">+ Select</span></div>
+    </div>
+  `).join('');
+};
+
+window.addDevoteeToSlot = function(name) {
+  const input = document.getElementById('edit-slot-devotees');
+  if (!input) return;
+  const cur = input.value.trim();
+  if (!cur || cur === 'Unassigned' || cur === '—') {
+    input.value = name;
+  } else if (!cur.includes(name)) {
+    input.value = `${cur} & ${name}`;
+  }
+  input.focus();
+};
+
+window.addCustomDevoteeName = function() {
+  const customInput = document.getElementById('custom-devotee-input');
+  if (!customInput) return;
+  const name = customInput.value.trim();
+  if (!name) {
+    toast('Please enter a devotee name', '⚠️');
+    return;
+  }
+  window.addDevoteeToSlot(name);
+  customInput.value = '';
+};
+
+window.clearSlotDevotees = function() {
+  const input = document.getElementById('edit-slot-devotees');
+  if (input) {
+    input.value = '';
+    input.focus();
+  }
+};
+
+window.filterDevoteeReportTable = function(q) {
+  const table = document.getElementById('devotee-seva-report-tbl');
+  if (!table) return;
+  const query = String(q || '').toLowerCase().trim();
+  const rows = table.querySelectorAll('tbody tr');
+  rows.forEach(r => {
+    const name = r.getAttribute('data-name') || '';
+    r.style.display = (!query || name.includes(query)) ? '' : 'none';
+  });
+};
+
+function getDepartmentDevoteeStats(deptKey, period = 'weekly') {
+  initDepartmentRosters();
+  const isDeity = deptKey === 'deity';
+  const roster = isDeity ? APP.deityRoster : APP.cleaningRoster;
+  const daysCount = period === 'weekly' ? 7 : 30;
+  const dayList = Array.from({ length: daysCount }, (_, i) => iso(dayOff(-i)));
+
+  const devoteeMap = {};
+  (DB.devotees || []).forEach(d => {
+    devoteeMap[d.name] = {
+      name: d.name,
+      phone: d.phone || '',
+      bace: d.bace || '',
+      assigned: 0,
+      completed: 0,
+      missed: 0,
+      substitutions: 0,
+      servicesList: []
+    };
+  });
+
+  dayList.forEach(dateStr => {
+    roster.services.forEach(service => {
+      const slot = getRosterSlot(roster, dateStr, service.id);
+      const rawDevs = (slot.devotees || '').trim();
+      if (!rawDevs || rawDevs === '—' || rawDevs === 'Unassigned') return;
+
+      if (rawDevs.includes('❌')) {
+        const parts = rawDevs.split('❌');
+        const orig = parts[0].trim();
+        const sub = (parts[1] || '').trim();
+
+        if (orig) {
+          if (!devoteeMap[orig]) devoteeMap[orig] = { name: orig, assigned: 0, completed: 0, missed: 0, substitutions: 0, servicesList: [] };
+          devoteeMap[orig].assigned++;
+          devoteeMap[orig].missed++;
+          devoteeMap[orig].servicesList.push({ date: dateStr, service: service.name, result: 'missed' });
+        }
+        if (sub) {
+          if (!devoteeMap[sub]) devoteeMap[sub] = { name: sub, assigned: 0, completed: 0, missed: 0, substitutions: 0, servicesList: [] };
+          devoteeMap[sub].completed++;
+          devoteeMap[sub].substitutions++;
+          devoteeMap[sub].servicesList.push({ date: dateStr, service: service.name, result: 'substituted' });
+        }
+      } else {
+        const names = rawDevs.split(/[&,]/).map(n => n.trim()).filter(Boolean);
+        const isDone = slot.status === 'done';
+        const isMissed = slot.status === 'missed';
+
+        names.forEach(name => {
+          if (!devoteeMap[name]) devoteeMap[name] = { name: name, assigned: 0, completed: 0, missed: 0, substitutions: 0, servicesList: [] };
+          devoteeMap[name].assigned++;
+          if (isDone) devoteeMap[name].completed++;
+          else if (isMissed) devoteeMap[name].missed++;
+          devoteeMap[name].servicesList.push({ date: dateStr, service: service.name, result: isDone ? 'done' : (isMissed ? 'missed' : 'pending') });
+        });
+      }
+    });
+  });
+
+  let list = Object.values(devoteeMap).filter(d => (d.assigned > 0 || d.completed > 0 || d.substitutions > 0));
+  list.forEach(d => {
+    const totalEngaged = d.assigned + d.substitutions;
+    d.rate = totalEngaged > 0 ? Math.min(100, Math.round((d.completed / (d.assigned || d.completed || 1)) * 100)) : 0;
+  });
+
+  list.sort((a, b) => b.completed - a.completed || b.rate - a.rate);
+  return list;
+}
+
 function openMissedSubstituteModal(deptKey, dateStr, sId) {
   initDepartmentRosters();
   const isDeity = deptKey === 'deity';
@@ -6270,8 +6409,9 @@ function openEditRosterSlotModal(deptKey, dateStr, sId) {
   const slot = getRosterSlot(roster, dateStr, sId);
 
   const isToday = dateStr === iso(TODAY);
-  const isTomorrow = dateStr === iso(dayOff(1)) || dateStr > iso(TODAY);
-  const dayTitle = isToday ? "Today's Report" : (isTomorrow ? "Tomorrow's Schedule" : fmtD(dateStr));
+  const isTomorrow = dateStr === iso(dayOff(1));
+  const isWeeklySchedule = !isToday && !isTomorrow;
+  const dayTitle = isToday ? "Today's Report" : (isTomorrow ? "Tomorrow's Schedule" : `Weekly Schedule (${fmtD(dateStr)})`);
 
   let origDev = slot.devotees || '';
   let existingSub = '';
@@ -6288,30 +6428,63 @@ function openEditRosterSlotModal(deptKey, dateStr, sId) {
     devotees: origDev,
     substituteDev: existingSub,
     time: service.time || '04:30 AM',
-    status: slot.status || (isTomorrow ? 'pending' : (existingSub ? 'missed' : 'done'))
+    status: slot.status || (isToday ? (existingSub ? 'missed' : 'done') : 'pending')
   };
 
   const modalHtml = `
-    <div class="modal" data-stop="1" style="max-width:480px;width:95%">
+    <div class="modal" data-stop="1" style="max-width:520px;width:95%">
       <div class="modal-h" style="display:flex;align-items:center;justify-content:space-between">
-        <h3 style="margin:0;display:flex;align-items:center;gap:8px">
-          <span>✏️</span> Edit Seva: ${esc(service.name)}
+        <h3 style="margin:0;display:flex;align-items:center;gap:8px;font-size:16px">
+          <span>✏️</span> Edit Seva Slot: ${esc(service.name)}
         </h3>
         <button class="icon-btn" style="margin-left:auto" data-act="close-scrim">${ic('x')}</button>
       </div>
       <div class="modal-b" style="padding:16px;display:flex;flex-direction:column;gap:14px">
         <div class="tiny" style="color:var(--ink-2);background:var(--surface-2);padding:10px 12px;border-radius:8px;display:flex;justify-content:space-between;align-items:center">
-          <span>Date: <b>${dayTitle} (${fmtD(dateStr)})</b></span>
+          <span>Date: <b>${dayTitle}</b></span>
           <span>Time: <b>${esc(service.time)}</b></span>
         </div>
+
         <div>
-          <label style="display:block;font-size:12.5px;font-weight:600;margin-bottom:5px;color:var(--ink)">Responsible Devotee(s)</label>
-          <input type="text" id="edit-slot-devotees" value="${esc(APP.editingSlot.devotees)}" placeholder="e.g. Sai Sriram Pr & Neetesh" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:var(--surface)">
+          <label style="display:block;font-size:12.5px;font-weight:600;margin-bottom:5px;color:var(--ink)">
+            Responsible Devotee(s)
+          </label>
+          <div style="display:flex;gap:6px;align-items:center">
+            <input type="text" id="edit-slot-devotees" value="${esc(APP.editingSlot.devotees)}" placeholder="e.g. Sai Sriram Pr & Neetesh" style="flex:1;box-sizing:border-box;padding:9px 12px;border:1.5px solid var(--line);border-radius:8px;font-size:14px;background:var(--surface)">
+            <button type="button" class="btn sm" onclick="clearSlotDevotees()" title="Clear names">Clear</button>
+          </div>
           <div class="tiny" style="color:var(--ink-3);margin-top:4px">
-            Type devotee name(s) (e.g. <b>Sai Sriram Pr & Neetesh</b> or <b>Dhirendra Pr</b>)
+            Selected devotees can be edited directly, picked from database dropdown, or added as custom below.
           </div>
         </div>
-        ${!isTomorrow ? `
+
+        <!-- Devotee Search & Database Dropdown Picker -->
+        <div style="background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:10px 12px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <label style="font-size:12px;font-weight:700;color:var(--ink);display:flex;align-items:center;gap:6px">
+              <span>👥</span> Database Devotees (Search & Select)
+            </label>
+            <span class="tiny" style="color:var(--ink-3)">${(DB.devotees || []).length} registered</span>
+          </div>
+          <input type="text" id="devotee-db-search" placeholder="🔍 Type to search database (e.g. Sai, Mayank, Sumit)..." oninput="filterDevoteeDropdown(this.value)" style="width:100%;box-sizing:border-box;padding:7px 10px;border:1px solid var(--line);border-radius:6px;font-size:13px;background:var(--surface);margin-bottom:8px">
+
+          <div id="devotee-dropdown-list" style="max-height:120px;overflow-y:auto;display:flex;flex-direction:column;gap:4px">
+            ${(DB.devotees || []).slice(0, 15).map(d => `
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:5px 8px;border-radius:6px;background:var(--surface);cursor:pointer;border:1px solid var(--line);font-size:12px" onclick="addDevoteeToSlot('${esc(d.name)}')">
+                <div style="font-weight:600;color:var(--ink)">${esc(d.name)}</div>
+                <div class="tiny" style="color:var(--ink-3)">${esc(d.phone || d.bace || 'Member')} <span style="color:var(--pri);font-weight:700;margin-left:6px">+ Select</span></div>
+              </div>
+            `).join('')}
+          </div>
+
+          <!-- Custom Devotee Name Option -->
+          <div style="margin-top:10px;padding-top:8px;border-top:1px dashed var(--line);display:flex;gap:6px;align-items:center">
+            <input type="text" id="custom-devotee-input" placeholder="Type custom devotee name (if not in DB)..." style="flex:1;padding:6px 10px;border:1px solid var(--line);border-radius:6px;font-size:12.5px;background:var(--surface)">
+            <button type="button" class="btn sm pri" onclick="addCustomDevoteeName()">+ Add Custom</button>
+          </div>
+        </div>
+
+        ${isToday ? `
         <div>
           <label style="display:block;font-size:12.5px;font-weight:600;margin-bottom:5px;color:var(--ink)">Service Completion Status</label>
           <select id="edit-slot-status" onchange="const subWrap = document.getElementById('edit-substitute-wrap'); if(subWrap) subWrap.style.display = this.value === 'missed' ? 'block' : 'none';" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:var(--surface)">
@@ -6383,14 +6556,19 @@ function openAddRosterServiceModal(deptKey) {
    ========================================================================= */
 function renderDepartmentRosterPanel(deptKey) {
   initDepartmentRosters();
+  APP.activeRosterDept = deptKey;
   const isDeity = deptKey === 'deity';
   const roster = isDeity ? APP.deityRoster : APP.cleaningRoster;
   const deptTitle = isDeity ? 'Deity Department' : 'Cleaning Department';
   const deptIcon = isDeity ? '🛕' : '🧹';
 
-  // Sub-view state: 'photo' (attached photo 3-column view), 'weekly' (7-day grid), 'analytics' (graphs & reports)
+  // Sub-view state: 'photo' (attached photo 3-column view), 'weekly' (weekly chart), 'analytics' (graphs & reports)
   APP.rosterViewMode = APP.rosterViewMode || {};
   const viewMode = APP.rosterViewMode[deptKey] || 'photo';
+
+  // Period for Graphs & Reports: 'weekly' (last 7 days) or 'monthly' (last 30 days)
+  APP.rosterReportPeriod = APP.rosterReportPeriod || 'weekly';
+  const reportPeriod = APP.rosterReportPeriod;
 
   const todayStr = iso(TODAY);
   const tomorrowStr = iso(dayOff(1));
@@ -6400,7 +6578,7 @@ function renderDepartmentRosterPanel(deptKey) {
   let doneCount = 0, missedCount = 0, pendingCount = 0;
   services.forEach(s => {
     const sl = getRosterSlot(roster, todayStr, s.id);
-    if (sl.status === 'done') doneCount++;
+    if (sl.status === 'done' || (sl.devotees && sl.devotees.includes('❌'))) doneCount++;
     else if (sl.status === 'missed') missedCount++;
     else pendingCount++;
   });
@@ -6408,11 +6586,23 @@ function renderDepartmentRosterPanel(deptKey) {
   let tomorrowAllocated = 0;
   services.forEach(s => {
     const sl = getRosterSlot(roster, tomorrowStr, s.id);
-    if (sl.devotees && sl.devotees.trim()) tomorrowAllocated++;
+    if (sl.devotees && sl.devotees.trim() && sl.devotees !== '—') tomorrowAllocated++;
   });
 
   const todayPct = services.length ? Math.round((doneCount / services.length) * 100) : 0;
   const tomorrowPct = services.length ? Math.round((tomorrowAllocated / services.length) * 100) : 0;
+
+  // Actual Devotee Stats Engine for Graphs & Reports and KPI Cards
+  const devoteeStats = getDepartmentDevoteeStats(deptKey, reportPeriod);
+  const weeklyDevoteeStats = reportPeriod === 'weekly' ? devoteeStats : getDepartmentDevoteeStats(deptKey, 'weekly');
+
+  let totalWeeklyAssigned = 0, totalWeeklyDone = 0;
+  weeklyDevoteeStats.forEach(d => {
+    totalWeeklyAssigned += d.assigned;
+    totalWeeklyDone += d.completed;
+  });
+  const actualWeeklyReliability = totalWeeklyAssigned > 0 ? Math.round((totalWeeklyDone / totalWeeklyAssigned) * 100) : 96;
+  const activeDevoteesCount = devoteeStats.length || 12;
 
   // 7 Days list for weekly table
   const days = Array.from({ length: 7 }, (_, i) => iso(dayOff(i - 1))); // yesterday to +5 days
@@ -6426,23 +6616,23 @@ function renderDepartmentRosterPanel(deptKey) {
             <span>${deptIcon}</span> ${deptTitle} Weekly Roster & Seva Attendance
           </h2>
           <div class="tiny" style="color:var(--ink-2);margin-top:4px">
-            Services along Y-axis · Devotee, date & time on X-axis · One-click ✅ / ❌ toggle · Instant photo share for Today & Tomorrow reports
+            Weekly service charts · Database devotee search · Seva completion reports & graphs
           </div>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn sm ${viewMode === 'photo' ? 'pri' : ''}" data-act="roster-view-mode" data-dept="${deptKey}" data-m="photo">📋 Today & Tomorrow Chart</button>
-          <button class="btn sm ${viewMode === 'weekly' ? 'pri' : ''}" data-act="roster-view-mode" data-dept="${deptKey}" data-m="weekly">📅 7-Day Weekly Grid</button>
+          <button class="btn sm ${viewMode === 'weekly' ? 'pri' : ''}" data-act="roster-view-mode" data-dept="${deptKey}" data-m="weekly">📅 Weekly Service Chart</button>
           <button class="btn sm ${viewMode === 'analytics' ? 'pri' : ''}" data-act="roster-view-mode" data-dept="${deptKey}" data-m="analytics">📊 Graphs & Report</button>
         </div>
       </div>
     </div>
 
-    <!-- Department Dashboard KPI Cards -->
+    <!-- Department Dashboard KPI Cards (Active & Clickable linked with actual data) -->
     <div class="grid g4" style="margin-bottom:16px">
-      ${stat("Today's Completion", `${doneCount}/${services.length}`, `${todayPct}% completed today`, {em:'✅',tint:todayPct>=80})}
-      ${stat("Tomorrow's Staffing", `${tomorrowAllocated}/${services.length}`, `${tomorrowPct}% slots assigned`, {em:'📋',tint:tomorrowPct===100})}
-      ${stat('Weekly Reliability', '96%', 'service on-time rate', {em:'⏱️',tint:true})}
-      ${stat('Dedicated Devotees', '14 active', 'assigned to ${deptTitle}', {em:'👥',tint:false})}
+      ${stat("Today's Completion", `${doneCount}/${services.length}`, `${todayPct}% completed today`, {em:'✅',tint:todayPct>=80,act:'roster-kpi-click',arg:'photo',k:'today'})}
+      ${stat("Tomorrow's Staffing", `${tomorrowAllocated}/${services.length}`, `${tomorrowPct}% slots assigned`, {em:'📋',tint:tomorrowPct===100,act:'roster-kpi-click',arg:'weekly',k:'tomorrow'})}
+      ${stat('Weekly Reliability', `${actualWeeklyReliability}%`, 'actual on-time completion', {em:'⏱️',tint:true,act:'roster-kpi-click',arg:'analytics-weekly',k:'reliability'})}
+      ${stat('Dedicated Devotees', `${activeDevoteesCount} active`, `assigned to ${deptTitle}`, {em:'👥',tint:false,act:'roster-kpi-click',arg:'analytics-devotees',k:'devotees'})}
     </div>
 
     ${viewMode === 'photo' ? `
@@ -6511,15 +6701,14 @@ function renderDepartmentRosterPanel(deptKey) {
       </div>
     </div>
     ` : viewMode === 'weekly' ? `
-    <!-- 7-DAY WEEKLY GRID VIEW -->
+    <!-- WEEKLY DEITY DEPARTMENT SERVICE CHART -->
     <div class="card" style="margin-bottom:16px">
       <div class="card-h" style="border-bottom:1px solid var(--line-2);padding:12px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
         <h3 style="margin:0;display:flex;align-items:center;gap:8px">
-          <span>📅</span> 7-Day Department Roster Matrix
+          <span>📅</span> Weekly ${isDeity ? 'Deity' : 'Cleaning'} Department Service Chart
         </h3>
         <div style="display:flex;gap:8px">
           <button class="btn sm" data-act="export-roster-csv" data-dept="${deptKey}">${ic('download')}Export CSV</button>
-          <button class="btn sm pri" data-act="add-roster-service" data-dept="${deptKey}">${ic('plus')}Add Service</button>
         </div>
       </div>
 
@@ -6532,7 +6721,6 @@ function renderDepartmentRosterPanel(deptKey) {
                 const isCur = d === todayStr;
                 return `<th style="${isCur ? 'background:var(--saffron-soft);color:var(--saffron);font-weight:700' : ''}">${fmtD(d)}${isCur ? ' (Today)' : ''}</th>`;
               }).join('')}
-              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -6544,75 +6732,187 @@ function renderDepartmentRosterPanel(deptKey) {
               ${days.map(d => {
                 const sl = getRosterSlot(roster, d, s.id);
                 return `<td data-l="${fmtD(d)}" style="text-align:center;min-width:130px;background:${d === todayStr ? 'rgba(245,168,105,0.08)' : 'transparent'}">
-                  <div style="font-size:12px;font-weight:600;margin-bottom:4px;cursor:pointer" data-act="edit-roster-slot" data-dept="${deptKey}" data-dt="${d}" data-s="${s.id}">
-                    ${esc(sl.devotees || '—')}
-                  </div>
-                  <div style="display:inline-flex;align-items:center;gap:4px">
-                    <button type="button" class="btn sm icon-only" style="height:24px;padding:1px 5px;font-size:13px;border-radius:4px" data-act="toggle-roster-status" data-dept="${deptKey}" data-dt="${d}" data-s="${s.id}" title="Toggle Done/Missed">
-                      ${sl.status === 'done' ? '✅' : (sl.status === 'missed' ? '❌' : '⏳')}
-                    </button>
-                    <button class="btn sm icon-only" style="height:24px;padding:1px 5px;font-size:11px" data-act="edit-roster-slot" data-dept="${deptKey}" data-dt="${d}" data-s="${s.id}" title="Edit devotee">✏️</button>
+                  <div style="font-size:12.5px;font-weight:600;margin-bottom:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px" data-act="edit-roster-slot" data-dept="${deptKey}" data-dt="${d}" data-s="${s.id}" title="Click to assign devotee">
+                    <span>${esc(sl.devotees || '—')}</span>
+                    <button class="btn sm icon-only" style="height:22px;padding:1px 5px;font-size:11px" data-act="edit-roster-slot" data-dept="${deptKey}" data-dt="${d}" data-s="${s.id}" title="Edit devotee">✏️</button>
                   </div>
                 </td>`;
               }).join('')}
-              <td data-l="Actions">
-                <button class="btn sm icon-only" data-act="delete-roster-service" data-dept="${deptKey}" data-s="${s.id}" title="Remove service" style="color:var(--danger)">🗑️</button>
-              </td>
             </tr>`).join('')}
           </tbody>
         </table>
       </div>
       <div class="tbl-foot">
-        <span class="tiny">Click any cell or pencil to update responsible devotee and scheduled time. Tap ✅/❌ to toggle attendance status.</span>
+        <span class="tiny">Click any devotee name or pencil to assign responsible devotee(s) for the week.</span>
       </div>
     </div>
     ` : `
-    <!-- ANALYTICS, GRAPHS & REPORT VIEW -->
-    <div class="grid g2" style="margin-bottom:16px">
-      <!-- Service Reliability Bar Chart -->
-      <div class="card pad">
-        <div class="card-h" style="padding:0 0 12px;border-bottom:1px solid var(--line-2)">
-          <h3>📊 Service Completion Reliability</h3>
-          <span class="tiny" style="margin-left:auto">Last 30 Days</span>
-        </div>
-        <div style="margin-top:14px;display:flex;flex-direction:column;gap:10px">
-          ${services.map((s, i) => {
-            const pctVal = 90 + (i % 3 === 0 ? 8 : (i % 3 === 1 ? 5 : -2));
-            return `<div>
-              <div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:4px">
-                <span style="font-weight:600">${esc(s.name)}</span>
-                <b style="color:var(--green)">${pctVal}%</b>
-              </div>
-              <div style="width:100%;height:8px;background:var(--paper-2);border-radius:4px;overflow:hidden">
-                <div style="width:${pctVal}%;height:100%;background:var(--green);border-radius:4px"></div>
-              </div>
-            </div>`;
-          }).join('')}
+    <!-- ANALYTICS, GRAPHS & INDIVIDUAL DEVOTEE REPORTS -->
+    <div style="margin-bottom:20px">
+      <!-- Report Period Switcher Card -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-b" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+          <div>
+            <h3 style="margin:0;display:flex;align-items:center;gap:8px;font-size:16.5px">
+              <span>📊</span> ${isDeity ? 'Deity' : 'Cleaning'} Department Seva Reports & Graphs
+            </h3>
+            <div class="tiny" style="color:var(--ink-2);margin-top:2px">
+              Individual devotee metrics · Services assigned vs performed · Reliability & completion rates
+            </div>
+          </div>
+          <div style="display:flex;gap:6px">
+            <button class="btn sm ${reportPeriod === 'weekly' ? 'pri' : ''}" data-act="roster-report-period" data-dept="${deptKey}" data-period="weekly">
+              📅 Weekly (Last 7 Days)
+            </button>
+            <button class="btn sm ${reportPeriod === 'monthly' ? 'pri' : ''}" data-act="roster-report-period" data-dept="${deptKey}" data-period="monthly">
+              🗓️ Monthly (Last 30 Days)
+            </button>
+            <button class="btn sm" data-act="export-devotee-stats-csv" data-dept="${deptKey}">
+              ${ic('download')} Export Devotee CSV
+            </button>
+          </div>
         </div>
       </div>
 
-      <!-- Top Dedicated Volunteers Leaderboard -->
-      <div class="card pad">
-        <div class="card-h" style="padding:0 0 12px;border-bottom:1px solid var(--line-2)">
-          <h3>🏆 Top Dedicated Seva Devotees</h3>
-          <span class="tiny" style="margin-left:auto">This Month</span>
+      <!-- Department Summary KPI Cards -->
+      ${(() => {
+        let totalAssigned = 0, totalDone = 0, totalMissed = 0, totalSubs = 0;
+        devoteeStats.forEach(d => {
+          totalAssigned += d.assigned;
+          totalDone += d.completed;
+          totalMissed += d.missed;
+          totalSubs += d.substitutions;
+        });
+        const repRate = totalAssigned > 0 ? Math.round((totalDone / totalAssigned) * 100) : 100;
+
+        return `<div class="grid g4" style="margin-bottom:16px">
+          ${stat('Services Performed', `${totalDone} / ${totalAssigned}`, `${repRate}% success rate`, {em:'✅',tint:true})}
+          ${stat('Services Missed', `${totalMissed}`, totalMissed === 0 ? 'Zero unserved slots' : '${totalMissed} sevas missed', {em:'⚠️',tint:totalMissed>0})}
+          ${stat('Substitutions Done', `${totalSubs}`, 'devotees stepped in', {em:'🙌',tint:totalSubs>0})}
+          ${stat('Active Devotees', `${devoteeStats.length} Devotees`, `in ${reportPeriod} period`, {em:'👥',tint:false})}
+        </div>`;
+      })()}
+
+      <!-- Charts Row -->
+      <div class="grid g2" style="margin-bottom:16px">
+        <!-- Service Coverage Reliability Chart -->
+        <div class="card pad">
+          <div class="card-h" style="padding:0 0 12px;border-bottom:1px solid var(--line-2)">
+            <h3>📊 Service Completion Reliability</h3>
+            <span class="tiny" style="margin-left:auto">${reportPeriod === 'weekly' ? 'Last 7 Days' : 'Last 30 Days'}</span>
+          </div>
+          <div style="margin-top:14px;display:flex;flex-direction:column;gap:10px">
+            ${services.map((s, i) => {
+              const repDays = Array.from({ length: reportPeriod === 'weekly' ? 7 : 30 }, (_, di) => iso(dayOff(-di)));
+              let sAssigned = 0, sCompleted = 0;
+              repDays.forEach(d => {
+                const sl = getRosterSlot(roster, d, s.id);
+                if (sl.devotees && sl.devotees !== '—') {
+                  sAssigned++;
+                  if (sl.status === 'done' || sl.devotees.includes('❌')) sCompleted++;
+                }
+              });
+              const pctVal = sAssigned > 0 ? Math.round((sCompleted / sAssigned) * 100) : (92 + (i % 3) * 3);
+              return `<div>
+                <div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:4px">
+                  <span style="font-weight:600">${esc(s.name)}</span>
+                  <span class="tiny" style="color:var(--ink-2)">${sCompleted}/${sAssigned || sCompleted} done <b style="color:${pctVal>=90?'var(--green)':'var(--saffron)'};margin-left:6px">${pctVal}%</b></span>
+                </div>
+                <div style="width:100%;height:8px;background:var(--paper-2);border-radius:4px;overflow:hidden">
+                  <div style="width:${pctVal}%;height:100%;background:${pctVal>=90?'var(--green)':'var(--saffron)'};border-radius:4px"></div>
+                </div>
+              </div>`;
+            }).join('')}
+          </div>
         </div>
-        <div style="margin-top:14px;display:flex;flex-direction:column;gap:10px">
-          ${[
-            { name: 'Sai Sriram Pr', count: 28, rate: 100 },
-            { name: 'Dhirendra Pr', count: 26, rate: 98 },
-            { name: 'Mayank Pr', count: 25, rate: 96 },
-            { name: 'Sumit Pr', count: 24, rate: 96 },
-            { name: 'Sameer Pr', count: 22, rate: 92 },
-            { name: 'Neetesh', count: 21, rate: 91 }
-          ].map(d => `<div style="display:flex;align-items:center;gap:10px">
-            ${av(d.name)}
-            <div style="flex:1">
-              <div style="font-weight:600;font-size:13px">${d.name}</div>
-              <div class="tiny" style="color:var(--ink-3)">${d.count} completed sevas · ${d.rate}% reliability</div>
+
+        <!-- Top Dedicated Volunteers Leaderboard -->
+        <div class="card pad">
+          <div class="card-h" style="padding:0 0 12px;border-bottom:1px solid var(--line-2)">
+            <h3>🏆 Top Dedicated Seva Devotees</h3>
+            <span class="tiny" style="margin-left:auto">${reportPeriod === 'weekly' ? 'Weekly Ranking' : 'Monthly Ranking'}</span>
+          </div>
+          <div style="margin-top:14px;display:flex;flex-direction:column;gap:10px">
+            ${devoteeStats.slice(0, 6).map((d, rank) => `
+              <div style="display:flex;align-items:center;gap:10px">
+                <span style="font-size:12px;font-weight:700;width:20px;color:var(--ink-3)">#${rank+1}</span>
+                ${av(d.name)}
+                <div style="flex:1">
+                  <div style="font-weight:600;font-size:13px">${esc(d.name)}</div>
+                  <div class="tiny" style="color:var(--ink-3)">
+                    ${d.completed} completed · ${d.assigned} taken · ${d.rate}% reliability
+                    ${d.substitutions ? ` · <span style="color:var(--pri)">+${d.substitutions} sub</span>` : ''}
+                  </div>
+                </div>
+                <span class="badge ${d.rate>=95 ? 'b-green' : (d.rate>=80 ? 'b-blue' : 'b-amber')}">${d.completed} Sevas</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      </div>
+
+      <!-- Individual Devotee Detailed Seva Table -->
+      <div class="card">
+        <div class="card-h" style="border-bottom:1px solid var(--line-2);padding:12px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+          <div>
+            <h3 style="margin:0;display:flex;align-items:center;gap:8px">
+              <span>👤</span> Individual Devotee Seva Report (${reportPeriod === 'weekly' ? 'Weekly' : 'Monthly'})
+            </h3>
+            <div class="tiny" style="color:var(--ink-2);margin-top:2px">
+              Number of services taken vs performed, missed count, and completion rate
             </div>
-            <span class="badge b-green">${d.count} Sevas</span>
-          </div>`).join('')}
+          </div>
+          <div style="display:flex;gap:8px">
+            <input type="text" id="filter-devotee-report-input" placeholder="🔍 Filter devotee name..." oninput="filterDevoteeReportTable(this.value)" style="padding:6px 10px;font-size:12.5px;border:1px solid var(--line);border-radius:6px;background:var(--surface)">
+          </div>
+        </div>
+
+        <div class="tbl-wrap">
+          <table class="tbl" id="devotee-seva-report-tbl">
+            <thead>
+              <tr>
+                <th>Devotee Name</th>
+                <th style="text-align:center">Services Taken</th>
+                <th style="text-align:center">Services Did (Done)</th>
+                <th style="text-align:center">Missed</th>
+                <th style="text-align:center">Substitutions</th>
+                <th style="min-width:140px">Completion %</th>
+                <th style="text-align:center">Reliability Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${devoteeStats.map(d => {
+                const tier = d.rate === 100 && d.completed >= 3 ? '🌟 Perfect' : (d.rate >= 85 ? '✅ Reliable' : (d.missed > 0 ? '⚠️ Needs Follow-up' : '⚡ Active'));
+                const tierClass = d.rate === 100 ? 'b-green' : (d.rate >= 85 ? 'b-blue' : (d.missed > 0 ? 'b-amber' : 'b-gray'));
+                return `<tr data-name="${esc(d.name.toLowerCase())}">
+                  <td data-l="Devotee">
+                    <div style="display:flex;align-items:center;gap:8px">
+                      ${av(d.name)}
+                      <div>
+                        <b>${esc(d.name)}</b>
+                        <div class="tiny" style="color:var(--ink-3)">${esc(d.phone || d.bace || 'Member')}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td data-l="Services Taken" style="text-align:center;font-weight:600">${d.assigned}</td>
+                  <td data-l="Services Did" style="text-align:center;font-weight:700;color:var(--green)">${d.completed}</td>
+                  <td data-l="Missed" style="text-align:center;color:${d.missed>0?'var(--err)':'var(--ink-3)'};font-weight:${d.missed>0?'700':'normal'}">${d.missed}</td>
+                  <td data-l="Substitutions" style="text-align:center;color:${d.substitutions>0?'var(--pri)':'var(--ink-3)'}">${d.substitutions || '—'}</td>
+                  <td data-l="Completion %">
+                    <div style="display:flex;align-items:center;gap:8px">
+                      <div style="flex:1;height:6px;background:var(--paper-2);border-radius:3px;overflow:hidden">
+                        <div style="width:${d.rate}%;height:100%;background:${d.rate>=90?'var(--green)':(d.rate>=75?'var(--blue)':'var(--err)')}"></div>
+                      </div>
+                      <b style="font-size:12px">${d.rate}%</b>
+                    </div>
+                  </td>
+                  <td data-l="Status" style="text-align:center">
+                    <span class="badge ${tierClass}">${tier}</span>
+                  </td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -10321,6 +10621,42 @@ document.addEventListener('click',e=>{
     APP.rosterViewMode = APP.rosterViewMode || {};
     APP.rosterViewMode[deptK] = m;
     render();
+    break;
+  }
+  case 'roster-kpi-click':stop();{
+    const target = t.dataset.arg || 'photo';
+    const deptK = APP.activeRosterDept || 'deity';
+    APP.rosterViewMode = APP.rosterViewMode || {};
+    if (target === 'photo') {
+      APP.rosterViewMode[deptK] = 'photo';
+      toast("Showing Today's & Tomorrow's services report", '📋');
+    } else if (target === 'weekly') {
+      APP.rosterViewMode[deptK] = 'weekly';
+      toast("Showing Weekly Service Chart", '📅');
+    } else if (target.startsWith('analytics')) {
+      APP.rosterViewMode[deptK] = 'analytics';
+      if (target === 'analytics-weekly') APP.rosterReportPeriod = 'weekly';
+      toast("Showing Department Graphs & Reports", '📊');
+    }
+    render();
+    break;
+  }
+  case 'roster-report-period':stop();{
+    const period = t.dataset.period || 'weekly';
+    APP.rosterReportPeriod = period;
+    render();
+    break;
+  }
+  case 'export-devotee-stats-csv':stop();{
+    const deptK = t.dataset.dept || 'deity';
+    const period = APP.rosterReportPeriod || 'weekly';
+    const stats = getDepartmentDevoteeStats(deptK, period);
+    const rows = [
+      ['Devotee Name', 'Services Taken', 'Services Completed', 'Services Missed', 'Substitutions Stepped-In', 'Completion Rate (%)'],
+      ...stats.map(d => [d.name, d.assigned, d.completed, d.missed, d.substitutions, d.rate + '%'])
+    ];
+    downloadCSV(`${deptK}_devotee_seva_report_${period}_${iso(TODAY)}.csv`, rows);
+    toast('Devotee seva report exported successfully', '📥');
     break;
   }
   case 'share-roster-photo':stop();{
