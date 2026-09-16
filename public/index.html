@@ -6491,8 +6491,7 @@ function viewAttendance(){
   const tabs = ['Morning programme', 'Deity Department', 'Cleaning', 'Department Matrix'];
   if (!tabs.includes(tab)) tab = 'Morning programme';
 
-  return head('✅ Attendance & Department Seva', 'Operational Attendance Hub', 'Morning sadhana punctuality, Deity & Cleaning weekly rosters with instant photo share',
-    `<button class="btn pri" data-act="share-roster-photo" data-dept="deity">📸 Share Deity Roster</button>`)+
+  return head('✅ Attendance & Department Seva', 'Operational Attendance Hub', 'Morning sadhana punctuality, Deity & Cleaning weekly rosters with instant photo share')+
    `<div class="tabs">${tabs.map(t => `<button class="${t===tab?'on':''}" data-act="tab" data-k="att" data-v="${t}">${t}</button>`).join('')}</div>`+
    (tab === 'Morning programme' ? morningProgramPanel()
    : tab === 'Deity Department' ? deityDepartmentPanel()
