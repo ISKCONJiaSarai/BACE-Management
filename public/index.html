@@ -2942,8 +2942,8 @@ function dataTable({id,cols,rows,onRow,per=10,toolbar='',empty,exportName}){
 }
 /* real CSV export */
 function downloadCSV(filename,rows){
-  const csv=rows.map(r=>r.map(c=>{const s=String(c??'');return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s}).join(',')).join('\n');
-  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+  const csv=rows.map(r=>r.map(c=>{const s=String(c??'');if(s.startsWith('="')&&s.endsWith('"'))return s;return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s}).join(',')).join('\n');
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;
   document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},400);
 }
@@ -11448,10 +11448,10 @@ document.addEventListener('click',e=>{
       ...list.map(d => [
         d.name,
         d.morning.pct + '%',
-        `${d.morning.present}/${d.morning.total}`,
-        `${d.deity.completed}/${d.deity.assigned || d.deity.completed}`,
+        `="${d.morning.present}/${d.morning.total}"`,
+        `="${d.deity.completed}/${d.deity.assigned || d.deity.completed}"`,
         d.deity.rate + '%',
-        `${d.cleaning.completed}/${d.cleaning.assigned || d.cleaning.completed}`,
+        `="${d.cleaning.completed}/${d.cleaning.assigned || d.cleaning.completed}"`,
         d.cleaning.rate + '%',
         d.overallScore + '%'
       ])
