@@ -6064,6 +6064,84 @@ function generateRosterCanvas(deptKey) {
   return canvas;
 }
 
+async function shareRosterPhotoDirectly(deptKey) {
+  initDepartmentRosters();
+  const isDeity = deptKey === 'deity';
+  const roster = isDeity ? APP.deityRoster : APP.cleaningRoster;
+  const deptTitle = isDeity ? 'Deity Department' : 'Cleaning Department';
+
+  const canvas = generateRosterCanvas(deptKey);
+  const dataUrl = canvas.toDataURL('image/png');
+
+  APP.modalData = {
+    deptKey,
+    dataUrl,
+    canvas
+  };
+
+  // Build WhatsApp report text
+  let msg = `*Hare Krishna! 🙏*\n*ISKCON Jia Sarai — ${deptTitle} Services*\n📅 Date: ${fmtD(iso(TODAY))}\n\n*TODAY'S SERVICES REPORT:*\n`;
+  roster.services.forEach(s => {
+    const sl = getRosterSlot(roster, iso(TODAY), s.id);
+    const st = sl.status === 'done' ? '✅' : (sl.status === 'missed' ? '❌' : '⏳');
+    msg += `• *${s.name}*: ${sl.devotees || 'Unassigned'} ${st}\n`;
+  });
+  msg += `\n*TOMORROW'S SERVICES SCHEDULE:*\n`;
+  roster.services.forEach(s => {
+    const sl = getRosterSlot(roster, iso(dayOff(1)), s.id);
+    msg += `• *${s.name}*: ${sl.devotees || 'Unassigned'}\n`;
+  });
+  msg += `\n_Please find attached services report photo._\n_Your servant,_\n_BACE Management_`;
+
+  // First open the modal so user sees the preview immediately
+  openShareRosterModal(deptKey);
+
+  canvas.toBlob(async blob => {
+    if (!blob) return;
+
+    // Check if Web Share API can share the picture directly (Android, iOS, Windows 10/11)
+    const file = new File([blob], `${deptKey}_services_${iso(TODAY)}.png`, { type: 'image/png' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({
+          files: [file],
+          title: `${deptTitle} Services Report`,
+          text: msg
+        });
+        toast('Services picture shared to WhatsApp!', '📸');
+        return;
+      } catch (err) {
+        if (err.name === 'AbortError') return;
+      }
+    }
+
+    // Fallback: copy image directly to clipboard for instant paste into WhatsApp, download PNG, and launch WhatsApp
+    let copied = false;
+    try {
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+      copied = true;
+    } catch(e) {}
+
+    // Download picture PNG
+    const link = document.createElement('a');
+    link.download = `${deptKey}_services_report_${iso(TODAY)}.png`;
+    link.href = dataUrl;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    // Launch WhatsApp application or web
+    const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
+    window.open(waUrl, '_blank');
+
+    if (copied) {
+      toast('Picture copied to clipboard! In WhatsApp, press Ctrl+V to paste & send.', '📸');
+    } else {
+      toast('Picture downloaded & WhatsApp opened! Send the picture file in chat.', '💬');
+    }
+  }, 'image/png');
+}
+
 function openShareRosterModal(deptKey) {
   const canvas = generateRosterCanvas(deptKey);
   const dataUrl = canvas.toDataURL('image/png');
@@ -6111,34 +6189,34 @@ function openEditRosterSlotModal(deptKey, dateStr, sId) {
   initDepartmentRosters();
   const isDeity = deptKey === 'deity';
   const roster = isDeity ? APP.deityRoster : APP.cleaningRoster;
-  const service = roster.services.find(s => s.id === sId) || { name: 'Seva' };
+  const service = roster.services.find(s => s.id === sId) || { name: 'Seva', time: '04:30 AM' };
   const slot = getRosterSlot(roster, dateStr, sId);
+
+  const isToday = dateStr === iso(TODAY);
+  const isTomorrow = dateStr === iso(dayOff(1)) || dateStr > iso(TODAY);
+  const dayTitle = isToday ? "Today's Report" : (isTomorrow ? "Tomorrow's Schedule" : fmtD(dateStr));
 
   APP.editingSlot = {
     deptKey,
     dateStr,
     sId,
     devotees: slot.devotees || '',
-    time: slot.time || service.time || '04:30 AM',
-    status: slot.status || 'pending'
+    time: service.time || '04:30 AM',
+    status: slot.status || (isTomorrow ? 'pending' : 'done')
   };
 
-  const isToday = dateStr === iso(TODAY);
-  const isTomorrow = dateStr === iso(dayOff(1));
-  const dayTitle = isToday ? "Today's Schedule" : (isTomorrow ? "Tomorrow's Schedule" : fmtD(dateStr));
-
   const modalHtml = `
-    <div class="modal" data-stop="1" style="max-width:500px;width:95%">
+    <div class="modal" data-stop="1" style="max-width:480px;width:95%">
       <div class="modal-h" style="display:flex;align-items:center;justify-content:space-between">
         <h3 style="margin:0;display:flex;align-items:center;gap:8px">
-          <span>✏️</span> Edit Seva Slot: ${esc(service.name)}
+          <span>✏️</span> Edit Seva: ${esc(service.name)}
         </h3>
         <button class="icon-btn" style="margin-left:auto" data-act="close-scrim">${ic('x')}</button>
       </div>
       <div class="modal-b" style="padding:16px;display:flex;flex-direction:column;gap:14px">
         <div class="tiny" style="color:var(--ink-2);background:var(--surface-2);padding:10px 12px;border-radius:8px;display:flex;justify-content:space-between;align-items:center">
           <span>Date: <b>${dayTitle} (${fmtD(dateStr)})</b></span>
-          <span>Service: <b>${esc(service.name)}</b></span>
+          <span>Time: <b>${esc(service.time)}</b></span>
         </div>
         <div>
           <label style="display:block;font-size:12.5px;font-weight:600;margin-bottom:5px;color:var(--ink)">Responsible Devotee(s)</label>
@@ -6147,20 +6225,14 @@ function openEditRosterSlotModal(deptKey, dateStr, sId) {
             Type devotee name(s) (e.g. <b>Sai Sriram Pr & Neetesh</b> or <b>Dhirendra Pr</b>)
           </div>
         </div>
-        <div class="grid g2" style="gap:10px">
-          <div>
-            <label style="display:block;font-size:12.5px;font-weight:600;margin-bottom:5px;color:var(--ink)">Service Time</label>
-            <input type="text" id="edit-slot-time" value="${esc(APP.editingSlot.time)}" placeholder="e.g. 04:30 AM" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:var(--surface)">
-          </div>
-          <div>
-            <label style="display:block;font-size:12.5px;font-weight:600;margin-bottom:5px;color:var(--ink)">Status</label>
-            <select id="edit-slot-status" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:var(--surface)">
-              <option value="done" ${APP.editingSlot.status === 'done' ? 'selected' : ''}>✅ Done / Completed</option>
-              <option value="missed" ${APP.editingSlot.status === 'missed' ? 'selected' : ''}>❌ Not Done / Missed</option>
-              <option value="pending" ${APP.editingSlot.status === 'pending' ? 'selected' : ''}>⏳ Scheduled / Pending</option>
-            </select>
-          </div>
-        </div>
+        ${!isTomorrow ? `
+        <div>
+          <label style="display:block;font-size:12.5px;font-weight:600;margin-bottom:5px;color:var(--ink)">Service Completion Status</label>
+          <select id="edit-slot-status" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:var(--surface)">
+            <option value="done" ${APP.editingSlot.status !== 'missed' ? 'selected' : ''}>✅ Done / Completed</option>
+            <option value="missed" ${APP.editingSlot.status === 'missed' ? 'selected' : ''}>❌ Not Done / Missed</option>
+          </select>
+        </div>` : ''}
       </div>
       <div class="modal-f" style="display:flex;justify-content:flex-end;gap:8px;padding:12px 16px;border-top:1px solid var(--line-2)">
         <button class="btn" data-act="close-scrim">Cancel</button>
@@ -6287,7 +6359,6 @@ function renderDepartmentRosterPanel(deptKey) {
         </div>
         <div style="display:flex;gap:8px">
           <button class="btn pri sm" data-act="share-roster-photo" data-dept="${deptKey}">📸 Generate & Share Photo</button>
-          <button class="btn sm" data-act="export-roster-csv" data-dept="${deptKey}">${ic('download')}Export CSV</button>
         </div>
       </div>
 
@@ -10159,7 +10230,7 @@ document.addEventListener('click',e=>{
   }
   case 'share-roster-photo':stop();{
     const deptK = t.dataset.dept || 'deity';
-    openShareRosterModal(deptK);
+    shareRosterPhotoDirectly(deptK);
     break;
   }
   case 'toggle-roster-status':stop();{
