@@ -43,10 +43,10 @@
   --f-ui:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
 }
 *{box-sizing:border-box}
-html,body{margin:0;padding:0;overflow-x:hidden;max-width:100vw;width:100%}
+html,body{margin:0;padding:0;overflow-x:hidden;max-width:100%;width:100%;-webkit-text-size-adjust:100%}
 body{background:var(--paper);color:var(--ink);font-family:var(--f-ui);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;overflow-x:hidden;max-width:100%}
-.shell,.view{max-width:100%;width:100%}
-.main{max-width:100%;min-width:0}
+.shell,.view{max-width:100%;width:100%;overflow-x:hidden}
+.main{max-width:100%;min-width:0;overflow-x:hidden}
 h1,h2,h3,h4{font-family:var(--f-head);font-weight:600;letter-spacing:-.01em;margin:0}
 h1{font-size:26px;line-height:1.2}
 h2{font-size:19px}
@@ -579,6 +579,10 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
 .org-node .rl{font-size:11.5px;color:var(--ink-3)}
 .org-row{display:flex;gap:14px;justify-content:center}
 .org-line{width:1.5px;height:20px;background:var(--line)}
+.funnel-wrap{width:100%}
+.funnel-row{display:flex;align-items:center;gap:11px;width:100%}
+.funnel-lbl{width:130px;font-size:12.5px;color:var(--ink-2);flex:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.funnel-conv{width:48px;font-size:12px;flex:none}
 
 /* chat */
 .chat{display:grid;grid-template-columns:290px 1fr;height:min(640px,72vh);border:1px solid var(--line);border-radius:var(--r-l);overflow:hidden;background:var(--surface)}
@@ -1108,8 +1112,8 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
 
 /* Mobile Dropdown & Anti-Overlap Rules */
 @media(max-width:1080px){
-  /* Dropdowns: noticeably smaller font and compact boxes than remaining page text */
-  select, .toolbar select, .field select, .cal-cat-select, .att-select{
+  /* Filter & Toolbar Dropdowns: noticeably smaller font and compact boxes than remaining page text */
+  .toolbar select, .cal-cat-select, .att-select, .mob-filter-item select{
     font-size:12px!important;
     font-weight:500!important;
     padding:5px 24px 5px 9px!important;
@@ -1271,12 +1275,177 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
   }
 }
 
-@media(max-width:620px){
-  input[type="text"],input[type="search"],input[type="date"],input[type="email"],input[type="password"],textarea{
+/* =========================================================================
+   COMPREHENSIVE RESPONSIVE STYLES FOR ALL MOBILE PHONES (320px – 768px)
+   ========================================================================= */
+@media(max-width:768px){
+  /* 1. iOS Safari Auto-Zoom Prevention: 16px minimum font on all form inputs and selects */
+  .field select, .modal select, .drawer select{
+    font-size:16px!important;
+    font-weight:400!important;
+    min-height:42px!important;
+    height:auto!important;
+    max-height:none!important;
+    padding:9px 12px!important;
+    border-radius:10px!important;
+    line-height:1.4!important;
+  }
+  .field input, .field textarea, .modal input, .modal textarea, .drawer input, .drawer textarea,
+  input[type="text"], input[type="search"], input[type="date"], input[type="time"], input[type="email"], input[type="password"], textarea{
     font-size:16px!important;
   }
-  .modal{border-radius:22px 22px 0 0;max-height:92vh;width:100%}
-  .scrim{padding:0;place-items:end center}
+
+  /* 2. Organization tree vertical stacking on mobile */
+  .org{width:100%!important;padding:6px 0!important}
+  .org-row{flex-direction:column!important;align-items:center!important;gap:10px!important;width:100%!important}
+  .org-node{width:min(280px,100%)!important;min-width:0!important;box-sizing:border-box!important}
+  .org-line{height:16px!important}
+
+  /* 3. Kanban carousel swipe snap on mobile */
+  .kanban{
+    scroll-snap-type:x mandatory!important;
+    -webkit-overflow-scrolling:touch!important;
+    padding-bottom:14px!important;
+    gap:10px!important;
+  }
+  .kcol{
+    width:min(290px,82vw)!important;
+    min-width:min(290px,82vw)!important;
+    scroll-snap-align:center!important;
+  }
+
+  /* 4. Table cells word wrapping on mobile cards */
+  table.tbl td{
+    word-break:break-word!important;
+    overflow-wrap:anywhere!important;
+  }
+
+  /* 5. FAB menu max-height viewport protection */
+  .fab-menu{
+    max-height:calc(100dvh - 160px)!important;
+    overflow-y:auto!important;
+    -webkit-overflow-scrolling:touch!important;
+  }
+}
+
+@media(max-width:620px){
+  /* Bottom sheet modal styling using dvh and safe-area */
+  .modal{
+    border-radius:20px 20px 0 0!important;
+    max-height:calc(92dvh - env(safe-area-inset-bottom, 0px))!important;
+    width:100%!important;
+    margin:0!important;
+  }
+  .scrim{
+    padding:0!important;
+    place-items:end center!important;
+  }
+  .modal-h{
+    padding:14px 16px!important;
+  }
+  .modal-b{
+    padding:14px 16px!important;
+    -webkit-overflow-scrolling:touch!important;
+    overscroll-behavior:contain!important;
+  }
+  .modal-f{
+    padding:12px 16px calc(14px + env(safe-area-inset-bottom, 0px))!important;
+    flex-direction:row!important;
+    justify-content:stretch!important;
+    gap:8px!important;
+  }
+  .modal-f .btn{
+    flex:1!important;
+    min-width:0!important;
+    justify-content:center!important;
+    padding:10px 12px!important;
+    font-size:14px!important;
+    min-height:42px!important;
+  }
+  .drawer{
+    width:100%!important;
+    max-width:100%!important;
+  }
+
+  /* Hero banner on compact screens */
+  .hero{
+    padding:16px 14px!important;
+    border-radius:var(--r-l)!important;
+  }
+  .hero h1{font-size:20px!important}
+  .hero p{font-size:13px!important}
+  .hero .hstats{
+    display:grid!important;
+    grid-template-columns:repeat(2, minmax(0, 1fr))!important;
+    gap:8px!important;
+    width:100%!important;
+    margin-top:14px!important;
+  }
+  .hero .hstat{
+    min-width:0!important;
+    width:100%!important;
+    padding:8px 10px!important;
+    box-sizing:border-box!important;
+  }
+  .hero .hstat b{font-size:20px!important}
+  .hero .hstat span{font-size:11px!important}
+  .hero .hstats > .hstat:last-child:nth-child(odd){
+    grid-column:1 / -1!important;
+  }
+}
+
+@media(max-width:540px){
+  /* Funnel chart fluid scaling */
+  .funnel-row{gap:8px!important}
+  .funnel-lbl{width:90px!important;font-size:11.5px!important}
+  .funnel-conv{width:38px!important;font-size:11px!important}
+}
+
+@media(max-width:480px){
+  /* Topbar compact touch targets */
+  .topbar{padding:6px 10px!important;gap:6px!important}
+  .topbar .icon-btn{width:33px!important;height:33px!important;border-radius:8px!important}
+  .topbar .icon-btn svg{width:15px!important;height:15px!important}
+  .topbar .topbar-title-mobile span{font-size:14px!important}
+
+  /* Login card on phones */
+  .login-panel{padding:20px 12px!important}
+  .login-card{padding:24px 16px 20px!important;border-radius:18px!important}
+  .login-card h2{font-size:21px!important}
+  .login-card-icon{width:44px!important;height:44px!important;margin-bottom:12px!important}
+}
+
+@media(max-width:380px){
+  /* Ultra-compact phones (iPhone SE 1st gen, small Androids 320px-360px) */
+  .view{padding:14px 10px calc(88px + env(safe-area-inset-bottom))!important}
+  .card.pad{padding:14px 10px!important}
+  .stat{padding:10px 10px!important}
+  .stat .val{font-size:20px!important}
+  .stat .lbl{font-size:11px!important}
+  .stat .foot{font-size:10px!important}
+  
+  .topbar{padding:6px 8px!important;gap:4px!important}
+  .topbar .icon-btn{width:30px!important;height:30px!important}
+  .topbar .topbar-title-mobile span{font-size:13px!important}
+
+  table.tbl td{padding:3px 6px!important;gap:6px!important;font-size:12px!important}
+  table.tbl td:before{min-width:74px!important;font-size:10.5px!important}
+
+  .funnel-row{gap:5px!important}
+  .funnel-lbl{width:76px!important;font-size:10.5px!important}
+  .funnel-conv{width:32px!important;font-size:10px!important}
+
+  .fab{
+    right:12px!important;
+    bottom:calc(72px + env(safe-area-inset-bottom))!important;
+    width:46px!important;
+    height:46px!important;
+  }
+  .fab-menu{
+    right:12px!important;
+    bottom:calc(126px + env(safe-area-inset-bottom))!important;
+    width:min(240px, calc(100vw - 24px))!important;
+  }
 }
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:26px;z-index:80;background:var(--ink);color:#FBF3E6;padding:11px 18px;border-radius:12px;box-shadow:var(--sh-3);font-size:13.5px;display:flex;gap:9px;align-items:center;animation:pop .2s ease-out;max-width:90vw}
 .demo-flag{font-size:11px;color:var(--ink-3);border:1px dashed var(--line);border-radius:20px;padding:3px 9px}
@@ -2722,15 +2891,15 @@ function donut(value,label,color='var(--accent)',tip){
 }
 function funnel(rows){
   const max = Math.max(...rows.map(r => Number(r.v) || 0), 1);
-  return `<div class="chart" style="display:flex;flex-direction:column;gap:6px">${rows.map((r,i)=>{
+  return `<div class="chart funnel-wrap" style="display:flex;flex-direction:column;gap:6px">${rows.map((r,i)=>{
     const val = Number(r.v) || 0;
     const wpc = Math.min(100, Math.max(14, Math.round((val / max) * 100)));
     const prev = i > 0 ? (Number(rows[i-1].v) || 0) : val;
     const conv = (i > 0 && prev > 0) ? pct(val, prev) : (val > 0 ? 100 : 0);
-    return `<div style="display:flex;align-items:center;gap:11px;${r.r?'cursor:pointer':''}" ${tipAttr(r.tip||`${r.l}: ${val}${i?` · ${conv}% from ${rows[i-1].l}`:''}`)} ${r.r?`data-act="drill" data-r="${r.r}"`:''}>
-      <div style="width:130px;font-size:12.5px;color:var(--ink-2);flex:none">${esc(r.l)}</div>
-      <div style="flex:1"><div style="height:29px;width:${wpc}%;background:${r.color||'var(--indigo)'};opacity:${1-i*.06};border-radius:7px;display:flex;align-items:center;padding-left:10px;color:#fff;font-size:12.5px;font-weight:600">${val}</div></div>
-      <div style="width:48px;text-align:right;font-size:12px;color:${i&&conv<45?'var(--danger)':'var(--ink-3)'}">${i?conv+'%':''}</div></div>`}).join('')}</div>`;
+    return `<div class="funnel-row" style="${r.r?'cursor:pointer':''}" ${tipAttr(r.tip||`${r.l}: ${val}${i?` · ${conv}% from ${rows[i-1].l}`:''}`)} ${r.r?`data-act="drill" data-r="${r.r}"`:''}>
+      <div class="funnel-lbl">${esc(r.l)}</div>
+      <div class="funnel-bar-box" style="flex:1;min-width:0"><div class="funnel-bar" style="height:29px;width:${wpc}%;background:${r.color||'var(--indigo)'};opacity:${1-i*.06};border-radius:7px;display:flex;align-items:center;padding-left:10px;color:#fff;font-size:12.5px;font-weight:600">${val}</div></div>
+      <div class="funnel-conv" style="text-align:right;color:${i&&conv<45?'var(--danger)':'var(--ink-3)'}">${i?conv+'%':''}</div></div>`}).join('')}</div>`;
 }
 function budgetBlock(b,label='Budget'){
   const util=pct(b.spent,b.allocated);
