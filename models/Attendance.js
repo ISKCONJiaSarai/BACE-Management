@@ -14,18 +14,43 @@ const AttendanceSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['MangalaAarti', 'SandhyaAarti', 'Class', 'CareGroup', 'Batch', 'Seva', 'Festival'],
-    required: true
+    enum: ['MangalaAarti', 'SandhyaAarti', 'Class', 'CareGroup', 'Batch', 'Seva', 'Festival', 'Morning programme'],
+    required: true,
+    index: true
   },
   date: {
     type: Date,
     default: Date.now,
     index: true
   },
+  dateStr: {
+    type: String,
+    index: true,
+    trim: true
+  },
   status: {
     type: String,
-    enum: ['Present', 'Absent', 'Late', 'Excused'],
+    enum: ['Present', 'Absent', 'Late', 'Excused', 'On Time', 'Grace'],
     default: 'Present'
+  },
+  timeIn: {
+    type: String,
+    trim: true
+  },
+  timeInMin: {
+    type: Number
+  },
+  standardTime: {
+    type: String,
+    trim: true
+  },
+  diffMin: {
+    type: Number
+  },
+  ref: {
+    type: String,
+    index: true,
+    trim: true
   },
   qrVerified: {
     type: Boolean,
@@ -42,5 +67,7 @@ const AttendanceSchema = new mongoose.Schema({
 }, {
   timestamps: true
 });
+
+AttendanceSchema.index({ devotee: 1, type: 1, dateStr: 1 }, { unique: false });
 
 module.exports = mongoose.model('Attendance', AttendanceSchema);

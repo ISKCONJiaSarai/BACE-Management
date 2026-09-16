@@ -271,6 +271,24 @@ const DevoteeSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  morningStandardTime: {
+    type: String,
+    trim: true,
+    default: '04:30'
+  },
+  morningAttendance: {
+    totalSessions: { type: Number, default: 0 },
+    presentCount: { type: Number, default: 0 },
+    onTimeCount: { type: Number, default: 0 },
+    graceCount: { type: Number, default: 0 },
+    lateCount: { type: Number, default: 0 },
+    absentCount: { type: Number, default: 0 },
+    attendanceRate: { type: Number, default: 0 },
+    punctualityRate: { type: Number, default: 0 },
+    lastPunchDate: { type: String, trim: true },
+    lastTimeIn: { type: String, trim: true },
+    lastStatus: { type: String, trim: true }
+  },
 
   // Nested structured metrics
   sadhana: {

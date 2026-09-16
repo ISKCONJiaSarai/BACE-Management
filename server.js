@@ -77,6 +77,7 @@ app.use('/api', async (req, res, next) => {
 });
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/devotees', require('./routes/devoteeRoutes'));
+app.use('/api/attendance', require('./routes/attendanceRoutes'));
 
 // Error handling middleware
 app.use((err, req, res, next) => {

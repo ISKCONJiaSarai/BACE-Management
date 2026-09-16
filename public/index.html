@@ -4369,8 +4369,30 @@ function viewDevotee(id){
        <td data-l="Response">${sbadge(a.state)}</td><td data-l="Performed by">${a.actualPerformer&&a.actualPerformer!==d.id?badge(nameOf(a.actualPerformer),'teal'):a.actualPerformer?'Self':'—'}</td>
        <td data-l="Status">${sbadge(x.status)}</td></tr>`).join('')}</tbody></table></div>`
      :emptyState('No seva yet','This devotee has not been allocated any seva. Assign one from the Assign / Schedule page.','<a class="btn pri" href="#/assign">Assign seva</a>')),
-   Attendance:(()=>{const rec=DB.attendance.filter(a=>a.devotee===d.id);const cats=[...new Set(rec.map(a=>a.category))];
-     return `<div class="grid g4" style="margin-bottom:15px">
+   Attendance:(()=>{
+     const rec=DB.attendance.filter(a=>a.devotee===d.id || a.devotee===d.customId || (d.name && a.devotee===d.name));
+     const cats=[...new Set(rec.map(a=>a.category))];
+     const ma = d.morningAttendance || {};
+     const mStd = d.morningStandardTime || '04:30';
+     const morningCard = `
+       <div class="card" style="margin-bottom:15px;border-left:4px solid var(--saffron)">
+         <div class="card-h" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+           <h3 style="margin:0;display:flex;align-items:center;gap:8px"><span>🌅</span> Morning Programme Sadhana Attendance</h3>
+           <button class="btn sm" data-act="edit-devotee-morning-std" data-id="${d.id}" title="Edit standard attendance time for this devotee">⏱️ Standard: ${esc(mStd)}</button>
+         </div>
+         <div class="card-b">
+           <div class="grid g4" style="margin-bottom:10px">
+             ${stat('Standard Target', mStd, 'Devotee on-time standard', { em: '⏱' })}
+             ${stat('Punctuality', (ma.punctualityRate !== undefined ? ma.punctualityRate : '—') + (ma.punctualityRate !== undefined ? '%' : ''), 'On-time / grace arrival', { em: '🎯' })}
+             ${stat('Sessions Present', (ma.presentCount || 0) + ' / ' + (ma.totalSessions || 0), (ma.attendanceRate !== undefined ? ma.attendanceRate + '% attendance' : 'Morning programs'), { em: '🌅' })}
+             ${stat('Last Punch', ma.lastPunchDate ? (fmtD(ma.lastPunchDate) + ' ' + (ma.lastTimeIn || '')) : 'No punch yet', ma.lastStatus || 'Standard 04:30 AM', { em: '📅' })}
+           </div>
+           <div class="tiny" style="color:var(--ink-2)">
+             Biometric punch records are synced into MongoDB and tied directly to this devotee profile.
+           </div>
+         </div>
+       </div>`;
+     return morningCard + `<div class="grid g4" style="margin-bottom:15px">
        ${stat('Overall',attFor(d.id)+'%','present vs recorded',{em:'✅',r:'#/attendance'})}
        ${stat('Records',rec.length,'attendance entries',{em:'📋',r:'#/attendance'})}
        ${stat('Absences',rec.filter(a=>a.status==='Absent').length,'marked absent',{em:'⚠️',r:'#/attendance'})}
@@ -4378,8 +4400,8 @@ function viewDevotee(id){
        section('By category',`<div class="card-b">${cats.length?barChart(cats.map(c=>({l:c,v:attFor(d.id,c),
          tip:`${c}\nPresent: ${rec.filter(a=>a.category===c&&a.status==='Present').length} of ${rec.filter(a=>a.category===c).length}`})),{horizontal:true,unit:'%'}):'<p class="tiny">No records yet.</p>'}</div>`)+
        `<div style="height:15px"></div>`+
-       section('Recent attendance',rec.length?`<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Date</th><th>Category</th><th>Status</th></tr></thead><tbody>
-        ${rec.sort((a,b)=>a.date<b.date?1:-1).slice(0,12).map(a=>`<tr><td data-l="Date">${fmtD(a.date)}</td><td data-l="Category">${esc(a.category)}</td><td data-l="Status">${sbadge(a.status)}</td></tr>`).join('')}</tbody></table></div>`
+       section('Recent attendance',rec.length?`<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Date</th><th>Category</th><th>Status / Time</th><th>Details</th></tr></thead><tbody>
+        ${rec.sort((a,b)=>a.date<b.date?1:-1).slice(0,14).map(a=>`<tr><td data-l="Date">${fmtD(a.date)}</td><td data-l="Category">${esc(a.category)}</td><td data-l="Status">${sbadge(a.status)}${a.timeIn ? ` <span class="tiny muted">(${esc(a.timeIn)})</span>` : ''}</td><td data-l="Details">${esc(a.standardTime ? `Standard ${a.standardTime}` : (a.notes || '—'))}</td></tr>`).join('')}</tbody></table></div>`
         :emptyState('No attendance recorded','Attendance appears here once it is marked.',''))})(),
    Care:careOK?`<div class="grid g2">
       ${section('Care status',`<div class="card-b"><dl class="kv">
@@ -5758,8 +5780,15 @@ function handleMorningCsvFile(file){
     if(parsed && parsed.rows && parsed.rows.length){
       APP.morningData = parsed;
       APP.morningView = 'csv';
+      try {
+        localStorage.setItem('bace_morning_text', text);
+        localStorage.setItem('bace_morning_date', parsed.date || iso(TODAY));
+      } catch(e){}
+      saveMorningAttendanceToDB(false);
+      syncMorningAttendanceToBackend(text, parsed);
       const typeLabel = parsed.isBiometric ? 'biometric device log (.txt)' : 'file';
-      toast(`Imported ${parsed.rows.length} devotee check-in records from ${typeLabel}!`, '🌅');
+      const sessionCount = parsed.availableDates ? parsed.availableDates.length : 1;
+      toast(`Imported & saved ${parsed.rows.length} devotee check-ins across ${sessionCount} sessions to MongoDB!`, '🌅');
       render();
     } else {
       toast('Could not parse devotee check-ins. Please ensure the file contains Name and DateTime columns.', '⚠️');
@@ -5769,6 +5798,87 @@ function handleMorningCsvFile(file){
     reader.readAsArrayBuffer(file);
   } else {
     reader.readAsText(file);
+  }
+}
+
+async function syncMorningAttendanceToBackend(rawText, parsed){
+  if(!rawText || !parsed) return;
+  const token = localStorage.getItem('bace_token');
+  try {
+    const res = await fetch('/api/attendance/morning-sync', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': 'Bearer ' + token } : {})
+      },
+      body: JSON.stringify({
+        rawBiometricText: rawText,
+        byDateRows: parsed.byDateRows || {},
+        availableDates: parsed.availableDates || [parsed.date]
+      })
+    });
+    if(res.ok){
+      const data = await res.json();
+      console.log('MongoDB morning attendance sync successful:', data);
+      syncDevoteesFromServer();
+    } else {
+      console.warn('MongoDB morning attendance sync error status:', res.status);
+    }
+  } catch(err){
+    console.warn('syncMorningAttendanceToBackend error:', err);
+  }
+}
+
+let lastMorningFetch = 0;
+async function loadMorningAttendanceFromBackend(){
+  // 1. Instant local restore so reload has zero delay
+  try {
+    const cachedText = localStorage.getItem('bace_morning_text');
+    if (cachedText && (!APP.morningData || !APP.morningData.rows || !APP.morningData.rows.length)) {
+      const cachedDate = localStorage.getItem('bace_morning_date');
+      const parsed = parseMorningCSV(cachedText, cachedDate);
+      if (parsed && parsed.rows && parsed.rows.length) {
+        APP.morningData = parsed;
+        saveMorningAttendanceToDB(false);
+      }
+    }
+  } catch(e){}
+
+  // 2. Fetch from MongoDB backend
+  if(Date.now() - lastMorningFetch < 4000) return;
+  lastMorningFetch = Date.now();
+  try {
+    const token = localStorage.getItem('bace_token');
+    const res = await fetch('/api/attendance/morning', {
+      headers: {
+        ...(token ? { 'Authorization': 'Bearer ' + token } : {})
+      }
+    });
+    if(!res.ok) return;
+    const json = await res.json();
+    if(json.success && json.hasData && json.rawBiometricText){
+      try {
+        localStorage.setItem('bace_morning_text', json.rawBiometricText);
+      } catch(e){}
+      const parsed = parseMorningCSV(json.rawBiometricText);
+      if(parsed && parsed.rows && parsed.rows.length){
+        APP.morningData = parsed;
+        saveMorningAttendanceToDB(false);
+      }
+      if(Array.isArray(json.devotees)){
+        json.devotees.forEach(serverDev => {
+          const local = dv(serverDev._id) || dv(serverDev.customId) || (DB.devotees || []).find(d => d.name && d.name.toLowerCase().trim() === (serverDev.name||'').toLowerCase().trim());
+          if(local){
+            if(serverDev.morningStandardTime) local.morningStandardTime = serverDev.morningStandardTime;
+            if(serverDev.morningAttendance) local.morningAttendance = serverDev.morningAttendance;
+            if(serverDev.sadhana) local.sadhana = { ...(local.sadhana || {}), ...serverDev.sadhana };
+          }
+        });
+      }
+      render();
+    }
+  } catch(err){
+    console.warn('loadMorningAttendanceFromBackend error:', err);
   }
 }
 
@@ -5821,41 +5931,73 @@ function exportMorningReport(){
   toast('Morning report exported to CSV', '📥');
 }
 
-function saveMorningAttendanceToDB(){
+function saveMorningAttendanceToDB(showToast = true){
   if(!APP.morningData || !APP.morningData.rows || !APP.morningData.rows.length){
-    toast('No records to save', '⚠️');
+    if(showToast) toast('No records to save', '⚠️');
     return;
   }
-  const date = APP.morningData.date || iso(TODAY);
+  const dates = (APP.morningData.availableDates && APP.morningData.availableDates.length) 
+    ? APP.morningData.availableDates 
+    : [APP.morningData.date || iso(TODAY)];
+
+  const byDates = APP.morningData.byDateRows || { [APP.morningData.date || iso(TODAY)]: APP.morningData.rows };
   let savedCount = 0;
-  APP.morningData.rows.forEach(r => {
-    const devId = r.devoteeId || r.name;
-    const ref = 'mp_' + date;
-    const st = r.status === 'On Time' || r.status === 'Grace' ? 'Present' : (r.status === 'Late' ? 'Late' : 'Absent');
-    let rec = DB.attendance.find(a => a.category === 'Morning programme' && a.ref === ref && a.devotee === devId);
-    if(rec){
-      rec.status = st;
-      rec.timeIn = r.timeIn;
-      rec.standardTime = r.standardTime;
-      rec.diffMin = r.diffMin;
-    } else {
-      DB.attendance.push({
-        id: uid('at'),
-        category: 'Morning programme',
-        ref,
-        devotee: devId,
-        date,
-        status: st,
-        timeIn: r.timeIn,
-        standardTime: r.standardTime,
-        diffMin: r.diffMin
-      });
-      savedCount++;
+
+  dates.forEach(dt => {
+    const rows = byDates[dt] || [];
+    rows.forEach(r => {
+      const devId = r.devoteeId || r.name;
+      const ref = 'mp_' + dt;
+      const st = r.status === 'On Time' || r.status === 'Grace' ? 'Present' : (r.status === 'Late' ? 'Late' : 'Absent');
+      let rec = DB.attendance.find(a => a.category === 'Morning programme' && a.ref === ref && (a.devotee === devId || (r.devoteeId && a.devotee === r.devoteeId)));
+      if(rec){
+        rec.status = st;
+        rec.timeIn = r.timeIn;
+        rec.standardTime = r.standardTime;
+        rec.diffMin = r.diffMin;
+        rec.notes = r.badgeText || '';
+      } else {
+        DB.attendance.push({
+          id: uid('at'),
+          category: 'Morning programme',
+          ref,
+          devotee: devId,
+          date: dt,
+          status: st,
+          timeIn: r.timeIn,
+          standardTime: r.standardTime,
+          diffMin: r.diffMin,
+          notes: r.badgeText || ''
+        });
+        savedCount++;
+      }
+    });
+  });
+
+  // Also update devotees in memory
+  const allDevStats = (APP.morningData.weekly && APP.morningData.weekly.devStats) || (APP.morningData.monthly && APP.morningData.monthly.devStats) || [];
+  allDevStats.forEach(p => {
+    const dev = dv(p.id) || dv(p.customId) || (DB.devotees || []).find(d => d.name && d.name.toLowerCase().trim() === p.name.toLowerCase().trim());
+    if(dev){
+      if(!dev.morningAttendance) dev.morningAttendance = {};
+      dev.morningAttendance.totalSessions = dates.length;
+      dev.morningAttendance.presentCount = p.presentCount;
+      dev.morningAttendance.onTimeCount = p.onTimeCount;
+      dev.morningAttendance.graceCount = p.graceCount;
+      dev.morningAttendance.lateCount = p.lateCount;
+      dev.morningAttendance.absentCount = Math.max(0, dates.length - p.presentCount);
+      dev.morningAttendance.attendanceRate = Math.round((p.presentCount / Math.max(1, dates.length)) * 100);
+      dev.morningAttendance.punctualityRate = p.punctualityRate;
+      dev.morningAttendance.lastPunchDate = p.lastPunchDate || dates[dates.length - 1];
+      dev.morningAttendance.lastTimeIn = p.lastTimeIn || '—';
+      dev.morningAttendance.lastStatus = p.lastStatus || '—';
+      if(!dev.sadhana) dev.sadhana = {};
+      dev.sadhana.morningProgram = dev.morningAttendance.attendanceRate;
     }
   });
-  logAudit('Morning programme attendance', `Recorded ${APP.morningData.rows.length} morning check-ins for ${date}`);
-  toast(`Saved ${APP.morningData.rows.length} morning records to Attendance database!`, '✅');
-  render();
+
+  logAudit('Morning programme attendance', `Recorded morning check-ins across ${dates.length} sessions`);
+  if(showToast) toast(`Saved morning attendance to database across ${dates.length} sessions!`, '✅');
 }
 
 /* =========================================================================
@@ -11189,7 +11331,10 @@ async function syncDevoteesFromServer(){
             id: targetId || ('d_' + Date.now()),
             batch: resolvedBatchId,
             dept: resolvedDeptId,
-            careGroup: resolvedGroupId
+            careGroup: resolvedGroupId,
+            morningStandardTime: serverDev.morningStandardTime || '04:30',
+            morningAttendance: serverDev.morningAttendance,
+            sadhana: serverDev.sadhana || { morningProgram: 0 }
           });
           DB.devotees.push(localDev);
           changed = true;
@@ -11203,6 +11348,16 @@ async function syncDevoteesFromServer(){
           if(serverDev.batchRole && localDev.batchRole !== serverDev.batchRole) { localDev.batchRole = serverDev.batchRole; changed = true; }
           if(serverDev.status && localDev.status !== serverDev.status) { localDev.status = serverDev.status; changed = true; }
           if(serverDev.level !== undefined && localDev.level !== serverDev.level) { localDev.level = serverDev.level; changed = true; }
+          if(serverDev.morningStandardTime && localDev.morningStandardTime !== serverDev.morningStandardTime) {
+            localDev.morningStandardTime = serverDev.morningStandardTime;
+            changed = true;
+          }
+          if(serverDev.morningAttendance) {
+            localDev.morningAttendance = serverDev.morningAttendance;
+          }
+          if(serverDev.sadhana) {
+            localDev.sadhana = { ...(localDev.sadhana || {}), ...serverDev.sadhana };
+          }
           if(serverDev.appointment && localDev.appointment !== serverDev.appointment) {
             localDev.appointment = serverDev.appointment;
             changed = true;
@@ -11768,6 +11923,8 @@ async function syncDevoteeToBackend(d, roleKey){
       source: d.source,
       skills: d.skills || [],
       sadhana: d.sadhana || { rounds: 16, morningProgram: 0 },
+      morningStandardTime: d.morningStandardTime || '04:30',
+      morningAttendance: d.morningAttendance || undefined,
       appointment: rObj.name,
       isFacilitator: (rKey === 'facilitator'),
       role: rKey,
@@ -12779,7 +12936,14 @@ document.addEventListener('click',e=>{
   }
   case 'download-morning-template':stop();downloadMorningTemplate();break;
   case 'export-morning-report':stop();exportMorningReport();break;
-  case 'save-morning-attendance':stop();saveMorningAttendanceToDB();break;
+  case 'save-morning-attendance':stop();{
+    saveMorningAttendanceToDB(true);
+    if(APP.morningData && APP.morningData.rawBiometricText) {
+      syncMorningAttendanceToBackend(APP.morningData.rawBiometricText, APP.morningData);
+    }
+    render();
+    break;
+  }
   case 'morning-progress-period':stop();{
     APP.morningProgressPeriod = t.dataset.p || 'weekly';
     render();
@@ -12835,10 +12999,13 @@ document.addEventListener('click',e=>{
       if(d){
         const newTime = (v.morningStandardTime || '04:30').trim();
         d.morningStandardTime = newTime;
+        syncDevoteeToBackend(d);
         if(APP.morningData && APP.morningData.rawBiometricText){
           APP.morningData = parseMorningCSV(APP.morningData.rawBiometricText, APP.morningData.date);
+          saveMorningAttendanceToDB(false);
+          syncMorningAttendanceToBackend(APP.morningData.rawBiometricText, APP.morningData);
         }
-        toast('Updated morning standard time for ' + d.name + ' to ' + newTime, '✅');
+        toast('Updated morning standard time for ' + d.name + ' to ' + newTime + ' and saved to database', '✅');
       }
     }
     APP.modal = '';
@@ -12849,8 +13016,35 @@ document.addEventListener('click',e=>{
     APP.morningData = null;
     APP.morningReportView = 'today';
     DB.attendance = (DB.attendance || []).filter(a => a.category !== 'Morning programme' && !String(a.ref).startsWith('mp_'));
-    try { localStorage.removeItem('bace_morning_data'); } catch(e){}
-    toast('Morning attendance data cleared. Ready for fresh upload.', '🗑️');
+    try {
+      localStorage.removeItem('bace_morning_data');
+      localStorage.removeItem('bace_morning_text');
+      localStorage.removeItem('bace_morning_date');
+    } catch(e){}
+    (DB.devotees || []).forEach(d => {
+      if(d.morningAttendance) {
+        d.morningAttendance = {
+          totalSessions: 0,
+          presentCount: 0,
+          onTimeCount: 0,
+          graceCount: 0,
+          lateCount: 0,
+          absentCount: 0,
+          attendanceRate: 0,
+          punctualityRate: 0
+        };
+      }
+      if(d.sadhana) d.sadhana.morningProgram = 0;
+    });
+    const token = localStorage.getItem('bace_token');
+    fetch('/api/attendance/morning-clear', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': 'Bearer ' + token } : {})
+      }
+    }).catch(e => console.warn('Clear backend error:', e));
+    toast('Morning attendance data cleared from MongoDB & ready for fresh upload.', '🗑️');
     render();
     break;
   }
@@ -13921,6 +14115,7 @@ async function verifyUserSessionFromServer(){
 }
 
 APP.route=location.hash||'#/';
+loadMorningAttendanceFromBackend();
 render();
 syncDevoteesFromServer();
 verifyUserSessionFromServer();
