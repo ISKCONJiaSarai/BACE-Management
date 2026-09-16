@@ -6241,11 +6241,9 @@ function renderDepartmentRosterPanel(deptKey) {
           </div>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn pri sm" data-act="share-roster-photo" data-dept="${deptKey}">📸 Share Service Photo</button>
           <button class="btn sm ${viewMode === 'photo' ? 'pri' : ''}" data-act="roster-view-mode" data-dept="${deptKey}" data-m="photo">📋 Today & Tomorrow Chart</button>
           <button class="btn sm ${viewMode === 'weekly' ? 'pri' : ''}" data-act="roster-view-mode" data-dept="${deptKey}" data-m="weekly">📅 7-Day Weekly Grid</button>
           <button class="btn sm ${viewMode === 'analytics' ? 'pri' : ''}" data-act="roster-view-mode" data-dept="${deptKey}" data-m="analytics">📊 Graphs & Report</button>
-          <button class="btn sm" data-act="add-roster-service" data-dept="${deptKey}">${ic('plus')}Add Service</button>
         </div>
       </div>
     </div>
