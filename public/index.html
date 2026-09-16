@@ -6175,13 +6175,16 @@ function generateRosterCanvas(deptKey) {
   ctx.fillText('Services', col0W / 2, headerH / 2);
 
   // Col 1 Header: Today's services report
-  ctx.font = 'bold 16.5px "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
-  ctx.fillText(`Today's ${deptTitle} services`, col0W + col1W / 2, (headerH / 2) - 11);
-  ctx.fillText('report', col0W + col1W / 2, (headerH / 2) + 12);
+  ctx.font = 'bold 15.5px "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+  ctx.fillText(`Today's ${deptTitle} services report`, col0W + col1W / 2, (headerH / 2) - 10);
+  ctx.font = 'bold 12px "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+  ctx.fillText(`(${fullDayName(todayStr)}, ${fmtD(todayStr)})`, col0W + col1W / 2, (headerH / 2) + 12);
 
   // Col 2 Header: Tomorrow services chart
-  ctx.fillText(`Tomorrow ${deptTitle}`, col0W + col1W + col2W / 2, (headerH / 2) - 11);
-  ctx.fillText('services chart', col0W + col1W + col2W / 2, (headerH / 2) + 12);
+  ctx.font = 'bold 15.5px "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+  ctx.fillText(`Tomorrow ${deptTitle} services chart`, col0W + col1W + col2W / 2, (headerH / 2) - 10);
+  ctx.font = 'bold 12px "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+  ctx.fillText(`(${fullDayName(tomorrowStr)}, ${fmtD(tomorrowStr)})`, col0W + col1W + col2W / 2, (headerH / 2) + 12);
 
   // Header vertical divider lines
   ctx.beginPath();
@@ -6317,7 +6320,7 @@ function generateWeeklyChartCanvas(deptKey) {
   const services = roster.services;
 
   const todayStr = iso(TODAY);
-  const days = Array.from({ length: 7 }, (_, i) => iso(dayOff(i - 1))); // yesterday to +5 days
+  const days = getWeekDays(TODAY).map(iso); // Monday to Sunday
 
   const col0W = 210; // Service name column
   const colDayW = 135; // Each of the 7 days
@@ -6375,10 +6378,13 @@ function generateWeeklyChartCanvas(deptKey) {
       ctx.fillStyle = '#111111';
     }
 
+    const dName = fullDayName(d);
     ctx.font = 'bold 15px "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
-    ctx.fillText(fmtD(d), x + (colDayW / 2), (headerH / 2) - 8);
-    ctx.font = 'normal 12px "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
-    ctx.fillText(isCur ? '(Today)' : dayName(d), x + (colDayW / 2), (headerH / 2) + 11);
+    ctx.fillText(dName, x + (colDayW / 2), isCur ? (headerH / 2) - 8 : (headerH / 2));
+    if (isCur) {
+      ctx.font = 'bold 12px "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+      ctx.fillText('(Today)', x + (colDayW / 2), (headerH / 2) + 11);
+    }
   });
 
   // Vertical divider lines across the canvas
@@ -7067,6 +7073,29 @@ function openAddRosterServiceModal(deptKey) {
 /* =========================================================================
    🛕 2 & 3. DEITY & CLEANING OPERATIONAL DEPARTMENT ENGINE
    ========================================================================= */
+function getWeekDays(refDate = TODAY) {
+  const d = new Date(refDate);
+  const day = d.getDay(); // 0 is Sunday, 1 is Monday, ... 6 is Saturday
+  const diffToMonday = day === 0 ? -6 : (1 - day);
+  const monday = new Date(d);
+  monday.setDate(d.getDate() + diffToMonday);
+
+  const days = [];
+  for (let i = 0; i < 7; i++) {
+    const cur = new Date(monday);
+    cur.setDate(monday.getDate() + i);
+    days.push(cur);
+  }
+  return days;
+}
+
+function fullDayName(dStr) {
+  try {
+    const d = typeof dStr === 'string' ? new Date(dStr + 'T12:00:00') : new Date(dStr);
+    return ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][d.getDay()] || '';
+  } catch(e) { return ''; }
+}
+
 function renderDepartmentRosterPanel(deptKey) {
   initDepartmentRosters();
   APP.activeRosterDept = deptKey;
@@ -7117,8 +7146,8 @@ function renderDepartmentRosterPanel(deptKey) {
   const actualWeeklyReliability = totalWeeklyAssigned > 0 ? Math.round((totalWeeklyDone / totalWeeklyAssigned) * 100) : 96;
   const activeDevoteesCount = devoteeStats.length || 12;
 
-  // 7 Days list for weekly table
-  const days = Array.from({ length: 7 }, (_, i) => iso(dayOff(i - 1))); // yesterday to +5 days
+  // 7 Days list for weekly table (Monday to Sunday)
+  const days = getWeekDays(TODAY).map(iso);
 
   return `<div>
     <!-- Action Banner & Mode Navigation -->
@@ -7166,10 +7195,10 @@ function renderDepartmentRosterPanel(deptKey) {
             <tr style="background:#F5A869;border-bottom:2px solid #000;color:#111">
               <th style="padding:14px 10px;width:30%;border-right:1.5px solid #000;font-size:16px;font-weight:700">Services</th>
               <th style="padding:14px 10px;width:35%;border-right:1.5px solid #000;font-size:16px;font-weight:700">
-                Today's ${isDeity ? 'Deity' : 'Cleaning'} services<br>report (${fmtD(todayStr)})
+                Today's ${isDeity ? 'Deity' : 'Cleaning'} services<br>report (${fullDayName(todayStr)}, ${fmtD(todayStr)})
               </th>
               <th style="padding:14px 10px;width:35%;font-size:16px;font-weight:700">
-                Tomorrow ${isDeity ? 'Deity' : 'Cleaning'}<br>services chart (${fmtD(tomorrowStr)})
+                Tomorrow ${isDeity ? 'Deity' : 'Cleaning'}<br>services chart (${fullDayName(tomorrowStr)}, ${fmtD(tomorrowStr)})
               </th>
             </tr>
           </thead>
@@ -7233,7 +7262,8 @@ function renderDepartmentRosterPanel(deptKey) {
               <th style="min-width:180px">Service (Y-axis)</th>
               ${days.map(d => {
                 const isCur = d === todayStr;
-                return `<th style="${isCur ? 'background:var(--saffron-soft);color:var(--saffron);font-weight:700' : ''}">${fmtD(d)}${isCur ? ' (Today)' : ''}</th>`;
+                const dName = fullDayName(d);
+                return `<th${isCur ? ' style="background:var(--saffron-soft);color:var(--saffron);font-weight:700"' : ''}>${dName}${isCur ? ' (Today)' : ''}</th>`;
               }).join('')}
             </tr>
           </thead>
@@ -11705,9 +11735,9 @@ document.addEventListener('click',e=>{
     const deptK = t.dataset.dept || 'deity';
     const isDeity = deptK === 'deity';
     const roster = isDeity ? APP.deityRoster : APP.cleaningRoster;
-    const daysList = Array.from({ length: 7 }, (_, i) => iso(dayOff(i - 1)));
+    const daysList = getWeekDays(TODAY).map(iso);
     const rows = [
-      ['Service Name', 'Scheduled Time', ...daysList.map(d => fmtD(d) + (d === iso(TODAY) ? ' (Today)' : ''))],
+      ['Service Name', 'Scheduled Time', ...daysList.map(d => fullDayName(d) + (d === iso(TODAY) ? ' (Today)' : ''))],
       ...roster.services.map(s => [
         s.name,
         s.time,
