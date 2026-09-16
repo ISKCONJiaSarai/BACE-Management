@@ -7299,7 +7299,7 @@ function renderDeityDressingScheduleCard() {
               <th style="min-width:140px">Date & Day</th>
               <th style="min-width:110px">Cadence</th>
               <th style="min-width:200px">Occasion / Seva</th>
-              <th style="min-width:280px">Responsible Devotee (Database Dropdown)</th>
+              <th style="min-width:220px">Responsible Devotee</th>
               <th style="min-width:110px;text-align:center">Status</th>
               <th style="min-width:100px;text-align:center">Actions</th>
             </tr>
@@ -7346,22 +7346,11 @@ function renderDeityDressingScheduleCard() {
                     ${item.notes ? `<div class="tiny" style="color:var(--ink-3);margin-top:2px">${esc(item.notes)}</div>` : ''}
                   </td>
 
-                  <!-- Responsible Devotee (Inline Dropdown from Database & Display) -->
+                  <!-- Responsible Devotee -->
                   <td data-l="Responsible Devotee">
-                    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-                      <!-- Direct Dropdown of devotees from Database -->
-                      <select class="sel sm" data-act="quick-dressing-devotee" data-id="${item.id}" style="font-weight:600;min-width:180px;border:1px solid var(--line);border-radius:6px;padding:4px 8px;font-size:12.5px" title="Pick responsible devotee directly from database">
-                        <option value="">-- Dropdown from Database --</option>
-                        ${(DB.devotees || []).map(d => `
-                          <option value="${esc(d.name)}" ${item.devotees === d.name ? 'selected' : ''}>${esc(d.name)} (${esc(d.phone || d.bace || 'Member')})</option>
-                        `).join('')}
-                      </select>
-                      <!-- Devotee label & Edit button -->
-                      <div style="font-size:12.5px;font-weight:700;color:var(--ink);display:flex;align-items:center;gap:4px">
-                        <span>${esc(item.devotees || 'Unassigned')}</span>
-                        <button class="btn sm icon-only" data-act="edit-dressing-modal" data-id="${item.id}" style="height:22px;padding:1px 5px;font-size:11px" title="Edit date, devotees or notes">✏️</button>
-                      </div>
-                    </div>
+                    ${item.devotees && item.devotees.trim() && item.devotees !== 'Unassigned' && item.devotees !== '—'
+                      ? `<span style="font-size:13.5px;font-weight:700;color:var(--ink)">${esc(item.devotees)}</span>`
+                      : `<span style="font-size:13px;color:var(--ink-3);font-style:italic">Unassigned</span>`}
                   </td>
 
                   <!-- Status -->
@@ -7373,10 +7362,7 @@ function renderDeityDressingScheduleCard() {
 
                   <!-- Actions -->
                   <td data-l="Actions" style="text-align:center">
-                    <div style="display:flex;gap:4px;justify-content:center">
-                      <button class="btn sm icon-only" data-act="edit-dressing-modal" data-id="${item.id}" title="Edit dressing schedule slot">✏️</button>
-                      <button class="btn sm icon-only" data-act="delete-dressing-slot" data-id="${item.id}" style="color:var(--danger)" title="Delete this dressing slot">🗑️</button>
-                    </div>
+                    <button class="btn sm icon-only" data-act="edit-dressing-modal" data-id="${item.id}" title="Edit dressing schedule slot">✏️</button>
                   </td>
                 </tr>
               `;
@@ -7388,7 +7374,7 @@ function renderDeityDressingScheduleCard() {
       <!-- Table Footer Note -->
       <div class="tbl-foot" style="background:var(--surface-2);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;padding:10px 18px">
         <span class="tiny" style="color:var(--ink-2)">
-          💡 <b>15-Day Cadence:</b> Deity dressing occurs fortnightly. Select devotee from database dropdown or click ✏️ to assign multiple devotees.
+          💡 <b>15-Day Cadence:</b> Deity dressing occurs fortnightly. Click ✏️ in Actions to assign or change responsible devotee.
         </span>
         <span class="tiny" style="color:var(--ink-3);font-weight:600">
           Total ${schedule.length} scheduled in ${selectedMonth === 'all' ? 'All Months' : (monthNames[selectedMonth] || selectedMonth)}
@@ -7470,18 +7456,7 @@ function openEditDressingSlotModal(slotId) {
           </div>
         </div>
 
-        <!-- Devotee Dropdown from Database -->
-        <div>
-          <label style="display:block;font-size:12.5px;font-weight:600;margin-bottom:5px;color:var(--ink)">
-            Select Responsible Devotee from Database Dropdown
-          </label>
-          <select id="edit-dressing-db-select" onchange="addDevoteeToDressingInput(this.value)" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1.5px solid var(--line);border-radius:8px;font-size:13.5px;background:var(--surface)">
-            <option value="">-- Choose Devotee from Database --</option>
-            ${(DB.devotees || []).map(d => `
-              <option value="${esc(d.name)}">${esc(d.name)} (${esc(d.phone || d.bace || 'Member')})</option>
-            `).join('')}
-          </select>
-        </div>
+        
 
         <!-- Devotee Search & Database Quick List -->
         <div style="background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:10px 12px">
@@ -7528,12 +7503,7 @@ function openEditDressingSlotModal(slotId) {
           </div>
         </div>
 
-        <div>
-          <label style="display:block;font-size:12.5px;font-weight:600;margin-bottom:5px;color:var(--ink)">
-            Shringar Theme / Notes (Optional)
-          </label>
-          <input type="text" id="edit-dressing-notes" value="${esc(item.notes || '')}" placeholder="e.g. Special Silk Poshaak, Flower Garlands & Ornaments" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1.5px solid var(--line);border-radius:8px;font-size:14px;background:var(--surface)">
-        </div>
+        
       </div>
 
       <div class="modal-f" style="display:flex;justify-content:flex-end;gap:8px;padding:12px 16px;border-top:1px solid var(--line-2)">
@@ -11956,35 +11926,8 @@ document.addEventListener('click',e=>{
     }
     break;
   }
-  case 'delete-dressing-slot':stop();{
-    const id = t.dataset.id;
-    if (!confirm('Are you sure you want to remove this dressing seva slot?')) break;
-    initDepartmentRosters();
-    const roster = APP.deityRoster;
-    if (roster.dressingSchedule) {
-      roster.dressingSchedule = roster.dressingSchedule.filter(s => s.id !== id);
-      saveStoredRoster('deity', roster);
-      toast('Dressing seva slot removed', '🗑️');
-      render();
-    }
-    break;
-  }
-  case 'quick-dressing-devotee':stop();{
-    const id = t.dataset.id;
-    const name = t.value;
-    initDepartmentRosters();
-    const roster = APP.deityRoster;
-    if (roster.dressingSchedule) {
-      const it = roster.dressingSchedule.find(s => s.id === id);
-      if (it) {
-        it.devotees = name;
-        saveStoredRoster('deity', roster);
-        toast('Responsible devotee assigned: ' + (name || 'Unassigned'), '👥');
-        render();
-      }
-    }
-    break;
-  }
+  
+  
   case 'auto-generate-15day':stop();{
     initDepartmentRosters();
     const roster = APP.deityRoster;
@@ -12032,13 +11975,11 @@ document.addEventListener('click',e=>{
     const titleInput = document.getElementById('edit-dressing-title');
     const devInput = document.getElementById('edit-dressing-devotees');
     const statusSelect = document.getElementById('edit-dressing-status');
-    const notesInput = document.getElementById('edit-dressing-notes');
 
     const dateVal = dateInput ? dateInput.value.trim() : iso(TODAY);
     const titleVal = titleInput ? titleInput.value.trim() : 'Fortnightly Altar & Deity Dressing';
     const devVal = devInput ? devInput.value.trim() : '';
     const statusVal = statusSelect ? statusSelect.value : 'pending';
-    const notesVal = notesInput ? notesInput.value.trim() : '';
 
     if (!dateVal) {
       toast('Please enter a valid dressing date', '⚠️');
@@ -12056,8 +11997,7 @@ document.addEventListener('click',e=>{
         title: titleVal,
         cadence: '15 Days',
         devotees: devVal,
-        status: statusVal,
-        notes: notesVal
+        status: statusVal
       });
     } else {
       const it = roster.dressingSchedule.find(s => s.id === id);
@@ -12066,11 +12006,11 @@ document.addEventListener('click',e=>{
         it.title = titleVal;
         it.devotees = devVal;
         it.status = statusVal;
-        it.notes = notesVal;
       }
     }
 
     roster.dressingSchedule.sort((a, b) => a.date.localeCompare(b.date));
+    APP.deityRoster = roster;
     saveStoredRoster('deity', roster);
     APP.modal = '';
     toast('Deity dressing seva saved successfully!', '🥻');
@@ -12677,22 +12617,7 @@ document.addEventListener('change',e=>{
      render();
      break;
    }
-   case 'quick-dressing-devotee':{
-     const id = t.dataset.id;
-     const name = t.value;
-     initDepartmentRosters();
-     const roster = APP.deityRoster;
-     if (roster.dressingSchedule) {
-       const it = roster.dressingSchedule.find(s => s.id === id);
-       if (it) {
-         it.devotees = name;
-         saveStoredRoster('deity', roster);
-         toast('Responsible devotee assigned: ' + (name || 'Unassigned'), '👥');
-         render();
-       }
-     }
-     break;
-   }
+   
    case 'morning-csv-file':{
      const file = e.target.files && e.target.files[0];
      if(file) handleMorningCsvFile(file);
