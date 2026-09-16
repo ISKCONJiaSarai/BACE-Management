@@ -5029,23 +5029,227 @@ function formatMinutesTime(mins){
   return `${String(dh).padStart(2,'0')}:${String(m).padStart(2,'0')} ${mer}`;
 }
 
-function parseMorningCSV(text){
+function cleanDevName(str) {
+  return String(str || '')
+    .toLowerCase()
+    .replace(/(^|\s)(pr|prabhu|das|dasa|ji|sharma|kumar|singh|roy)($|\s)/gi, ' ')
+    .replace(/[^a-z0-9\s]/g, '')
+    .trim();
+}
+
+function matchDevotee(a, b) {
+  const ca = cleanDevName(a);
+  const cb = cleanDevName(b);
+  if (!ca || !cb) return false;
+  if (ca === cb || ca.includes(cb) || cb.includes(ca)) return true;
+
+  const wordsA = ca.split(/\s+/).filter(Boolean);
+  const wordsB = cb.split(/\s+/).filter(Boolean);
+
+  if (wordsA.some(w => wordsB.includes(w))) return true;
+
+  const phon = s => s.replace(/[ei]+/g, 'i').replace(/[ou]+/g, 'u').replace(/v/g, 'w').replace(/h/g, '');
+  const pa = wordsA.map(phon);
+  const pb = wordsB.map(phon);
+
+  for (const wa of pa) {
+    for (const wb of pb) {
+      if (wa === wb) return true;
+      if (wa.length >= 4 && wb.length >= 4 && (wa.startsWith(wb) || wb.startsWith(wa))) return true;
+    }
+  }
+  return false;
+}
+
+function parseMorningCSV(text, specificDate){
   if(!text || !text.trim()) return null;
-  const lines = parseCSV(text);
+  // Clean null bytes from UTF-16LE and strip BOM
+  const cleaned = text.replace(/\0/g, '').replace(/^\uFEFF/, '').trim();
+  const rawLines = cleaned.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  if(rawLines.length < 2) return null;
+
+  const firstLine = rawLines[0];
+  const delim = firstLine.includes('\t') ? '\t' : (firstLine.includes(',') ? ',' : (firstLine.includes(';') ? ';' : '\t'));
+  const headerCols = firstLine.split(delim).map(c => String(c).toLowerCase().trim().replace(/[^a-z0-9]/g, ''));
+
+  const findCol = (keys) => {
+    for(let i=0; i<headerCols.length; i++){
+      if(keys.some(k => headerCols[i].includes(k))) return i;
+    }
+    return -1;
+  };
+
+  const isBiometric = headerCols.some(c => c.includes('datetime') || c.includes('inout') || c.includes('enno') || c.includes('tmno') || c.includes('punchtime'));
+
+  if(isBiometric){
+    // BIOMETRIC DEVICE EXPORT PARSER (.txt / tab-delimited)
+    const nameCol = findCol(['name', 'devotee', 'person']);
+    const dtCol = findCol(['datetime', 'timestamp', 'punchtime']);
+    const inOutCol = findCol(['inout', 'in/out', 'duty', 'direction']);
+    const enNoCol = findCol(['enno', 'enroll', 'enrollno', 'empno', 'badgeno', 'userid']);
+
+    const normName = (s) => String(s || '').toLowerCase().replace(/\b(pr|prabhu|das|dasa|ji)\b/g, '').replace(/[^a-z0-9]/g, '').trim();
+
+    const byDate = {};
+
+    for(let i=1; i<rawLines.length; i++){
+      const cols = rawLines[i].split(delim);
+      if(cols.length < 2) continue;
+
+      const rawName = (nameCol >= 0 ? cols[nameCol] : '').trim();
+      const rawEnNo = (enNoCol >= 0 ? cols[enNoCol] : '').trim();
+      const rawDt = (dtCol >= 0 ? cols[dtCol] : '').trim();
+      const rawInOut = (inOutCol >= 0 ? cols[inOutCol] : '').trim();
+
+      if(!rawDt) continue;
+      const dtParts = rawDt.split(/\s+/);
+      const dateStr = dtParts[0].replace(/\//g, '-');
+      const timeStr = dtParts[1] || '';
+
+      const timeM = timeStr.match(/^(\d{1,2}):(\d{2})/);
+      if(!timeM) continue;
+      const h = parseInt(timeM[1], 10);
+      const min = parseInt(timeM[2], 10);
+      const totalMin = h * 60 + min;
+
+      const displayName = rawName || (rawEnNo ? `Devotee #${parseInt(rawEnNo, 10) || rawEnNo}` : 'Devotee');
+      const devKey = normName(displayName) || displayName;
+
+      byDate[dateStr] = byDate[dateStr] || {};
+      const cur = byDate[dateStr][devKey];
+
+      // Prefer DutyOn or earliest punch of that day
+      if(!cur || totalMin < cur.min || (rawInOut.toLowerCase().includes('on') && !cur.inOut.toLowerCase().includes('on'))){
+        byDate[dateStr][devKey] = {
+          name: displayName,
+          rawTimeIn: `${String(h).padStart(2,'0')}:${String(min).padStart(2,'0')}`,
+          min: totalMin,
+          inOut: rawInOut,
+          enNo: rawEnNo,
+          date: dateStr
+        };
+      }
+    }
+
+    const availableDates = Object.keys(byDate).sort();
+    if(!availableDates.length) return null;
+
+    // Use requested date or default to the most recent date present in the file
+    const targetDate = (specificDate && byDate[specificDate]) ? specificDate : availableDates[availableDates.length - 1];
+    const punchesForDate = byDate[targetDate] || {};
+
+    const rows = [];
+    const matchedDevKeys = new Set();
+    const allDbDevs = (DB && DB.devotees) || [];
+
+    allDbDevs.forEach(d => {
+      const dNorm = normName(d.name);
+      let foundPunch = null;
+      for(const [k, p] of Object.entries(punchesForDate)){
+        if(k === dNorm || matchDevotee(d.name, p.name)){
+          foundPunch = p;
+          matchedDevKeys.add(k);
+          break;
+        }
+      }
+
+      const stdMin = 270; // 04:30 AM default
+      const inMin = foundPunch ? foundPunch.min : null;
+      let status = 'Absent';
+      let statusTone = 'grey';
+      let badgeText = 'No check-in';
+      let diffMin = null;
+
+      if(inMin != null){
+        diffMin = inMin - stdMin;
+        if(diffMin <= 0){
+          status = 'On Time';
+          statusTone = 'green';
+          badgeText = diffMin === 0 ? 'Exact time' : `${Math.abs(diffMin)}m early`;
+        } else if(diffMin <= 10){
+          status = 'Grace';
+          statusTone = 'amber';
+          badgeText = `+${diffMin}m (grace)`;
+        } else {
+          status = 'Late';
+          statusTone = 'danger';
+          badgeText = `+${diffMin}m late`;
+        }
+      }
+
+      rows.push({
+        name: d.name,
+        devoteeId: d.id,
+        avatarName: d.name,
+        devoteeInfo: d.appointment || (typeof dept === 'function' && dept(d.dept)?.name) || 'Devotee',
+        rawTimeIn: foundPunch ? foundPunch.rawTimeIn : '',
+        rawStd: '04:30',
+        timeInMin: inMin,
+        stdMin: stdMin,
+        timeIn: inMin != null ? formatMinutesTime(inMin) : '—',
+        standardTime: formatMinutesTime(stdMin),
+        diffMin,
+        status,
+        statusTone,
+        badgeText,
+        date: targetDate,
+        biometricEnNo: foundPunch ? foundPunch.enNo : null
+      });
+    });
+
+    // Add extra attendees found in the biometric file who are not registered in DB.devotees
+    for(const [k, p] of Object.entries(punchesForDate)){
+      if(!matchedDevKeys.has(k)){
+        const inMin = p.min;
+        const stdMin = 270;
+        const diffMin = inMin - stdMin;
+        let status = diffMin <= 0 ? 'On Time' : (diffMin <= 10 ? 'Grace' : 'Late');
+        let statusTone = diffMin <= 0 ? 'green' : (diffMin <= 10 ? 'amber' : 'danger');
+        let badgeText = diffMin <= 0 ? (diffMin === 0 ? 'Exact time' : `${Math.abs(diffMin)}m early`) : `+${diffMin}m late`;
+        rows.push({
+          name: p.name,
+          devoteeId: null,
+          avatarName: p.name,
+          devoteeInfo: 'Guest / Visiting Devotee',
+          rawTimeIn: p.rawTimeIn,
+          rawStd: '04:30',
+          timeInMin: inMin,
+          stdMin: stdMin,
+          timeIn: formatMinutesTime(inMin),
+          standardTime: formatMinutesTime(stdMin),
+          diffMin,
+          status,
+          statusTone,
+          badgeText,
+          date: targetDate,
+          biometricEnNo: p.enNo
+        });
+      }
+    }
+
+    const metrics = computeMorningMetrics(rows, targetDate);
+    metrics.isBiometric = true;
+    metrics.availableDates = availableDates;
+    metrics.rawBiometricText = text;
+    return metrics;
+  }
+
+  // STANDARD CSV PARSER FALLBACK
+  const lines = parseCSV(cleaned);
   if(!lines || lines.length < 2) return null;
   
   const headers = lines[0].map(h => String(h).toLowerCase().trim().replace(/[^a-z0-9]/g, ''));
-  const findCol = (keys) => {
+  const findCsvCol = (keys) => {
     for(let i=0; i<headers.length; i++){
       if(keys.some(k => headers[i].includes(k))) return i;
     }
     return -1;
   };
 
-  const nameIdx = findCol(['name', 'devotee', 'fullname', 'person']);
-  const inIdx = findCol(['timein', 'intime', 'time', 'actual', 'arrival']);
-  const stdIdx = findCol(['standard', 'target', 'benchmark', 'expected', 'std']);
-  const dateIdx = findCol(['date', 'day']);
+  const nameIdx = findCsvCol(['name', 'devotee', 'fullname', 'person']);
+  const inIdx = findCsvCol(['timein', 'intime', 'time', 'actual', 'arrival']);
+  const stdIdx = findCsvCol(['standard', 'target', 'benchmark', 'expected', 'std']);
+  const dateIdx = findCsvCol(['date', 'day']);
 
   const rows = [];
   for(let i=1; i<lines.length; i++){
@@ -5213,18 +5417,51 @@ function handleMorningCsvFile(file){
   if(!file) return;
   const reader = new FileReader();
   reader.onload = e => {
-    const text = e.target.result;
+    let text = '';
+    const buffer = e.target.result;
+    if (typeof buffer === 'string') {
+      text = buffer;
+    } else {
+      const bytes = new Uint8Array(buffer);
+      // Check for UTF-16LE BOM (0xFF 0xFE)
+      if (bytes.length >= 2 && bytes[0] === 0xFF && bytes[1] === 0xFE) {
+        try { text = new TextDecoder('utf-16le').decode(buffer); } catch(err){}
+      } else if (bytes.length >= 2 && bytes[0] === 0xFE && bytes[1] === 0xFF) {
+        try { text = new TextDecoder('utf-16be').decode(buffer); } catch(err){}
+      }
+      if (!text) {
+        try { text = new TextDecoder('utf-8').decode(buffer); } catch(err){
+          try { text = new TextDecoder('windows-1252').decode(buffer); } catch(e2){}
+        }
+      }
+      // If it contains null bytes, decode as utf-16le
+      if (text && text.includes('\0')) {
+        try {
+          const dec = new TextDecoder('utf-16le').decode(buffer);
+          if (dec && !dec.includes('\0')) text = dec;
+          else text = text.replace(/\0/g, '');
+        } catch(err) {
+          text = text.replace(/\0/g, '');
+        }
+      }
+    }
+    text = (text || '').replace(/^\uFEFF/, '').trim();
     const parsed = parseMorningCSV(text);
     if(parsed && parsed.rows && parsed.rows.length){
       APP.morningData = parsed;
       APP.morningView = 'csv';
-      toast(`Imported ${parsed.rows.length} morning check-in records!`, '🌅');
+      const typeLabel = parsed.isBiometric ? 'biometric device log (.txt)' : 'file';
+      toast(`Imported ${parsed.rows.length} devotee check-in records from ${typeLabel}!`, '🌅');
       render();
     } else {
-      toast('Could not parse valid devotee times. Please use the template.', '⚠️');
+      toast('Could not parse devotee check-ins. Please ensure the file contains Name and DateTime columns.', '⚠️');
     }
   };
-  reader.readAsText(file);
+  if (typeof reader.readAsArrayBuffer === 'function') {
+    reader.readAsArrayBuffer(file);
+  } else {
+    reader.readAsText(file);
+  }
 }
 
 function downloadMorningTemplate(){
@@ -5580,7 +5817,7 @@ function morningProgramPanel(){
 
   return `<div>
     <!-- Action Banner & Upload Control Bar -->
-    <input type="file" id="morning-csv-input" accept=".csv" style="display:none" data-act="morning-csv-file">
+    <input type="file" id="morning-csv-input" accept=".txt,.csv,.log,.dat,text/plain" style="display:none" data-act="morning-csv-file">
     
     <div class="card" style="margin-bottom:16px;border-left:4px solid var(--saffron);box-shadow:var(--sh-m)">
       <div class="card-b" style="display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap">
@@ -5589,23 +5826,22 @@ function morningProgramPanel(){
             <span>🌅</span> Morning Programme Sadhana & Attendance
           </h2>
           <div class="tiny" style="color:var(--ink-2);margin-top:4px">
-            Upload arrival CSV · Track week-over-week & month-over-month punctuality progress, arrival shifts, and streaks.
+            Upload biometric device export (.txt) · Track week-over-week & month-over-month punctuality progress, arrival shifts, and streaks.
           </div>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn pri sm" data-act="trigger-morning-csv">${ic('upload')}Upload CSV File</button>
-          <button class="btn sm" data-act="download-morning-template">${ic('download')}Template</button>
+          <button class="btn pri sm" data-act="trigger-morning-csv">${ic('upload')}Upload Biometric File (.txt)</button>
           <button class="btn sm ${progTab === 'progress' ? 'pri' : ''}" data-act="morning-subtab" data-v="progress">📈 Devotees Progress (${allDevs.length})</button>
-          <button class="btn sm ${progTab === 'report' ? 'pri' : ''}" data-act="morning-subtab" data-v="report">📋 Today's CSV Report</button>
+          <button class="btn sm ${progTab === 'report' ? 'pri' : ''}" data-act="morning-subtab" data-v="report">📋 Today's Attendance Report</button>
         </div>
       </div>
     </div>
 
     <!-- Drag & Drop Zone -->
     <div class="mp-dropzone" style="border:2px dashed var(--line);border-radius:var(--r-m);padding:18px 20px;text-align:center;background:var(--surface);margin-bottom:16px;cursor:pointer;transition:border-color .2s ease" data-act="trigger-morning-csv">
-      <div style="font-size:24px;margin-bottom:4px">📂</div>
-      <div style="font-weight:600;font-size:13.5px;color:var(--ink)">Click to browse or drop your Morning Program CSV file here</div>
-      <div class="tiny" style="color:var(--ink-3);margin-top:2px">Columns required: <b>Devotee Name</b>, <b>Time In</b> (e.g. 04:25 AM), <b>Standard Time</b> (e.g. 04:30 AM)</div>
+      <div style="font-size:24px;margin-bottom:4px">📟</div>
+      <div style="font-weight:600;font-size:13.5px;color:var(--ink)">Click to browse or drop your Biometrics Log (.txt / .csv) file here</div>
+      <div class="tiny" style="color:var(--ink-3);margin-top:2px">Supports biometric device exports (tab-delimited with <b>Name</b> and <b>DateTime</b>) and attendance files</div>
     </div>
 
     <!-- KPI Metric Dashboard Cards -->
