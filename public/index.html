@@ -11451,22 +11451,95 @@ function toast(msg,em='✅'){
   document.body.appendChild(t);setTimeout(()=>t.remove(),2600);
 }
 const FLD=(n,l,t='text',o={})=>({n,l,t,...o});
+function updateMultiSelectUI(name){
+  const container = document.querySelector(`.ms-container[data-ms="${name}"]`);
+  if(!container) return;
+  const checkboxes = container.querySelectorAll(`input[type="checkbox"][name="${name}"]`);
+  const checked = Array.from(checkboxes).filter(cb => cb.checked);
+  
+  const countEl = container.querySelector('.ms-count');
+  if(countEl) countEl.textContent = `${checked.length} selected`;
+  
+  const tagsWrap = container.querySelector('.ms-tags-wrap');
+  if(tagsWrap){
+    if(checked.length === 0){
+      tagsWrap.innerHTML = `<span class="muted ms-placeholder" style="font-size:13px">Select facilitators from dropdown...</span>`;
+    } else {
+      tagsWrap.innerHTML = checked.map(cb => {
+        const lab = cb.dataset.lab || cb.value;
+        return `<span class="ms-tag" data-val="${esc(cb.value)}" style="display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:14px;background:var(--accent-soft);border:1px solid var(--accent);color:var(--ink);font-size:12px;font-weight:500">
+          <span>🧑‍🏫 ${esc(lab)}</span>
+          <span class="ms-tag-del" data-act="ms-remove-tag" data-name="${esc(name)}" data-val="${esc(cb.value)}" title="Remove" style="cursor:pointer;font-size:14px;color:var(--muted);line-height:1;margin-left:2px;font-weight:bold">&times;</span>
+        </span>`;
+      }).join('');
+    }
+  }
+  
+  checkboxes.forEach(cb => {
+    const row = cb.closest('.ms-opt-row');
+    if(row){
+      row.style.background = cb.checked ? 'var(--accent-soft)' : 'transparent';
+      const mark = row.querySelector('.ms-check-mark');
+      if(mark) mark.style.display = cb.checked ? 'inline' : 'none';
+      const labelSpan = row.querySelector('.ms-opt-label');
+      if(labelSpan) labelSpan.style.fontWeight = cb.checked ? '600' : 'normal';
+    }
+  });
+}
+
 function fieldHTML(f){
   const v=f.v??'';
-  if(f.t==='multicheck'){
+  if(f.t==='multiselect' || f.t==='multicheck'){
     const selSet = new Set([].concat(f.v||[]).map(String));
-    return `<div class="field"><label>${esc(f.l)}</label>
-      <div style="display:flex;flex-wrap:wrap;gap:8px;padding:8px 10px;background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r);max-height:140px;overflow-y:auto">
-        ${(f.opts||[]).map(o=>{
-          const val=Array.isArray(o)?o[0]:o,lab=Array.isArray(o)?o[1]:o;
-          const chk=selSet.has(String(val));
-          return `<label style="display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:16px;background:${chk?'var(--accent-soft)':'var(--surface)'};border:1px solid ${chk?'var(--accent)':'var(--line)'};cursor:pointer;font-size:12.5px;color:var(--ink)">
-            <input type="checkbox" name="${f.n}" value="${esc(val)}" ${chk?'checked':''} style="margin:0">
-            <span>${esc(lab)}</span>
-          </label>`;
-        }).join('')}
+    const opts = f.opts || [];
+    const tagsHtml = opts.filter(o => selSet.has(String(Array.isArray(o)?o[0]:o))).map(o => {
+      const val = Array.isArray(o) ? o[0] : o;
+      const lab = Array.isArray(o) ? o[1] : o;
+      return `<span class="ms-tag" data-val="${esc(val)}" style="display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:14px;background:var(--accent-soft);border:1px solid var(--accent);color:var(--ink);font-size:12px;font-weight:500">
+        <span>🧑‍🏫 ${esc(lab)}</span>
+        <span class="ms-tag-del" data-act="ms-remove-tag" data-name="${esc(f.n)}" data-val="${esc(val)}" title="Remove" style="cursor:pointer;font-size:14px;color:var(--muted);line-height:1;margin-left:2px;font-weight:bold">&times;</span>
+      </span>`;
+    }).join('');
+
+    return `<div class="field ms-container" data-ms="${esc(f.n)}" style="position:relative">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
+        <label style="margin:0">${esc(f.l)}</label>
+        <span class="tiny muted ms-count" id="ms-count-${esc(f.n)}">${selSet.size} selected</span>
       </div>
-      ${f.hint?`<div class="hint">${esc(f.hint)}</div>`:''}
+
+      <!-- Multi-select Dropdown Trigger Box -->
+      <div class="ms-trigger" data-act="ms-toggle-menu" data-name="${esc(f.n)}" style="display:flex;align-items:center;justify-content:space-between;padding:7px 11px;border:1px solid var(--line);border-radius:var(--r);background:var(--card);cursor:pointer;min-height:40px;box-sizing:border-box">
+        <div class="ms-tags-wrap" id="ms-tags-${esc(f.n)}" style="display:flex;flex-wrap:wrap;gap:5px;align-items:center;flex:1;min-width:0">
+          ${tagsHtml || `<span class="muted ms-placeholder" style="font-size:13px">Select facilitators from dropdown...</span>`}
+        </div>
+        <span class="ms-arrow" id="ms-arrow-${esc(f.n)}" style="font-size:11px;color:var(--muted);margin-left:8px;user-select:none">▼</span>
+      </div>
+
+      <!-- Dropdown Menu -->
+      <div class="ms-menu" id="ms-menu-${esc(f.n)}" style="display:none;position:absolute;top:100%;left:0;right:0;margin-top:4px;background:var(--surface-1);border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.18);z-index:999;padding:6px;max-height:220px;overflow-y:auto">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 8px 6px;border-bottom:1px solid var(--line);margin-bottom:4px">
+          <input type="text" class="ms-search" data-act="ms-search" data-name="${esc(f.n)}" placeholder="Filter facilitators..." style="flex:1;min-width:0;padding:4px 8px;border:1px solid var(--line);border-radius:6px;font-size:12px;background:var(--surface-2);color:var(--ink);margin-right:8px">
+          <div style="display:flex;gap:6px">
+            <button type="button" class="btn sm" data-act="ms-select-all" data-name="${esc(f.n)}" style="padding:2px 7px;font-size:11px">All</button>
+            <button type="button" class="btn sm" data-act="ms-clear-all" data-name="${esc(f.n)}" style="padding:2px 7px;font-size:11px">Clear</button>
+          </div>
+        </div>
+        <div class="ms-opts-list" id="ms-opts-${esc(f.n)}">
+          ${opts.map(o => {
+            const val = Array.isArray(o) ? o[0] : o;
+            const lab = Array.isArray(o) ? o[1] : o;
+            const chk = selSet.has(String(val));
+            return `
+              <label class="ms-opt-row" data-val="${esc(val)}" data-lab="${esc(lab).toLowerCase()}" style="display:flex;align-items:center;gap:10px;padding:7px 9px;border-radius:6px;cursor:pointer;font-size:12.5px;color:var(--ink);transition:background 0.15s;background:${chk ? 'var(--accent-soft)' : 'transparent'}">
+                <input type="checkbox" name="${esc(f.n)}" value="${esc(val)}" ${chk ? 'checked' : ''} data-act="ms-toggle-item" data-name="${esc(f.n)}" data-lab="${esc(lab)}" style="margin:0;cursor:pointer;accent-color:var(--accent)">
+                <span class="ms-opt-label" style="flex:1;min-width:0;font-weight:${chk ? '600' : 'normal'}">🧑‍🏫 ${esc(lab)}</span>
+                <span class="ms-check-mark" style="font-size:12px;color:var(--accent);display:${chk ? 'inline' : 'none'}">✓</span>
+              </label>
+            `;
+          }).join('')}
+        </div>
+      </div>
+      ${f.hint ? `<div class="hint">${esc(f.hint)}</div>` : ''}
     </div>`;
   }
   if(f.t==='select')return `<div class="field"><label>${esc(f.l)}</label><select name="${f.n}">${(f.opts||[]).map(o=>{
@@ -12515,7 +12588,7 @@ function openBatchForm(id){
     FLD('level','Level','select',{v:b?.level||1,opts:[[1,'Level 1'],[2,'Level 2'],[3,'Level 3']],half:1}),
     FLD('incharge','Incharge (senior responsible)','select',{v:b?.incharge||'',opts:[['','— None —'],...allDevs],half:1}),
     FLD('coordinator','Coordinator','select',{v:b?.coordinator,opts:DB.devotees.map(x=>[x.id,x.name]),half:1}),
-    FLD('facilitators','Facilitators (from hierarchy)','multicheck',{v:facIds,opts:hFacs.map(x=>[x.id,x.name]),hint:'Check all facilitators who guide devotees in this batch'}),
+    FLD('facilitators','Facilitators (from hierarchy)','multiselect',{v:facIds,opts:hFacs.map(x=>[x.id,x.name]),hint:'Select all facilitators who guide devotees in this batch'}),
     FLD('freq','Meeting frequency','select',{v:b?.freq||'Weekly',opts:['Weekly','Fortnightly','Monthly'],half:1}),
     FLD('day','Meeting day','select',{v:b?.day||'Thu',opts:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],half:1}),
     FLD('time','Class time','text',{v:b?.time||'7:00 pm',half:1}),
@@ -12962,6 +13035,16 @@ function refocus(sel,caretEnd=true){
   el.focus();if(caretEnd&&el.setSelectionRange&&el.type!=='date'&&el.type!=='number'){const v=el.value;try{el.setSelectionRange(v.length,v.length)}catch(e){}}
 }
 document.addEventListener('click',e=>{
+  // Close any open multi-select dropdowns if clicking outside
+  if (!e.target.closest('.ms-container')) {
+    document.querySelectorAll('.ms-menu').forEach(menu => {
+      menu.style.display = 'none';
+      const name = menu.id.replace('ms-menu-', '');
+      const arrow = document.getElementById('ms-arrow-' + name);
+      if(arrow) arrow.textContent = '▼';
+    });
+  }
+
   const t=e.target.closest('[data-act]');
   const link=e.target.closest('a[href^="#/"]');
   if(link&&!t){e.preventDefault();go(link.getAttribute('href'));return}
@@ -12973,6 +13056,10 @@ document.addEventListener('click',e=>{
     e.preventDefault();go(t.getAttribute('href'));return}
   const stop=()=>{e.preventDefault();e.stopPropagation()};
   switch(a){
+   case 'ms-toggle-item':{
+     updateMultiSelectUI(t.dataset.name);
+     break}
+
   /* ---- session / navigation ---- */
   case 'pick-user':loginPick=id;render();break;
   case 'login':{const u=DB.users.find(x=>x.id===loginPick);APP.user={...u};
@@ -12982,6 +13069,43 @@ document.addEventListener('click',e=>{
   case 'switch-user':APP.modal='account';render();break;
   case 'logout':localStorage.removeItem('bace_token');localStorage.removeItem('bace_user');APP.user=null;APP.modal='';render();toast('Signed out successfully','👋');break;
   case 'check-approval-status':checkApprovalStatus();break;
+  case 'ms-toggle-menu':{
+    const name = t.dataset.name;
+    const menu = document.getElementById('ms-menu-' + name);
+    const arrow = document.getElementById('ms-arrow-' + name);
+    if(menu){
+      const isOpen = menu.style.display === 'block';
+      // Close other open menus
+      document.querySelectorAll('.ms-menu').forEach(m => m.style.display = 'none');
+      document.querySelectorAll('.ms-arrow').forEach(a => a.textContent = '▼');
+      if(!isOpen){
+        menu.style.display = 'block';
+        if(arrow) arrow.textContent = '▲';
+        setTimeout(()=>{
+          const sInp = menu.querySelector('.ms-search');
+          if(sInp) sInp.focus();
+        }, 50);
+      }
+    }
+    break}
+  case 'ms-remove-tag':stop();{
+    const name = t.dataset.name, val = t.dataset.val;
+    const cb = document.querySelector(`#modalform input[type="checkbox"][name="${name}"][value="${val}"]`);
+    if(cb){
+      cb.checked = false;
+      updateMultiSelectUI(name);
+    }
+    break}
+  case 'ms-select-all':stop();{
+    const name = t.dataset.name;
+    document.querySelectorAll(`#modalform input[type="checkbox"][name="${name}"]`).forEach(cb => cb.checked = true);
+    updateMultiSelectUI(name);
+    break}
+  case 'ms-clear-all':stop();{
+    const name = t.dataset.name;
+    document.querySelectorAll(`#modalform input[type="checkbox"][name="${name}"]`).forEach(cb => cb.checked = false);
+    updateMultiSelectUI(name);
+    break}
   case 'approve-devotee':stop();approveDevoteeAction(id);break;
   case 'reject-devotee':stop();rejectDevoteeAction(id);break;
   case 're-apply':if(APP.user)APP.user.approvalStatus='pending_profile';render();break;
@@ -14944,6 +15068,17 @@ case 'rep-batch':APP.filters.repBatch=t.value;savePreachingFilters();render();br
 });
 /* input events: search fields with focus retention */
 document.addEventListener('input',e=>{
+  const msSearch = e.target.closest('[data-act="ms-search"]');
+  if(msSearch){
+    const name = msSearch.dataset.name;
+    const query = msSearch.value.trim().toLowerCase();
+    const rows = document.querySelectorAll(`#ms-opts-${name} .ms-opt-row`);
+    rows.forEach(r => {
+      const lab = r.dataset.lab || '';
+      r.style.display = (!query || lab.includes(query)) ? 'flex' : 'none';
+    });
+    return;
+  }
   const t=e.target.closest('[data-act]');if(!t)return;
   const a=t.dataset.act;
   if(a==='f'){const k=t.dataset.k,n=t.dataset.n;APP.filters[k]=APP.filters[k]||{};APP.filters[k][n]=t.value;APP.page[k]=1;
