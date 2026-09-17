@@ -1204,6 +1204,16 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
     text-overflow:ellipsis!important;
     padding:7px 4px!important;
   }
+  .att-filter-controls-row{
+    flex-direction:column!important;
+    align-items:stretch!important;
+    gap:8px!important;
+  }
+  .att-filter-controls-row > div,
+  .att-filter-controls-row select{
+    width:100%!important;
+    max-width:100%!important;
+  }
   .card{
     width:100%!important;
     max-width:100%!important;
@@ -9399,9 +9409,42 @@ function batchAttendancePanel(){
   const classes=batchActs(bid).filter(a=>(a.type==='Class'||a.type==='Event')).sort((a,b)=>a.date<b.date?1:-1);
   const cid=APP.filters.attClass&&classes.some(c=>c.id===APP.filters.attClass)?APP.filters.attClass:(classes[0]||{}).id;
   const cl=act(cid);
-  const members=batchMembers(bid);
+  const allMembers=batchMembers(bid);
   const cur=id=>(DB.attendance.find(a=>a.ref===cid&&a.devotee===id)||{}).status||'';
-  const present=members.filter(m=>cur(m.id)==='Present').length;
+  
+  const present=allMembers.filter(m=>cur(m.id)==='Present').length;
+  const late=allMembers.filter(m=>cur(m.id)==='Late').length;
+  const excused=allMembers.filter(m=>cur(m.id)==='Excused').length;
+  const absent=allMembers.filter(m=>cur(m.id)==='Absent').length;
+  const unmarked=allMembers.filter(m=>!cur(m.id)).length;
+
+  let members = [...allMembers];
+
+  // Search filter by devotee name or college/org
+  const q = (APP.filters.attSearch||'').trim().toLowerCase();
+  if(q){
+    members = members.filter(d => (d.name||'').toLowerCase().includes(q) || (d.org||'').toLowerCase().includes(q) || (d.phone||'').includes(q));
+  }
+
+  // Status filter dropdown
+  const stFilter = APP.filters.attStatusFilter || '';
+  if(stFilter === 'unmarked'){
+    members = members.filter(d => !cur(d.id));
+  } else if(stFilter){
+    members = members.filter(d => cur(d.id) === stFilter);
+  }
+
+  // Sort option (Name A-Z, Z-A, Status, Default)
+  const sortOpt = APP.filters.attSort || 'name_asc';
+  if(sortOpt === 'name_asc'){
+    members.sort((a,b) => (a.name||'').localeCompare(b.name||''));
+  } else if(sortOpt === 'name_desc'){
+    members.sort((a,b) => (b.name||'').localeCompare(a.name||''));
+  } else if(sortOpt === 'status'){
+    const order = { 'Present': 1, 'Late': 2, 'Excused': 3, 'Absent': 4, '': 5 };
+    members.sort((a,b) => (order[cur(a.id)] || 5) - (order[cur(b.id)] || 5) || (a.name||'').localeCompare(b.name||''));
+  }
+
   return section(`📖 ${esc(batch(bid).name)} attendance`,`
    <div class="toolbar att-toolbar">
      <div class="att-toolbar-row">
@@ -9410,12 +9453,35 @@ function batchAttendancePanel(){
      </div>
      <div class="att-toolbar-row att-actions-row">
        <button class="btn sm pri" data-act="save-attendance">${ic('check')}Save attendance</button>
-       <button class="btn sm" data-act="mark-all" data-ref="${cid}" data-b="${bid}">Mark all present</button>
-        <button class="btn sm" data-act="open-schedule" data-batch="${bid}" data-type="Event">✨ Create event</button>
-        <button class="btn sm" data-act="open-schedule" data-batch="${bid}" data-type="Class" style="border-color:var(--indigo-soft);color:var(--indigo)">${ic('plus')}Schedule class</button>
+       <button class="btn sm" data-act="mark-all" data-ref="${cid}" data-b="${bid}" title="Mark all members as Present">Mark all present</button>
+       <button class="btn sm" data-act="mark-unmarked-absent" data-ref="${cid}" data-b="${bid}" style="border-color:rgba(220,53,69,0.3);color:var(--danger);background:rgba(220,53,69,0.06)" title="Mark all remaining unmarked members as absent">✗ Mark unmarked as absent</button>
+       <button class="btn sm" data-act="open-schedule" data-batch="${bid}" data-type="Event">✨ Create event</button>
+       <button class="btn sm" data-act="open-schedule" data-batch="${bid}" data-type="Class" style="border-color:var(--indigo-soft);color:var(--indigo)">${ic('plus')}Schedule class</button>
+     </div>
+     <div class="att-toolbar-row att-filter-controls-row" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:4px;padding-top:8px;border-top:1px solid var(--line-2)">
+       <div style="position:relative;flex:1;min-width:170px;max-width:280px">
+         <input type="text" class="inp sm" data-act="att-q" value="${esc(APP.filters.attSearch||'')}" placeholder="Search devotee name..." style="width:100%;font-size:12.5px;padding:6px 10px 6px 28px;border-radius:8px;box-sizing:border-box">
+         <span style="position:absolute;left:9px;top:50%;transform:translateY(-50%);font-size:12px;opacity:0.55;pointer-events:none">🔍</span>
+         ${APP.filters.attSearch ? `<button type="button" class="btn ghost sm" data-act="clear-att-q" style="position:absolute;right:3px;top:50%;transform:translateY(-50%);padding:2px 6px;font-size:11px;color:var(--ink-3);min-height:auto" title="Clear search">✕</button>` : ''}
+       </div>
+       <select class="att-select sm" data-act="att-status-filter" style="font-size:12.5px;padding:6px 10px;border-radius:8px;min-width:145px">
+         <option value="">All Statuses (${allMembers.length})</option>
+         <option value="unmarked" ${stFilter==='unmarked'?'selected':''}>❓ Unmarked (${unmarked})</option>
+         <option value="Present" ${stFilter==='Present'?'selected':''}>✓ Present (${present})</option>
+         <option value="Late" ${stFilter==='Late'?'selected':''}>⚠️ Late (${late})</option>
+         <option value="Excused" ${stFilter==='Excused'?'selected':''}>🛡 Excused (${excused})</option>
+         <option value="Absent" ${stFilter==='Absent'?'selected':''}>✗ Absent (${absent})</option>
+       </select>
+       <select class="att-select sm" data-act="att-sort" style="font-size:12.5px;padding:6px 10px;border-radius:8px;min-width:150px">
+         <option value="name_asc" ${(APP.filters.attSort||'name_asc')==='name_asc'?'selected':''}>Sort: Name (A → Z)</option>
+         <option value="name_desc" ${APP.filters.attSort==='name_desc'?'selected':''}>Sort: Name (Z → A)</option>
+         <option value="status" ${APP.filters.attSort==='status'?'selected':''}>Sort: By Status</option>
+         <option value="default" ${APP.filters.attSort==='default'?'selected':''}>Sort: Default batch order</option>
+       </select>
+       ${(q || stFilter || (APP.filters.attSort && APP.filters.attSort !== 'name_asc')) ? `<button class="btn sm ghost" data-act="reset-att-filters" style="font-size:11.5px;padding:4px 8px;color:var(--accent)" title="Reset filters & sorting">Reset filters</button>` : ''}
      </div>
    </div>
-   ${cl?`<div class="card-b att-summary-bar" style="padding-bottom:0"><div class="tiny">${fmtLong(cl.date)} · ${esc(cl.location||'Online / BACE')} · <b>${present} of ${members.length}</b> present (${pct(present,members.length)}%)</div></div>`:''}
+   ${cl?`<div class="card-b att-summary-bar" style="padding-bottom:0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><div class="tiny">${fmtLong(cl.date)} · ${esc(cl.location||'Online / BACE')} · <b>${present} of ${allMembers.length}</b> present (${pct(present,allMembers.length)}%)${late?` · <span style="color:var(--amber);font-weight:600">${late} late</span>`:''}${absent?` · <span style="color:var(--danger);font-weight:600">${absent} absent</span>`:''}${unmarked?` · <span style="color:var(--ink-3)">${unmarked} unmarked</span>`:''}</div><div class="tiny" style="color:var(--ink-2)">Showing <b>${members.length}</b> of ${allMembers.length} devotees</div></div>`:''}
    ${members.length?`<div class="list">${members.map(d=>{const st=cur(d.id);return `<div class="li att-row">
      <div class="att-row-top">
        ${av(d.name)}
@@ -9429,7 +9495,8 @@ function batchAttendancePanel(){
        ${['Present','Late','Excused','Absent'].map(s=>`<button type="button" class="chip att-btn ${s.toLowerCase()} ${st===s?'on':''}" data-act="mark" data-ref="${cid}" data-d="${d.id}" data-s="${s}" data-cat="Preaching batch">${s==='Present'?'✓ ':''}${s}</button>`).join('')}
      </div>
    </div>`}).join('')}</div>`
-   :emptyState('No members in this batch','Add members from batch management.','<a class="btn pri" href="#/batches">Batch management</a>','people')}`,`
+   : (allMembers.length ? emptyState('No matching devotees','No devotees match the selected filter or search query.','<button class="btn sm" data-act="reset-att-filters">Clear filters</button>','search')
+   : emptyState('No members in this batch','Add members from batch management.','<a class="btn pri" href="#/batches">Batch management</a>','people'))}`,`
    <span class="tiny">Tap once per devotee</span>`);
 }
 
@@ -14179,6 +14246,20 @@ document.addEventListener('click',e=>{
     batchMembers(t.dataset.b).forEach(d=>{let rec=DB.attendance.find(x=>x.ref===ref&&x.devotee===d.id);
       if(rec)rec.status='Present';else DB.attendance.push({id:uid('at'),category:'Preaching batch',ref,devotee:d.id,date:(act(ref)||{}).date||iso(TODAY),status:'Present'})});
     toast('All marked present — remember to save');render();break}
+  case 'mark-unmarked-absent':stop();{const ref=t.dataset.ref;
+    let count=0;
+    batchMembers(t.dataset.b).forEach(d=>{let rec=DB.attendance.find(x=>x.ref===ref&&x.devotee===d.id);
+      if(!rec || !rec.status){
+        if(rec) rec.status='Absent';
+        else DB.attendance.push({id:uid('at'),category:'Preaching batch',ref,devotee:d.id,date:(act(ref)||{}).date||iso(TODAY),status:'Absent'});
+        count++;
+      }
+    });
+    if(count > 0) toast(`${count} unmarked devotees marked as Absent — remember to save`, '📋');
+    else toast('All devotees are already marked', 'ℹ️');
+    render();break}
+  case 'clear-att-q':stop();APP.filters.attSearch='';render();break;
+  case 'reset-att-filters':stop();APP.filters.attSearch='';APP.filters.attStatusFilter='';APP.filters.attSort='name_asc';render();break;
   case 'mark-all-act':stop();{const ref=t.dataset.ref;
     if(ref && ref.startsWith('dept_')){
       const dId = ref.split('_')[1];
@@ -15168,6 +15249,8 @@ document.addEventListener('change',e=>{
 case 'range':APP.range[t.dataset.n]=t.value;savePreachingFilters();render();break;
    case 'att-batch':APP.filters.attBatch=t.value;APP.filters.attClass=null;try{localStorage.setItem('bace_att_batch',t.value)}catch(e){}render();break;
    case 'att-class':APP.filters.attClass=t.value;try{localStorage.setItem('bace_att_class',t.value)}catch(e){}render();break;
+   case 'att-status-filter':APP.filters.attStatusFilter=t.value;render();break;
+   case 'att-sort':APP.filters.attSort=t.value;render();break;
    case 'att-dept':APP.filters.attDept=t.value;APP.filters.attAct=null;render();break;
    case 'att-act':APP.filters.attAct=t.value;render();break;
    case 'att-date':APP.filters.attDate=t.value;render();break;
@@ -15229,6 +15312,7 @@ document.addEventListener('input',e=>{
   else if(a==='vol-q'){syncAssign();assignDraft().q=t.value;render();refocus('[data-act="vol-q"]')}
   else if(a==='pick-q'){APP.modal.q=t.value;render();refocus('#pickq')}
   else if(a==='morning-q'){APP.morningSearch=t.value;render();refocus('[data-act="morning-q"]')}
+  else if(a==='att-q'){APP.filters.attSearch=t.value;render();refocus('[data-act="att-q"]')}
   else if(a==='global-search'){APP.search=t.value}
 });
 document.addEventListener('keydown',e=>{
