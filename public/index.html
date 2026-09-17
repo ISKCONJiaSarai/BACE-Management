@@ -5076,8 +5076,8 @@ function activityModal(id){
       </select>
     </div>
     <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
-      <select id="scope-devotee-sel" style="flex:1 1 0%;min-width:0;padding:8px 10px;border:1px solid var(--line);border-radius:9px;font-size:13px;background:var(--card);color:var(--ink)">
-        <option value="">Select devotee (${scopeDevs.length} available)...</option>
+      <select id="scope-devotee-sel" data-act="side-select-assign" data-a="${a.id}" style="flex:1 1 0%;min-width:0;padding:8px 10px;border:1px solid var(--line);border-radius:9px;font-size:13px;background:var(--card);color:var(--ink);cursor:pointer;text-overflow:ellipsis">
+        <option value="">${scopeDevs.length ? `Select devotee (${scopeDevs.length} available)...` : 'No available devotees in this batch'}</option>
         ${scopeDevs.map(d=>`<option value="${d.id}">${esc(d.name)}${d.batch && d.batch!==selBatchId ? ` (${batch(d.batch)?.name||''})` : ''} · ${d.attendancePct}% attendance</option>`).join('')}
       </select>
       <button class="btn sm pri" data-act="assign-from-sel" data-a="${a.id}" style="flex-shrink:0;padding:8px 14px;white-space:nowrap">${ic('plus')}Assign</button>
@@ -12700,7 +12700,7 @@ function routeView(){
       case 'notifications':return viewNotifications();
       case 'admin':return guard('admin',viewAdmin);
       case 'more':return viewMore();
-      case 'activity':{const a=act(arg);if(a){APP.modal={kind:'activity',id:arg};}return viewAssign()}
+      case 'activity':{const a=act(arg);if(a){APP.sideDevFilterBatch = a.batch || '';APP.modal={kind:'activity',id:arg};}return viewAssign()}
       default:return emptyState('Page not found','That route does not exist in this application.','<a class="btn pri" href="#/">Back to dashboard</a>');
     }
   } catch(err) {
@@ -12712,6 +12712,10 @@ function render(){
   DB.devotees.forEach(normalizeDevotee);
   const app=document.getElementById('app');
   if(!APP.user){app.innerHTML=viewLogin();initGoogleAuth();return}
+
+  // Preserve drawer scroll position if side panel is open
+  const drawerBody = document.querySelector('.drawer .modal-b');
+  const prevDrawerScroll = drawerBody ? drawerBody.scrollTop : 0;
 
   // Gating for unapproved devotees:
   const curDevotee = (APP.user.devotee && dv(APP.user.devotee)) || DB.devotees.find(x => x.email && APP.user.email && x.email.trim().toLowerCase() === APP.user.email.trim().toLowerCase());
@@ -12753,6 +12757,10 @@ function render(){
   const mobileScrim = APP.mobileDrawerOpen ? `<div class="mobile-scrim" data-act="close-mobile-drawer" aria-label="Close menu"></div>` : '';
   app.innerHTML=`<div class="${shellClass}">${sidebar()}<div class="main">${topbar()}<div class="view">${body}</div></div></div>
     ${mobileScrim}${sbToggleBtn}${botnav()}${fab()}${modalHTML()}`;
+  const newDrawerBody = document.querySelector('.drawer .modal-b');
+  if (newDrawerBody && prevDrawerScroll > 0) {
+    newDrawerBody.scrollTop = prevDrawerScroll;
+  }
   const sb=document.getElementById('sbscroll');
   if(sb){
     let lockScroll = true;
@@ -12958,6 +12966,7 @@ document.addEventListener('click',e=>{
   const link=e.target.closest('a[href^="#/"]');
   if(link&&!t){e.preventDefault();go(link.getAttribute('href'));return}
   if(!t){return}
+  if(t.tagName==='SELECT'||e.target.tagName==='SELECT'||e.target.tagName==='OPTION'){return}
   const a=t.dataset.act,id=t.dataset.id;
   // links that also carry data-act
   if(t.tagName==='A'&&t.getAttribute('href')&&t.getAttribute('href').startsWith('#/')&&['drill'].includes(a)===false&&!['open-devotee','open-activity','open-contact','open-dept','open-batch','open-group','open-sop'].includes(a)){
@@ -13065,7 +13074,13 @@ document.addEventListener('click',e=>{
   case 'open-dept':stop();go('#/dept/'+id);break;
   case 'open-batch':stop();go('#/batch/'+id);break;
   case 'open-group':stop();go('#/group/'+id);break;
-  case 'open-activity':stop();APP.modal={kind:'activity',id};render();break;
+  case 'open-activity':stop();{
+    const a = act(id);
+    APP.sideDevFilterBatch = a ? (a.batch || '') : '';
+    APP.modal = {kind: 'activity', id};
+    render();
+    break;
+  }
   case 'open-contact':stop();APP.modal={kind:'contact',id};render();break;
   case 'open-sop':stop();APP.modal={kind:'sop',id};render();break;
   case 'open-report':{const r=DB.reports.find(x=>x.id===id);if(!r)break;
@@ -13806,10 +13821,7 @@ document.addEventListener('click',e=>{
     assignsFor(a.id).forEach(x=>{if(!x.state.startsWith('Completed')){x.state='Completed';x.actualPerformer=x.devotee;x.completedAt=`${iso(TODAY)} ${nowTime()}`}});
     saveActivitiesToStorage();saveAssignmentsToStorage();
     logAudit('Activity completed',a.name);toast('Marked completed','✅');render();break}
-  case 'side-filter-batch':stop();{
-    APP.sideDevFilterBatch = t.value;
-    render();
-    break}
+
   case 'quick-add-item':stop();{
     const aId = t.dataset.id;
     const inp = document.getElementById('new-item-inp-' + aId);
@@ -14870,6 +14882,21 @@ document.addEventListener('change',e=>{
   const a=t.dataset.act;
   switch(a){
    case 'side-filter-batch':{APP.sideDevFilterBatch=t.value;render();break}
+   case 'side-select-assign':{
+     const aId=t.dataset.a;
+     const dId=t.value;
+     if(dId){
+       if(!DB.assignments.some(x=>x.activity===aId && x.devotee===dId)){
+         DB.assignments.push({id:uid('as'),activity:aId,devotee:dId,state:'Assigned',actualPerformer:null,completedAt:null});
+         const a=act(aId);if(a&&a.status==='Scheduled')a.status='Assigned';
+         DB.notifications.unshift({id:uid('n'),em:'🪔',title:'Seva assigned',body:`${nameOf(dId)} assigned to ${a?.name||''}`,date:iso(TODAY),read:false,cat:'Management'});
+         logAudit('Seva assigned',`${nameOf(dId)} → ${a?.name||''}`);
+         toast(nameOf(dId)+' assigned');
+         saveAssignmentsToStorage();saveActivitiesToStorage();
+       }
+       render();
+     }
+     break}
    case 'f':{const k=t.dataset.k,n=t.dataset.n;APP.filters[k]=APP.filters[k]||{};APP.filters[k][n]=t.value;APP.page[k]=1;render();break}
 case 'range':APP.range[t.dataset.n]=t.value;savePreachingFilters();render();break;
    case 'att-batch':APP.filters.attBatch=t.value;APP.filters.attClass=null;try{localStorage.setItem('bace_att_batch',t.value)}catch(e){}render();break;
