@@ -11956,131 +11956,233 @@ async function executeDevoteeCsvImport(){
       backendResult = data;
     }
 
-    // Synchronize in-memory DB.devotees
-    let localAdded = 0;
-    let localUpdated = 0;
+    // If backend returned populated devotees, merge them directly into DB.devotees
+    if(backendResult && Array.isArray(backendResult.data) && backendResult.data.length > 0){
+      backendResult.data.forEach(serverDev => {
+        if(isBaceAdminEmail(serverDev.email) || serverDev.appointment === 'BACE Administrator') return;
 
-    devoteesPayload.forEach(row => {
-      const rawName = (row.name || '').trim();
-      if(!rawName) return;
-      if(isBaceAdminEmail(row.email) || rawName === 'ISKCON BACE Admin') return;
+        const targetId = String(serverDev.customId || serverDev._id || serverDev.id || '');
+        const serverName = (serverDev.name || '').trim().toLowerCase();
 
-      let existing = DB.devotees.find(d => 
-        !isBaceAdminEmail(d.email) && (
-          d.name.trim().toLowerCase() === rawName.toLowerCase() ||
-          (row.email && d.email && d.email.trim().toLowerCase() === row.email.trim().toLowerCase())
-        )
-      );
-
-      let bId = null;
-      if(targetBatchId){
-        bId = targetBatchId;
-      } else if(row.batch){
-        const matchB = (DB.batches||[]).find(b => 
-          b.id === row.batch || 
-          b.name.toLowerCase().trim() === String(row.batch).toLowerCase().trim()
+        let localDev = DB.devotees.find(x =>
+          (targetId && (String(x.id) === targetId || String(x.customId) === targetId)) ||
+          (x.name && x.name.trim().toLowerCase() === serverName) ||
+          (serverDev.email && x.email && x.email.trim().toLowerCase() === serverDev.email.trim().toLowerCase())
         );
-        bId = matchB ? matchB.id : row.batch;
-      }
 
-      let dpId = null;
-      if(row.dept){
-        const matchDp = (DB.departments||[]).find(dp => 
-          dp.id === row.dept || 
-          dp.name.toLowerCase().trim() === String(row.dept).toLowerCase().trim()
-        );
-        dpId = matchDp ? matchDp.id : row.dept;
-      }
-
-      let cgId = null;
-      if(row.careGroup){
-        const matchCg = (DB.careGroups||[]).find(cg => 
-          cg.id === row.careGroup || 
-          cg.name.toLowerCase().trim() === String(row.careGroup).toLowerCase().trim()
-        );
-        cgId = matchCg ? matchCg.id : row.careGroup;
-      }
-
-      let facId = null;
-      if(row.facilitator){
-        const cleanF = String(row.facilitator).toLowerCase().trim();
-        const allFacs = getHierarchyFacilitators();
-        const matchF = allFacs.find(f => 
-          f.id === row.facilitator || 
-          f.name.toLowerCase().trim() === cleanF ||
-          (f.email && f.email.toLowerCase().trim() === cleanF)
-        ) || (DB.devotees||[]).find(d => 
-          d.id === row.facilitator || 
-          d.name.toLowerCase().trim() === cleanF
-        );
-        facId = matchF ? matchF.id : row.facilitator;
-      }
-
-      if(existing){
-        if(row.gender) existing.gender = (String(row.gender).toLowerCase().startsWith('f')) ? 'Female' : 'Male';
-        if(row.phone) existing.phone = row.phone;
-        if(row.email) existing.email = row.email;
-        if(row.residence) existing.residence = row.residence;
-        if(row.address) existing.address = row.address;
-        if(row.attendanceMode) existing.attendanceMode = row.attendanceMode;
-        if(row.batchRole) existing.batchRole = row.batchRole;
-        if(bId) existing.batch = bId;
-        if(dpId) existing.dept = dpId;
-        if(cgId) existing.careGroup = cgId;
-        if(facId) existing.facilitator = facId;
-        if(row.status) existing.status = row.status;
-        if(row.level !== undefined && row.level !== '') existing.level = Number(row.level);
-        if(row.org) existing.org = row.org;
-        if(row.occupation) existing.occupation = row.occupation;
-        if(row.highestEducation) existing.highestEducation = row.highestEducation;
-        if(row.presentStudiesOrJob) existing.presentStudiesOrJob = row.presentStudiesOrJob;
-        if(row.attendancePct !== undefined && row.attendancePct !== '') existing.attendancePct = Number(row.attendancePct);
-        if(row.rounds !== undefined && row.rounds !== ''){
-          existing.sadhana = existing.sadhana || {};
-          existing.sadhana.rounds = Number(row.rounds);
+        // Resolve populated relational objects to local in-memory IDs
+        let resolvedBatchId = null;
+        if(serverDev.batch){
+          const bObj = typeof serverDev.batch === 'object' ? serverDev.batch : null;
+          const bName = bObj ? bObj.name : null;
+          const bRawId = bObj ? String(bObj._id || bObj.id || '') : String(serverDev.batch);
+          const bMatch = (DB.batches||[]).find(b =>
+            (bName && b.name === bName) ||
+            b.id === bRawId || (b._id && String(b._id) === bRawId)
+          );
+          resolvedBatchId = bMatch ? bMatch.id : (targetBatchId || bRawId);
+        } else if(targetBatchId){
+          resolvedBatchId = targetBatchId;
         }
-        if(row.skills){
-          const sArr = Array.isArray(row.skills) ? row.skills : String(row.skills).split(',').map(s=>s.trim()).filter(Boolean);
-          if(sArr.length) existing.skills = Array.from(new Set([...(existing.skills||[]), ...sArr]));
-        }
-        normalizeDevotee(existing);
-        localUpdated++;
-      } else {
-        const newD = normalizeDevotee({
-          id: 'd_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
-          name: rawName,
-          gender: (row.gender && String(row.gender).toLowerCase().startsWith('f')) ? 'Female' : 'Male',
-          phone: row.phone || '',
-          email: row.email || '',
-          residence: row.residence || 'Jia Sarai BACE',
-          address: row.address || '',
-          attendanceMode: row.attendanceMode || 'Offline at BACE',
-          batchRole: row.batchRole || 'Member',
-          batch: bId || null,
-          dept: dpId || null,
-          careGroup: cgId || null,
-          facilitator: facId || null,
-          status: row.status || 'Active',
-          level: row.level !== undefined && row.level !== '' ? Number(row.level) : (bId ? 1 : 0),
-          org: row.org || 'IIT Delhi',
-          occupation: row.occupation || 'Student',
-          highestEducation: row.highestEducation || '',
-          presentStudiesOrJob: row.presentStudiesOrJob || '',
-          attendancePct: row.attendancePct !== undefined && row.attendancePct !== '' ? Number(row.attendancePct) : 85,
-          joined: row.joined || iso(TODAY),
-          sadhana: {
-            rounds: row.rounds !== undefined && row.rounds !== '' ? Number(row.rounds) : 0,
-            morningProgram: 0
-          },
-          skills: row.skills ? (Array.isArray(row.skills) ? row.skills : String(row.skills).split(',').map(s=>s.trim()).filter(Boolean)) : []
-        });
-        DB.devotees.unshift(newD);
-        localAdded++;
-      }
-    });
 
-    const finalAdded = backendResult ? backendResult.added : localAdded;
-    const finalUpdated = backendResult ? backendResult.updated : localUpdated;
+        let resolvedDeptId = null;
+        if(serverDev.dept){
+          const dObj = typeof serverDev.dept === 'object' ? serverDev.dept : null;
+          const dName = dObj ? dObj.name : null;
+          const dRawId = dObj ? String(dObj._id || dObj.id || '') : String(serverDev.dept);
+          const dMatch = (DB.departments||[]).find(d =>
+            (dName && d.name === dName) ||
+            d.id === dRawId || (d._id && String(d._id) === dRawId)
+          );
+          resolvedDeptId = dMatch ? dMatch.id : dRawId;
+        }
+
+        let resolvedGroupId = null;
+        if(serverDev.careGroup){
+          const gObj = typeof serverDev.careGroup === 'object' ? serverDev.careGroup : null;
+          const gName = gObj ? gObj.name : null;
+          const gRawId = gObj ? String(gObj._id || gObj.id || '') : String(serverDev.careGroup);
+          const gMatch = (DB.careGroups||[]).find(g =>
+            (gName && g.name === gName) ||
+            g.id === gRawId || (g._id && String(g._id) === gRawId)
+          );
+          resolvedGroupId = gMatch ? gMatch.id : gRawId;
+        }
+
+        let resolvedFacilitatorId = null;
+        if(serverDev.facilitator){
+          const fObj = typeof serverDev.facilitator === 'object' ? serverDev.facilitator : null;
+          const fName = fObj ? fObj.name : null;
+          const fRawId = fObj ? String(fObj._id || fObj.id || '') : String(serverDev.facilitator);
+          const localFac = DB.devotees.find(x =>
+            (fRawId && (String(x.id) === fRawId || String(x.customId) === fRawId || String(x._id || '') === fRawId)) ||
+            (fName && x.name && x.name.toLowerCase().trim() === fName.toLowerCase().trim())
+          );
+          resolvedFacilitatorId = localFac ? localFac.id : fRawId;
+        }
+
+        if(!localDev){
+          const merged = normalizeDevotee({
+            ...serverDev,
+            id: targetId || ('d_' + Date.now() + '_' + Math.random().toString(36).slice(2,6)),
+            _id: String(serverDev._id || ''),
+            customId: targetId,
+            batch: resolvedBatchId,
+            dept: resolvedDeptId,
+            careGroup: resolvedGroupId,
+            facilitator: resolvedFacilitatorId || null,
+            sadhana: serverDev.sadhana || { morningProgram: 0, rounds: 0 }
+          });
+          DB.devotees.unshift(merged);
+        } else {
+          if(serverDev._id && !localDev._id) localDev._id = String(serverDev._id);
+          if(targetId && !localDev.customId) localDev.customId = targetId;
+          if(serverDev.name) localDev.name = serverDev.name;
+          if(serverDev.gender) localDev.gender = serverDev.gender;
+          if(serverDev.phone) localDev.phone = serverDev.phone;
+          if(serverDev.email) localDev.email = serverDev.email;
+          if(serverDev.residence) localDev.residence = serverDev.residence;
+          if(serverDev.address) localDev.address = serverDev.address;
+          if(resolvedBatchId) localDev.batch = resolvedBatchId;
+          if(resolvedDeptId) localDev.dept = resolvedDeptId;
+          if(resolvedGroupId) localDev.careGroup = resolvedGroupId;
+          if(resolvedFacilitatorId) localDev.facilitator = resolvedFacilitatorId;
+          if(serverDev.batchRole) localDev.batchRole = serverDev.batchRole;
+          if(serverDev.status) localDev.status = serverDev.status;
+          if(serverDev.level !== undefined) localDev.level = serverDev.level;
+          if(serverDev.org) localDev.org = serverDev.org;
+          if(serverDev.occupation) localDev.occupation = serverDev.occupation;
+          if(serverDev.highestEducation) localDev.highestEducation = serverDev.highestEducation;
+          if(serverDev.presentStudiesOrJob) localDev.presentStudiesOrJob = serverDev.presentStudiesOrJob;
+          if(serverDev.attendancePct !== undefined) localDev.attendancePct = serverDev.attendancePct;
+          if(serverDev.sadhana) localDev.sadhana = { ...(localDev.sadhana || {}), ...serverDev.sadhana };
+          if(serverDev.appointment) localDev.appointment = serverDev.appointment;
+          if(Array.isArray(serverDev.skills) && serverDev.skills.length) localDev.skills = serverDev.skills;
+          normalizeDevotee(localDev);
+        }
+      });
+    } else {
+      // Fallback: backend unavailable — do local-only update from raw CSV rows
+      devoteesPayload.forEach(row => {
+        const rawName = (row.name || '').trim();
+        if(!rawName) return;
+        if(isBaceAdminEmail(row.email) || rawName === 'ISKCON BACE Admin') return;
+
+        let existing = DB.devotees.find(d =>
+          !isBaceAdminEmail(d.email) && (
+            d.name.trim().toLowerCase() === rawName.toLowerCase() ||
+            (row.email && d.email && d.email.trim().toLowerCase() === row.email.trim().toLowerCase())
+          )
+        );
+
+        let bId = null;
+        if(targetBatchId){
+          bId = targetBatchId;
+        } else if(row.batch){
+          const matchB = (DB.batches||[]).find(b =>
+            b.id === row.batch ||
+            b.name.toLowerCase().trim() === String(row.batch).toLowerCase().trim()
+          );
+          bId = matchB ? matchB.id : row.batch;
+        }
+
+        let dpId = null;
+        if(row.dept){
+          const matchDp = (DB.departments||[]).find(dp =>
+            dp.id === row.dept ||
+            dp.name.toLowerCase().trim() === String(row.dept).toLowerCase().trim()
+          );
+          dpId = matchDp ? matchDp.id : row.dept;
+        }
+
+        let cgId = null;
+        if(row.careGroup){
+          const matchCg = (DB.careGroups||[]).find(cg =>
+            cg.id === row.careGroup ||
+            cg.name.toLowerCase().trim() === String(row.careGroup).toLowerCase().trim()
+          );
+          cgId = matchCg ? matchCg.id : row.careGroup;
+        }
+
+        let facId = null;
+        if(row.facilitator){
+          const cleanF = String(row.facilitator).toLowerCase().trim();
+          const allFacs = getHierarchyFacilitators();
+          const matchF = allFacs.find(f =>
+            f.id === row.facilitator ||
+            f.name.toLowerCase().trim() === cleanF ||
+            (f.email && f.email.toLowerCase().trim() === cleanF)
+          ) || (DB.devotees||[]).find(d =>
+            d.id === row.facilitator ||
+            d.name.toLowerCase().trim() === cleanF
+          );
+          facId = matchF ? matchF.id : row.facilitator;
+        }
+
+        if(existing){
+          if(row.gender) existing.gender = (String(row.gender).toLowerCase().startsWith('f')) ? 'Female' : 'Male';
+          if(row.phone) existing.phone = row.phone;
+          if(row.email) existing.email = row.email;
+          if(row.residence) existing.residence = row.residence;
+          if(row.address) existing.address = row.address;
+          if(row.attendanceMode) existing.attendanceMode = row.attendanceMode;
+          if(row.batchRole) existing.batchRole = row.batchRole;
+          if(bId) existing.batch = bId;
+          if(dpId) existing.dept = dpId;
+          if(cgId) existing.careGroup = cgId;
+          if(facId) existing.facilitator = facId;
+          if(row.status) existing.status = row.status;
+          if(row.level !== undefined && row.level !== '') existing.level = Number(row.level);
+          if(row.org) existing.org = row.org;
+          if(row.occupation) existing.occupation = row.occupation;
+          if(row.highestEducation) existing.highestEducation = row.highestEducation;
+          if(row.presentStudiesOrJob) existing.presentStudiesOrJob = row.presentStudiesOrJob;
+          if(row.attendancePct !== undefined && row.attendancePct !== '') existing.attendancePct = Number(row.attendancePct);
+          if(row.rounds !== undefined && row.rounds !== ''){
+            existing.sadhana = existing.sadhana || {};
+            existing.sadhana.rounds = Number(row.rounds);
+          }
+          if(row.skills){
+            const sArr = Array.isArray(row.skills) ? row.skills : String(row.skills).split(',').map(s=>s.trim()).filter(Boolean);
+            if(sArr.length) existing.skills = Array.from(new Set([...(existing.skills||[]), ...sArr]));
+          }
+          normalizeDevotee(existing);
+        } else {
+          const newD = normalizeDevotee({
+            id: 'd_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+            name: rawName,
+            gender: (row.gender && String(row.gender).toLowerCase().startsWith('f')) ? 'Female' : 'Male',
+            phone: row.phone || '',
+            email: row.email || '',
+            residence: row.residence || 'Jia Sarai BACE',
+            address: row.address || '',
+            attendanceMode: row.attendanceMode || 'Offline at BACE',
+            batchRole: row.batchRole || 'Member',
+            batch: bId || null,
+            dept: dpId || null,
+            careGroup: cgId || null,
+            facilitator: facId || null,
+            status: row.status || 'Active',
+            level: row.level !== undefined && row.level !== '' ? Number(row.level) : (bId ? 1 : 0),
+            org: row.org || 'IIT Delhi',
+            occupation: row.occupation || 'Student',
+            highestEducation: row.highestEducation || '',
+            presentStudiesOrJob: row.presentStudiesOrJob || '',
+            attendancePct: row.attendancePct !== undefined && row.attendancePct !== '' ? Number(row.attendancePct) : 85,
+            joined: row.joined || iso(TODAY),
+            sadhana: {
+              rounds: row.rounds !== undefined && row.rounds !== '' ? Number(row.rounds) : 0,
+              morningProgram: 0
+            },
+            skills: row.skills ? (Array.isArray(row.skills) ? row.skills : String(row.skills).split(',').map(s=>s.trim()).filter(Boolean)) : []
+          });
+          DB.devotees.unshift(newD);
+        }
+      });
+    }
+
+    const finalAdded = backendResult ? backendResult.added : 0;
+    const finalUpdated = backendResult ? backendResult.updated : 0;
     const totalCount = finalAdded + finalUpdated;
 
     logAudit('CSV Imported', `Imported ${totalCount} devotees from CSV (${finalAdded} added, ${finalUpdated} updated)`);
@@ -12089,6 +12191,10 @@ async function executeDevoteeCsvImport(){
     APP.modal = '';
     APP.parsedImportData = null;
     render();
+
+    // Force a fresh server sync to ensure all IDs and names resolve correctly
+    lastDevoteesSync = 0;
+    setTimeout(() => syncDevoteesFromServer(), 800);
   } catch(err) {
     console.error('Import execution error:', err);
     toast(err.message || 'Failed to import CSV devotees', '❌');
