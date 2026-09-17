@@ -9871,7 +9871,8 @@ function batchDashboardBody(b){
   const m=batchMetrics(b.id);
   const today=batchActs(b.id).filter(a=>a.date===iso(TODAY));
   const nextClass=batchActs(b.id).filter(a=>a.type==='Class'&&a.date>=iso(TODAY)).sort((x,y)=>x.date<y.date?-1:1)[0];
-  const events=batchActs(b.id).filter(a=>a.type==='Event');
+  const allBatchEvents=batchActs(b.id).filter(a=>a.type==='Event');
+  const events=allBatchEvents.filter(a=>a.date>=iso(TODAY)&&a.status!=='Completed'&&a.status!=='Cancelled').sort((x,y)=>(x.date||'').localeCompare(y.date||''));
   const contacts=batchContacts(b.id);
   const fus=DB.followups.filter(f=>f.kind==='Preaching'&&contacts.some(c=>c.id===f.subject));
   const thread=DB.threads.find(t=>t.type==='batch'&&t.ref===b.id);
@@ -9884,7 +9885,7 @@ function batchDashboardBody(b){
     ${stat('Facilitators',facList.length,`guiding devotees`,{em:'🧑‍🏫',act:'edit-batch-facilitators',id:b.id})}
     ${stat('Attendance',m.attendance+'%',`best ${m.best}% · lowest ${m.low}%`,{em:'✅',r:'#/batch-attendance'})}
     ${stat('Classes',m.classes.length,'in the record',{em:'📖',r:'#/classes'})}
-    ${stat('Events',m.events.length,'special programmes',{em:'✨',r:'#/classes'})}
+    ${stat('Events',events.length,'upcoming programmes',{em:'✨',r:'#/classes'})}
     ${stat('Follow-ups',m.fus.pending,`${m.fus.overdue} overdue`,{em:'⏰',tint:m.fus.overdue>0,act:'go',r:'#/followups'})}
     ${stat('Budget used',m.util+'%',money(b.budget.spent)+' of '+money(b.budget.allocated),{em:'🧾',r:'#/preaching-reports'})}</div>
    ${teamSection({incharge:b.incharge,coordinator:b.coordinator,facilitators:facIds,volunteers:(b.volunteers||[]),canEdit:ownsBatch(b.id),editAct:'edit-batch',editId:b.id})}
@@ -9898,8 +9899,8 @@ function batchDashboardBody(b){
           ${ownsBatch(b.id)?`<button class="btn sm" data-act="go-batch-attendance" data-b="${b.id}">Attendance</button>`:''}</div>`:''}</div>`
         :emptyState('No class scheduled','Schedule the next class for this batch.',ownsBatch(b.id)?`<button class="btn pri" data-act="open-schedule" data-batch="${b.id}" data-type="Class">Schedule class</button>`:''),
         ownsBatch(b.id)?`<button class="btn sm pri" data-act="open-schedule" data-batch="${b.id}" data-type="Class">${ic('plus')}Schedule class</button>`:'')}
-      ${section('✨ Events & special programmes',events.length?`<div class="tbl-wrap">${actTable(events)}</div>`
-        :emptyState('No events yet','Create an event for this batch.',ownsBatch(b.id)?`<button class="btn pri" data-act="open-schedule" data-batch="${b.id}" data-type="Event">Create event</button>`:''),
+      ${section('✨ Events & special programmes',events.length?`<div class="tbl-wrap">${actTable(events)}</div>${allBatchEvents.length > events.length ? `<div class="tiny muted" style="padding:10px 14px;border-top:1px solid var(--line);display:flex;justify-content:space-between;align-items:center"><span>Showing ${events.length} upcoming event${events.length!==1?'s':''}</span><a href="#/classes" style="color:var(--accent);text-decoration:none;font-weight:600">View all ${allBatchEvents.length} events in archive →</a></div>` : ''}`
+        :emptyState('No upcoming events','There are no upcoming events scheduled for this batch.' + (allBatchEvents.length ? ` (${allBatchEvents.length} past event${allBatchEvents.length!==1?'s':''} in archive)` : ''),ownsBatch(b.id)?`<button class="btn pri" data-act="open-schedule" data-batch="${b.id}" data-type="Event">Create event</button>`:''),
         ownsBatch(b.id)?`<button class="btn sm pri" data-act="open-schedule" data-batch="${b.id}" data-type="Event">${ic('plus')}Create event</button>`:null)}
       ${section('📊 Class attendance trend',trend.length?`<div class="card-b">${lineChart(trend,{unit:'%',color:'var(--indigo)'})}
         <div class="tiny" style="margin-top:8px">Hover a point for present / absent / total for that class</div></div>`
