@@ -12120,8 +12120,11 @@ document.addEventListener('click',e=>{
   case 'page':APP.page[t.dataset.t]=+t.dataset.p;render();break;
   case 'fab':APP.fabOpen=!APP.fabOpen;render();break;
   case 'notifications':APP.modal='notif';render();break;
-  case 'close-scrim':{const inside=e.target.closest('[data-stop]'),btn=t.closest('[data-stop]');
-    if(inside&&!btn)break;            // click landed on modal content, not on a close control
+  case 'close-scrim':{
+    // Only close if the trigger element is an explicit button/link inside the modal
+    // (i.e., it sits inside [data-stop]). Clicking the scrim backdrop itself does NOT close.
+    const isExplicitCloseBtn = t.closest('[data-stop]');
+    if(!isExplicitCloseBtn) break;   // backdrop click — ignore, do NOT close
     APP.modal='';APP.fabOpen=false;render();break}
   case 'toast':toast(t.dataset.msg||'Saved');break;
   case 'install-hint':toast('Use your browser menu → Add to Home Screen','📱');break;
