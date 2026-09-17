@@ -1711,7 +1711,11 @@ const logAudit=(action,record)=>DB.audit.unshift({id:uid('au'),user:(APP.user?na
   DB.devotees.push(surya);
 
   // All other devotees are loaded from the server — no fake seed data.
+  // These are null so downstream seed references fall back to 'd1' (Area Leader).
+  let audaryaId = null, dhirendraId = null, prashantId = null, sureshId = null;
+
   // Batch coordinators/facilitators will be set after server sync.
+
   DB.batches.forEach(b => {
     if (!b.coordinator) b.coordinator = 'd1';
     if (!b.facilitators || !b.facilitators.length) b.facilitators = ['d1'];
