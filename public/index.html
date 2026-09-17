@@ -2859,14 +2859,18 @@ function donut(value,label,color='var(--accent)',tip){
    <text x="55" y="60" text-anchor="middle" font-family="Fraunces" font-size="21" fill="var(--ink)">${value}%</text>
   </svg><div class="tiny" style="max-width:160px">${label}</div></div>`;
 }
-function funnel(rows){
+function funnel(rows, batchId = ''){
   const max = Math.max(...rows.map(r => Number(r.v) || 0), 1);
   return `<div class="chart funnel-wrap" style="display:flex;flex-direction:column;gap:6px">${rows.map((r,i)=>{
     const val = Number(r.v) || 0;
     const wpc = Math.min(100, Math.max(14, Math.round((val / max) * 100)));
     const prev = i > 0 ? (Number(rows[i-1].v) || 0) : val;
     const conv = (i > 0 && prev > 0) ? Math.min(100, pct(val, prev)) : (val > 0 ? 100 : 0);
-    return `<div class="funnel-row" style="${r.r?'cursor:pointer':''}" ${tipAttr(r.tip||`${r.l}: ${val}${i?` · ${conv}% from ${rows[i-1].l}`:''}`)} ${r.r?`data-act="drill" data-r="${r.r}"`:''}>
+    const bid = batchId || r.bid || '';
+    const clickAttr = bid 
+      ? `data-act="funnel-drill" data-bid="${bid}" data-stage="${r.key || i}"`
+      : (r.r ? `data-act="drill" data-r="${r.r}"` : '');
+    return `<div class="funnel-row" style="cursor:pointer" ${tipAttr(r.tip||`${r.l}: ${val}${i?` · ${conv}% from ${rows[i-1].l}`:''}`)} ${clickAttr}>
       <div class="funnel-lbl">${esc(r.l)}</div>
       <div class="funnel-bar-box" style="flex:1;min-width:0"><div class="funnel-bar" style="height:29px;width:${wpc}%;background:${r.color||'var(--indigo)'};opacity:${1-i*.06};border-radius:7px;display:flex;align-items:center;padding-left:10px;color:#fff;font-size:12.5px;font-weight:600">${val}</div></div>
       <div class="funnel-conv" style="text-align:right;color:${i&&conv<45?'var(--danger)':'var(--ink-3)'}">${i?conv+'%':''}</div></div>`}).join('')}</div>`;
@@ -9781,7 +9785,7 @@ function batchDashboardBody(b){
     <div style="display:flex;flex-direction:column;gap:15px">
       ${section('🎯 Batch preaching funnel', `<div class="card-b">
         <p class="tiny muted" style="margin-top:0;margin-bottom:12px">Conversion and progression of souls connected with ${esc(b.name)}</p>
-        ${funnel(batchPreachingFunnel(b.id))}
+        ${funnel(batchPreachingFunnel(b.id), b.id)}
         <div class="tiny" style="margin-top:10px;display:flex;justify-content:space-between;align-items:center">
           <span>Tracks member progression from Registered to Actively Serving.</span>
           <span style="color:var(--ink-3)">Click any bar to drill down</span>
@@ -10112,7 +10116,8 @@ function saveDevoteesToStorage(){
     const list = (DB.devotees||[]).map(d => ({
       id: d.id, batch: d.batch, level: d.level, facilitator: d.facilitator,
       isFacilitator: d.isFacilitator, appointment: d.appointment, batchRole: d.batchRole,
-      dept: d.dept, status: d.status, attendancePct: d.attendancePct, batchHistory: d.batchHistory
+      dept: d.dept, status: d.status, attendancePct: d.attendancePct, batchHistory: d.batchHistory,
+      sadhana: d.sadhana, roles: d.roles, appointments: d.appointments, skills: d.skills, service: d.service
     }));
     localStorage.setItem('bace_devotees_store', JSON.stringify(list));
   }catch(e){console.warn('saveDevoteesToStorage error:', e)}
@@ -10136,6 +10141,11 @@ function loadDevoteesFromStorage(){
           if(saved.dept !== undefined) d.dept = saved.dept;
           if(saved.status !== undefined) d.status = saved.status;
           if(saved.batchHistory !== undefined) d.batchHistory = saved.batchHistory;
+          if(saved.sadhana !== undefined) d.sadhana = Object.assign(d.sadhana || {}, saved.sadhana);
+          if(saved.roles !== undefined) d.roles = saved.roles;
+          if(saved.appointments !== undefined) d.appointments = saved.appointments;
+          if(saved.skills !== undefined) d.skills = saved.skills;
+          if(saved.service !== undefined) d.service = saved.service;
         }
       });
     }
@@ -10206,52 +10216,331 @@ function loadPreachingFilters(){
   }catch(e){}
 }
 
+const STAGE_KEYS = ['registered', 'interested', 'attending', 'regular', 'sadhana', 'serving'];
+
+const STAGE_META = {
+  registered: { label: 'Registered Members', emoji: '📋', color: 'var(--indigo)', desc: 'All souls connected with and enrolled in this batch' },
+  interested: { label: 'Interested & Active', emoji: '✨', color: '#4f46e5', desc: 'Members who actively communicate and are not marked inactive' },
+  attending: { label: 'Attending Classes', emoji: '📖', color: '#6366f1', desc: 'Members attending spiritual classes and discussions' },
+  regular: { label: 'Regular Attendees', emoji: '🎯', color: '#0ea5e9', desc: 'Steady members with ≥50% attendance or multiple sessions' },
+  sadhana: { label: 'Practicing Sadhana', emoji: '📿', color: '#10b981', desc: 'Members chanting rounds, attending morning sadhana or advanced training' },
+  serving: { label: 'Actively Serving', emoji: '🛠', color: '#f59e0b', desc: 'Devotees engaged in seva departments, ashram services or volunteering' }
+};
+
+function getFunnelStageDevotees(bid, stageKey){
+  const b = batch(bid);
+  if(!b) return [];
+  const mems = batchMembers(bid);
+  
+  if(typeof stageKey === 'number' || (!isNaN(stageKey) && stageKey !== '')) {
+    stageKey = STAGE_KEYS[Number(stageKey)] || 'registered';
+  }
+
+  // 1. Registered: all members connected with this batch
+  if(stageKey === 'registered') return [...mems];
+
+  // 2. Interested: active or interested members (excluding Inactive/Archived/Dropped)
+  const interested = mems.filter(d => d.status !== 'Inactive' && d.status !== 'Archived' && d.status !== 'Dropped');
+  if(stageKey === 'interested') return interested;
+
+  // 3. Attending Class: members attending classes or sessions
+  const attending = interested.filter(d => {
+    if((d.attendancePct || 0) > 0) return true;
+    return (DB.attendance || []).some(a => 
+      (a.devotee === d.id || a.devotee === d.customId || (d.name && a.devotee === d.name)) && 
+      (a.status === 'Present' || a.status === 'On Time' || a.status === 'Grace' || a.status === 'Late')
+    );
+  });
+  if(stageKey === 'attending') return attending;
+
+  // 4. Regular: members with >=50% attendance or multiple sessions attended
+  const regular = attending.filter(d => {
+    if((d.attendancePct || 0) >= 50) return true;
+    const pMarks = (DB.attendance || []).filter(a => 
+      (a.devotee === d.id || a.devotee === d.customId || (d.name && a.devotee === d.name)) && 
+      (a.status === 'Present' || a.status === 'On Time')
+    ).length;
+    if(pMarks >= 2) return true;
+    return (d.status === 'Active' && (d.attendancePct || 0) >= 40);
+  });
+  if(stageKey === 'regular') return regular;
+
+  // 5. Sadhana: members in regular (or attending) who practice sadhana (chanting rounds, morning program, sadhana reports, level >= 2)
+  const sadhana = attending.filter(d => {
+    const rounds = Number(d.sadhana?.rounds) || 0;
+    if(rounds >= 1) return true;
+    const sRec = (DB.sadhana || []).find(s => s.devotee === d.id || s.devotee === d.customId || (d.name && s.devotee === d.name));
+    if(sRec && ((Number(sRec.rounds)||0) >= 1 || (Number(sRec.program)||0) > 0)) return true;
+    const hasMorning = (DB.attendance || []).some(a => 
+      (a.devotee === d.id || a.devotee === d.customId || (d.name && a.devotee === d.name)) && 
+      (a.category === 'Morning programme' || a.category === 'Morning attendance' || (a.ref && String(a.ref).startsWith('mp_'))) &&
+      (a.status === 'Present' || a.status === 'On Time' || a.status === 'Grace' || a.status === 'Late')
+    );
+    if(hasMorning) return true;
+    if(d.morningStandardTime || d.morningAttendance) return true;
+    if(d.sadhana?.morningProgram && d.sadhana.morningProgram > 0) return true;
+    if(d.level && Number(d.level) >= 2) return true;
+    if(d.sadhana?.lastReported) return true;
+    if(d.careStatus?.spiritual && d.careStatus.spiritual !== 'Not assessed') return true;
+    return false;
+  });
+  if(stageKey === 'sadhana') return sadhana;
+
+  // 6. Actively Serving: members engaged in seva departments, ashram services, volunteer team
+  const serving = attending.filter(d => {
+    if(d.dept && d.dept !== '') return true;
+    if((DB.deptMembers || []).some(dm => (dm.devotee === d.id || dm.devotee === d.customId || (d.name && dm.devotee === d.name)) && dm.status === 'Active')) return true;
+    if((DB.assignments || []).some(a => (a.devotee === d.id || a.actualPerformer === d.id) && a.state !== 'Declined' && a.state !== 'Missed')) return true;
+    if((b.volunteers || []).includes(d.id) || (b.volunteers || []).includes(d.customId)) return true;
+    if(getBatchVolunteers(b.id).some(v => v.id === d.id || v.id === d.customId)) return true;
+    if((d.roles || []).some(r => r !== 'devotee')) return true;
+    if(d.appointment && d.appointment !== 'Devotee' && d.appointment !== '') return true;
+    if(d.isFacilitator) return true;
+    if((d.services || []).length > 0 || (d.service && d.service !== '')) return true;
+    if(d.swabhav && d.swabhav.engaged) return true;
+    const hasSevaAtt = (DB.attendance || []).some(a => 
+      (a.devotee === d.id || a.devotee === d.customId || (d.name && a.devotee === d.name)) && 
+      (DB.activities || []).some(act => act.id === a.ref && (act.type === 'Seva' || act.type === 'Service'))
+    );
+    if(hasSevaAtt) return true;
+    if((d.skills || []).length > 0 && (d.attendancePct || 0) >= 50) return true;
+    return false;
+  });
+  if(stageKey === 'serving') return serving;
+
+  return [];
+}
+
 function batchPreachingFunnel(bid){
   const b = batch(bid);
-  const mems = batchMembers(bid);
+  if(!b) return [];
 
-  // 1. Registered: all those in the batch members list
-  const registered = mems.length;
-
-  // 2. Interested: batch members who are active or interested (not inactive)
-  const interested = Math.min(registered, mems.filter(d => d.status !== 'Inactive').length);
-
-  // 3. Attending Class: batch members who attend classes (attendance marked or attendancePct > 0)
-  const attendedCount = mems.filter(d => (d.attendancePct || 0) > 0 || (DB.attendance||[]).some(a => a.devotee === d.id && a.status === 'Present')).length;
-  const attendingClass = Math.min(interested, attendedCount);
-
-  // 4. Regular: batch members who attend regularly (>=50% attendance or multi-session)
-  const regularCount = mems.filter(d => ((d.attendancePct || 0) >= 50 || (DB.attendance||[]).filter(a => a.devotee === d.id && a.status === 'Present').length >= 2) && d.status === 'Active').length;
-  const regular = Math.min(attendingClass, regularCount);
-
-  // 5. Sadhana: batch members practicing sadhana (sadhana log, >=1 round, morning program, or level >= 2)
-  const sadhanaCount = mems.filter(d => {
-    const sRec = (DB.sadhana || []).find(s => s.devotee === d.id);
-    const rounds = sRec?.rounds || d.sadhana?.rounds || 0;
-    const prog = sRec?.program || d.sadhana?.morningProgram || 0;
-    return rounds >= 1 || prog > 0 || (d.level && d.level >= 2);
-  }).length;
-  const sadhana = Math.min(regular, sadhanaCount);
-
-  // 6. Actively Serving: batch members actively serving in seva/department/volunteers
-  const servingCount = mems.filter(d => {
-    return (d.dept && d.dept !== '') ||
-      (d.service && d.service.length > 0) ||
-      (d.swabhav && d.swabhav.engaged) ||
-      (b && b.volunteers && b.volunteers.includes(d.id)) ||
-      (DB.assignments || []).some(asg => (asg.devotee === d.id || asg.actualPerformer === d.id) && asg.state !== 'Declined' && asg.state !== 'Missed') ||
-      (DB.deptMembers || []).some(dm => dm.devotee === d.id && dm.status === 'Active');
-  }).length;
-  const activelyServing = Math.min(sadhana || regular, servingCount);
+  const reg = getFunnelStageDevotees(bid, 'registered').length;
+  const int = getFunnelStageDevotees(bid, 'interested').length;
+  const att = getFunnelStageDevotees(bid, 'attending').length;
+  const regu = getFunnelStageDevotees(bid, 'regular').length;
+  const sadh = getFunnelStageDevotees(bid, 'sadhana').length;
+  const serv = getFunnelStageDevotees(bid, 'serving').length;
 
   return [
-    {l: 'Registered', v: registered, color: 'var(--indigo)', r: '#/devotees', tip: `Registered batch members: ${registered}`},
-    {l: 'Interested', v: interested, color: '#4f46e5', r: '#/devotees', tip: `Interested & active members: ${interested}`},
-    {l: 'Attending Class', v: attendingClass, color: '#6366f1', r: '#/batch-attendance', tip: `Attending classes / sessions: ${attendingClass}`},
-    {l: 'Regular', v: regular, color: '#0ea5e9', r: '#/batch-attendance', tip: `Regular attendees (>=50%): ${regular}`},
-    {l: 'Sadhana', v: sadhana, color: '#10b981', r: '#/sadhana', tip: `Practicing sadhana: ${sadhana}`},
-    {l: 'Actively Serving', v: activelyServing, color: '#f59e0b', r: '#/services', tip: `Actively serving in seva: ${activelyServing}`}
+    { key: 'registered', l: 'Registered', v: reg, color: 'var(--indigo)', tip: `Registered batch members: ${reg}` },
+    { key: 'interested', l: 'Interested', v: int, color: '#4f46e5', tip: `Active & interested: ${int}` },
+    { key: 'attending', l: 'Attending Class', v: att, color: '#6366f1', tip: `Attending sessions: ${att}` },
+    { key: 'regular', l: 'Regular', v: regu, color: '#0ea5e9', tip: `Regular attendees (>=50%): ${regu}` },
+    { key: 'sadhana', l: 'Sadhana', v: sadh, color: '#10b981', tip: `Practicing sadhana & chanting: ${sadh}` },
+    { key: 'serving', l: 'Actively Serving', v: serv, color: '#f59e0b', tip: `Engaged in seva & departments: ${serv}` }
   ];
+}
+
+function showBatchFunnelDrillModal(batchId, stageKey, searchQuery = ''){
+  const b = batch(batchId);
+  if(!b) return;
+
+  const allKeys = ['registered', 'interested', 'attending', 'regular', 'sadhana', 'serving'];
+  if(typeof stageKey === 'number' || (!isNaN(stageKey) && stageKey !== '')) {
+    stageKey = allKeys[Number(stageKey)] || 'registered';
+  }
+  if(!allKeys.includes(stageKey)) stageKey = 'registered';
+
+  const stageInfo = STAGE_META[stageKey] || STAGE_META.registered;
+  
+  // Compute counts for all stages
+  const counts = {};
+  allKeys.forEach(k => counts[k] = getFunnelStageDevotees(batchId, k).length);
+
+  const stageIdx = allKeys.indexOf(stageKey);
+  const prevCount = stageIdx > 0 ? counts[allKeys[stageIdx - 1]] : counts[stageKey];
+  const curCount = counts[stageKey];
+  const convRate = stageIdx > 0 ? (prevCount > 0 ? Math.min(100, Math.round((curCount / prevCount) * 100)) : 0) : 100;
+
+  const devs = getFunnelStageDevotees(batchId, stageKey);
+
+  const body = `
+    <div style="padding:0 18px 18px">
+      <!-- 6 Stage Switcher Tabs -->
+      <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:10px;margin-bottom:14px;border-bottom:1px solid var(--line)">
+        ${allKeys.map((k, idx) => {
+          const meta = STAGE_META[k];
+          const active = k === stageKey;
+          const cnt = counts[k];
+          return `<button type="button" class="chip ${active?'on':''}" data-act="funnel-tab-stage" data-bid="${b.id}" data-stage="${k}" style="${active?`background:${meta.color};color:#fff;font-weight:700`:''};white-space:nowrap;cursor:pointer">
+            ${meta.emoji} ${meta.label} (${cnt})
+          </button>`;
+        }).join('')}
+      </div>
+
+      <!-- Action Toolbar -->
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+        <input type="search" id="funnel-search-inp" placeholder="Search ${curCount} members in ${stageInfo.label}..." style="flex:1;min-width:200px;height:36px;padding:6px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface)">
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn sm" data-act="export-funnel-stage" data-bid="${b.id}" data-stage="${stageKey}" title="Export these devotees to CSV">${ic('download')}Export CSV</button>
+          <button class="btn sm pri" data-act="open-stage-sadhana-modal" data-bid="${b.id}">📿 Record Sadhana</button>
+          <button class="btn sm pri" data-act="open-stage-seva-modal" data-bid="${b.id}">🛠 Assign Seva</button>
+        </div>
+      </div>
+
+      <!-- Devotees List -->
+      ${devs.length ? `
+        <div class="list" id="funnel-devs-list" style="max-height:55vh;overflow-y:auto;border:1px solid var(--line);border-radius:12px">
+          ${devs.map(d => {
+            const devFac = nameOf(d.facilitator) || 'No facilitator';
+            const rounds = Number(d.sadhana?.rounds) || 0;
+            const dpName = dept(d.dept)?.name || d.service || '';
+            const isVol = (b.volunteers||[]).includes(d.id);
+            return `<div class="li funnel-dev-item" style="padding:10px 14px;align-items:center;gap:12px;display:flex;border-bottom:1px solid var(--line)">
+              ${av(d.name, 36)}
+              <div class="grow" style="min-width:180px">
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                  <a href="#/devotee/${d.id}" data-act="close-scrim" style="font-weight:700;font-size:14px;color:var(--ink);text-decoration:none">${esc(d.name)}</a>
+                  ${sbadge(d.status)}
+                  ${d.level ? `<span class="badge b-purple">Level ${d.level}</span>` : ''}
+                </div>
+                <div class="tiny muted" style="margin-top:3px;display:flex;flex-wrap:wrap;gap:10px">
+                  ${d.phone ? `<span>📱 ${esc(d.phone)}</span>` : ''}
+                  ${d.org ? `<span>🏫 ${esc(d.org)}</span>` : ''}
+                  <span>🧑‍🏫 ${esc(devFac)}</span>
+                </div>
+              </div>
+
+              <!-- Metrics / Badges -->
+              <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+                <span class="badge ${d.attendancePct>=50?'b-green':'b-grey'}" title="Class Attendance">${d.attendancePct||0}% att</span>
+                <span class="badge ${rounds>0?'b-green':'b-grey'}" title="Chanting Rounds">📿 ${rounds} rounds</span>
+                ${dpName ? `<span class="badge b-amber" title="Department">🛠 ${esc(dpName)}</span>` : (isVol ? `<span class="badge b-amber">🛠 Volunteer</span>` : '')}
+              </div>
+
+              <!-- Devotee Quick Actions -->
+              <div style="display:flex;align-items:center;gap:6px">
+                <button class="btn sm" data-act="quick-edit-sadhana" data-id="${d.id}" data-bid="${b.id}" title="Set chanting rounds / sadhana">📿 Rounds</button>
+                <button class="btn sm" data-act="quick-assign-seva" data-id="${d.id}" data-bid="${b.id}" title="Assign department or volunteering">🛠 Seva</button>
+                <a class="btn sm" href="#/devotee/${d.id}" data-act="close-scrim">View</a>
+              </div>
+            </div>`;
+          }).join('')}
+        </div>
+      ` : `
+        <div style="text-align:center;padding:36px 18px;border:1px dashed var(--line);border-radius:12px;background:var(--paper-1)">
+          <div style="font-size:32px;margin-bottom:8px">${stageInfo.emoji}</div>
+          <div style="font-weight:700;font-size:16px;margin-bottom:6px">No devotees currently in ${stageInfo.label}</div>
+          <div class="tiny muted" style="max-width:380px;margin:0 auto 16px">${stageInfo.desc}. You can record sadhana or assign seva to regular members below to advance them into this stage.</div>
+          <div style="display:flex;justify-content:center;gap:8px;flex-wrap:wrap">
+            <button class="btn sm pri" data-act="open-stage-sadhana-modal" data-bid="${b.id}">📿 Record Sadhana for Members</button>
+            <button class="btn sm pri" data-act="open-stage-seva-modal" data-bid="${b.id}">🛠 Assign Seva / Dept</button>
+          </div>
+        </div>
+      `}
+    </div>
+  `;
+
+  APP.customModalHtml = `<div class="modal" data-stop="1" style="max-width:780px;width:95%">
+    <div class="modal-h">
+      <div>
+        <div class="eyebrow" style="color:${stageInfo.color};font-weight:700">🎯 Stage ${stageIdx + 1} of 6 — ${stageInfo.label}</div>
+        <h3 style="margin:2px 0 4px">${esc(b.name)} Funnel Drill-Down</h3>
+        <p class="sub">${curCount} devotee${curCount!==1?'s':''} · ${convRate}% progression from previous stage</p>
+      </div>
+      <button class="icon-btn" style="margin-left:auto" data-act="close-scrim">${ic('x')}</button>
+    </div>
+    ${body}
+    <div class="modal-f" style="display:flex;justify-content:space-between;align-items:center">
+      <div class="tiny muted">Tracks member progression from Registered to Actively Serving</div>
+      <button class="btn" data-act="close-scrim">Close</button>
+    </div>
+  </div>`;
+
+  APP.modal = 'custom';
+  render();
+}
+
+function openSetSadhanaModal(devoteeId, batchId){
+  const d = dv(devoteeId);
+  if(!d) return;
+  const curRounds = d.sadhana?.rounds || 0;
+  const curProg = d.sadhana?.morningProgram || (d.attendancePct || 80);
+  openForm(`Record Sadhana: ${d.name}`, [
+    FLD('rounds', 'Chanting Rounds (Japa)', 'select', { v: String(curRounds || 16), opts: [['0','0 rounds'], ['1','1 round'], ['2','2 rounds'], ['4','4 rounds'], ['8','8 rounds'], ['16','16 rounds (Daily minimum)']] }),
+    FLD('program', 'Morning Attendance %', 'number', { v: curProg, half: 1 }),
+    FLD('wake', 'Average Rising Time', 'text', { v: d.sadhana?.avgWake || '05:00 am', ph: 'e.g. 4:30 am / 5:00 am', half: 1 }),
+    FLD('notes', 'Sadhana Note / Realisation', 'textarea', { ph: 'e.g. Regular chanting, completed 16 rounds this week' })
+  ], 'save-quick-sadhana', { devoteeId: d.id, batchId }, 'Updating sadhana will advance this devotee in the preaching funnel.');
+}
+
+function openAssignBatchSevaModal(devoteeId, batchId){
+  const d = dv(devoteeId);
+  if(!d) return;
+  const b = batch(batchId);
+  const isVol = b && (b.volunteers||[]).includes(d.id);
+  openForm(`Assign Seva & Department: ${d.name}`, [
+    FLD('dept', 'Seva Department', 'select', {
+      v: d.dept || '',
+      opts: [['', '-- No Department / General Volunteer --'], ...(DB.departments||[]).map(dp => [dp.id, `${dp.name} (${dp.category || 'Seva'})`])]
+    }),
+    FLD('service', 'Service Description / Title', 'text', { v: d.service || '', ph: 'e.g. Sound Operator, Prasadam Service, Cleaning' }),
+    FLD('isVolunteer', 'Batch Volunteer Team', 'select', {
+      v: isVol ? 'yes' : 'no',
+      opts: [['yes', 'Yes — Add to Batch Volunteers List'], ['no', 'No — General Member']],
+      half: 1
+    }),
+    FLD('notes', 'Notes', 'textarea', { ph: 'Special seva responsibilities or skills' })
+  ], 'save-quick-batch-seva', { devoteeId: d.id, batchId }, 'Assigning a department or volunteer role will advance this devotee into Actively Serving in the funnel.');
+}
+
+function openStageSadhanaModal(batchId){
+  const b = batch(batchId);
+  if(!b) return;
+  const mems = batchMembers(batchId);
+  openForm(`Batch Sadhana Tracker — ${b.name}`, [
+    FLD('devoteeId', 'Select Devotee', 'select', {
+      opts: mems.map(d => [d.id, `${d.name} (${d.sadhana?.rounds||0} rounds, ${d.attendancePct||0}% att)`])
+    }),
+    FLD('rounds', 'Chanting Rounds (Japa)', 'select', { v: '16', opts: [['1','1 round'], ['2','2 rounds'], ['4','4 rounds'], ['8','8 rounds'], ['16','16 rounds (Daily minimum)']] }),
+    FLD('program', 'Morning Attendance %', 'number', { v: 85, half: 1 }),
+    FLD('wake', 'Average Rising Time', 'text', { v: '05:00 am', ph: 'e.g. 05:00 am', half: 1 })
+  ], 'save-quick-sadhana', { batchId }, 'Record chanting and sadhana for this member to advance them into the Sadhana stage.');
+}
+
+function openStageSevaModal(batchId){
+  const b = batch(batchId);
+  if(!b) return;
+  const mems = batchMembers(batchId);
+  openForm(`Assign Seva & Department — ${b.name}`, [
+    FLD('devoteeId', 'Select Devotee', 'select', {
+      opts: mems.map(d => [d.id, `${d.name} (${dept(d.dept)?.name || 'No Dept'}, ${d.attendancePct||0}% att)`])
+    }),
+    FLD('dept', 'Seva Department', 'select', {
+      opts: [['', '-- No Department / General Volunteer --'], ...(DB.departments||[]).map(dp => [dp.id, `${dp.name} (${dp.category || 'Seva'})`])]
+    }),
+    FLD('service', 'Specific Seva Task', 'text', { ph: 'e.g. Prasadam Distribution, Sound/Audio, Media, Reception' }),
+    FLD('isVolunteer', 'Batch Volunteer Team', 'select', {
+      v: 'yes',
+      opts: [['yes', 'Yes — Add to Batch Volunteers List'], ['no', 'No — Department Member Only']],
+      half: 1
+    })
+  ], 'save-quick-batch-seva', { batchId }, 'Assigning a department or volunteer role will advance this devotee into Actively Serving in the funnel.');
+}
+
+function exportFunnelStageCSV(batchId, stageKey){
+  const b = batch(batchId);
+  if(!b) return;
+  const devs = getFunnelStageDevotees(batchId, stageKey);
+  const stageName = STAGE_META[stageKey]?.label || stageKey;
+  const headers = ['Name', 'Gender', 'Status', 'Level', 'Batch', 'Attendance %', 'Chanting Rounds', 'Department', 'Facilitator', 'Phone', 'Email', 'Organisation'];
+  const rows = devs.map(d => [
+    d.name,
+    d.gender || 'Male',
+    d.status,
+    d.level || b.level || 1,
+    b.name,
+    (d.attendancePct || 0) + '%',
+    (d.sadhana?.rounds || 0) + ' rounds',
+    dept(d.dept)?.name || d.service || '—',
+    nameOf(d.facilitator) || '—',
+    d.phone || '—',
+    d.email || '—',
+    d.org || '—'
+  ]);
+  downloadCSV(`${b.name.replace(/\s+/g,'_')}_Funnel_${stageKey}_${iso(TODAY)}.csv`, [headers, ...rows]);
+  toast(`Exported ${devs.length} devotees (${stageName})`, '⬇️');
 }
 function showBatchFacilitatorsModal(batchId){
   const b = batch(batchId);
@@ -10721,7 +11010,7 @@ function viewPreachingReports(){
 
       ${section('🎯 Batch preaching funnel',`<div class="card-b">
         <p class="tiny muted" style="margin-top:0;margin-bottom:12px">Conversion and progression of souls connected with ${esc(b.name)}</p>
-        ${funnel(batchPreachingFunnel(bid))}
+        ${funnel(batchPreachingFunnel(bid), bid)}
       </div>`, `<span class="badge b-purple" style="font-size:11px">6-Stage Funnel</span>`)}
 
       ${section('📖 Classes & events',`<div class="grid g4" style="padding:16px 18px">
@@ -13415,6 +13704,109 @@ document.addEventListener('click',e=>{
   case 're-apply':if(APP.user)APP.user.approvalStatus='pending_profile';render();break;
   case 'go':go(t.dataset.r);break;
   case 'drill':go(t.dataset.r);break;
+  case 'funnel-drill':stop();{
+    const bid = t.dataset.bid || id;
+    const stage = t.dataset.stage;
+    showBatchFunnelDrillModal(bid, stage);
+    break;
+  }
+  case 'funnel-tab-stage':stop();{
+    const bid = t.dataset.bid;
+    const stage = t.dataset.stage;
+    showBatchFunnelDrillModal(bid, stage);
+    break;
+  }
+  case 'export-funnel-stage':stop();{
+    const bid = t.dataset.bid;
+    const stage = t.dataset.stage;
+    exportFunnelStageCSV(bid, stage);
+    break;
+  }
+  case 'quick-edit-sadhana':stop();{
+    const devId = t.dataset.id;
+    const bid = t.dataset.bid;
+    openSetSadhanaModal(devId, bid);
+    break;
+  }
+  case 'open-stage-sadhana-modal':stop();{
+    const bid = t.dataset.bid;
+    openStageSadhanaModal(bid);
+    break;
+  }
+  case 'save-quick-sadhana':{
+    const v = collect();
+    const devId = APP.modal?.ctx?.devoteeId || v.devoteeId;
+    const bid = APP.modal?.ctx?.batchId;
+    const d = dv(devId);
+    if(d){
+      const rounds = Number(v.rounds) || 0;
+      const prog = Number(v.program) || 0;
+      d.sadhana = d.sadhana || {};
+      d.sadhana.rounds = rounds;
+      d.sadhana.morningProgram = prog;
+      if(v.wake) d.sadhana.avgWake = v.wake;
+      d.sadhana.lastReported = iso(TODAY);
+      
+      let sRec = (DB.sadhana || []).find(s => s.devotee === d.id);
+      if(!sRec){
+        sRec = { id: uid('sd'), devotee: d.id, week: 'This week', rounds, avgWake: v.wake || '05:00 am', reading: 'Daily', program: prog };
+        DB.sadhana.push(sRec);
+      } else {
+        sRec.rounds = rounds;
+        sRec.program = prog;
+        if(v.wake) sRec.avgWake = v.wake;
+      }
+      saveDevoteesToStorage();
+      logAudit('Sadhana recorded', `${d.name}: ${rounds} rounds`);
+      toast(`Sadhana updated for ${d.name} (${rounds} rounds)`, '📿');
+      APP.modal = '';
+      render();
+      if(bid) showBatchFunnelDrillModal(bid, 'sadhana');
+    }
+    break;
+  }
+  case 'quick-assign-seva':stop();{
+    const devId = t.dataset.id;
+    const bid = t.dataset.bid;
+    openAssignBatchSevaModal(devId, bid);
+    break;
+  }
+  case 'open-stage-seva-modal':stop();{
+    const bid = t.dataset.bid;
+    openStageSevaModal(bid);
+    break;
+  }
+  case 'save-quick-batch-seva':{
+    const v = collect();
+    const devId = APP.modal?.ctx?.devoteeId || v.devoteeId;
+    const bid = APP.modal?.ctx?.batchId;
+    const d = dv(devId);
+    const b = batch(bid);
+    if(d){
+      if(v.dept) d.dept = v.dept;
+      if(v.service) d.service = v.service;
+      if(v.isVolunteer === 'yes' || v.isVolunteer === true || v.isVolunteer === '1'){
+        if(b){
+          b.volunteers = b.volunteers || [];
+          if(!b.volunteers.includes(d.id)) b.volunteers.push(d.id);
+          saveBatchesToStorage();
+        }
+      }
+      if(v.dept){
+        DB.deptMembers = DB.deptMembers || [];
+        if(!DB.deptMembers.some(dm => dm.devotee === d.id && dm.dept === v.dept)){
+          DB.deptMembers.push({ id: uid('dm'), dept: v.dept, devotee: d.id, status: 'Active', joined: iso(TODAY) });
+        }
+      }
+      saveDevoteesToStorage();
+      logAudit('Seva assigned', `${d.name} → ${dept(d.dept)?.name || 'Volunteer'}`);
+      toast(`Seva assigned to ${d.name}`, '🛠');
+      APP.modal = '';
+      render();
+      if(bid) showBatchFunnelDrillModal(bid, 'serving');
+    }
+    break;
+  }
   case 'pillar': {
     stop();
     const k = t.dataset.k;
@@ -15589,6 +15981,15 @@ case 'rep-batch':APP.filters.repBatch=t.value;savePreachingFilters();render();br
 });
 /* input events: search fields with focus retention */
 document.addEventListener('input',e=>{
+  if(e.target && e.target.id === 'funnel-search-inp'){
+    const query = e.target.value.trim().toLowerCase();
+    const rows = document.querySelectorAll('#funnel-devs-list .funnel-dev-item');
+    rows.forEach(r => {
+      const txt = (r.textContent || '').toLowerCase();
+      r.style.display = (!query || txt.includes(query)) ? 'flex' : 'none';
+    });
+    return;
+  }
   const msSearch = e.target.closest('[data-act="ms-search"]');
   if(msSearch){
     const name = msSearch.dataset.name;
