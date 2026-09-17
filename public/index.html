@@ -4612,11 +4612,13 @@ function viewDepts(){
 /* reusable department dashboard template (§49) */
 /* ---------- team section helper (batch & dept) ---------- */
 function teamSection(opts){
-  /* opts: { incharge, coordinator (id or id[]), volunteers (id[]), canEdit, editAct, editId } */
+  /* opts: { incharge, coordinator (id or id[]), facilitators (id[]), volunteers (id[]), canEdit, editAct, editId } */
   const roles=[];
   if(opts.incharge)roles.push({label:'Incharge',ids:[opts.incharge],color:'var(--saffron)'});
   const coords=[].concat(opts.coordinator||[]).filter(Boolean);
   if(coords.length)roles.push({label:coords.length>1?'Coordinators':'Coordinator',ids:coords,color:'var(--indigo)'});
+  const facs=[].concat(opts.facilitators||opts.facilitator||[]).filter(Boolean);
+  if(facs.length)roles.push({label:facs.length>1?'Facilitators':'Facilitator',ids:facs,color:'var(--green)'});
   const vols=[].concat(opts.volunteers||[]).filter(Boolean);
   if(vols.length)roles.push({label:'Volunteers',ids:vols,color:'var(--teal)'});
   if(!roles.length)return '';
@@ -4626,7 +4628,7 @@ function teamSection(opts){
       <div style="display:flex;flex-wrap:wrap;gap:7px;flex:1">
         ${r.ids.map(did=>{
           const d=dv(did);if(!d)return '';
-          return `<a href="#/devotee/${did}" style="display:inline-flex;align-items:center;gap:7px;padding:5px 10px 5px 5px;border-radius:20px;background:var(--surface-2);border:1px solid var(--line);text-decoration:none;color:inherit">
+          return `<a href="#/devotee/${did}" style="display:inline-flex;align-items:center;gap:7px;padding:5px 10px 5px 5px;border-radius:20px;background:var(--surface-2);border:1px solid var(--line);text-decoration:none;color:inherit" title="View devotee profile">
             <span class="av s" style="background:${avc(d.name)}">${initials(d.name)}</span>
             <span style="font-size:13px;font-weight:600">${esc(d.name)}</span>
           </a>`;
@@ -4634,8 +4636,9 @@ function teamSection(opts){
       </div>
     </div>`).join('');
   const teamPickerAct=opts.editAct?opts.editAct+'-team':null;
+  const facPickerAct=opts.editAct==='edit-batch'?'edit-batch-facilitators':null;
   return section('👥 Team',`<div class="card-b" style="padding:0 4px">${rows}<div style="height:6px"></div></div>`,
-    opts.canEdit?`<button class="btn sm" data-act="${opts.editAct}" data-id="${opts.editId}">${ic('edit')}Edit roles</button><button class="btn sm" data-act="${teamPickerAct}" data-id="${opts.editId}">${ic('people')}Manage volunteers (${vols.length})</button>`:'')
+    opts.canEdit?`<button class="btn sm" data-act="${opts.editAct}" data-id="${opts.editId}">${ic('edit')}Edit roles</button>${facPickerAct?`<button class="btn sm" data-act="${facPickerAct}" data-id="${opts.editId}">🧑‍🏫 Manage facilitators (${facs.length})</button>`:''}<button class="btn sm" data-act="${teamPickerAct}" data-id="${opts.editId}">${ic('people')}Manage volunteers (${vols.length})</button>`:'')
 }
 function deptDashboardBody(dp){
   if(!dp)return emptyState('No department','You are not assigned to a department yet.','');
@@ -9587,14 +9590,17 @@ function batchDashboardBody(b){
   const thread=DB.threads.find(t=>t.type==='batch'&&t.ref===b.id);
   const trend=m.perClass.slice(-6).map(p=>({label:fmtD(p.c.date).slice(0,6),v:p.pctv,
     tip:`${p.c.name}\n${fmtLong(p.c.date)}\nAttendance: ${p.pctv}%\nPresent: ${p.present}\nAbsent: ${p.total-p.present}\nTotal: ${p.total}`}));
-  return `<div class="grid g6" style="margin-bottom:15px">
+  const facList=(b.facilitators && b.facilitators.length) ? b.facilitators.map(dv).filter(Boolean) : getBatchFacilitators(b.id);
+  const facIds=facList.map(f=>f.id);
+  return `<div class="grid g-batch-dash" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(130px, 1fr));gap:12px;margin-bottom:15px">
     ${stat('Members',m.members.length,`${m.neu} new this month`,{em:'👥',r:'#/devotees'})}
+    ${stat('Facilitators',facList.length,`guiding devotees`,{em:'🧑‍🏫',act:'edit-batch-facilitators',id:b.id})}
     ${stat('Attendance',m.attendance+'%',`best ${m.best}% · lowest ${m.low}%`,{em:'✅',r:'#/batch-attendance'})}
     ${stat('Classes',m.classes.length,'in the record',{em:'📖',r:'#/classes'})}
     ${stat('Events',m.events.length,'special programmes',{em:'✨',r:'#/classes'})}
     ${stat('Follow-ups',m.fus.pending,`${m.fus.overdue} overdue`,{em:'⏰',tint:m.fus.overdue>0,act:'go',r:'#/followups'})}
     ${stat('Budget used',m.util+'%',money(b.budget.spent)+' of '+money(b.budget.allocated),{em:'🧾',r:'#/preaching-reports'})}</div>
-   ${teamSection({incharge:b.incharge,coordinator:b.coordinator,volunteers:(b.volunteers||[]),canEdit:ownsBatch(b.id),editAct:'edit-batch',editId:b.id})}
+   ${teamSection({incharge:b.incharge,coordinator:b.coordinator,facilitators:facIds,volunteers:(b.volunteers||[]),canEdit:ownsBatch(b.id),editAct:'edit-batch',editId:b.id})}
    <div class="grid g-2-1" style="margin-bottom:15px">
     <div style="display:flex;flex-direction:column;gap:15px">
       ${section('📅 Today & next class',today.length||nextClass?`<div class="list">
@@ -11201,6 +11207,22 @@ function toast(msg,em='✅'){
 const FLD=(n,l,t='text',o={})=>({n,l,t,...o});
 function fieldHTML(f){
   const v=f.v??'';
+  if(f.t==='multicheck'){
+    const selSet = new Set([].concat(f.v||[]).map(String));
+    return `<div class="field"><label>${esc(f.l)}</label>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;padding:8px 10px;background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r);max-height:140px;overflow-y:auto">
+        ${(f.opts||[]).map(o=>{
+          const val=Array.isArray(o)?o[0]:o,lab=Array.isArray(o)?o[1]:o;
+          const chk=selSet.has(String(val));
+          return `<label style="display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:16px;background:${chk?'var(--accent-soft)':'var(--surface)'};border:1px solid ${chk?'var(--accent)':'var(--line)'};cursor:pointer;font-size:12.5px;color:var(--ink)">
+            <input type="checkbox" name="${f.n}" value="${esc(val)}" ${chk?'checked':''} style="margin:0">
+            <span>${esc(lab)}</span>
+          </label>`;
+        }).join('')}
+      </div>
+      ${f.hint?`<div class="hint">${esc(f.hint)}</div>`:''}
+    </div>`;
+  }
   if(f.t==='select')return `<div class="field"><label>${esc(f.l)}</label><select name="${f.n}">${(f.opts||[]).map(o=>{
     const val=Array.isArray(o)?o[0]:o,lab=Array.isArray(o)?o[1]:o;
     return `<option value="${esc(val)}" ${String(v)===String(val)?'selected':''}>${esc(lab)}</option>`}).join('')}</select>${f.hint?`<div class="hint">${esc(f.hint)}</div>`:''}</div>`;
@@ -11225,7 +11247,16 @@ function formModal(){
      <button class="btn pri" data-act="${m.save}">${ic('check')}Save</button></div></div></div>`;
 }
 function collect(){
-  const o={};document.querySelectorAll('#modalform [name]').forEach(el=>o[el.name]=el.value);return o;
+  const o={};
+  document.querySelectorAll('#modalform [name]').forEach(el=>{
+    if(el.type === 'checkbox'){
+      if(!o[el.name]) o[el.name] = [];
+      if(el.checked) o[el.name].push(el.value);
+    } else {
+      o[el.name]=el.value;
+    }
+  });
+  return o;
 }
 /* picker (single or multi select of devotees) */
 function openPicker({title,sub,items,selected,multi,save,ctx}){
@@ -12229,13 +12260,16 @@ function openDeptForm(id){
 function openBatchForm(id){
   const b=id?batch(id):null;
   const allDevs=DB.devotees.map(x=>[x.id,x.name]);
+  const hFacs=getHierarchyFacilitators();
   const volIds=(b?.volunteers||[]);
+  const facIds=(b?.facilitators||[]);
   openForm(b?'Edit batch':'Create batch',[
     FLD('name','Batch name','text',{v:b?.name,ph:'e.g. Sreshtha'}),
     FLD('desc','Description','textarea',{v:b?.desc}),
     FLD('level','Level','select',{v:b?.level||1,opts:[[1,'Level 1'],[2,'Level 2'],[3,'Level 3']],half:1}),
     FLD('incharge','Incharge (senior responsible)','select',{v:b?.incharge||'',opts:[['','— None —'],...allDevs],half:1}),
     FLD('coordinator','Coordinator','select',{v:b?.coordinator,opts:DB.devotees.map(x=>[x.id,x.name]),half:1}),
+    FLD('facilitators','Facilitators (from hierarchy)','multicheck',{v:facIds,opts:hFacs.map(x=>[x.id,x.name]),hint:'Check all facilitators who guide devotees in this batch'}),
     FLD('freq','Meeting frequency','select',{v:b?.freq||'Weekly',opts:['Weekly','Fortnightly','Monthly'],half:1}),
     FLD('day','Meeting day','select',{v:b?.day||'Thu',opts:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],half:1}),
     FLD('time','Class time','text',{v:b?.time||'7:00 pm',half:1}),
@@ -12244,7 +12278,7 @@ function openBatchForm(id){
     FLD('spent','Budget spent (₹)','number',{v:b?.budget.spent||0,half:1}),
     FLD('status','Status','select',{v:b?.status||'Active',opts:['Active','Inactive','Archived']})
   ],'save-batch',{id},'',
-  b?`<button class="btn sm" data-act="edit-batch-team" data-id="${b.id}" style="margin-right:auto">${ic('people')}Volunteers (${volIds.length})</button>`:null);
+  b?`<div style="display:flex;gap:7px;margin-right:auto"><button class="btn sm" data-act="edit-batch-facilitators" data-id="${b.id}">🧑‍🏫 Facilitators (${facIds.length})</button><button class="btn sm" data-act="edit-batch-team" data-id="${b.id}">${ic('people')}Volunteers (${volIds.length})</button></div>`:null);
 }
 function openGroupForm(id){
   const g=id?group(id):null;
@@ -12886,15 +12920,41 @@ document.addEventListener('click',e=>{
     if(!v.name.trim()){toast('A batch needs a name','⚠️');break}
     if(ctx.id){const b=batch(ctx.id);Object.assign(b,{name:v.name,desc:v.desc,level:+v.level,incharge:v.incharge||'',coordinator:v.coordinator,
       freq:v.freq,day:v.day,time:v.time,start:v.start,status:v.status,budget:{allocated:+v.allocated||0,spent:+v.spent||0}});
-      // Keep facilitators in sync with coordinator
-      if(!b.facilitators)b.facilitators=[];
-      if(b.coordinator&&!b.facilitators.includes(b.coordinator))b.facilitators.unshift(b.coordinator);
+      if(v.facilitators !== undefined){
+        b.facilitators = Array.isArray(v.facilitators) ? v.facilitators : (v.facilitators ? [v.facilitators] : []);
+      }
       logAudit('Batch updated',b.name);toast('Batch updated')}
-    else{const b={id:uid('b'),name:v.name,desc:v.desc,level:+v.level,day:v.day,time:v.time,freq:v.freq,status:v.status,
-      coordinator:v.coordinator,facilitators:[],start:v.start,budget:{allocated:+v.allocated||0,spent:+v.spent||0}};
+    else{
+      const facList = v.facilitators ? (Array.isArray(v.facilitators) ? v.facilitators : [v.facilitators]) : [];
+      const b={id:uid('b'),name:v.name,desc:v.desc,level:+v.level,day:v.day,time:v.time,freq:v.freq,status:v.status,
+        incharge:v.incharge||'d1',coordinator:v.coordinator,facilitators:facList,start:v.start,budget:{allocated:+v.allocated||0,spent:+v.spent||0}};
       DB.batches.push(b);
       DB.threads.push({id:uid('th'),type:'batch',name:b.name+' chat',members:[b.coordinator],ref:b.id,messages:[],pinnedNote:null});
       logAudit('Batch created',v.name);toast('Batch created with its own group chat')}
+    APP.modal='';render();break}
+  case 'edit-batch-facilitators':stop();{
+    const b=batch(id);
+    if(!b){toast('Batch not found','⚠️');break}
+    const hFacs = getHierarchyFacilitators();
+    openPicker({title:'Manage facilitators — '+b.name,
+      sub:'Select facilitators for this batch from the overall hierarchy facilitators list.',
+      items:hFacs.map(d=>({
+        id:d.id,
+        label:d.name,
+        sub:d.phone ? `${d.phone} · ${d.appointment||'Facilitator'}` : (d.appointment||'Facilitator'),
+        avatar:d.name
+      })),
+      selected:(b.facilitators||[]),
+      multi:true,
+      save:'save-batch-facilitators',
+      ctx:{id}});
+    break}
+  case 'save-batch-facilitators':{const m=APP.modal;const b=batch(m.ctx.id);
+    if(b){
+      b.facilitators=m.selected;
+      logAudit('Batch facilitators updated',`${b.name} — ${m.selected.length} facilitator(s)`);
+      toast(`Facilitators updated — ${m.selected.length} assigned`);
+    }
     APP.modal='';render();break}
   case 'edit-batch-team':stop();{
     const b=batch(id);
