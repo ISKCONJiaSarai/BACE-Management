@@ -1662,48 +1662,8 @@ const logAudit=(action,record)=>DB.audit.unshift({id:uid('au'),user:(APP.user?na
     coordinator:null,facilitators:[],start:iso(dayOff(-360)),
     budget:{allocated:budget,spent:Math.round(budget*0.45)}}));
 
-  /* devotees: Real CSV devotees (Surya Narayana Das + Gaurvani Sabha + Narad Sabha) + 1 sample devotee */
-  const GAUR_DATA=[
-    ['Purushottam Chandra pr','9599406925','Nilachal Dham BACE','Offline at BACE','Member'],
-    ['Audarya Gaur pr','9971932510','Jia Sarai BACE','Offline at BACE','Coordinator'],
-    ['Sakshi Paramatma pr','7292046236','Jia Sarai BACE','Offline at BACE','Member'],
-    ['Daksha Chaitanya pr','9599507579','Home at Delhi','Offline at BACE','Member'],
-    ['Ravindra Gaur pr','7669011901','Chattarpur flat','Offline at BACE','Member'],
-    ['Yogeswara Priya pr','8376864606','Home at Dwaraka','Offline at BACE','Member'],
-    ['Subal Krsnacharan pr','8287020058','Chattarpur flat','Offline at BACE','Member'],
-    ['Ekachakra Nitai pr','7417705296','Jia Sarai BACE','Offline at BACE','Member'],
-    ['Achyuta Deenabandu pr','9651539936','Chattarpur flat','Offline at BACE','Member'],
-    ['Prashant pr','7355756316','Jia Sarai BACE','Offline at BACE','Secretary'],
-    ['Hemant pr','7357480250','Jia Sarai BACE','Offline at BACE','Member'],
-    ['Adbut Gaur pr','9999624233','Home at Baddarpur','Online','Member'],
-    ['Priya Brajesh pr','9718147152','Post Doc. at US','Online','Member'],
-    ['Rupa Chaitanya pr','7827836164','Flat at Ayodhya','Online','Member'],
-    ['Gaura Charan pr','7840086429','Home at Delhi','Online','Member'],
-    ['Dhruva Murari pr','9536999390','Job Hyderabad','Online','Member'],
-    ['Gaurav Singh pr','8130994369','Personal Home','Online','Member']
-  ];
-
-  const NARAD_DATA=[
-    ['Janardhan Shyam pr','7054117460','Jia Sarai BACE','Offline at BACE','Member'],
-    ['Swayam Bhagavan pr','8540892209','Jia Sarai BACE','Offline at BACE','Member'],
-    ['Dhirendra pr','8094976774','Jia Sarai BACE','Offline at BACE','Coordinator'],
-    ['Harsh pr','7067628467','Flat at Jia Sara','Offline at BACE','Member'],
-    ['Tryambakesh pr','8434614166','Flat at Delhi','Offline at BACE','Member'],
-    ['Neteesh pr','7302700640','Jia Sarai BACE','Offline at BACE','Member'],
-    ['Suraj pr','8400922410','Jia Sarai BACE','Offline at BACE','Member'],
-    ['Vineet pr','7838282673','Jia Sarai BACE','Offline at BACE','Member'],
-    ['Mohit pr','9896157854','Home at Chattarpur','Offline at BACE','Member'],
-    ['Aman Raj pr','9508314944','BACE Extn.', 'Offline at BACE','Member'],
-    ['Raj pr','8955121393','Nilgiri Hostel','Offline at BACE','Member'],
-    ['Arpit pr','8439383371','BACE Extn.','Offline at BACE','Member'],
-    ['Himanshu pr','8307673689','BACE Extn.','Offline at BACE','Member'],
-    ['Sameer pr','7781998528','BACE Extn.','Offline at BACE','Member'],
-    ['Suresh pr','8890057274','Job at Nagpur','Online','Secretary'],
-    ['Bharat pr','7060868649','Rudrapur Gurukul','Online','Member'],
-    ['Yash pr','8699427745','Job at Mumbai','Online','Member'],
-    ['Rachit pr','6261254227','Home at Gwalior','Online','Member'],
-    ['Shivam pr','8433125397','Home at Agra','Online','Member']
-  ];
+  /* devotees: Only Surya Narayana Das (Area Leader) is seeded locally.
+     All other devotees are loaded from the server via syncDevoteesFromServer(). */
 
   // 1. Surya Narayana Das (Area Leader & Gaurvani Sabha)
   const surya = {
@@ -1750,122 +1710,12 @@ const logAudit=(action,record)=>DB.audit.unshift({id:uid('au'),user:(APP.user?na
   };
   DB.devotees.push(surya);
 
-  // 2. Gaurvani Sabha Members (17 members)
-  let audaryaId = null, dhirendraId = null, prashantId = null, sureshId = null;
-  GAUR_DATA.forEach(([name,ph,res,mode,role], idx)=>{
-    const did = 'd_g' + (idx + 1);
-    const isCoord = role === 'Coordinator';
-    const isSec = role === 'Secretary';
-    if(isCoord) audaryaId = did;
-    if(isSec) prashantId = did;
-    const dev = {
-      id: did, name, gender: 'M', dob: '1998-05-15', phone: '+91 ' + ph, email: name.toLowerCase().replace(/[^a-z0-9]/g,'.') + '@iskcon.in',
-      address: res, residence: res, mode, batchRole: role,
-      occupation: res.includes('BACE') ? 'Full-time devotee' : 'Working professional / Student',
-      org: 'IIT Delhi & Associates', emergency: '+91 ' + ph, joined: iso(dayOff(-750)), status: 'Active', level: 3,
-      batch: 'b8', careGroup: null, friends: ['d1'], facilitator: null, mentor: 'd1', dept: null, service: null, serviceRole: null,
-      serviceStart: null, skills: ['Preaching', 'Teaching'], availability: 'Anytime',
-      appointment: role !== 'Member' ? `Gaurvani Sabha ${role}` : null,
-      isFacilitator: isCoord,
-      sadhana: { rounds: 16, morningProgram: mode === 'Online' ? 85 : 92, lastReported: iso(TODAY) },
-      swabhav: { nature: 'Teaching', suggested: 'Outreach & classes', interests: ['Reading', 'Kirtan'], engaged: true },
-      careStatus: { emotional: 'Doing well', spiritual: 'Steady' },
-      firstContact: iso(dayOff(-800)), source: 'Book distribution',
-      attendancePct: mode === 'Online' ? 88 : 95,
-      timeline: [{ date: iso(dayOff(-750)), title: 'Joined Gaurvani Sabha', desc: 'Active member.', tone: 'green' }],
-      history: []
-    };
-    DB.devotees.push(dev);
-  });
-
-  // 3. Narad Sabha Members (19 members)
-  NARAD_DATA.forEach(([name,ph,res,mode,role], idx)=>{
-    const did = 'd_n' + (idx + 1);
-    const isCoord = role === 'Coordinator';
-    const isSec = role === 'Secretary';
-    if(isCoord) dhirendraId = did;
-    if(isSec) sureshId = did;
-    const dev = {
-      id: did, name, gender: 'M', dob: '1999-08-20', phone: '+91 ' + ph, email: name.toLowerCase().replace(/[^a-z0-9]/g,'.') + '@iskcon.in',
-      address: res, residence: res, mode, batchRole: role,
-      occupation: res.includes('BACE') ? 'Full-time devotee' : 'Working professional / Student',
-      org: 'IIT Delhi & Associates', emergency: '+91 ' + ph, joined: iso(dayOff(-600)), status: 'Active', level: 3,
-      batch: 'b7', careGroup: null, friends: ['d1'], facilitator: null, mentor: 'd1', dept: null, service: null, serviceRole: null,
-      serviceStart: null, skills: ['Preaching', 'Teaching'], availability: 'Anytime',
-      appointment: role !== 'Member' ? `Narad Sabha ${role}` : null,
-      isFacilitator: isCoord,
-      sadhana: { rounds: 16, morningProgram: mode === 'Online' ? 85 : 92, lastReported: iso(TODAY) },
-      swabhav: { nature: 'Teaching', suggested: 'Outreach & classes', interests: ['Reading', 'Kirtan'], engaged: true },
-      careStatus: { emotional: 'Doing well', spiritual: 'Steady' },
-      firstContact: iso(dayOff(-650)), source: 'Book distribution',
-      attendancePct: mode === 'Online' ? 88 : 95,
-      timeline: [{ date: iso(dayOff(-600)), title: 'Joined Narad Sabha', desc: 'Active member.', tone: 'green' }],
-      history: []
-    };
-    DB.devotees.push(dev);
-  });
-
-  // 4. 1 Sample Dummy Devotee (Rahul Sharma)
-  const sampleDev = {
-    id: 'd_sample',
-    name: 'Rahul Sharma',
-    gender: 'M',
-    dob: '2004-03-20',
-    phone: '+91 9876543210',
-    email: 'rahul.sharma@example.in',
-    address: 'Hostel, IIT Delhi',
-    residence: 'Hostel',
-    mode: 'Offline at BACE',
-    batchRole: 'Member',
-    occupation: 'B.Tech 2nd year',
-    org: 'IIT Delhi',
-    emergency: '+91 9876543210',
-    joined: iso(dayOff(-90)),
-    status: 'Active',
-    level: 1,
-    batch: 'b1',
-    careGroup: 'cg1',
-    friends: [audaryaId || 'd1'],
-    facilitator: audaryaId || 'd1',
-    mentor: audaryaId || 'd1',
-    dept: 'dp6',
-    service: 'Prasadam serving',
-    serviceRole: 'Volunteer',
-    serviceStart: iso(dayOff(-60)),
-    skills: ['Cooking', 'Kirtan'],
-    availability: 'Weekends',
-    appointment: null,
-    isFacilitator: false,
-    sadhana: { rounds: 4, morningProgram: 75, lastReported: iso(TODAY) },
-    swabhav: { nature: 'Organising', suggested: 'Festival and event management', interests: ['Kirtan', 'Reading'], engaged: true },
-    careStatus: { emotional: 'Doing well', spiritual: 'Growing' },
-    firstContact: iso(dayOff(-120)),
-    source: 'Campus stall',
-    attendancePct: 80,
-    timeline: [
-      { date: iso(dayOff(-120)), title: 'First contact', desc: 'Met through campus book stall.', tone: 'saffron' },
-      { date: iso(dayOff(-90)), title: 'Joined community', desc: 'Profile created in devotee database.', tone: 'green' },
-      { date: iso(dayOff(-60)), title: 'Joined Taksharya', desc: 'Level 1 batch.', tone: 'indigo' }
-    ],
-    history: []
-  };
-  DB.devotees.push(sampleDev);
-
-  // Link batch coordinators & facilitators & incharge
-  const bG = DB.batches.find(b => b.id === 'b8');
-  if (bG && audaryaId) { bG.coordinator = audaryaId; bG.facilitators = [audaryaId, 'd1']; bG.incharge = 'd1'; }
-  const bN = DB.batches.find(b => b.id === 'b7');
-  if (bN && dhirendraId) { bN.coordinator = dhirendraId; bN.facilitators = [dhirendraId, 'd1']; bN.incharge = 'd1'; }
-  const bT = DB.batches.find(b => b.id === 'b1');
-  if (bT && audaryaId) { bT.coordinator = audaryaId; bT.facilitators = [audaryaId]; bT.incharge = 'd1'; }
+  // All other devotees are loaded from the server — no fake seed data.
+  // Batch coordinators/facilitators will be set after server sync.
   DB.batches.forEach(b => {
-    if (!b.coordinator) {
-      b.coordinator = (b.level === 3 ? dhirendraId : audaryaId) || 'd1';
-      b.facilitators = [b.coordinator];
-    }
-    if (!b.incharge) {
-      b.incharge = 'd1';
-    }
+    if (!b.coordinator) b.coordinator = 'd1';
+    if (!b.facilitators || !b.facilitators.length) b.facilitators = ['d1'];
+    if (!b.incharge) b.incharge = 'd1';
     if (!b.volunteers) {
       b.volunteers = [];
     }
@@ -12194,7 +12044,8 @@ async function executeDevoteeCsvImport(){
 
     // Force a fresh server sync to ensure all IDs and names resolve correctly
     lastDevoteesSync = 0;
-    setTimeout(() => syncDevoteesFromServer(), 800);
+    setTimeout(() => syncDevoteesFromServer(true), 800);
+
   } catch(err) {
     console.error('Import execution error:', err);
     toast(err.message || 'Failed to import CSV devotees', '❌');
@@ -12336,9 +12187,11 @@ function importCsvModal(){
 }
 
 let lastDevoteesSync = 0;
-async function syncDevoteesFromServer(){
+async function syncDevoteesFromServer(forceImmediate){
   const token = localStorage.getItem('bace_token');
-  if(!token || Date.now() - lastDevoteesSync < 10000) return;
+  if(!token) return;
+  // Rate-limit: skip if called within 10s, unless forceImmediate is set
+  if(!forceImmediate && Date.now() - lastDevoteesSync < 10000) return;
   lastDevoteesSync = Date.now();
   try {
     const res = await fetch('/api/devotees', {
@@ -12352,73 +12205,79 @@ async function syncDevoteesFromServer(){
         if(isBaceAdminEmail(serverDev.email) || serverDev.appointment === 'BACE Administrator') return;
         const targetId = String(serverDev.customId || serverDev._id || serverDev.id || '');
         const serverName = (serverDev.name || '').trim().toLowerCase();
-        
-        let localDev = DB.devotees.find(x => 
-          (targetId && (String(x.id) === targetId || String(x.customId) === targetId)) ||
+
+        let localDev = DB.devotees.find(x =>
+          (targetId && (String(x.id) === targetId || String(x.customId) === targetId || String(x._id||'') === targetId)) ||
           (x.name && x.name.trim().toLowerCase() === serverName) ||
           (serverDev.email && x.email && x.email.trim().toLowerCase() === serverDev.email.trim().toLowerCase())
         );
 
-        // Resolve relational references to match local IDs and map MongoDB _id
-        let resolvedBatchId = null;
-        if(serverDev.batch){
-          const bMatch = batch(serverDev.batch);
-          if(bMatch){
-            if(typeof serverDev.batch === 'object' && serverDev.batch._id) bMatch._id = String(serverDev.batch._id);
-            resolvedBatchId = bMatch.id;
+        // Resolve populated relational objects (batch/dept/careGroup) returned by server
+        // The batch() helper returns the object directly if it has a .name — so extract .id from local match
+        function resolveRelationalId(serverField, lookupFn) {
+          if(!serverField) return null;
+          if(typeof serverField === 'object'){
+            // Server returned populated object: {_id, name}
+            const rawId = String(serverField._id || serverField.id || '');
+            const name = serverField.name || '';
+            // Find in local DB by name first (most reliable), then by _id
+            const local = lookupFn(name) || (rawId ? lookupFn(rawId) : null);
+            return local ? local.id : rawId || null;
           } else {
-            resolvedBatchId = typeof serverDev.batch === 'object' ? (serverDev.batch._id || serverDev.batch.id) : serverDev.batch;
+            const local = lookupFn(String(serverField));
+            return local ? local.id : String(serverField);
           }
         }
-        let resolvedDeptId = null;
-        if(serverDev.dept){
-          const dMatch = dept(serverDev.dept);
-          if(dMatch){
-            if(typeof serverDev.dept === 'object' && serverDev.dept._id) dMatch._id = String(serverDev.dept._id);
-            resolvedDeptId = dMatch.id;
-          } else {
-            resolvedDeptId = typeof serverDev.dept === 'object' ? (serverDev.dept._id || serverDev.dept.id) : serverDev.dept;
-          }
-        }
-        let resolvedGroupId = null;
-        if(serverDev.careGroup){
-          const gMatch = group(serverDev.careGroup);
-          if(gMatch){
-            if(typeof serverDev.careGroup === 'object' && serverDev.careGroup._id) gMatch._id = String(serverDev.careGroup._id);
-            resolvedGroupId = gMatch.id;
-          } else {
-            resolvedGroupId = typeof serverDev.careGroup === 'object' ? (serverDev.careGroup._id || serverDev.careGroup.id) : serverDev.careGroup;
-          }
-        }
+
+        const resolvedBatchId = resolveRelationalId(serverDev.batch, batch);
+        const resolvedDeptId = resolveRelationalId(serverDev.dept, dept);
+        const resolvedGroupId = resolveRelationalId(serverDev.careGroup, group);
+
         let resolvedFacilitatorId = null;
         if(serverDev.facilitator){
-          const fId = typeof serverDev.facilitator === 'object' ? (serverDev.facilitator._id || serverDev.facilitator.id) : serverDev.facilitator;
-          const fName = typeof serverDev.facilitator === 'object' ? serverDev.facilitator.name : null;
-          const localFac = DB.devotees.find(x => 
-            (fId && (String(x._id) === String(fId) || String(x.id) === String(fId) || String(x.customId) === String(fId))) ||
+          const fObj = typeof serverDev.facilitator === 'object' ? serverDev.facilitator : null;
+          const fId = fObj ? String(fObj._id || fObj.id || '') : String(serverDev.facilitator);
+          const fName = fObj ? (fObj.name || '') : '';
+          const localFac = DB.devotees.find(x =>
+            (fId && (String(x._id||'') === fId || String(x.id) === fId || String(x.customId||'') === fId)) ||
             (fName && x.name && x.name.toLowerCase().trim() === fName.toLowerCase().trim())
           );
           resolvedFacilitatorId = localFac ? localFac.id : (fId || null);
         }
 
         if(!localDev){
+          // New devotee from server — add to local DB
           localDev = normalizeDevotee({
             ...serverDev,
-            id: targetId || ('d_' + Date.now()),
+            id: targetId || ('d_sv_' + Date.now() + '_' + Math.random().toString(36).slice(2,5)),
+            _id: String(serverDev._id || ''),
+            customId: targetId,
             batch: resolvedBatchId,
             dept: resolvedDeptId,
             careGroup: resolvedGroupId,
             facilitator: resolvedFacilitatorId || null,
             morningStandardTime: serverDev.morningStandardTime || '04:30',
             morningAttendance: serverDev.morningAttendance,
-            sadhana: serverDev.sadhana || { morningProgram: 0 }
+            sadhana: serverDev.sadhana || { morningProgram: 0, rounds: 0 }
           });
           DB.devotees.push(localDev);
           changed = true;
         } else {
-          if(serverDev._id && !localDev._id) localDev._id = String(serverDev._id);
+          // Update existing local entry with server data
+          if(serverDev._id && !localDev._id) { localDev._id = String(serverDev._id); changed = true; }
+          if(targetId && !localDev.customId) { localDev.customId = targetId; changed = true; }
+          if(serverDev.name) localDev.name = serverDev.name;
+          if(serverDev.gender) localDev.gender = serverDev.gender;
           if(serverDev.phone && localDev.phone !== serverDev.phone) { localDev.phone = serverDev.phone; changed = true; }
           if(serverDev.email && localDev.email !== serverDev.email) { localDev.email = serverDev.email; changed = true; }
+          if(serverDev.residence) localDev.residence = serverDev.residence;
+          if(serverDev.address) localDev.address = serverDev.address;
+          if(serverDev.org) localDev.org = serverDev.org;
+          if(serverDev.occupation) localDev.occupation = serverDev.occupation;
+          if(serverDev.highestEducation) localDev.highestEducation = serverDev.highestEducation;
+          if(serverDev.presentStudiesOrJob) localDev.presentStudiesOrJob = serverDev.presentStudiesOrJob;
+          if(serverDev.attendancePct !== undefined) localDev.attendancePct = serverDev.attendancePct;
+          if(serverDev.attendanceMode) localDev.attendanceMode = serverDev.attendanceMode;
           if(resolvedBatchId && localDev.batch !== resolvedBatchId) { localDev.batch = resolvedBatchId; changed = true; }
           if(resolvedDeptId && localDev.dept !== resolvedDeptId) { localDev.dept = resolvedDeptId; changed = true; }
           if(resolvedGroupId && localDev.careGroup !== resolvedGroupId) { localDev.careGroup = resolvedGroupId; changed = true; }
@@ -12427,21 +12286,17 @@ async function syncDevoteesFromServer(){
           if(serverDev.status && localDev.status !== serverDev.status) { localDev.status = serverDev.status; changed = true; }
           if(serverDev.level !== undefined && localDev.level !== serverDev.level) { localDev.level = serverDev.level; changed = true; }
           if(serverDev.morningStandardTime && localDev.morningStandardTime !== serverDev.morningStandardTime) {
-            localDev.morningStandardTime = serverDev.morningStandardTime;
-            changed = true;
+            localDev.morningStandardTime = serverDev.morningStandardTime; changed = true;
           }
-          if(serverDev.morningAttendance) {
-            localDev.morningAttendance = serverDev.morningAttendance;
-          }
-          if(serverDev.sadhana) {
-            localDev.sadhana = { ...(localDev.sadhana || {}), ...serverDev.sadhana };
-          }
+          if(serverDev.morningAttendance) localDev.morningAttendance = serverDev.morningAttendance;
+          if(serverDev.sadhana) localDev.sadhana = { ...(localDev.sadhana || {}), ...serverDev.sadhana };
           if(serverDev.appointment && localDev.appointment !== serverDev.appointment) {
-            localDev.appointment = serverDev.appointment;
-            changed = true;
+            localDev.appointment = serverDev.appointment; changed = true;
           }
+          if(Array.isArray(serverDev.skills) && serverDev.skills.length) localDev.skills = serverDev.skills;
+          normalizeDevotee(localDev);
 
-          // If current logged in devotee's role or appointment was changed on server
+          // If current logged-in devotee's role changed on server, update session
           const isMeSync = APP.user && (
             APP.user.devotee === localDev.id ||
             APP.user.devotee === localDev.customId ||
@@ -15434,8 +15289,9 @@ async function verifyUserSessionFromServer(){
 APP.route=location.hash||'#/';
 loadMorningAttendanceFromBackend();
 render();
-syncDevoteesFromServer();
+syncDevoteesFromServer(true); // forceImmediate on first page load
 verifyUserSessionFromServer();
+
 
 </script>
 </body>
