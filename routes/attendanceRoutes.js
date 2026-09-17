@@ -75,6 +75,26 @@ router.get('/morning', async (req, res) => {
   }
 });
 
+// Merge previous biometric notes with incoming text so past sessions are never lost
+function mergeBiometricLines(existingNotes, newText) {
+  if (!existingNotes || !existingNotes.trim()) return newText || '';
+  if (!newText || !newText.trim()) return existingNotes || '';
+
+  const clean = t => String(t).replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n').map(l => l.trim()).filter(Boolean);
+  const existingLines = clean(existingNotes);
+  const newLines = clean(newText);
+  if (!existingLines.length) return newText;
+  if (!newLines.length) return existingNotes;
+
+  const set = new Set(existingLines);
+  newLines.forEach(l => {
+    const low = l.toLowerCase();
+    if ((low.includes('datetime') || low.includes('punchtime')) && (low.includes('name') || low.includes('enno'))) return;
+    set.add(l);
+  });
+  return Array.from(set).join('\n');
+}
+
 // @route   POST /api/attendance/morning-sync
 // @desc    Save uploaded biometric text and sync all check-in records into individual devotees in MongoDB
 router.post('/morning-sync', async (req, res) => {
@@ -97,11 +117,12 @@ router.post('/morning-sync', async (req, res) => {
       if (d.name) devMap.set(d.name.trim().toLowerCase(), d);
     });
 
-    // 2. Persist the raw biometric log into Attendance collection so reload is instant
+    // 2. Persist the raw biometric log into Attendance collection so reload is instant and records accumulate
     let rawLogDoc = await Attendance.findOne({ type: 'Morning programme', ref: 'mp_raw_log' });
     const adminDev = allDevs.find(d => (d.email || '').includes('terkadamba') || d.appointment === 'Area Leader') || allDevs[0];
+    const mergedNotes = rawLogDoc ? mergeBiometricLines(rawLogDoc.notes, rawBiometricText) : rawBiometricText;
     if (rawLogDoc) {
-      rawLogDoc.notes = rawBiometricText;
+      rawLogDoc.notes = mergedNotes;
       rawLogDoc.date = new Date();
       await rawLogDoc.save();
     } else if (adminDev) {
@@ -109,7 +130,7 @@ router.post('/morning-sync', async (req, res) => {
         devotee: adminDev._id,
         type: 'Morning programme',
         ref: 'mp_raw_log',
-        notes: rawBiometricText,
+        notes: mergedNotes,
         status: 'Present',
         date: new Date()
       });

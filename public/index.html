@@ -1996,7 +1996,16 @@ const logAudit=(action,record)=>DB.audit.unshift({id:uid('au'),user:(APP.user?na
   };
   DB.templates.push(tplKitchen);
 
-  DB.activities.push({
+  let deletedActIds = new Set();
+  try {
+    const delRaw = localStorage.getItem('bace_deleted_activities_store');
+    if(delRaw) deletedActIds = new Set(JSON.parse(delRaw));
+  } catch(e){}
+  const addSeedAct = a => {
+    if(!deletedActIds.has(a.id)) DB.activities.push(a);
+  };
+
+  addSeedAct({
     id: 'ac_s1',
     type: 'Seva',
     name: 'Sunday Feast Prasadam Cooking',
@@ -2033,7 +2042,7 @@ const logAudit=(action,record)=>DB.audit.unshift({id:uid('au'),user:(APP.user?na
     completedAt: null
   });
 
-  DB.activities.push({
+  addSeedAct({
     id: 'ac_e1',
     type: 'Event',
     name: 'Sunday Love Feast & Kirtan',
@@ -2064,7 +2073,7 @@ const logAudit=(action,record)=>DB.audit.unshift({id:uid('au'),user:(APP.user?na
     expected: 60
   });
 
-  DB.activities.push({
+  addSeedAct({
     id: 'ac_c1',
     type: 'Class',
     name: 'Narad Sabha Weekly Study',
@@ -2092,7 +2101,7 @@ const logAudit=(action,record)=>DB.audit.unshift({id:uid('au'),user:(APP.user?na
     expected: 19
   });
 
-  DB.activities.push({
+  addSeedAct({
     id: 'ac_c2',
     type: 'Class',
     name: 'Gaurvani Sabha Weekly Study',
@@ -2120,7 +2129,7 @@ const logAudit=(action,record)=>DB.audit.unshift({id:uid('au'),user:(APP.user?na
     expected: 18
   });
 
-  DB.activities.push({
+  addSeedAct({
     id: 'ac_c3',
     type: 'Class',
     name: 'Bhagavad-gita Foundation',
@@ -2148,7 +2157,7 @@ const logAudit=(action,record)=>DB.audit.unshift({id:uid('au'),user:(APP.user?na
     expected: 10
   });
 
-  DB.activities.push({
+  addSeedAct({
     id: 'ac_t1',
     type: 'Task',
     name: 'Submit weekly seva report',
@@ -5902,6 +5911,28 @@ function getSampleMorningData(){
   return computeMorningMetrics(rawRows, iso(TODAY));
 }
 
+// Merge existing biometric logs with new logs so previous sessions are never lost or cleared
+function mergeBiometricTexts(oldText, newText) {
+  if (!oldText || !oldText.trim()) return newText || '';
+  if (!newText || !newText.trim()) return oldText || '';
+
+  const clean = t => String(t).replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n').map(l => l.trim()).filter(Boolean);
+  const oldLines = clean(oldText);
+  const newLines = clean(newText);
+  if (!oldLines.length) return newText;
+  if (!newLines.length) return oldText;
+
+  const set = new Set(oldLines);
+  newLines.forEach(line => {
+    const low = line.toLowerCase();
+    if ((low.includes('datetime') || low.includes('punchtime')) && (low.includes('name') || low.includes('enno'))) return;
+    if (low.includes('devotee') && low.includes('time')) return;
+    set.add(line);
+  });
+
+  return Array.from(set).join('\n');
+}
+
 function handleMorningCsvFile(file){
   if(!file) return;
   const reader = new FileReader();
@@ -5935,19 +5966,21 @@ function handleMorningCsvFile(file){
       }
     }
     text = (text || '').replace(/^\uFEFF/, '').trim();
-    const parsed = parseMorningCSV(text);
+    // Retrieve previous text so previous uploads & sessions are NEVER cleared or overwritten
+    const prevText = localStorage.getItem('bace_morning_text') || (APP.morningData && APP.morningData.rawBiometricText) || '';
+    const mergedText = mergeBiometricTexts(prevText, text);
+    const parsed = parseMorningCSV(mergedText);
     if(parsed && parsed.rows && parsed.rows.length){
       APP.morningData = parsed;
       APP.morningView = 'csv';
       try {
-        localStorage.setItem('bace_morning_text', text);
+        localStorage.setItem('bace_morning_text', mergedText);
         localStorage.setItem('bace_morning_date', parsed.date || iso(TODAY));
       } catch(e){}
       saveMorningAttendanceToDB(false);
-      syncMorningAttendanceToBackend(text, parsed);
-      const typeLabel = parsed.isBiometric ? 'biometric device log (.txt)' : 'file';
+      syncMorningAttendanceToBackend(mergedText, parsed);
       const sessionCount = parsed.availableDates ? parsed.availableDates.length : 1;
-      toast(`Imported & saved ${parsed.rows.length} devotee check-ins across ${sessionCount} sessions to MongoDB!`, '🌅');
+      toast(`Saved & merged ${parsed.rows.length} devotee check-ins across ${sessionCount} sessions! Stored permanently to MongoDB.`, '🌅');
       render();
     } else {
       toast('Could not parse devotee check-ins. Please ensure the file contains Name and DateTime columns.', '⚠️');
@@ -5990,10 +6023,10 @@ async function syncMorningAttendanceToBackend(rawText, parsed){
 
 let lastMorningFetch = 0;
 async function loadMorningAttendanceFromBackend(){
-  // 1. Instant local restore so reload has zero delay
+  // 1. Instant local restore so reload has zero delay and never shows empty
   try {
     const cachedText = localStorage.getItem('bace_morning_text');
-    if (cachedText && (!APP.morningData || !APP.morningData.rows || !APP.morningData.rows.length)) {
+    if (cachedText) {
       const cachedDate = localStorage.getItem('bace_morning_date');
       const parsed = parseMorningCSV(cachedText, cachedDate);
       if (parsed && parsed.rows && parsed.rows.length) {
@@ -6016,10 +6049,12 @@ async function loadMorningAttendanceFromBackend(){
     if(!res.ok) return;
     const json = await res.json();
     if(json.success && json.hasData && json.rawBiometricText){
+      const localText = localStorage.getItem('bace_morning_text') || '';
+      const combined = mergeBiometricTexts(localText, json.rawBiometricText);
       try {
-        localStorage.setItem('bace_morning_text', json.rawBiometricText);
+        localStorage.setItem('bace_morning_text', combined);
       } catch(e){}
-      const parsed = parseMorningCSV(json.rawBiometricText);
+      const parsed = parseMorningCSV(combined);
       if(parsed && parsed.rows && parsed.rows.length){
         APP.morningData = parsed;
         saveMorningAttendanceToDB(false);
@@ -6403,7 +6438,8 @@ function morningProgramPanel(){
         <div style="font-size:48px;margin-bottom:12px">🌅</div>
         <h3 style="margin:0 0 8px;font-size:18px">No Attendance Log Loaded</h3>
         <p style="color:var(--ink-3);max-width:560px;margin:0 auto 20px;font-size:13.5px;line-height:1.5">
-          All previous records are cleared. Upload your device log (<b>.txt</b> file) to record punches.<br>
+          Upload your device log (<b>.txt</b> / <b>.csv</b> file) to record morning punches.<br>
+          All records are saved permanently to MongoDB and accumulated across sessions without being cleared.<br>
           Devotees will be matched with the database by their <b>first name (case-insensitive)</b>.<br>
           <span style="display:inline-block;margin-top:8px;color:var(--ink-2);font-weight:600">
             Standard: 04:30 AM On Time · Grace up to 05:30 AM · Late up to 06:30 AM · Absent after 07:00 AM (no marking)
@@ -10065,24 +10101,34 @@ function getBatchVolunteers(batchId){
 /* ---------- LocalStorage Persistence Layer for Batches, Reports & Filters ---------- */
 function saveActivitiesToStorage(){
   try{
-    localStorage.setItem('bace_activities_store', JSON.stringify(DB.activities || []));
+    let deletedIds = new Set();
+    try {
+      const delRaw = localStorage.getItem('bace_deleted_activities_store');
+      if(delRaw) deletedIds = new Set(JSON.parse(delRaw));
+    }catch(e){}
+    const cleanList = (DB.activities || []).filter(a => a && a.id && !deletedIds.has(a.id));
+    localStorage.setItem('bace_activities_store', JSON.stringify(cleanList));
   }catch(e){console.warn('saveActivitiesToStorage error:', e)}
 }
 
 function loadActivitiesFromStorage(){
   try{
+    let deletedIds = new Set();
+    try {
+      const delRaw = localStorage.getItem('bace_deleted_activities_store');
+      if(delRaw) deletedIds = new Set(JSON.parse(delRaw));
+    }catch(e){}
+
     const raw = localStorage.getItem('bace_activities_store');
-    if(!raw) return;
-    const list = JSON.parse(raw);
-    if(Array.isArray(list)){
-      list.forEach(saved => {
-        const a = (DB.activities||[]).find(x => x.id === saved.id);
-        if(a){
-          Object.assign(a, saved);
-        } else {
-          DB.activities.push(saved);
-        }
-      });
+    if(raw){
+      const list = JSON.parse(raw);
+      if(Array.isArray(list)){
+        DB.activities = list.filter(a => a && a.id && !deletedIds.has(a.id));
+        return;
+      }
+    }
+    if(deletedIds.size > 0){
+      DB.activities = (DB.activities || []).filter(a => a && a.id && !deletedIds.has(a.id));
     }
   }catch(e){console.warn('loadActivitiesFromStorage error:', e)}
 }
@@ -15008,6 +15054,15 @@ document.addEventListener('click',e=>{
       const idx = DB.activities.findIndex(x => x.id === aId);
       if(idx !== -1) DB.activities.splice(idx, 1);
       DB.assignments = (DB.assignments || []).filter(x => x.activity !== aId);
+
+      // Record deleted activity ID in permanent tombstone store so it never reappears
+      try {
+        const delRaw = localStorage.getItem('bace_deleted_activities_store');
+        const deletedIds = new Set(delRaw ? JSON.parse(delRaw) : []);
+        deletedIds.add(aId);
+        localStorage.setItem('bace_deleted_activities_store', JSON.stringify(Array.from(deletedIds)));
+      } catch(e){}
+
       saveActivitiesToStorage();
       saveAssignmentsToStorage();
       if(APP.drawer === 'activity' && APP.drawerId === aId){
@@ -15223,6 +15278,9 @@ document.addEventListener('click',e=>{
     break;
   }
   case 'clear-morning-data':stop();{
+    if(!confirm('⚠️ Are you sure you want to permanently clear all stored biometric attendance records from both this device and MongoDB? This cannot be undone.')){
+      break;
+    }
     APP.morningData = null;
     APP.morningReportView = 'today';
     DB.attendance = (DB.attendance || []).filter(a => a.category !== 'Morning programme' && !String(a.ref).startsWith('mp_'));
