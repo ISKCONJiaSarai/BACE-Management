@@ -2768,6 +2768,7 @@ const ICONS={
  rupee:'M6 3h12M6 8h12M16 3c0 5-4 5-7 5l7 8',leaf:'M11 20A7 7 0 0 1 4 13c0-5 5-10 16-10 0 11-5 16-10 16ZM4 21c2-6 6-9 10-10',
  repeat:'M17 1l4 4-4 4M3 11V9a4 4 0 0 1 4-4h14M7 23l-4-4 4-4M21 13v2a4 4 0 0 1-4 4H3',
  logout:'M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9',
+ trash:'M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6',
  sliders:'M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6'
 };
 const ic=(n,c='')=>`<svg class="ic ${c}" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="${ICONS[n]||ICONS.grid}"/></svg>`;
@@ -9893,13 +9894,17 @@ function fuList(kind){
     <div class="chips">${Object.keys(buckets).map(b=>`<button class="chip ${f.bucket===b?'on':''}" data-act="f" data-k="fu" data-n="bucket" data-v="${b}">${b}</button>`).join('')}</div>
     <input type="search" placeholder="Search person" value="${esc(f.q)}" data-act="f" data-k="fu" data-n="q" style="margin-left:auto">
     <button class="btn sm pri" data-act="add-followup">${ic('plus')}New</button></div>
-   ${rows.length?`<div class="list">${rows.sort((a,b)=>a.due<b.due?-1:1).map(x=>`<div class="li">
-     ${av(subjectName(x))}<span class="grow"><span class="t">${esc(subjectName(x))}</span>
+   ${rows.length?`<div class="list">${rows.sort((a,b)=>a.due<b.due?-1:1).map(x=>`<div class="li" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+     ${av(subjectName(x))}<span class="grow" style="min-width:200px"><span class="t">${esc(subjectName(x))}</span>
      <span class="d">${esc(x.purpose)} · assigned to ${esc(nameOf(x.assigned))}${x.notes?' · '+esc(x.notes):''}</span></span>
-     ${isOverdue(x)?badge('Overdue '+relD(x.due),'red'):badge(relD(x.due),isDueToday(x)?'amber':'grey')}
-     ${sbadge(x.priority)}
-     ${x.status==='Pending'?`<button class="btn sm pri" data-act="complete-fu" data-id="${x.id}">Mark done</button>
-       <button class="btn sm" data-act="snooze-fu" data-id="${x.id}">+3 days</button>`:sbadge(x.status)}</div>`).join('')}</div>`
+     <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-left:auto">
+       ${isOverdue(x)?badge('Overdue '+relD(x.due),'red'):badge(relD(x.due),isDueToday(x)?'amber':'grey')}
+       ${sbadge(x.priority)}
+       ${x.status==='Pending'?`<button class="btn sm pri" data-act="complete-fu" data-id="${x.id}">Mark done</button>
+         <button class="btn sm" data-act="snooze-fu" data-id="${x.id}">+3 days</button>`:sbadge(x.status)}
+       <button class="btn sm" data-act="edit-fu" data-id="${x.id}" title="Edit follow-up">${ic('edit')}Edit</button>
+       <button class="btn sm danger" data-act="delete-fu" data-id="${x.id}" title="Delete follow-up">${ic('trash')}Delete</button>
+     </div></div>`).join('')}</div>`
    :emptyState('Nothing in this bucket','No follow-ups match this filter.','<button class="btn pri" data-act="add-followup">Create follow-up</button>','calm')}</div>`;
 }
 function viewFollowups(){
@@ -12944,15 +12949,39 @@ function getFollowupSubjectOptions(kind, selectedId=''){
 
 function openFollowupForm(kind, defaultSubject=''){
   const k = kind || 'Preaching';
+  const facs = getHierarchyFacilitators().sort((a,b) => (a.name||'').localeCompare(b.name||''));
+  const facOpts = facs.map(x => [x.id, x.name]);
+  const defaultAssigned = (APP.user?.devotee && facs.some(f => f.id === APP.user.devotee))
+    ? APP.user.devotee
+    : (facs[0]?.id || '');
+
   openForm('Schedule follow-up', [
     FLD('kind', 'Type', 'select', { v: k, opts: ['Preaching', 'Care'] }),
     FLD('subject', 'Person', 'select', { rawHtml: getFollowupSubjectOptions(k, defaultSubject) }),
     FLD('purpose', 'Purpose', 'text', { ph: k === 'Preaching' ? 'Invite to Sunday class / discuss book' : 'Care meeting / spiritual inquiry' }),
-    FLD('assigned', 'Assigned to', 'select', { opts: (DB.devotees||[]).filter(d => d.level >= 2 || d.isFacilitator || d.id === APP.user?.devotee).map(x => [x.id, x.name]), half: 1 }),
+    FLD('assigned', 'Assigned to', 'select', { v: defaultAssigned, opts: facOpts, half: 1 }),
     FLD('due', 'Due date', 'date', { v: iso(dayOff(2)), half: 1 }),
     FLD('priority', 'Priority', 'select', { opts: ['High', 'Medium', 'Low'], half: 1 }),
     FLD('notes', 'Notes', 'textarea', { ph: 'Context or background notes for the conversation' })
   ], 'save-followup', {}, 'Preaching lists contacts / students; Care lists devotees grouped by batch');
+}
+
+function openEditFollowupForm(fuId){
+  const f = DB.followups.find(x => x.id === fuId);
+  if(!f) return toast('Follow-up not found', '⚠️');
+  const k = f.kind || 'Preaching';
+  const facs = getHierarchyFacilitators().sort((a,b) => (a.name||'').localeCompare(b.name||''));
+  const facOpts = facs.map(x => [x.id, x.name]);
+  openForm('Edit follow-up', [
+    FLD('kind', 'Type', 'select', { v: k, opts: ['Preaching', 'Care'] }),
+    FLD('subject', 'Person', 'select', { rawHtml: getFollowupSubjectOptions(k, f.subject) }),
+    FLD('purpose', 'Purpose', 'text', { v: f.purpose || '', ph: 'Purpose of follow-up' }),
+    FLD('assigned', 'Assigned to', 'select', { v: f.assigned || '', opts: facOpts, half: 1 }),
+    FLD('due', 'Due date', 'date', { v: f.due || iso(TODAY), half: 1 }),
+    FLD('priority', 'Priority', 'select', { v: f.priority || 'Medium', opts: ['High', 'Medium', 'Low'], half: 1 }),
+    FLD('status', 'Status', 'select', { v: f.status || 'Pending', opts: ['Pending', 'Completed'], half: 1 }),
+    FLD('notes', 'Notes', 'textarea', { v: f.notes || '', ph: 'Context or background notes for the conversation' })
+  ], 'save-edited-fu', { id: f.id }, 'Edit follow-up details, assignee or status');
 }
 function openReportForm(deptId,kind){
   if(kind==='preaching'){
@@ -14032,6 +14061,57 @@ document.addEventListener('click',e=>{
       saveFollowupsToStorage();
       logAudit('Follow-up rescheduled', subjectName(f));
       toast('Moved to ' + fmtD(f.due), '⏰');
+      render();
+    }
+    break;
+  }
+  case 'edit-fu':stop();{
+    const fuId = t.dataset.id || id;
+    openEditFollowupForm(fuId);
+    break;
+  }
+  case 'save-edited-fu':{
+    const fuId = APP.modal?.ctx?.id;
+    const f = DB.followups.find(x => x.id === fuId);
+    if(f){
+      const v = collect();
+      if(!v.subject){
+        toast('Please select a person', '⚠️');
+        break;
+      }
+      f.kind = v.kind || f.kind;
+      f.subject = v.subject;
+      f.purpose = v.purpose || f.purpose;
+      f.assigned = v.assigned || f.assigned;
+      f.due = v.due || f.due;
+      f.priority = v.priority || f.priority;
+      f.status = v.status || f.status;
+      f.notes = v.notes || '';
+      if(f.kind === 'Preaching'){
+        const c = contact(v.subject);
+        if(c && c.batch) f.batch = c.batch;
+      } else {
+        const d = dv(v.subject);
+        if(d && d.batch) f.batch = d.batch;
+      }
+      saveFollowupsToStorage();
+      logAudit('Follow-up updated', subjectName(f));
+      toast('Follow-up updated', '✅');
+      APP.modal = '';
+      render();
+    }
+    break;
+  }
+  case 'delete-fu':stop();{
+    const fuId = t.dataset.id || id;
+    const f = DB.followups.find(x => x.id === fuId);
+    if(!f) break;
+    if(confirm(`Are you sure you want to delete follow-up for "${subjectName(f)}"?`)){
+      const idx = DB.followups.findIndex(x => x.id === fuId);
+      if(idx !== -1) DB.followups.splice(idx, 1);
+      saveFollowupsToStorage();
+      logAudit('Follow-up deleted', subjectName(f));
+      toast('Follow-up deleted', '🗑️');
       render();
     }
     break;
