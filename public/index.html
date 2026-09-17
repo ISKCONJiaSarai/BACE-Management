@@ -1813,7 +1813,7 @@ const logAudit=(action,record)=>DB.audit.unshift({id:uid('au'),user:(APP.user?na
 
   DB.batches.forEach(b => {
     if (!b.coordinator) b.coordinator = 'd1';
-    if (!b.facilitators || !b.facilitators.length) b.facilitators = ['d1'];
+    if (!b.facilitators) b.facilitators = [];
     if (!b.incharge) b.incharge = 'd1';
     if (!b.volunteers) {
       b.volunteers = [];
@@ -10279,20 +10279,14 @@ function viewBatchAttendance(){
 function getBatchFacilitators(batchId){
   const b = batch(batchId);
   if(!b) return [];
-  const set = new Set();
-  (b.facilitators || []).forEach(id => id && set.add(id));
-  if(b.coordinator) set.add(b.coordinator);
-  const mems = batchMembers(b.id);
-  mems.forEach(d => {
-    if(d.facilitator) set.add(d.facilitator);
-    if(d.isFacilitator || d.batchRole === 'Facilitator' || d.appointment === 'Facilitator') set.add(d.id);
-  });
-  const res = Array.from(set).map(id => dv(id) || (DB.devotees||[]).find(x => x.id === id || x.customId === id)).filter(Boolean);
-  if(!res.length){
-    const fallback = dv(b.coordinator) || dv('d1');
-    if(fallback) res.push(fallback);
-  }
-  return res;
+  // Only those who have been explicitly allotted as the facilitators of the batch
+  const rawList = Array.isArray(b.facilitators) ? b.facilitators : [];
+  return rawList
+    .map(id => {
+      if(typeof id === 'object' && id !== null) return (dv(id.id || id._id || id.customId) || id);
+      return dv(id) || (DB.devotees||[]).find(x => x.id === id || x._id === id || x.customId === id || x.name === id);
+    })
+    .filter(Boolean);
 }
 
 function getBatchVolunteers(batchId){
@@ -10400,6 +10394,11 @@ function loadBatchesFromStorage(){
         }
       });
     }
+    (DB.batches||[]).forEach(b => {
+      if(Array.isArray(b.facilitators)){
+        b.facilitators = b.facilitators.filter(f => f !== 'd1');
+      }
+    });
   }catch(e){console.warn('loadBatchesFromStorage error:', e)}
 }
 
@@ -13541,6 +13540,22 @@ async function syncDevoteesFromServer(forceImmediate){
             changed = true;
           }
         } catch(me) {}
+      }
+
+            // Ensure Taksharya has its allotted facilitators if not explicitly configured
+      const takBatch = (DB.batches||[]).find(x => x.id === 'b1' || x.name === 'Taksharya');
+      if (takBatch && (!takBatch.facilitators || !takBatch.facilitators.length || (takBatch.facilitators.length === 1 && takBatch.facilitators[0] === 'd1'))) {
+        const allottedNames = ['Bharat', 'Suresh', 'Aman Raj', 'Suraj', 'Harsh', 'Dhirendra', 'Swayam Bhagavan'];
+        const matchedIds = [];
+        allottedNames.forEach(n => {
+          const d = (DB.devotees||[]).find(x => x.name && new RegExp('\\b' + n + '\\b', 'i').test(x.name) && x.name !== 'Harsh chaubey');
+          if (d && !matchedIds.includes(d.id)) matchedIds.push(d.id);
+        });
+        if (matchedIds.length >= 5) {
+          takBatch.facilitators = matchedIds;
+          saveBatchesToStorage();
+          changed = true;
+        }
       }
 
       if(changed) render();
