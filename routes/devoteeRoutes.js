@@ -1,8 +1,124 @@
 const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
-const { Devotee, User } = require('../models');
+const { Devotee, User, Batch, Department, CareGroup } = require('../models');
 const { protect, requireDevoteeImportPermission } = require('../middleware/auth');
+
+const escapeRegex = (s) => String(s || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+async function resolveDevoteeRelations(data) {
+  const clean = { ...data };
+
+  // Resolve Batch
+  if (clean.batch) {
+    const rawBatch = String(clean.batch).trim();
+    if (mongoose.Types.ObjectId.isValid(rawBatch)) {
+      clean.batch = rawBatch;
+    } else if (rawBatch && rawBatch !== 'none') {
+      const bDoc = await Batch.findOne({
+        $or: [
+          { customId: rawBatch },
+          { name: new RegExp('^' + escapeRegex(rawBatch) + '$', 'i') }
+        ]
+      });
+      clean.batch = bDoc ? bDoc._id : null;
+    } else {
+      clean.batch = null;
+    }
+  } else {
+    clean.batch = null;
+  }
+
+  // Resolve Department
+  if (clean.dept) {
+    const rawDept = String(clean.dept).trim();
+    if (mongoose.Types.ObjectId.isValid(rawDept)) {
+      clean.dept = rawDept;
+    } else if (rawDept && rawDept !== 'none') {
+      const dDoc = await Department.findOne({
+        $or: [
+          { customId: rawDept },
+          { name: new RegExp('^' + escapeRegex(rawDept) + '$', 'i') }
+        ]
+      });
+      clean.dept = dDoc ? dDoc._id : null;
+    } else {
+      clean.dept = null;
+    }
+  } else {
+    clean.dept = null;
+  }
+
+  // Resolve CareGroup
+  if (clean.careGroup) {
+    const rawGroup = String(clean.careGroup).trim();
+    if (mongoose.Types.ObjectId.isValid(rawGroup)) {
+      clean.careGroup = rawGroup;
+    } else if (rawGroup && rawGroup !== 'none') {
+      const gDoc = await CareGroup.findOne({
+        $or: [
+          { customId: rawGroup },
+          { name: new RegExp('^' + escapeRegex(rawGroup) + '$', 'i') }
+        ]
+      });
+      clean.careGroup = gDoc ? gDoc._id : null;
+    } else {
+      clean.careGroup = null;
+    }
+  } else {
+    clean.careGroup = null;
+  }
+
+  // Resolve Facilitator
+  if (clean.facilitator) {
+    const rawFac = String(clean.facilitator).trim();
+    if (mongoose.Types.ObjectId.isValid(rawFac)) {
+      clean.facilitator = rawFac;
+    } else if (rawFac && rawFac !== 'none') {
+      const fDoc = await Devotee.findOne({
+        $or: [
+          { customId: rawFac },
+          { name: new RegExp('^' + escapeRegex(rawFac) + '$', 'i') }
+        ]
+      });
+      clean.facilitator = fDoc ? fDoc._id : null;
+    } else {
+      clean.facilitator = null;
+    }
+  } else {
+    clean.facilitator = null;
+  }
+
+  // Date fields cleanup
+  if (clean.dob === '' || clean.dob === 'null' || clean.dob === null) {
+    delete clean.dob;
+  } else if (clean.dob) {
+    const d = new Date(clean.dob);
+    if (isNaN(d.getTime())) delete clean.dob;
+    else clean.dob = d;
+  }
+
+  if (clean.joined === '' || clean.joined === 'null' || clean.joined === null) {
+    clean.joined = new Date();
+  } else if (clean.joined) {
+    const d = new Date(clean.joined);
+    if (isNaN(d.getTime())) clean.joined = new Date();
+    else clean.joined = d;
+  }
+
+  // Ensure unique customId or generate one if not present or blank
+  if (!clean.customId || clean.customId.trim() === '') {
+    clean.customId = 'd_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
+  }
+
+  // Ensure status is valid
+  const validStatuses = ['Active', 'New', 'Inactive', 'Alumni', 'Pending Approval', 'Irregular', 'Graduated'];
+  if (!clean.status || !validStatuses.includes(clean.status)) {
+    clean.status = 'Active';
+  }
+
+  return clean;
+}
 
 const getRoleFromAppointment = (appt, isFacilitator) => {
   const a = (appt || '').toLowerCase();
@@ -117,9 +233,26 @@ router.post('/', async (req, res) => {
     if (isAdminDevotee(req.body) || req.body.role === 'admin') {
       return res.status(400).json({ success: false, message: 'Cannot create BACE Administrator devotee profile' });
     }
-    const devotee = await Devotee.create(req.body);
+    const resolvedData = await resolveDevoteeRelations(req.body);
+
+    // If customId already exists on an existing devotee, check whether to update or assign fresh customId
+    if (resolvedData.customId) {
+      const existingWithCustomId = await Devotee.findOne({ customId: resolvedData.customId });
+      if (existingWithCustomId) {
+        if ((resolvedData.email && existingWithCustomId.email && resolvedData.email.toLowerCase().trim() === existingWithCustomId.email.toLowerCase().trim()) ||
+            (resolvedData.name && existingWithCustomId.name && resolvedData.name.toLowerCase().trim() === existingWithCustomId.name.toLowerCase().trim())) {
+          const updated = await Devotee.findByIdAndUpdate(existingWithCustomId._id, resolvedData, { new: true, runValidators: true });
+          return res.status(200).json({ success: true, data: updated, isUpdate: true });
+        } else {
+          resolvedData.customId = 'd_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
+        }
+      }
+    }
+
+    const devotee = await Devotee.create(resolvedData);
     res.status(201).json({ success: true, data: devotee });
   } catch (err) {
+    console.error('Error in POST /api/devotees:', err);
     res.status(400).json({ success: false, error: err.message });
   }
 });
@@ -129,18 +262,37 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const query = getDevoteeQuery(req.params.id);
-    const existing = await Devotee.findOne(query);
+    let existing = await Devotee.findOne(query);
+
+    // Fallback match by email or name if ID not found
+    if (!existing && (req.body.email || req.body.name)) {
+      existing = await Devotee.findOne({
+        $or: [
+          ...(req.body.email ? [{ email: req.body.email.toLowerCase().trim() }] : []),
+          ...(req.body.name ? [{ name: new RegExp('^' + escapeRegex(req.body.name.trim()) + '$', 'i') }] : [])
+        ]
+      });
+    }
+
     if (!existing || isAdminDevotee(existing)) {
-      return res.status(404).json({ success: false, message: 'Devotee not found' });
+      // Seamless creation if devotee doesn't exist yet
+      if (isAdminDevotee(req.body) || req.body.role === 'admin') {
+        return res.status(400).json({ success: false, message: 'Cannot create BACE Administrator devotee profile' });
+      }
+      const resolvedData = await resolveDevoteeRelations(req.body);
+      const devotee = await Devotee.create(resolvedData);
+      return res.status(201).json({ success: true, data: devotee, createdViaPut: true });
     }
 
     if (req.body.role === 'admin' || req.body.appointment === 'BACE Administrator' || req.body.appointment === 'System Administrator') {
       return res.status(400).json({ success: false, message: 'Cannot assign BACE Administrator role to a devotee' });
     }
 
-    const devotee = await Devotee.findOneAndUpdate(
-      query,
-      req.body,
+    const resolvedData = await resolveDevoteeRelations(req.body);
+
+    const devotee = await Devotee.findByIdAndUpdate(
+      existing._id,
+      resolvedData,
       { new: true, runValidators: true }
     );
 
@@ -158,6 +310,7 @@ router.put('/:id', async (req, res) => {
 
     res.json({ success: true, data: devotee });
   } catch (err) {
+    console.error('Error in PUT /api/devotees/:id:', err);
     res.status(400).json({ success: false, error: err.message });
   }
 });
@@ -261,14 +414,9 @@ router.post('/bulk', async (req, res) => {
   }
 });
 
-// Helper to escape regex special chars
-const escapeRegex = (str) => String(str || '').replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
-
 // @route   POST /api/devotees/import-csv
 // @desc    Import/upload devotees from CSV with upsert (update existing names, add new, no repetitions)
 // @access  Protected: Batch Coordinator (for assigned batch), Area Leader, Admin
-const { Batch, Department, CareGroup } = require('../models');
-
 router.post('/import-csv', protect, requireDevoteeImportPermission, async (req, res) => {
   try {
     const { devotees, targetBatchId } = req.body;

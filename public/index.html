@@ -2920,20 +2920,24 @@ function donut(value,label,color='var(--accent)',tip){
   </svg><div class="tiny" style="max-width:160px">${label}</div></div>`;
 }
 function funnel(rows, batchId = ''){
+  const topVal = Number(rows[0]?.v) || 1;
   const max = Math.max(...rows.map(r => Number(r.v) || 0), 1);
   return `<div class="chart funnel-wrap" style="display:flex;flex-direction:column;gap:6px">${rows.map((r,i)=>{
     const val = Number(r.v) || 0;
     const wpc = Math.min(100, Math.max(14, Math.round((val / max) * 100)));
     const prev = i > 0 ? (Number(rows[i-1].v) || 0) : val;
-    const conv = (i > 0 && prev > 0) ? Math.min(100, pct(val, prev)) : (val > 0 ? 100 : 0);
+    // Conversion relative to the total base (Registered / top of funnel)
+    const conv = topVal > 0 ? Math.min(100, Math.round((val / topVal) * 100)) : 0;
+    const stepConv = (i > 0 && prev > 0) ? Math.min(100, Math.round((val / prev) * 100)) : 100;
     const bid = batchId || r.bid || '';
     const clickAttr = bid 
       ? `data-act="funnel-drill" data-bid="${bid}" data-stage="${r.key || i}"`
       : (r.r ? `data-act="drill" data-r="${r.r}"` : '');
-    return `<div class="funnel-row" style="cursor:pointer" ${tipAttr(r.tip||`${r.l}: ${val}${i?` · ${conv}% from ${rows[i-1].l}`:''}`)} ${clickAttr}>
+    const tipText = r.tip || `${r.l}: ${val} (${conv}% of total registered${i > 0 ? ` · ${stepConv}% from ${rows[i-1].l}` : ''})`;
+    return `<div class="funnel-row" style="cursor:pointer" ${tipAttr(tipText)} ${clickAttr}>
       <div class="funnel-lbl">${esc(r.l)}</div>
       <div class="funnel-bar-box" style="flex:1;min-width:0"><div class="funnel-bar" style="height:29px;width:${wpc}%;background:${r.color||'var(--indigo)'};opacity:${1-i*.06};border-radius:7px;display:flex;align-items:center;padding-left:10px;color:#fff;font-size:12.5px;font-weight:600">${val}</div></div>
-      <div class="funnel-conv" style="text-align:right;color:${i&&conv<45?'var(--danger)':'var(--ink-3)'}">${i?conv+'%':''}</div></div>`}).join('')}</div>`;
+      <div class="funnel-conv" style="text-align:right;font-weight:600;color:${i && conv < 35 ? 'var(--danger)' : (i && conv < 60 ? 'var(--mustard)' : 'var(--ink-2)')}">${i ? conv + '%' : ''}</div></div>`}).join('')}</div>`;
 }
 function budgetBlock(b,label='Budget'){
   const util=pct(b.spent,b.allocated);
@@ -10263,10 +10267,13 @@ function loadReportsFromStorage(){
 function saveDevoteesToStorage(){
   try{
     const list = (DB.devotees||[]).map(d => ({
-      id: d.id, batch: d.batch, level: d.level, facilitator: d.facilitator,
+      ...d,
+      id: d.id, _id: d._id, customId: d.customId, name: d.name, email: d.email, phone: d.phone,
+      batch: d.batch, level: d.level, facilitator: d.facilitator,
       isFacilitator: d.isFacilitator, appointment: d.appointment, batchRole: d.batchRole,
       dept: d.dept, status: d.status, attendancePct: d.attendancePct, batchHistory: d.batchHistory,
-      sadhana: d.sadhana, roles: d.roles, appointments: d.appointments, skills: d.skills, service: d.service
+      sadhana: d.sadhana, roles: d.roles, appointments: d.appointments, skills: d.skills, service: d.service,
+      org: d.org, residence: d.residence, dob: d.dob, joined: d.joined, createdAt: d.createdAt
     }));
     localStorage.setItem('bace_devotees_store', JSON.stringify(list));
   }catch(e){console.warn('saveDevoteesToStorage error:', e)}
@@ -10279,22 +10286,12 @@ function loadDevoteesFromStorage(){
     const list = JSON.parse(raw);
     if(Array.isArray(list)){
       list.forEach(saved => {
-        const d = (DB.devotees||[]).find(x => x.id === saved.id);
+        if (!saved || !saved.name) return;
+        let d = (DB.devotees||[]).find(x => x.id === saved.id || (saved._id && x._id === saved._id) || (saved.customId && x.customId === saved.customId));
         if(d){
-          if(saved.batch !== undefined) d.batch = saved.batch;
-          if(saved.level !== undefined) d.level = saved.level;
-          if(saved.facilitator !== undefined) d.facilitator = saved.facilitator;
-          if(saved.isFacilitator !== undefined) d.isFacilitator = saved.isFacilitator;
-          if(saved.appointment !== undefined) d.appointment = saved.appointment;
-          if(saved.batchRole !== undefined) d.batchRole = saved.batchRole;
-          if(saved.dept !== undefined) d.dept = saved.dept;
-          if(saved.status !== undefined) d.status = saved.status;
-          if(saved.batchHistory !== undefined) d.batchHistory = saved.batchHistory;
-          if(saved.sadhana !== undefined) d.sadhana = Object.assign(d.sadhana || {}, saved.sadhana);
-          if(saved.roles !== undefined) d.roles = saved.roles;
-          if(saved.appointments !== undefined) d.appointments = saved.appointments;
-          if(saved.skills !== undefined) d.skills = saved.skills;
-          if(saved.service !== undefined) d.service = saved.service;
+          Object.assign(d, saved);
+        } else if (saved.name && saved.id) {
+          DB.devotees.push(normalizeDevotee(saved));
         }
       });
     }
@@ -13173,9 +13170,14 @@ async function syncDevoteesFromServer(forceImmediate){
       const initialCount = DB.devotees.length;
       DB.devotees = DB.devotees.filter(d => {
         if (isBaceAdminEmail(d.email) || d.appointment === 'BACE Administrator' || d.name === 'ISKCON BACE Admin') return false;
-        const dId = String(d.id || d.customId || d._id || '');
+        if (d.id === 'd1' || (d.email && isSuryaEmail(d.email))) return true;
+        const hasId = (d.id && serverIds.has(String(d.id))) ||
+                      (d.customId && serverIds.has(String(d.customId))) ||
+                      (d._id && serverIds.has(String(d._id)));
         const dEmail = (d.email || '').toLowerCase().trim();
-        return serverIds.has(dId) || (dEmail && serverEmails.has(dEmail));
+        const hasEmail = dEmail && serverEmails.has(dEmail);
+        const isRecentLocal = d.createdAt && (Date.now() - Number(d.createdAt) < 180000);
+        return hasId || hasEmail || isRecentLocal;
       });
       if (DB.devotees.length !== initialCount) changed = true;
 
@@ -13735,14 +13737,20 @@ async function syncDevoteeToBackend(d, roleKey){
   try{
     const rKeys = devoteeRoles(d);
     const rKey = roleKey || rKeys[0] || 'devotee';
-    const rObj = ROLES[rKey] || ROLES.devotee;
     const allTitles = rKeys.map(k => (ROLES[k]?.name || k));
+
+    // Resolve batch, dept, careGroup, facilitator names or IDs
+    const batchVal = d.batch ? (batch(d.batch)?.name || d.batch) : null;
+    const deptVal = d.dept ? (dept(d.dept)?.name || d.dept) : null;
+    const groupVal = d.careGroup ? (group(d.careGroup)?.name || d.careGroup) : null;
+    const facVal = d.facilitator ? (dv(d.facilitator)?.name || d.facilitator) : null;
+
     const payload = {
       name: d.name,
       phone: d.phone,
       email: d.email,
-      dob: d.dob,
-      joined: d.joined,
+      dob: d.dob || undefined,
+      joined: d.joined || iso(TODAY),
       org: d.org,
       occupation: d.occupation,
       highestEducation: d.highestEducation || '',
@@ -13753,13 +13761,13 @@ async function syncDevoteeToBackend(d, roleKey){
       level: d.level !== undefined ? Number(d.level) : 1,
       address: d.address,
       emergency: d.emergency,
-      dept: d.dept || null,
-      batch: d.batch || null,
-      careGroup: d.careGroup || null,
-      facilitator: d.facilitator || null,
-      availability: d.availability,
-      status: d.status,
-      source: d.source,
+      dept: deptVal,
+      batch: batchVal,
+      careGroup: groupVal,
+      facilitator: facVal,
+      availability: d.availability || 'Weekends',
+      status: d.status || 'Active',
+      source: d.source || 'Book distribution',
       skills: d.skills || [],
       sadhana: d.sadhana || { rounds: 16, morningProgram: 0 },
       morningStandardTime: d.morningStandardTime || '04:30',
@@ -13771,27 +13779,52 @@ async function syncDevoteeToBackend(d, roleKey){
       role: rKey,
       customId: d.customId || d.id
     };
-    const targetId = d._id || d.id;
-    const res = await fetch(`/api/devotees/${targetId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-      body: JSON.stringify(payload)
-    });
-    fetch(`/api/devotees/${targetId}/assign-role`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-      body: JSON.stringify({ role: rKey, roles: rKeys })
-    }).catch(()=>{});
-    if(!res.ok && (res.status === 404 || res.status === 400)){
+
+    let targetId = d._id;
+    let savedDevDoc = null;
+
+    if (targetId) {
+      // Devotee already has MongoDB _id: update via PUT
+      const res = await fetch(`/api/devotees/${targetId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.data) savedDevDoc = json.data;
+      }
+    }
+
+    if (!savedDevDoc) {
+      // New devotee: create via POST
       const postRes = await fetch('/api/devotees', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
         body: JSON.stringify(payload)
       });
-      if(postRes.ok){
+      if (postRes.ok) {
         const json = await postRes.json();
-        if(json.data && json.data._id) d._id = String(json.data._id);
+        if (json.data) savedDevDoc = json.data;
+      } else {
+        const err = await postRes.json().catch(() => ({}));
+        console.warn('POST /api/devotees notice:', err);
       }
+    }
+
+    if (savedDevDoc) {
+      if (savedDevDoc._id) d._id = String(savedDevDoc._id);
+      if (savedDevDoc.customId) d.customId = String(savedDevDoc.customId);
+      targetId = d._id;
+      saveDevoteesToStorage();
+    }
+
+    if (targetId) {
+      fetch(`/api/devotees/${targetId}/assign-role`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ role: rKey, roles: rKeys })
+      }).catch(()=>{});
     }
   }catch(e){
     console.warn('Backend devotee sync notice:', e);
@@ -14591,7 +14624,8 @@ document.addEventListener('click',e=>{
         source: v.source || 'Book distribution',
         attendancePct: 85,
         timeline: [{ date: iso(TODAY), title: 'Joined the community', desc: `Profile created with role ${roleObj.name}.`, tone: 'green' }],
-        history: []
+        history: [],
+        createdAt: Date.now()
       });
       DB.devotees.unshift(d);
       if(v.dept)DB.deptMembers.push({id:uid('dm'),dept:v.dept,devotee:d.id,role:'Volunteer',since:iso(TODAY),status:'Active'});
