@@ -2632,6 +2632,234 @@ const assignsFor=aid=>DB.assignments.filter(x=>x.activity===aid);
 const filled=a=>assignsFor(a.id).filter(x=>x.state!=='Declined').length;
 const isFilled=a=>filled(a)>=a.need;
 const attFor=(id,cat)=>{const r=DB.attendance.filter(a=>a.devotee===id&&(!cat||a.category===cat));return pct(r.filter(a=>a.status==='Present').length,r.length)};
+
+function getDevoteeRealAttendance(d) {
+  if (!d) return { overall: 0, morning: { total: 0, present: 0, onTime: 0, late: 0, absent: 0, rate: 0, punctuality: 0, records: [] }, deity: { total: 0, completed: 0, missed: 0, substitutions: 0, rate: 0, history: [] }, cleaning: { total: 0, completed: 0, missed: 0, substitutions: 0, rate: 0, history: [] }, classes: { total: 0, present: 0, absent: 0, late: 0, rate: 0, records: [] }, totalHeld: 0, totalAttended: 0 };
+
+  // 1. Morning Program
+  const ma = d.morningAttendance || {};
+  let mTotal = Number(ma.totalSessions || 0);
+  let mPresent = Number(ma.presentCount || 0);
+  let mOnTime = Number(ma.onTimeCount || 0);
+  let mLate = Number(ma.lateCount || 0);
+  let mAbsent = Number(ma.absentCount || 0);
+
+  const devRecs = (DB.attendance || []).filter(a => a.devotee === d.id || a.devotee === d._id || a.devotee === d.customId || (d.name && a.devotee === d.name));
+  const mRecs = devRecs.filter(a => a.category === 'Morning programme' || a.type === 'Morning programme' || String(a.ref).startsWith('mp_'));
+
+  if (mTotal === 0 && mRecs.length > 0) {
+    mTotal = mRecs.length;
+    mPresent = mRecs.filter(a => ['Present', 'Late', 'On Time', 'Grace'].includes(a.status)).length;
+    mOnTime = mRecs.filter(a => ['Present', 'On Time', 'Grace'].includes(a.status)).length;
+    mLate = mRecs.filter(a => a.status === 'Late').length;
+    mAbsent = mRecs.filter(a => a.status === 'Absent').length;
+  }
+
+  const mRate = mTotal > 0 ? (ma.attendanceRate !== undefined && ma.totalSessions > 0 ? ma.attendanceRate : Math.round((mPresent / mTotal) * 100)) : 0;
+  const mPunctuality = mPresent > 0 ? (ma.punctualityRate !== undefined && ma.presentCount > 0 ? ma.punctualityRate : Math.round((mOnTime / mPresent) * 100)) : 0;
+
+  // 2. Deity Services
+  if (typeof initDepartmentRosters === 'function') initDepartmentRosters();
+  let dTotal = 0;
+  let dCompleted = 0;
+  let dMissed = 0;
+  let dSubstituted = 0;
+  const deityHistory = [];
+
+  if (typeof APP !== 'undefined' && APP.deityRoster && APP.deityRoster.slots) {
+    Object.entries(APP.deityRoster.slots).forEach(([dateStr, sMap]) => {
+      Object.entries(sMap).forEach(([sId, slot]) => {
+        const rawDevs = (slot.devotees || '').trim();
+        if (!rawDevs || rawDevs === '—' || rawDevs === 'Unassigned') return;
+        const sObj = (APP.deityRoster.services || []).find(x => x.id === sId) || { name: 'Deity Seva', time: slot.time || '04:30 AM' };
+
+        if (rawDevs.includes('❌')) {
+          const parts = rawDevs.split('❌');
+          const orig = parts[0].trim();
+          const sub = (parts[1] || '').trim();
+          if (orig && (orig === d.name || (typeof matchDevotee === 'function' && matchDevotee(orig, d.name)))) {
+            dTotal++;
+            dMissed++;
+            deityHistory.push({ date: dateStr, service: sObj.name, time: slot.time || sObj.time, status: 'Missed (Substituted by ' + sub + ')', rawStatus: 'missed' });
+          }
+          if (sub && (sub === d.name || (typeof matchDevotee === 'function' && matchDevotee(sub, d.name)))) {
+            dTotal++;
+            dCompleted++;
+            dSubstituted++;
+            deityHistory.push({ date: dateStr, service: sObj.name, time: slot.time || sObj.time, status: 'Completed (Substituted for ' + orig + ')', rawStatus: 'done' });
+          }
+        } else {
+          const names = rawDevs.split(/[&,]/).map(n => n.trim()).filter(Boolean);
+          const matched = names.some(n => n === d.name || (typeof matchDevotee === 'function' && matchDevotee(n, d.name)));
+          if (matched) {
+            dTotal++;
+            if (slot.status === 'done') {
+              dCompleted++;
+              deityHistory.push({ date: dateStr, service: sObj.name, time: slot.time || sObj.time, status: 'Completed', rawStatus: 'done' });
+            } else if (slot.status === 'missed') {
+              dMissed++;
+              deityHistory.push({ date: dateStr, service: sObj.name, time: slot.time || sObj.time, status: 'Missed', rawStatus: 'missed' });
+            } else {
+              deityHistory.push({ date: dateStr, service: sObj.name, time: slot.time || sObj.time, status: 'Scheduled', rawStatus: 'pending' });
+            }
+          }
+        }
+      });
+    });
+  }
+
+  (DB.assignments || []).filter(a => a.devotee === d.id).forEach(asg => {
+    const actObj = (DB.activities || []).find(x => x.id === asg.activity);
+    if (!actObj) return;
+    const isDeityAct = actObj.department === 'dp3' || (actObj.category && (actObj.category === 'Deity' || actObj.category === 'Worship')) || /deity|altar|aarti|bhoga/i.test(actObj.name);
+    if (isDeityAct) {
+      dTotal++;
+      if (asg.state === 'Accepted' || actObj.status === 'Completed' || asg.actualPerformer === d.id) {
+        dCompleted++;
+        deityHistory.push({ date: actObj.date, service: actObj.name, time: actObj.time || '—', status: 'Completed', rawStatus: 'done' });
+      } else if (asg.state === 'Declined' || actObj.status === 'Missed') {
+        dMissed++;
+        deityHistory.push({ date: actObj.date, service: actObj.name, time: actObj.time || '—', status: 'Missed', rawStatus: 'missed' });
+      } else {
+        deityHistory.push({ date: actObj.date, service: actObj.name, time: actObj.time || '—', status: asg.state || actObj.status, rawStatus: 'pending' });
+      }
+    }
+  });
+
+  const dRate = dTotal > 0 ? Math.min(100, Math.round((dCompleted / dTotal) * 100)) : (dCompleted > 0 ? 100 : 0);
+
+  // 3. Cleaning & Ashram Seva
+  let cCleanTotal = 0;
+  let cCleanCompleted = 0;
+  let cCleanMissed = 0;
+  let cCleanSubstituted = 0;
+  const cleanHistory = [];
+
+  if (typeof APP !== 'undefined' && APP.cleaningRoster && APP.cleaningRoster.slots) {
+    Object.entries(APP.cleaningRoster.slots).forEach(([dateStr, sMap]) => {
+      Object.entries(sMap).forEach(([sId, slot]) => {
+        const rawDevs = (slot.devotees || '').trim();
+        if (!rawDevs || rawDevs === '—' || rawDevs === 'Unassigned') return;
+        const sObj = (APP.cleaningRoster.services || []).find(x => x.id === sId) || { name: 'Cleaning Task', time: slot.time || '04:30 AM' };
+
+        if (rawDevs.includes('❌')) {
+          const parts = rawDevs.split('❌');
+          const orig = parts[0].trim();
+          const sub = (parts[1] || '').trim();
+          if (orig && (orig === d.name || (typeof matchDevotee === 'function' && matchDevotee(orig, d.name)))) {
+            cCleanTotal++;
+            cCleanMissed++;
+            cleanHistory.push({ date: dateStr, service: sObj.name, time: slot.time || sObj.time, status: 'Missed (Substituted by ' + sub + ')', rawStatus: 'missed' });
+          }
+          if (sub && (sub === d.name || (typeof matchDevotee === 'function' && matchDevotee(sub, d.name)))) {
+            cCleanTotal++;
+            cCleanCompleted++;
+            cCleanSubstituted++;
+            cleanHistory.push({ date: dateStr, service: sObj.name, time: slot.time || sObj.time, status: 'Completed (Substituted for ' + orig + ')', rawStatus: 'done' });
+          }
+        } else {
+          const names = rawDevs.split(/[&,]/).map(n => n.trim()).filter(Boolean);
+          const matched = names.some(n => n === d.name || (typeof matchDevotee === 'function' && matchDevotee(n, d.name)));
+          if (matched) {
+            cCleanTotal++;
+            if (slot.status === 'done') {
+              cCleanCompleted++;
+              cleanHistory.push({ date: dateStr, service: sObj.name, time: slot.time || sObj.time, status: 'Completed', rawStatus: 'done' });
+            } else if (slot.status === 'missed') {
+              cCleanMissed++;
+              cleanHistory.push({ date: dateStr, service: sObj.name, time: slot.time || sObj.time, status: 'Missed', rawStatus: 'missed' });
+            } else {
+              cleanHistory.push({ date: dateStr, service: sObj.name, time: slot.time || sObj.time, status: 'Scheduled', rawStatus: 'pending' });
+            }
+          }
+        }
+      });
+    });
+  }
+
+  (DB.assignments || []).filter(a => a.devotee === d.id).forEach(asg => {
+    const actObj = (DB.activities || []).find(x => x.id === asg.activity);
+    if (!actObj) return;
+    const isCleanAct = actObj.department === 'dp8' || (actObj.category && (actObj.category === 'Facilities' || actObj.category === 'Cleaning')) || /clean|cleaning|ashram/i.test(actObj.name);
+    if (isCleanAct) {
+      cCleanTotal++;
+      if (asg.state === 'Accepted' || actObj.status === 'Completed' || asg.actualPerformer === d.id) {
+        cCleanCompleted++;
+        cleanHistory.push({ date: actObj.date, service: actObj.name, time: actObj.time || '—', status: 'Completed', rawStatus: 'done' });
+      } else if (asg.state === 'Declined' || actObj.status === 'Missed') {
+        cCleanMissed++;
+        cleanHistory.push({ date: actObj.date, service: actObj.name, time: actObj.time || '—', status: 'Missed', rawStatus: 'missed' });
+      } else {
+        cleanHistory.push({ date: actObj.date, service: actObj.name, time: actObj.time || '—', status: asg.state || actObj.status, rawStatus: 'pending' });
+      }
+    }
+  });
+
+  const cleanRate = cCleanTotal > 0 ? Math.min(100, Math.round((cCleanCompleted / cCleanTotal) * 100)) : (cCleanCompleted > 0 ? 100 : 0);
+
+  // 4. Class & Events
+  const classRecs = devRecs.filter(a => ['Preaching batch', 'Class', 'Batch attendance', 'Festival', 'Event'].includes(a.category || a.type) || (a.category !== 'Morning programme' && a.type !== 'Morning programme' && !String(a.ref).startsWith('mp_')));
+  let clTotal = classRecs.length;
+  let clPresent = classRecs.filter(a => ['Present', 'Late', 'On Time', 'Grace'].includes(a.status)).length;
+  let clAbsent = classRecs.filter(a => a.status === 'Absent').length;
+  let clLate = classRecs.filter(a => a.status === 'Late').length;
+  const clRate = clTotal > 0 ? Math.round((clPresent / clTotal) * 100) : 0;
+
+  // Total sessions held and attended across active pillars
+  const totalHeld = mTotal + dTotal + cCleanTotal + clTotal;
+  const totalAttended = mPresent + dCompleted + cCleanCompleted + clPresent;
+
+  let overall = 0;
+  if (totalHeld > 0 && (totalAttended > 0 || !d.attendancePct || d.attendancePct === 85)) {
+    overall = Math.round((totalAttended / totalHeld) * 100);
+  } else if (d.attendancePct && d.attendancePct !== 85) {
+    overall = d.attendancePct;
+  }
+
+  return {
+    overall,
+    morning: {
+      total: mTotal,
+      present: mPresent,
+      onTime: mOnTime,
+      late: mLate,
+      absent: mAbsent,
+      rate: mRate,
+      punctuality: mPunctuality,
+      records: mRecs,
+      lastPunchDate: ma.lastPunchDate || '',
+      lastTimeIn: ma.lastTimeIn || '',
+      lastStatus: ma.lastStatus || ''
+    },
+    deity: {
+      total: dTotal,
+      completed: dCompleted,
+      missed: dMissed,
+      substitutions: dSubstituted,
+      rate: dRate,
+      history: deityHistory
+    },
+    cleaning: {
+      total: cCleanTotal,
+      completed: cCleanCompleted,
+      missed: cCleanMissed,
+      substitutions: cCleanSubstituted,
+      rate: cleanRate,
+      history: cleanHistory
+    },
+    classes: {
+      total: clTotal,
+      present: clPresent,
+      absent: clAbsent,
+      late: clLate,
+      rate: clRate,
+      records: classRecs
+    },
+    totalHeld,
+    totalAttended
+  };
+}
+
 const deptMembers=id=>DB.deptMembers.filter(m=>m.dept===id&&m.status==='Active');
 const batchMembers=b=>{
   if(!b) return [];
@@ -4141,7 +4369,7 @@ function viewDevotees(){
     }
     if(f.skill&&(!d.skills||!d.skills.includes(f.skill)))return false;
     if(f.attendance){
-      const att = Number(d.attendancePct || 0);
+      const att = getDevoteeRealAttendance(d).overall;
       if(f.attendance==='high'&&att < 80) return false;
       if(f.attendance==='mid'&&(att < 50 || att >= 80)) return false;
       if(f.attendance==='low'&&att >= 50) return false;
@@ -4158,8 +4386,8 @@ function viewDevotees(){
       case 'date_desc': return new Date(b.joined || 0) - new Date(a.joined || 0);
       case 'date_asc': return new Date(a.joined || 0) - new Date(b.joined || 0);
       case 'level_desc': return (b.level || 0) - (a.level || 0) || a.name.localeCompare(b.name);
-      case 'att_desc': return (b.attendancePct || 0) - (a.attendancePct || 0);
-      case 'att_asc': return (a.attendancePct || 0) - (b.attendancePct || 0);
+      case 'att_desc': return (getDevoteeRealAttendance(b).overall || 0) - (getDevoteeRealAttendance(a).overall || 0);
+      case 'att_asc': return (getDevoteeRealAttendance(a).overall || 0) - (getDevoteeRealAttendance(b).overall || 0);
       case 'sadhana_desc': return ((b.sadhana?.rounds || 0) - (a.sadhana?.rounds || 0));
       case 'name_asc':
       default:
@@ -4349,7 +4577,13 @@ function viewDevotees(){
          ], 'All')}
        </div>`,
        label: 'Attendance',
-       c: d => `<div>${prog(d.attendancePct)}<span class="tiny" style="font-size:10.5px">${d.attendancePct}%</span></div>`
+       c: d => {
+          const att = getDevoteeRealAttendance(d);
+          const v = att.overall;
+          const col = v >= 75 ? 'var(--green, #10B981)' : (v >= 50 ? 'var(--saffron, #EA580C)' : (v > 0 ? 'var(--danger, #DC2626)' : 'var(--line, #CBD5E1)'));
+          const tip = `Overall: ${v}%\n🌅 Morning: ${att.morning.rate}% (${att.morning.present}/${att.morning.total})\n🪔 Deity: ${att.deity.rate}% (${att.deity.completed}/${att.deity.total})\n🧹 Cleaning: ${att.cleaning.rate}% (${att.cleaning.completed}/${att.cleaning.total})\n📖 Classes: ${att.classes.rate}% (${att.classes.present}/${att.classes.total})`;
+          return `<div title="${esc(tip)}" style="cursor:help"><div class="prog" style="background:var(--line-2,#e2e8f0)"><i style="width:${Math.max(v > 0 ? 3 : 0, Math.min(100, v))}%;background:${col}"></i></div><span class="tiny" style="font-size:10.5px;font-weight:${v > 0 ? '600' : '400'};color:${v > 0 ? 'var(--ink)' : 'var(--ink-3)'}">${v}%</span></div>`;
+        }
      },
      {
        w:'10%',
@@ -4407,7 +4641,7 @@ function viewDevotee(id){
         <a class="li click" href="#/batch/${d.batch||''}"><span class="badge b-indigo">📖 Preaching</span><span class="grow"><span class="t">${esc(batch(d.batch)?.name||'No batch')}</span><span class="d">First contact ${fmtD(d.firstContact)} via ${esc(d.source)}</span></span></a>
         <a class="li click" href="#/group/${d.careGroup||''}"><span class="badge b-green">❤️ Care</span><span class="grow"><span class="t">${esc(group(d.careGroup)?.name||'No group')}</span><span class="d">Facilitator ${esc(nameOf(d.facilitator))}</span></span></a>
       </div>`)}
-      ${section('Attendance',`<div class="card-b">${donut(d.attendancePct,'Overall attendance across classes, seva and the morning programme.')}</div>`)}
+      ${section('Attendance',`<div class="card-b">${donut(getDevoteeRealAttendance(d).overall,'Overall attendance across classes, seva and the morning programme.')}</div>`)}
       ${d.history.length?section('History retained',`<div class="list">${d.history.map(h=>`<div class="li"><span class="grow"><span class="t">${esc(h.from)} → ${esc(h.to)}</span><span class="d">${fmtD(h.date)} · ${esc(h.type)} change</span></span></div>`).join('')}</div>`):''}
      </div></div>`,
    Preaching:`<div class="grid g-2-1"><div class="card"><div class="card-h"><h3>Preaching record</h3></div><div class="card-b">
@@ -4415,7 +4649,7 @@ function viewDevotee(id){
       <dt>Current stage</dt><dd>${d.level?badge('Level '+d.level,'indigo'):badge('Pre-batch','grey')}</dd>
       <dt>Current batch</dt><dd>${esc(batch(d.batch)?.name||'—')}</dd>
       <dt>Assigned preacher</dt><dd>${esc(nameOf(batch(d.batch)?.coordinator))}</dd>
-      <dt>Class attendance</dt><dd>${attFor(d.id,'Preaching batch')||d.attendancePct}%</dd></dl></div></div>
+      <dt>Class attendance</dt><dd>${getDevoteeRealAttendance(d).classes.rate}%</dd></dl></div></div>
       ${section('Follow-ups',`<div class="list">${DB.followups.filter(f=>f.subject===d.id).slice(0,6).map(f=>`
         <div class="li"><span class="grow"><span class="t">${esc(f.purpose)}</span><span class="d">Due ${relD(f.due)} · ${esc(nameOf(f.assigned))}</span></span>${isOverdue(f)?badge('Overdue','red'):sbadge(f.status)}</div>`).join('')
         ||emptyState('No follow-ups','Nothing scheduled for this devotee.','')}</div>`)}</div>`,
@@ -4426,39 +4660,343 @@ function viewDevotee(id){
        <td data-l="Status">${sbadge(x.status)}</td></tr>`).join('')}</tbody></table></div>`
      :emptyState('No seva yet','This devotee has not been allocated any seva. Assign one from the Assign / Schedule page.','<a class="btn pri" href="#/assign">Assign seva</a>')),
    Attendance:(()=>{
-     const rec=DB.attendance.filter(a=>a.devotee===d.id || a.devotee===d.customId || (d.name && a.devotee===d.name));
-     const cats=[...new Set(rec.map(a=>a.category))];
-     const ma = d.morningAttendance || {};
+     const attInfo = getDevoteeRealAttendance(d);
+     const ma = attInfo.morning;
      const mStd = d.morningStandardTime || '04:30';
-     const morningCard = `
-       <div class="card" style="margin-bottom:15px;border-left:4px solid var(--saffron)">
-         <div class="card-h" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
-           <h3 style="margin:0;display:flex;align-items:center;gap:8px"><span>🌅</span> Morning Programme Sadhana Attendance</h3>
-           <button class="btn sm" data-act="edit-devotee-morning-std" data-id="${d.id}" title="Edit standard attendance time for this devotee">⏱️ Standard: ${esc(mStd)}</button>
+     const deit = attInfo.deity;
+     const clean = attInfo.cleaning;
+     const cls = attInfo.classes;
+     const batchObj = batch(d.batch);
+
+     // Top 4-Pillar Executive Summary Cards
+     const topCards = `
+       <div class="grid g4" style="margin-bottom:15px">
+         <div class="stat-card" style="background:var(--surface);border:1px solid var(--line);border-top:4px solid #f59e0b;padding:14px;border-radius:12px">
+           <div style="display:flex;justify-content:space-between;align-items:flex-start">
+             <div>
+               <div style="font-size:11.5px;color:var(--ink-2);font-weight:600;text-transform:uppercase;letter-spacing:0.5px">🌅 Morning Program</div>
+               <div style="font-size:24px;font-weight:800;color:var(--ink);margin:4px 0">${ma.rate}%</div>
+               <div style="font-size:11.5px;color:var(--ink-2)">${ma.present} / ${ma.total} sessions present</div>
+             </div>
+             <span style="font-size:24px">🌅</span>
+           </div>
+           <div style="margin-top:8px">${prog(ma.rate, '#f59e0b')}</div>
+         </div>
+
+         <div class="stat-card" style="background:var(--surface);border:1px solid var(--line);border-top:4px solid #ea580c;padding:14px;border-radius:12px">
+           <div style="display:flex;justify-content:space-between;align-items:flex-start">
+             <div>
+               <div style="font-size:11.5px;color:var(--ink-2);font-weight:600;text-transform:uppercase;letter-spacing:0.5px">🛕 Deity Services</div>
+               <div style="font-size:24px;font-weight:800;color:var(--ink);margin:4px 0">${deit.rate}%</div>
+               <div style="font-size:11.5px;color:var(--ink-2)">${deit.completed} / ${deit.total} sevas performed</div>
+             </div>
+             <span style="font-size:24px">🪔</span>
+           </div>
+           <div style="margin-top:8px">${prog(deit.rate, '#ea580c')}</div>
+         </div>
+
+         <div class="stat-card" style="background:var(--surface);border:1px solid var(--line);border-top:4px solid #0d9488;padding:14px;border-radius:12px">
+           <div style="display:flex;justify-content:space-between;align-items:flex-start">
+             <div>
+               <div style="font-size:11.5px;color:var(--ink-2);font-weight:600;text-transform:uppercase;letter-spacing:0.5px">🧹 Cleaning Seva</div>
+               <div style="font-size:24px;font-weight:800;color:var(--ink);margin:4px 0">${clean.rate}%</div>
+               <div style="font-size:11.5px;color:var(--ink-2)">${clean.completed} / ${clean.total} rotas completed</div>
+             </div>
+             <span style="font-size:24px">🧹</span>
+           </div>
+           <div style="margin-top:8px">${prog(clean.rate, '#0d9488')}</div>
+         </div>
+
+         <div class="stat-card" style="background:var(--surface);border:1px solid var(--line);border-top:4px solid #6366f1;padding:14px;border-radius:12px">
+           <div style="display:flex;justify-content:space-between;align-items:flex-start">
+             <div>
+               <div style="font-size:11.5px;color:var(--ink-2);font-weight:600;text-transform:uppercase;letter-spacing:0.5px">📖 Class & Events</div>
+               <div style="font-size:24px;font-weight:800;color:var(--ink);margin:4px 0">${cls.rate}%</div>
+               <div style="font-size:11.5px;color:var(--ink-2)">${cls.present} / ${cls.total} classes attended</div>
+             </div>
+             <span style="font-size:24px">📖</span>
+           </div>
+           <div style="margin-top:8px">${prog(cls.rate, '#6366f1')}</div>
+         </div>
+       </div>`;
+
+     // Overall Comparative Benchmark Bar
+     const benchmarkBar = `
+       <div class="card" style="margin-bottom:20px;border:1px solid var(--line);border-radius:12px">
+         <div class="card-h" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+           <div>
+             <h3 style="margin:0;font-size:15px;display:flex;align-items:center;gap:8px">
+               <span>📊</span> 4-Pillar Attendance Performance Comparison
+             </h3>
+             <span class="tiny" style="color:var(--ink-2)">Real-time website metrics across spiritual disciplines and service responsibilities</span>
+           </div>
+           <div style="display:flex;align-items:center;gap:10px">
+             <span class="badge b-ink" style="font-size:12px;padding:4px 10px">Overall Score: <b>${attInfo.overall}%</b></span>
+           </div>
          </div>
          <div class="card-b">
-           <div class="grid g4" style="margin-bottom:10px">
-             ${stat('Standard Target', mStd, 'Devotee on-time standard', { em: '⏱' })}
-             ${stat('Punctuality', (ma.punctualityRate !== undefined ? ma.punctualityRate : '—') + (ma.punctualityRate !== undefined ? '%' : ''), 'On-time / grace arrival', { em: '🎯' })}
-             ${stat('Sessions Present', (ma.presentCount || 0) + ' / ' + (ma.totalSessions || 0), (ma.attendanceRate !== undefined ? ma.attendanceRate + '% attendance' : 'Morning programs'), { em: '🌅' })}
-             ${stat('Last Punch', ma.lastPunchDate ? (fmtD(ma.lastPunchDate) + ' ' + (ma.lastTimeIn || '')) : 'No punch yet', ma.lastStatus || 'Standard 04:30 AM', { em: '📅' })}
-           </div>
-           <div class="tiny" style="color:var(--ink-2)">
-             Biometric punch records are synced into MongoDB and tied directly to this devotee profile.
+           <div style="display:flex;flex-direction:column;gap:12px">
+             <div>
+               <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;margin-bottom:4px">
+                 <span style="display:flex;align-items:center;gap:6px"><span>🌅</span> Morning Program Sadhana</span>
+                 <span style="color:${ma.rate >= 75 ? 'var(--green)' : ma.rate >= 50 ? 'var(--saffron)' : 'var(--ink-2)'}">${ma.rate}% (${ma.present}/${ma.total} sessions)</span>
+               </div>
+               <div class="prog" style="height:9px;background:var(--line-2)"><i style="width:${ma.rate}%;background:linear-gradient(90deg, #f59e0b, #d97706)"></i></div>
+             </div>
+             <div>
+               <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;margin-bottom:4px">
+                 <span style="display:flex;align-items:center;gap:6px"><span>🪔</span> Deity Services & Altar Worship</span>
+                 <span style="color:${deit.rate >= 75 ? 'var(--green)' : deit.rate >= 50 ? 'var(--saffron)' : 'var(--ink-2)'}">${deit.rate}% (${deit.completed}/${deit.total} sevas)</span>
+               </div>
+               <div class="prog" style="height:9px;background:var(--line-2)"><i style="width:${deit.rate}%;background:linear-gradient(90deg, #ea580c, #c2410c)"></i></div>
+             </div>
+             <div>
+               <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;margin-bottom:4px">
+                 <span style="display:flex;align-items:center;gap:6px"><span>🧹</span> Cleaning & Facilities Maintenance</span>
+                 <span style="color:${clean.rate >= 75 ? 'var(--green)' : clean.rate >= 50 ? 'var(--saffron)' : 'var(--ink-2)'}">${clean.rate}% (${clean.completed}/${clean.total} rotas)</span>
+               </div>
+               <div class="prog" style="height:9px;background:var(--line-2)"><i style="width:${clean.rate}%;background:linear-gradient(90deg, #0d9488, #0f766e)"></i></div>
+             </div>
+             <div>
+               <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;margin-bottom:4px">
+                 <span style="display:flex;align-items:center;gap:6px"><span>📖</span> Preaching Batch & Class Sessions</span>
+                 <span style="color:${cls.rate >= 75 ? 'var(--green)' : cls.rate >= 50 ? 'var(--saffron)' : 'var(--ink-2)'}">${cls.rate}% (${cls.present}/${cls.total} classes)</span>
+               </div>
+               <div class="prog" style="height:9px;background:var(--line-2)"><i style="width:${cls.rate}%;background:linear-gradient(90deg, #6366f1, #4f46e5)"></i></div>
+             </div>
            </div>
          </div>
        </div>`;
-     return morningCard + `<div class="grid g4" style="margin-bottom:15px">
-       ${stat('Overall',attFor(d.id)+'%','present vs recorded',{em:'✅',r:'#/attendance'})}
-       ${stat('Records',rec.length,'attendance entries',{em:'📋',r:'#/attendance'})}
-       ${stat('Absences',rec.filter(a=>a.status==='Absent').length,'marked absent',{em:'⚠️',r:'#/attendance'})}
-       ${stat('Late',rec.filter(a=>a.status==='Late').length,'arrived late',{em:'⏱',r:'#/attendance'})}</div>`+
-       section('By category',`<div class="card-b">${cats.length?barChart(cats.map(c=>({l:c,v:attFor(d.id,c),
-         tip:`${c}\nPresent: ${rec.filter(a=>a.category===c&&a.status==='Present').length} of ${rec.filter(a=>a.category===c).length}`})),{horizontal:true,unit:'%'}):'<p class="tiny">No records yet.</p>'}</div>`)+
-       `<div style="height:15px"></div>`+
-       section('Recent attendance',rec.length?`<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Date</th><th>Category</th><th>Status / Time</th><th>Details</th></tr></thead><tbody>
-        ${rec.sort((a,b)=>a.date<b.date?1:-1).slice(0,14).map(a=>`<tr><td data-l="Date">${fmtD(a.date)}</td><td data-l="Category">${esc(a.category)}</td><td data-l="Status">${sbadge(a.status)}${a.timeIn ? ` <span class="tiny muted">(${esc(a.timeIn)})</span>` : ''}</td><td data-l="Details">${esc(a.standardTime ? `Standard ${a.standardTime}` : (a.notes || '—'))}</td></tr>`).join('')}</tbody></table></div>`
-        :emptyState('No attendance recorded','Attendance appears here once it is marked.',''))})(),
+
+     // Sub-section 1: Morning Program
+     const morningSection = `
+       <div class="card" style="margin-bottom:20px;border-left:4px solid #f59e0b;border-radius:12px">
+         <div class="card-h" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+           <div>
+             <h3 style="margin:0;display:flex;align-items:center;gap:8px"><span>🌅</span> Sub-section 1: Morning Program & Sadhana</h3>
+             <span class="tiny" style="color:var(--ink-2)">Biometric fingerprint attendance, mangala aarti punctuality & sadhana discipline</span>
+           </div>
+           <button class="btn sm" data-act="edit-devotee-morning-std" data-id="${d.id}" title="Edit standard attendance time for this devotee">⏱️ Standard: ${esc(mStd)}</button>
+         </div>
+         <div class="card-b">
+           <div class="grid g4" style="margin-bottom:14px">
+             ${stat('Standard Target', mStd, 'Devotee on-time target', { em: '⏱' })}
+             ${stat('Punctuality Rate', (ma.punctuality !== undefined ? ma.punctuality : '0') + '%', 'On-time / grace arrival', { em: '🎯' })}
+             ${stat('Morning Attendance', ma.rate + '%', ma.present + ' / ' + ma.total + ' sessions present', { em: '🌅' })}
+             ${stat('Last Punch', ma.lastPunchDate ? (fmtD(ma.lastPunchDate) + ' ' + (ma.lastTimeIn || '')) : 'No punch yet', ma.lastStatus || 'Standard: ' + mStd, { em: '📅' })}
+           </div>
+
+           <!-- Responsive Punctuality Breakdown -->
+           <div style="background:var(--surface-2, #f8fafc);border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:14px">
+             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+               <span style="font-size:12px;font-weight:700">Check-in Punctuality Distribution</span>
+               <span class="tiny" style="color:var(--ink-2)">Total: ${ma.total} morning sessions</span>
+             </div>
+             <div style="display:flex;height:12px;border-radius:6px;overflow:hidden;background:var(--line);margin-bottom:10px">
+               <div style="width:${ma.total ? (ma.onTime / ma.total) * 100 : 0}%;background:#10B981" title="On Time: ${ma.onTime}"></div>
+               <div style="width:${ma.total ? (ma.late / ma.total) * 100 : 0}%;background:#F59E0B" title="Late: ${ma.late}"></div>
+               <div style="width:${ma.total ? (ma.absent / ma.total) * 100 : 0}%;background:#EF4444" title="Absent: ${ma.absent}"></div>
+             </div>
+             <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;font-size:11.5px">
+               <span style="color:#10B981;font-weight:600">● On Time: ${ma.onTime} (${ma.total ? Math.round((ma.onTime/ma.total)*100) : 0}%)</span>
+               <span style="color:#F59E0B;font-weight:600">● Late: ${ma.late} (${ma.total ? Math.round((ma.late/ma.total)*100) : 0}%)</span>
+               <span style="color:#EF4444;font-weight:600">● Absent: ${ma.absent} (${ma.total ? Math.round((ma.absent/ma.total)*100) : 0}%)</span>
+             </div>
+           </div>
+
+           ${ma.records && ma.records.length ? `
+             <div style="font-weight:700;font-size:13px;margin-bottom:8px">Recent Morning Check-in Records</div>
+             <div class="tbl-wrap"><table class="tbl">
+               <thead><tr><th>Date</th><th>Punch Time</th><th>Standard</th><th>Variance</th><th>Status</th><th>Notes</th></tr></thead>
+               <tbody>
+                 ${ma.records.sort((a,b)=>a.date<b.date?1:-1).slice(0, 10).map(r => `
+                   <tr>
+                     <td data-l="Date">${fmtD(r.date)}</td>
+                     <td data-l="Punch Time"><b>${esc(r.timeIn || '—')}</b></td>
+                     <td data-l="Standard">${esc(r.standardTime || mStd)}</td>
+                     <td data-l="Variance">${r.diffMin != null ? (r.diffMin > 0 ? `+${r.diffMin}m` : `${r.diffMin}m`) : '—'}</td>
+                     <td data-l="Status">${sbadge(r.status)}</td>
+                     <td data-l="Notes" class="tiny muted">${esc(r.notes || '—')}</td>
+                   </tr>
+                 `).join('')}
+               </tbody>
+             </table></div>
+           ` : `<div style="text-align:center;padding:16px;background:var(--surface);border:1px dashed var(--line);border-radius:8px">
+                  <span class="tiny" style="color:var(--ink-3)">No biometric punch records found for this devotee. Punches will appear dynamically when recorded on the BACE device.</span>
+                </div>`}
+         </div>
+       </div>`;
+
+     // Sub-section 2: Deity Services
+     const deitySection = `
+       <div class="card" style="margin-bottom:20px;border-left:4px solid #ea580c;border-radius:12px">
+         <div class="card-h" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+           <div>
+             <h3 style="margin:0;display:flex;align-items:center;gap:8px"><span>🛕</span> Sub-section 2: Deity Services (Altar & Worship)</h3>
+             <span class="tiny" style="color:var(--ink-2)">Aarti, bhoga offerings, dressing, altar seva & temple worship assignments</span>
+           </div>
+           <a class="btn sm" href="#/dept/dp3" title="View Deity Department Roster">🪔 Deity Roster</a>
+         </div>
+         <div class="card-b">
+           <div class="grid g4" style="margin-bottom:14px">
+             ${stat('Scheduled Sevas', deit.total, 'Allocated worship slots', { em: '🪔' })}
+             ${stat('Completed Sevas', deit.completed, 'Successfully performed', { em: '✅' })}
+             ${stat('Missed Sevas', deit.missed, 'Substituted / unattended', { em: '⚠️' })}
+             ${stat('Seva Reliability', deit.rate + '%', 'Fulfillment percentage', { em: '⭐' })}
+           </div>
+
+           <!-- Responsive Reliability Breakdown -->
+           <div style="background:var(--surface-2, #f8fafc);border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:14px">
+             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+               <span style="font-size:12px;font-weight:700">Deity Seva Fulfillment Progress</span>
+               <span class="tiny" style="color:var(--ink-2)">Reliability: ${deit.rate}%</span>
+             </div>
+             <div class="prog" style="height:12px;border-radius:6px;background:var(--line);margin-bottom:10px">
+               <i style="width:${deit.rate}%;background:linear-gradient(90deg, #ea580c, #f97316)"></i>
+             </div>
+             <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;font-size:11.5px">
+               <span style="color:#10B981;font-weight:600">● Completed: ${deit.completed}</span>
+               <span style="color:#F59E0B;font-weight:600">● Substituted: ${deit.substitutions}</span>
+               <span style="color:#EF4444;font-weight:600">● Missed: ${deit.missed}</span>
+               <span style="color:var(--ink-2)">Total: ${deit.total} sevas</span>
+             </div>
+           </div>
+
+           ${deit.history && deit.history.length ? `
+             <div style="font-weight:700;font-size:13px;margin-bottom:8px">Recent Deity Seva Log</div>
+             <div class="tbl-wrap"><table class="tbl">
+               <thead><tr><th>Date</th><th>Service / Aarti</th><th>Time Slot</th><th>Status</th></tr></thead>
+               <tbody>
+                 ${deit.history.sort((a,b)=>a.date<b.date?1:-1).slice(0, 10).map(h => `
+                   <tr>
+                     <td data-l="Date">${fmtD(h.date)}</td>
+                     <td data-l="Service"><b>${esc(h.service)}</b></td>
+                     <td data-l="Time Slot">${esc(h.time || '—')}</td>
+                     <td data-l="Status"><span class="badge ${h.rawStatus==='done'?'b-teal':h.rawStatus==='missed'?'b-red':'b-grey'}">${esc(h.status)}</span></td>
+                   </tr>
+                 `).join('')}
+               </tbody>
+             </table></div>
+           ` : `<div style="text-align:center;padding:16px;background:var(--surface);border:1px dashed var(--line);border-radius:8px">
+                  <span class="tiny" style="color:var(--ink-3)">No deity services recorded for this devotee yet. Services assigned from the Deity Department roster appear here.</span>
+                </div>`}
+         </div>
+       </div>`;
+
+     // Sub-section 3: Cleaning Section
+     const cleaningSection = `
+       <div class="card" style="margin-bottom:20px;border-left:4px solid #0d9488;border-radius:12px">
+         <div class="card-h" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+           <div>
+             <h3 style="margin:0;display:flex;align-items:center;gap:8px"><span>🧹</span> Sub-section 3: Cleaning & Ashram Maintenance</h3>
+             <span class="tiny" style="color:var(--ink-2)">Temple hall mopping, prasadam hall, kitchen, and washroom sanitation rotas</span>
+           </div>
+           <a class="btn sm" href="#/dept/dp8" title="View Cleaning Department Roster">🧹 Cleaning Roster</a>
+         </div>
+         <div class="card-b">
+           <div class="grid g4" style="margin-bottom:14px">
+             ${stat('Assigned Rotas', clean.total, 'Scheduled cleaning tasks', { em: '🧹' })}
+             ${stat('Completed Rotas', clean.completed, 'Sanitation verified', { em: '✨' })}
+             ${stat('Missed Rotas', clean.missed, 'Substituted / pending', { em: '⚠️' })}
+             ${stat('Cleaning Reliability', clean.rate + '%', 'Completion score', { em: '🎯' })}
+           </div>
+
+           <!-- Responsive Cleaning Fulfillment Graph -->
+           <div style="background:var(--surface-2, #f8fafc);border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:14px">
+             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+               <span style="font-size:12px;font-weight:700">Sanitation & Ashram Seva Fulfillment</span>
+               <span class="tiny" style="color:var(--ink-2)">Reliability: ${clean.rate}%</span>
+             </div>
+             <div class="prog" style="height:12px;border-radius:6px;background:var(--line);margin-bottom:10px">
+               <i style="width:${clean.rate}%;background:linear-gradient(90deg, #0d9488, #14b8a6)"></i>
+             </div>
+             <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;font-size:11.5px">
+               <span style="color:#10B981;font-weight:600">● Completed: ${clean.completed}</span>
+               <span style="color:#F59E0B;font-weight:600">● Substituted: ${clean.substitutions}</span>
+               <span style="color:#EF4444;font-weight:600">● Missed: ${clean.missed}</span>
+               <span style="color:var(--ink-2)">Total: ${clean.total} rotas</span>
+             </div>
+           </div>
+
+           ${clean.history && clean.history.length ? `
+             <div style="font-weight:700;font-size:13px;margin-bottom:8px">Recent Cleaning Rota History</div>
+             <div class="tbl-wrap"><table class="tbl">
+               <thead><tr><th>Date</th><th>Area / Task</th><th>Time Slot</th><th>Status</th></tr></thead>
+               <tbody>
+                 ${clean.history.sort((a,b)=>a.date<b.date?1:-1).slice(0, 10).map(h => `
+                   <tr>
+                     <td data-l="Date">${fmtD(h.date)}</td>
+                     <td data-l="Task"><b>${esc(h.service)}</b></td>
+                     <td data-l="Time Slot">${esc(h.time || '—')}</td>
+                     <td data-l="Status"><span class="badge ${h.rawStatus==='done'?'b-teal':h.rawStatus==='missed'?'b-red':'b-grey'}">${esc(h.status)}</span></td>
+                   </tr>
+                 `).join('')}
+               </tbody>
+             </table></div>
+           ` : `<div style="text-align:center;padding:16px;background:var(--surface);border:1px dashed var(--line);border-radius:8px">
+                  <span class="tiny" style="color:var(--ink-3)">No cleaning rotas allocated to this devotee yet. Tasks assigned in the Cleaning Department roster appear here.</span>
+                </div>`}
+         </div>
+       </div>`;
+
+     // Sub-section 4: Class & Events Section
+     const classSection = `
+       <div class="card" style="margin-bottom:20px;border-left:4px solid #6366f1;border-radius:12px">
+         <div class="card-h" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+           <div>
+             <h3 style="margin:0;display:flex;align-items:center;gap:8px"><span>📖</span> Sub-section 4: Class & Events Attendance</h3>
+             <span class="tiny" style="color:var(--ink-2)">Preaching batch sessions, Gita courses, workshops, and festival programs</span>
+           </div>
+           ${d.batch ? `<a class="btn sm" href="#/batch/${d.batch}" title="View Batch">📖 ${esc(batchObj?.name || 'Batch')}</a>` : ''}
+         </div>
+         <div class="card-b">
+           <div class="grid g4" style="margin-bottom:14px">
+             ${stat('Current Batch', batchObj?.name || (d.level ? 'Level ' + d.level : 'Pre-batch'), 'Stage: ' + (d.stage || (d.level ? 'Level ' + d.level : 'New contact')), { em: '📖' })}
+             ${stat('Classes Recorded', cls.total, 'Total batch sessions marked', { em: '📋' })}
+             ${stat('Classes Attended', cls.present, 'Present & on-time', { em: '✅' })}
+             ${stat('Batch Regularity', cls.rate + '%', 'Presence percentage', { em: '🎯' })}
+           </div>
+
+           <!-- Responsive Class Attendance Graph -->
+           <div style="background:var(--surface-2, #f8fafc);border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:14px">
+             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+               <span style="font-size:12px;font-weight:700">Class Regularity & Attendance Rate</span>
+               <span class="tiny" style="color:var(--ink-2)">Regularity: ${cls.rate}%</span>
+             </div>
+             <div class="prog" style="height:12px;border-radius:6px;background:var(--line);margin-bottom:10px">
+               <i style="width:${cls.rate}%;background:linear-gradient(90deg, #6366f1, #818cf8)"></i>
+             </div>
+             <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;font-size:11.5px">
+               <span style="color:#10B981;font-weight:600">● Present: ${cls.present}</span>
+               <span style="color:#F59E0B;font-weight:600">● Late: ${cls.late}</span>
+               <span style="color:#EF4444;font-weight:600">● Absent: ${cls.absent}</span>
+               <span style="color:var(--ink-2)">Total: ${cls.total} classes</span>
+             </div>
+           </div>
+
+           ${cls.records && cls.records.length ? `
+             <div style="font-weight:700;font-size:13px;margin-bottom:8px">Recent Batch Classes & Events Log</div>
+             <div class="tbl-wrap"><table class="tbl">
+               <thead><tr><th>Date</th><th>Category</th><th>Status / Time</th><th>Details</th></tr></thead>
+               <tbody>
+                 ${cls.records.sort((a,b)=>a.date<b.date?1:-1).slice(0, 10).map(r => `
+                   <tr>
+                     <td data-l="Date">${fmtD(r.date)}</td>
+                     <td data-l="Category"><span class="badge b-indigo">${esc(r.category || r.type || 'Class')}</span></td>
+                     <td data-l="Status">${sbadge(r.status)}${r.timeIn ? ` <span class="tiny muted">(${esc(r.timeIn)})</span>` : ''}</td>
+                     <td data-l="Details" class="tiny muted">${esc(r.notes || r.topic || '—')}</td>
+                   </tr>
+                 `).join('')}
+               </tbody>
+             </table></div>
+           ` : `<div style="text-align:center;padding:16px;background:var(--surface);border:1px dashed var(--line);border-radius:8px">
+                  <span class="tiny" style="color:var(--ink-3)">No batch class sessions recorded for this devotee yet. Mark attendance in the Preaching Batch section to see records here.</span>
+                </div>`}
+         </div>
+       </div>`;
+
+     return topCards + benchmarkBar + morningSection + deitySection + cleaningSection + classSection;
+   })(),
    Care:careOK?`<div class="grid g2">
       ${section('Care status',`<div class="card-b"><dl class="kv">
         <dt>Friends</dt><dd>${d.friends.map(f=>`<a href="#/devotee/${f}">${esc(nameOf(f))}</a>`).join(', ')||'—'}</dd>
@@ -11109,7 +11647,7 @@ function showBatchVolunteersModal(batchId){
         <span class="d" style="font-size:12px;color:var(--ink-3);display:flex;flex-wrap:wrap;gap:8px;margin-top:2px">
           <span>📱 ${esc(d.phone || 'No phone')}</span>
           <span>🛠 ${esc(dept(d.dept)?.name || d.service || 'Active Volunteer')}</span>
-          <span class="badge b-green">Attendance: ${d.attendancePct || 85}%</span>
+          <span class="badge b-green">Attendance: ${d.attendancePct || 0}%</span>
         </span>
       </span>
       <a class="btn sm" href="#/devotee/${d.id}" data-act="close-scrim" style="white-space:nowrap">View profile</a>
@@ -13275,7 +13813,7 @@ async function executeDevoteeCsvImport(){
             occupation: row.occupation || 'Student',
             highestEducation: row.highestEducation || '',
             presentStudiesOrJob: row.presentStudiesOrJob || '',
-            attendancePct: row.attendancePct !== undefined && row.attendancePct !== '' ? Number(row.attendancePct) : 85,
+            attendancePct: row.attendancePct !== undefined && row.attendancePct !== '' ? Number(row.attendancePct) : 0,
             joined: row.joined || iso(TODAY),
             sadhana: {
               rounds: row.rounds !== undefined && row.rounds !== '' ? Number(row.rounds) : 0,
@@ -15109,7 +15647,7 @@ document.addEventListener('click',e=>{
         careStatus: { emotional: 'Doing well', spiritual: 'Steady' },
         firstContact: iso(TODAY),
         source: v.source || 'Book distribution',
-        attendancePct: 85,
+        attendancePct: 0,
         timeline: [{ date: iso(TODAY), title: 'Joined the community', desc: `Profile created with role ${roleObj.name}.`, tone: 'green' }],
         history: [],
         createdAt: Date.now()
@@ -16488,7 +17026,7 @@ document.addEventListener('click',e=>{
       ['Volunteer', ...days.map(d => fmtD(d)), 'Regularity %'],
       ...vols.map(d => {
         const rec = days.map(dt => DB.attendance.find(a => a.devotee === d.id && a.date === iso(dt) && (a.category === 'Seva' || String(a.ref).includes(dId)))).filter(Boolean);
-        const p = rec.length ? pct(rec.filter(r => r.status === 'Present').length, rec.length) : (d.attendancePct || 85);
+        const p = rec.length ? pct(rec.filter(r => r.status === 'Present').length, rec.length) : (d.attendancePct || 0);
         return [
           d.name,
           ...days.map(dt => {
