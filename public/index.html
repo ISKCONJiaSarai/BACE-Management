@@ -4840,6 +4840,36 @@ function assignDraft(){
 function assignModal(){
   const d=assignDraft();
   const isClass=d.type==='Class';
+  const isEvent = d.type === 'Event';
+
+  /* ---------------- Schedule Event / Special Programme View (BACE Preaching) ---------------- */
+  if(isEvent){
+    return `<div class="scrim" data-act="close-scrim"><div class="modal wide" data-stop="1">
+     <div class="modal-h"><h2>✨ Schedule Special Programme / Event</h2><span class="tiny">Special programmes, seminars, festivals, kirtan and camps</span>
+       <button class="icon-btn" style="margin-left:auto" data-act="close-scrim">${ic('x')}</button></div>
+     <div class="modal-b">
+      <div class="form-row"><div class="field"><label>Event Name / Programme Title <span style="color:var(--danger)">*</span></label><input name="name" value="${esc(d.name)}" placeholder="e.g. Janmashtami Special Kirtan & Katha, Youth Fest Seminar, BACE Camp"></div>
+        <div class="field"><label>Batch</label>
+        <select name="batch">
+          <option value="">-- All batches / Open to all --</option>
+          ${activeBatches().map(b=>`<option value="${b.id}" ${d.batch===b.id?'selected':''}>${esc(b.name)} (Level ${b.level})</option>`).join('')}
+        </select></div></div>
+      <div class="form-row t3"><div class="field"><label>Date <span style="color:var(--danger)">*</span></label><input type="date" name="date" value="${d.date}"></div>
+        <div class="field"><label>Start time</label><input type="time" name="start" value="${d.start||'17:30'}"></div>
+        <div class="field"><label>End time</label><input type="time" name="end" value="${d.end||'20:30'}"></div></div>
+      <div class="form-row"><div class="field"><label>Location / Venue</label><input name="location" value="${esc(d.location)}" placeholder="e.g. Main Temple Hall / BACE Centre / Campus Auditorium"></div>
+        <div class="field"><label>Speaker / Lead Preacher</label>
+        <input type="text" name="responsible" value="${esc(dv(d.responsible)?.name || d.responsible || '')}" placeholder="e.g. HG Sundar Gopal Das"></div></div>
+      <div class="form-row"><div class="field"><label>Expected Attendees</label><input type="number" name="expected" value="${esc(d.expected||50)}" min="0" placeholder="e.g. 50"></div>
+        <div class="field"><label>Budget Allocated (₹)</label><input type="number" name="budget" value="${esc(d.budget||0)}" min="0" placeholder="e.g. 5000"></div></div>
+      <div class="field"><label>Description / Agenda & Prasadam arrangements</label><textarea name="desc" placeholder="Special programme rundown, kirtan lead, speaker topic, prasadam arrangements, or guidelines for devotees…">${esc(d.desc)}</textarea></div>
+      <div class="field"><label>🔁 Repeats</label>
+        <div class="chips">${['One time','Weekly','Monthly','Annual'].map(r=>`<button class="chip ${d.recurrence===r?'on':''}" data-act="draft" data-n="recurrence" data-v="${r}">${r}</button>`).join('')}</div>
+        ${d.recurrence!=='One time'?'<div class="hint">A recurring event schedule will be created and future event sessions generated automatically.</div>':''}</div>
+     </div>
+     <div class="modal-f"><button class="btn" data-act="close-scrim">Cancel</button>
+       <button class="btn pri" data-act="save-assign">${ic('check')}Create event</button></div></div></div>`;
+  }
   const isTask=d.type==='Task'||d.type==='Responsibility';
 
   /* ---------------- Schedule Class View (BACE Preaching) ---------------- */
@@ -9611,6 +9641,9 @@ function batchDashboardBody(b){
           ${ownsBatch(b.id)?`<button class="btn sm" data-act="go-batch-attendance" data-b="${b.id}">Attendance</button>`:''}</div>`:''}</div>`
         :emptyState('No class scheduled','Schedule the next class for this batch.',ownsBatch(b.id)?`<button class="btn pri" data-act="open-schedule" data-batch="${b.id}" data-type="Class">Schedule class</button>`:''),
         ownsBatch(b.id)?`<button class="btn sm pri" data-act="open-schedule" data-batch="${b.id}" data-type="Class">${ic('plus')}Schedule class</button>`:'')}
+      ${section('✨ Events & special programmes',events.length?`<div class="tbl-wrap">${actTable(events)}</div>`
+        :emptyState('No events yet','Create an event for this batch.',ownsBatch(b.id)?`<button class="btn pri" data-act="open-schedule" data-batch="${b.id}" data-type="Event">Create event</button>`:''),
+        ownsBatch(b.id)?`<button class="btn sm pri" data-act="open-schedule" data-batch="${b.id}" data-type="Event">${ic('plus')}Create event</button>`:null)}
       ${section('📊 Class attendance trend',trend.length?`<div class="card-b">${lineChart(trend,{unit:'%',color:'var(--indigo)'})}
         <div class="tiny" style="margin-top:8px">Hover a point for present / absent / total for that class</div></div>`
         :emptyState('No attendance yet','The trend appears once classes are held and attendance is marked.',''))}
@@ -9665,9 +9698,7 @@ function batchDashboardBody(b){
         :emptyState('No chat yet','A group chat is created with the batch.','','chat'))}
       ${section('📄 Reports',`<div class="card-b"><button class="btn block" data-act="batch-report" data-id="${b.id}">${ic('doc')}Generate monthly report</button>
         <button class="btn block" style="margin-top:8px" data-act="go" data-r="#/preaching-reports">All preaching reports</button></div>`)}
-    </div></div>
-   ${section('✨ Events & special programmes',events.length?`<div class="tbl-wrap">${actTable(events)}</div>`
-     :emptyState('No events yet','Create an event for this batch.',ownsBatch(b.id)?`<button class="btn pri" data-act="open-assign" data-batch="${b.id}">Create event</button>`:''))}`;
+    </div></div>`;
 }
 function viewBatch(id){
   const b=batch(id);if(!b)return emptyState('Batch not found','','<a class="btn" href="#/batches">Back to batches</a>');
@@ -9678,7 +9709,8 @@ function viewBatch(id){
       ${canImportCsv(b.id)?`<button class="btn" data-act="open-import-csv" data-batch="${b.id}" style="margin-right:6px">${ic('upload')}Import CSV</button>`:''}
       <button class="btn" data-act="edit-batch" data-id="${b.id}">${ic('edit')}Edit batch</button>
       <button class="btn" data-act="go-batch-attendance" data-b="${b.id}">✅ Attendance</button>
-      <button class="btn pri" data-act="open-schedule" data-batch="${b.id}" data-type="Class">${ic('plus')}Schedule class</button>`:'')+
+      <button class="btn" data-act="open-schedule" data-batch="${b.id}" data-type="Event">✨ Create event</button>
+      <button class="btn pri" data-act="open-schedule" data-batch="${b.id}" data-type="Class">${ic('plus')}Schedule class</button>`:null)+
    batchDashboardBody(b);
 }
 
@@ -13504,14 +13536,12 @@ document.addEventListener('click',e=>{
   /* ---- assign / schedule ---- */
   case 'open-schedule':
   case 'open-assign':{stop();APP.draft.assign=null;const d=assignDraft();
-    if(a==='open-schedule'||t.dataset.act==='open-schedule'||t.dataset.type==='Class'){
-      d.type='Class';
-      d.batch=t.dataset.batch||(activeBatches()[0]||{}).id||'';
-    } else {
-      d.type=t.dataset.type||'Seva';
-      if(t.dataset.dept)d.dept=t.dataset.dept;
-      if(t.dataset.batch){d.batch=t.dataset.batch;d.type='Class';}
-    }
+    const reqType = t.dataset.type || (a==='open-schedule'||t.dataset.act==='open-schedule'?'Class':'Seva');
+    d.type = reqType;
+    if(t.dataset.batch) d.batch = t.dataset.batch;
+    else if(d.type==='Class') d.batch = (activeBatches()[0]||{}).id||'';
+    if(t.dataset.dept) d.dept = t.dataset.dept;
+    if(d.type==='Event' && !d.start){ d.start='17:30'; d.end='20:30'; }
     APP.fabOpen=false;APP.modal='assign';render();break}
   case 'draft':{syncAssign();const d=assignDraft();d[t.dataset.n]=t.dataset.v;
     if(t.dataset.n==='type'&&t.dataset.v==='Class'&&!d.batch)d.batch=activeBatches()[0].id;render();break}
@@ -13532,11 +13562,11 @@ document.addEventListener('click',e=>{
     const el=document.querySelector('[name=newItem]');if(el&&el.value.trim()){d.items.push(el.value.trim());render();refocus('[name=newItem]')}break}
   case 'draft-item-del':{syncAssign();const d=assignDraft();d.items.splice(+t.dataset.i,1);render();break}
   case 'save-assign':{syncAssign();const d=assignDraft();
-    if(!d.name.trim()){toast(d.type==='Class'?'Please give the class a name / topic':'Please give the seva / service a name','⚠️');break}
+    if(!d.name.trim()){toast(d.type==='Class'?'Please give the class a name / topic':d.type==='Event'?'Please enter the event / programme title':'Please give the seva / service a name','⚠️');break}
     const isTask=d.type==='Task'||d.type==='Responsibility';
     const mk=(date,templateId)=>{
       const a={id:uid('ac'),type:d.type,name:d.name,title:d.name,cat:d.type==='Class'?'Classes':d.type==='Event'?'Preaching':isTask?'Management':'Services',
-        dept:d.type==='Class'?null:d.dept,batch:d.type==='Class'?d.batch:null,date,start:d.start,end:d.end,
+        dept:(d.type==='Class'||d.type==='Event')?null:d.dept,batch:(d.type==='Class'||d.type==='Event')?d.batch:null,date,start:d.start,end:d.end,
         location:d.location,desc:d.desc,priority:d.priority,need:isTask?1:d.need,vols:d.need,skills:[],
         responsible:d.responsible||d.volunteers[0]||APP.user.devotee,owner:APP.user.devotee,templateId,recurrence:d.recurrence,
         overridden:false,status:d.volunteers.length?'Assigned':'Scheduled',
@@ -13561,6 +13591,10 @@ document.addEventListener('click',e=>{
       DB.notifications.unshift({id:uid('n'),em:'📖',title:'Class scheduled',body:`${d.name} for ${batch(d.batch)?.name||'batch'} on ${fmtD(d.date)}`,date:iso(TODAY),read:false,cat:'Preaching'});
       logAudit('Class scheduled',`${d.name} (${batch(d.batch)?.name||''}) on ${d.date}`);
       toast(created>1?`Class scheduled — ${created} sessions created`:'Class scheduled successfully','📖');
+    } else if(d.type==='Event'){
+      DB.notifications.unshift({id:uid('n'),em:'✨',title:'Event scheduled',body:`${d.name} on ${fmtD(d.date)}`,date:iso(TODAY),read:false,cat:'Preaching'});
+      logAudit('Event scheduled',`${d.name} (${batch(d.batch)?.name||''}) on ${d.date}`);
+      toast(created>1?`Event scheduled — ${created} sessions created`:'Event scheduled successfully','✨');
     } else if(isTask){
       DB.notifications.unshift({id:uid('n'),em:'🎯',title:'Action item created',body:`${d.name}`,date:iso(TODAY),read:false,cat:'Management'});
       logAudit('Action item created',d.name);
@@ -14660,7 +14694,7 @@ document.addEventListener('click',e=>{
 /* keep assign-modal form values when the modal re-renders */
 function syncAssign(){
   const d=APP.draft.assign;if(!d)return;
-  ['name','date','start','end','location','desc','priority','budget','dept','batch','responsible'].forEach(n=>{
+  ['name','date','start','end','location','desc','priority','budget','dept','batch','responsible','expected'].forEach(n=>{
     const el=document.querySelector(`.modal [name=${n}]`);if(el)d[n]=el.value});
 }
 /* change events: selects and checkboxes that carry data-act */
