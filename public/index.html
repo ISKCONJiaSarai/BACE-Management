@@ -11063,7 +11063,12 @@ function exportBatchMonthlyReportPDF(bid){
   const facs = getBatchFacilitators(bid);
   const vols = getBatchVolunteers(bid);
   const bIncharge = b.incharge || 'd1';
-  const bCoordinator = b.coordinator || b.facilitators?.[0] || 'd1';
+  let bCoordinator = b.coordinator || b.facilitators?.[0] || 'd1';
+  let coordName = nameOf(bCoordinator);
+  if ((!coordName || coordName === bCoordinator || coordName.startsWith('d_')) && facs.length) {
+    const matchDv = dv(bCoordinator) || (DB.devotees||[]).find(x => x.id === bCoordinator || x.customId === bCoordinator);
+    coordName = matchDv ? matchDv.name : (facs[0]?.name || 'Batch Coordinator');
+  }
 
   const maxVal = Math.max(...funnelStages.map(s => s.v), 1);
   const dateRangeStr = `${fmtD(APP.range.from)} — ${fmtD(APP.range.to)}`;
@@ -11072,192 +11077,363 @@ function exportBatchMonthlyReportPDF(bid){
 <html>
 <head>
   <meta charset="utf-8">
-  <title>ISKCON_Jia_Sarai_${b.name.replace(/\s+/g,'_')}_Monthly_Report_${iso(TODAY)}</title>
+  <title>${esc(b.name).replace(/\s+/g,'_')}_Batch_Preaching_Report</title>
   <style>
-    @page { size: A4 portrait; margin: 12mm; }
-    * { box-sizing: border-box; }
-    html { background: #525659; }
+    @page {
+      size: A4 portrait;
+      margin: 10mm 12mm 10mm 12mm;
+    }
+    * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    html { background: #475569; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      color: #111;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      color: #0f172a;
       width: 210mm;
       max-width: 210mm;
       min-height: 297mm;
       margin: 20px auto;
-      padding: 14mm 14mm 16mm 14mm;
-      background: #fff;
-      font-size: 11.5px;
+      padding: 12mm 15mm;
+      background: #ffffff;
+      font-size: 11px;
       line-height: 1.45;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.25);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.22);
     }
     .no-print-bar {
-      background: #222;
-      color: #fff;
-      padding: 10px 16px;
+      background: #0f172a;
+      color: #f8fafc;
+      padding: 10px 18px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin: -14mm -14mm 16px -14mm;
+      margin: -12mm -15mm 14px -15mm;
       font-size: 13px;
+      font-weight: 500;
+      border-bottom: 1px solid #334155;
     }
     .btn-print {
-      background: #c2410c;
-      color: #fff;
+      background: #ea580c;
+      color: #ffffff;
       border: none;
-      padding: 6px 14px;
+      padding: 7px 16px;
       border-radius: 6px;
-      font-weight: 600;
+      font-weight: 700;
       cursor: pointer;
       font-size: 12.5px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 2px 4px rgba(234,88,12,0.3);
+      transition: background 0.15s;
     }
+    .btn-print:hover { background: #c2410c; }
     .btn-close {
       background: transparent;
-      color: #ccc;
-      border: 1px solid #555;
-      padding: 6px 12px;
+      color: #94a3b8;
+      border: 1px solid #475569;
+      padding: 6px 14px;
       border-radius: 6px;
       cursor: pointer;
       font-size: 12px;
       margin-left: 8px;
     }
+    .btn-close:hover { color: #fff; border-color: #cbd5e1; }
+
+    /* Header */
     .header {
-      border-bottom: 2px solid #ea580c;
-      padding-bottom: 12px;
-      margin-bottom: 16px;
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
+      gap: 16px;
     }
-    .brand-title {
-      font-size: 19px;
+    .org-kicker {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #ea580c;
+      margin-bottom: 3px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .report-title {
+      font-size: 22px;
       font-weight: 800;
-      color: #9a3412;
-      letter-spacing: -0.02em;
+      color: #0f172a;
+      margin: 0 0 5px 0;
+      letter-spacing: -0.025em;
+      line-height: 1.2;
     }
-    .sub-brand {
+    .report-subtitle {
       font-size: 12px;
-      color: #666;
-      margin-top: 2px;
+      font-weight: 500;
+      color: #475569;
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
-    .badge {
+    .report-subtitle strong {
+      color: #0f172a;
+      font-weight: 700;
+    }
+    .header-badges {
+      text-align: right;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 5px;
+    }
+    .level-badge {
       display: inline-block;
-      padding: 3px 8px;
-      border-radius: 12px;
+      padding: 3px 10px;
+      border-radius: 20px;
       font-size: 11px;
-      font-weight: 600;
-      background: #ffedd5;
+      font-weight: 700;
+      background: #fff7ed;
       color: #c2410c;
+      border: 1px solid #ffedd5;
+      letter-spacing: 0.01em;
     }
+    .active-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 10px;
+      font-weight: 600;
+      background: #ecfdf5;
+      color: #047857;
+      border: 1px solid #d1fae5;
+    }
+    .header-divider {
+      height: 3px;
+      background: linear-gradient(90deg, #ea580c 0%, #f97316 45%, #fdba74 85%, #f1f5f9 100%);
+      border-radius: 3px;
+      margin: 11px 0 12px 0;
+    }
+
+    /* Metadata Ribbon */
     .meta-box {
       background: #f8fafc;
       border: 1px solid #e2e8f0;
       border-radius: 8px;
-      padding: 10px 14px;
-      margin-bottom: 16px;
+      padding: 8px 14px;
+      margin-bottom: 12px;
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 10px;
-      font-size: 12px;
+      gap: 12px;
     }
-    .meta-item b { display: block; font-size: 13px; color: #0f172a; margin-top: 1px; }
-    .meta-item span { color: #64748b; font-size: 11px; }
-    .section-title {
-      font-size: 13.5px;
+    .meta-item span {
+      display: block;
+      color: #64748b;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-weight: 600;
+    }
+    .meta-item b {
+      display: block;
+      font-size: 12.5px;
+      color: #0f172a;
+      margin-top: 2px;
       font-weight: 700;
-      color: #1e293b;
-      margin: 16px 0 8px 0;
-      padding-bottom: 4px;
-      border-bottom: 1px solid #cbd5e1;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
     }
+
+    /* Section Headings */
+    .section-title {
+      font-size: 12.5px;
+      font-weight: 800;
+      color: #1e293b;
+      margin: 11px 0 6px 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      letter-spacing: -0.01em;
+    }
+
+    /* Metrics Grid */
     .stats-grid {
       display: grid;
       grid-template-columns: repeat(6, 1fr);
       gap: 8px;
-      margin-bottom: 16px;
+      margin-bottom: 12px;
     }
     .stat-card {
-      background: #fff;
+      background: #ffffff;
       border: 1px solid #e2e8f0;
-      border-radius: 6px;
-      padding: 8px 10px;
+      border-radius: 8px;
+      padding: 7px 5px;
       text-align: center;
     }
     .stat-card .val {
-      font-size: 20px;
-      font-weight: 700;
+      font-size: 18px;
+      font-weight: 800;
       color: #0f172a;
-      line-height: 1.1;
-      margin-top: 4px;
+      line-height: 1.15;
+      margin-top: 2px;
     }
     .stat-card .lbl {
-      font-size: 10.5px;
+      font-size: 9px;
       color: #64748b;
       text-transform: uppercase;
-      letter-spacing: 0.03em;
+      letter-spacing: 0.04em;
+      font-weight: 700;
     }
+
+    /* Funnel */
     .funnel-container {
-      background: #fff;
+      background: #ffffff;
       border: 1px solid #e2e8f0;
       border-radius: 8px;
-      padding: 12px 14px;
-      margin-bottom: 16px;
+      padding: 9px 13px;
+      margin-bottom: 12px;
     }
     .funnel-row {
       display: flex;
       align-items: center;
       gap: 10px;
-      margin-bottom: 7px;
-      font-size: 11.5px;
-    }
-    .funnel-row:last-child { margin-bottom: 0; }
-    .funnel-lbl { width: 140px; font-weight: 600; color: #334155; }
-    .funnel-bar-box { flex: 1; background: #f1f5f9; border-radius: 6px; height: 24px; overflow: hidden; }
-    .funnel-bar {
-      height: 100%;
-      background: #4f46e5;
-      color: #fff;
-      display: flex;
-      align-items: center;
-      padding-left: 10px;
-      font-weight: 700;
+      margin-bottom: 5px;
       font-size: 11px;
     }
-    .funnel-conv { width: 48px; text-align: right; color: #64748b; font-weight: 600; font-size: 11px; }
+    .funnel-row:last-child { margin-bottom: 0; }
+    .funnel-lbl {
+      width: 125px;
+      font-weight: 700;
+      color: #334155;
+    }
+    .funnel-bar-box {
+      flex: 1;
+      background: #f1f5f9;
+      border-radius: 6px;
+      height: 21px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+    }
+    .funnel-bar {
+      height: 100%;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      padding-left: 8px;
+      font-weight: 800;
+      font-size: 10px;
+      border-radius: 5px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.25);
+    }
+    .funnel-conv {
+      width: 44px;
+      text-align: right;
+      color: #475569;
+      font-weight: 700;
+      font-size: 10.5px;
+    }
+
+    /* Table */
+    .table-box {
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-bottom: 16px;
-      font-size: 11px;
+      font-size: 10.5px;
     }
     th {
-      background: #f1f5f9;
+      background: #f8fafc;
       color: #475569;
-      font-weight: 600;
+      font-weight: 700;
       text-align: left;
-      padding: 7px 9px;
+      padding: 6px 9px;
       border-bottom: 1px solid #cbd5e1;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
     }
     td {
-      padding: 6px 9px;
-      border-bottom: 1px solid #e2e8f0;
+      padding: 5px 9px;
+      border-bottom: 1px solid #f1f5f9;
       color: #1e293b;
     }
-    .signatures {
-      margin-top: 36px;
+    tr:last-child td { border-bottom: none; }
+    tr:nth-child(even) td { background: #fafafa; }
+    .att-pill {
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 10px;
+    }
+    .att-high { background: #dcfce7; color: #15803d; }
+    .att-mid { background: #fef3c7; color: #b45309; }
+    .att-low { background: #fee2e2; color: #b91c1c; }
+
+    /* Team Grid */
+    .team-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .team-card {
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 8px 12px;
+      background: #ffffff;
+    }
+    .team-card-head {
+      font-weight: 800;
+      font-size: 11px;
+      margin-bottom: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .team-list {
+      font-size: 10.5px;
+      color: #334155;
+      line-height: 1.55;
+    }
+
+    /* Budget Box */
+    .budget-box {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 9px 13px;
+      margin-bottom: 12px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+
+    /* Narrative Box */
+    .narrative-box {
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 9px 12px;
+      font-size: 10.5px;
+      margin-bottom: 12px;
+      background: #ffffff;
+      border-left: 3px solid #6366f1;
+    }
+
+    /* Footer */
+    .report-footer {
+      margin-top: 12px;
+      padding-top: 8px;
+      border-top: 1px solid #e2e8f0;
       display: flex;
       justify-content: space-between;
-      page-break-inside: avoid;
+      align-items: center;
+      color: #94a3b8;
+      font-size: 9.5px;
+      font-weight: 500;
     }
-    .sig-box {
-      width: 44%;
-      border-top: 1px dashed #64748b;
-      padding-top: 6px;
-      text-align: center;
-      font-size: 11.5px;
-    }
+
     @media print {
       body {
         margin: 0;
@@ -11272,7 +11448,7 @@ function exportBatchMonthlyReportPDF(bid){
 </head>
 <body>
   <div class="no-print-bar">
-    <div><strong>ISKCON Jia Sarai BACE</strong> — Automated Monthly Report Preview</div>
+    <div><strong>ISKCON Jia Sarai BACE</strong> — Monthly Batch Report Preview</div>
     <div>
       <button class="btn-print" onclick="window.print()">🖨️ Print / Save as PDF</button>
       <button class="btn-close" onclick="window.close()">✕ Close Preview</button>
@@ -11281,19 +11457,24 @@ function exportBatchMonthlyReportPDF(bid){
 
   <div class="header">
     <div>
-      <div class="brand-title">ISKCON Jia Sarai · BACE Management</div>
-      <div class="sub-brand">Preaching Ministry — Automated Live Monthly Batch Report</div>
+      <div class="org-kicker">ISKCON Jia Sarai · BACE Preaching Ministry</div>
+      <h1 class="report-title">${esc(b.name)} Batch Preaching Report</h1>
+      <div class="report-subtitle">
+        <span>📅 Duration:</span>
+        <strong>${dateRangeStr}</strong>
+      </div>
     </div>
-    <div style="text-align:right">
-      <span class="badge">Level ${b.level} Batch</span>
-      <div style="font-size:11px;color:#64748b;margin-top:4px">Generated: ${fmtLong(TODAY)}</div>
+    <div class="header-badges">
+      <span class="level-badge">Level ${b.level} Batch</span>
+      <span class="active-badge">● Active Preaching</span>
     </div>
   </div>
+  <div class="header-divider"></div>
 
   <div class="meta-box">
     <div class="meta-item"><span>Batch Name</span><b>${esc(b.name)}</b></div>
     <div class="meta-item"><span>Incharge</span><b>${esc(nameOf(bIncharge))}</b></div>
-    <div class="meta-item"><span>Coordinator</span><b>${esc(nameOf(bCoordinator))}</b></div>
+    <div class="meta-item"><span>Coordinator</span><b>${esc(coordName)}</b></div>
     <div class="meta-item"><span>Reporting Period</span><b>${dateRangeStr}</b></div>
   </div>
 
@@ -11303,7 +11484,7 @@ function exportBatchMonthlyReportPDF(bid){
     <div class="stat-card"><div class="lbl">Active</div><div class="val" style="color:#16a34a">${m.active}</div></div>
     <div class="stat-card"><div class="lbl">Facilitators</div><div class="val" style="color:#4f46e5">${facs.length}</div></div>
     <div class="stat-card"><div class="lbl">Volunteers</div><div class="val" style="color:#d97706">${vols.length}</div></div>
-    <div class="stat-card"><div class="lbl">Avg Attendance</div><div class="val">${m.attendance}%</div></div>
+    <div class="stat-card"><div class="lbl">Avg Attendance</div><div class="val" style="color:#0284c7">${m.attendance}%</div></div>
     <div class="stat-card"><div class="lbl">Follow-ups Done</div><div class="val">${m.fus.done}/${m.fus.total}</div></div>
   </div>
 
@@ -11323,68 +11504,74 @@ function exportBatchMonthlyReportPDF(bid){
     }).join('')}
   </div>
 
-  <div class="section-title">📖 Classes & Attendance Breakdown (${m.classes.length} classes)</div>
-  <table>
-    <thead>
-      <tr>
-        <th>Date</th>
-        <th>Class / Topic</th>
-        <th>Preacher / Speaker</th>
-        <th style="text-align:right">Present</th>
-        <th style="text-align:right">Total</th>
-        <th style="text-align:right">Attendance %</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${m.perClass.length ? m.perClass.map(pc => `
+  <div class="section-title">📖 Classes & Attendance Breakdown (${m.classes.length} class${m.classes.length!==1?'es':''})</div>
+  <div class="table-box">
+    <table>
+      <thead>
         <tr>
-          <td><b>${fmtD(pc.c.date)}</b></td>
-          <td>${esc(pc.c.name)}</td>
-          <td>${esc(nameOf(pc.c.responsible || bCoordinator))}</td>
-          <td style="text-align:right">${pc.present}</td>
-          <td style="text-align:right">${pc.total}</td>
-          <td style="text-align:right;font-weight:700;color:${pc.pctv >= 75 ? '#16a34a' : pc.pctv >= 50 ? '#d97706' : '#dc2626'}">${pc.pctv}%</td>
-        </tr>`).join('') : '<tr><td colspan="6" style="text-align:center;color:#64748b;padding:12px">No completed classes in this period</td></tr>'}
-    </tbody>
-  </table>
+          <th>Date</th>
+          <th>Class / Topic</th>
+          <th>Preacher / Speaker</th>
+          <th style="text-align:right">Present</th>
+          <th style="text-align:right">Total</th>
+          <th style="text-align:right">Attendance %</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${m.perClass.length ? m.perClass.map(pc => `
+          <tr>
+            <td><b>${fmtD(pc.c.date)}</b></td>
+            <td style="font-weight:600">${esc(pc.c.name)}</td>
+            <td>${esc(nameOf(pc.c.responsible || bCoordinator))}</td>
+            <td style="text-align:right;font-weight:600">${pc.present}</td>
+            <td style="text-align:right;color:#64748b">${pc.total}</td>
+            <td style="text-align:right">
+              <span class="att-pill ${pc.pctv >= 75 ? 'att-high' : pc.pctv >= 50 ? 'att-mid' : 'att-low'}">${pc.pctv}%</span>
+            </td>
+          </tr>`).join('') : '<tr><td colspan="6" style="text-align:center;color:#64748b;padding:12px">No completed classes in this period</td></tr>'}
+      </tbody>
+    </table>
+  </div>
 
   <div class="section-title">🧑‍🏫 Batch Leadership & Care Team</div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
-    <div style="border:1px solid #e2e8f0;border-radius:6px;padding:10px 12px">
-      <div style="font-weight:700;color:#4f46e5;margin-bottom:6px">Facilitators (${facs.length})</div>
-      <div style="font-size:11px;color:#334155">${facs.map(f => `• ${esc(f.name)} (${esc(f.phone || 'Active')})`).join('<br>') || 'None'}</div>
+  <div class="team-grid">
+    <div class="team-card" style="border-left:3px solid #4f46e5">
+      <div class="team-card-head" style="color:#4f46e5">
+        <span>Facilitators (${facs.length})</span>
+      </div>
+      <div class="team-list">
+        ${facs.map(f => `<div>• <b>${esc(f.name)}</b> <span style="color:#64748b;font-size:10px">(${esc(f.phone || 'Active')})</span></div>`).join('') || '<span style="color:#94a3b8">None assigned</span>'}
+      </div>
     </div>
-    <div style="border:1px solid #e2e8f0;border-radius:6px;padding:10px 12px">
-      <div style="font-weight:700;color:#d97706;margin-bottom:6px">Volunteers (${vols.length})</div>
-      <div style="font-size:11px;color:#334155">${vols.map(v => `• ${esc(v.name)} (${esc(dept(v.dept)?.name || v.service || 'Active')})`).join('<br>') || 'None'}</div>
+    <div class="team-card" style="border-left:3px solid #d97706">
+      <div class="team-card-head" style="color:#d97706">
+        <span>Volunteers (${vols.length})</span>
+      </div>
+      <div class="team-list">
+        ${vols.map(v => `<div>• <b>${esc(v.name)}</b> <span style="color:#64748b;font-size:10px">(${esc(dept(v.dept)?.name || v.service || 'Active')})</span></div>`).join('') || '<span style="color:#94a3b8">None assigned</span>'}
+      </div>
     </div>
   </div>
 
   ${(DB.reports.find(r => r.batch === bid) || {}).story || (DB.reports.find(r => r.batch === bid) || {}).challenges ? `
   <div class="section-title">📝 Monthly Preaching Narrative</div>
-  <div style="border:1px solid #e2e8f0;border-radius:6px;padding:10px 12px;font-size:11px;margin-bottom:16px">
-    ${(DB.reports.find(r => r.batch === bid) || {}).story ? `<p style="margin:4px 0"><b>Successes:</b> ${esc((DB.reports.find(r => r.batch === bid) || {}).story)}</p>` : ''}
-    ${(DB.reports.find(r => r.batch === bid) || {}).challenges ? `<p style="margin:4px 0"><b>Challenges:</b> ${esc((DB.reports.find(r => r.batch === bid) || {}).challenges)}</p>` : ''}
-    ${(DB.reports.find(r => r.batch === bid) || {}).next ? `<p style="margin:4px 0"><b>Next Month Plan:</b> ${esc((DB.reports.find(r => r.batch === bid) || {}).next)}</p>` : ''}
+  <div class="narrative-box">
+    ${(DB.reports.find(r => r.batch === bid) || {}).story ? `<p style="margin:3px 0"><b>Successes:</b> ${esc((DB.reports.find(r => r.batch === bid) || {}).story)}</p>` : ''}
+    ${(DB.reports.find(r => r.batch === bid) || {}).challenges ? `<p style="margin:3px 0"><b>Challenges:</b> ${esc((DB.reports.find(r => r.batch === bid) || {}).challenges)}</p>` : ''}
+    ${(DB.reports.find(r => r.batch === bid) || {}).next ? `<p style="margin:3px 0"><b>Next Month Plan:</b> ${esc((DB.reports.find(r => r.batch === bid) || {}).next)}</p>` : ''}
   </div>` : ''}
 
   <div class="section-title">🧾 Budget & Accounts (Collection & Expenses)</div>
-  <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px 14px;margin-bottom:16px;display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
-    <div class="meta-item"><span>Collected Budget</span><b style="color:#16a34a;font-size:14px">₹${Number(m.budget.allocated).toLocaleString()}</b></div>
-    <div class="meta-item"><span>Total Expenses (Spent)</span><b style="color:#dc2626;font-size:14px">₹${Number(m.budget.spent).toLocaleString()}</b></div>
-    <div class="meta-item"><span>Remaining Balance</span><b style="color:#0f172a;font-size:14px">₹${Number(m.budget.allocated - m.budget.spent).toLocaleString()}</b></div>
-    <div class="meta-item"><span>Utilisation</span><b style="color:${m.util>90?'#dc2626':'#2563eb'};font-size:14px">${m.util}%</b></div>
+  <div class="budget-box">
+    <div class="meta-item"><span>Collected Budget</span><b style="color:#16a34a;font-size:13px">₹${Number(m.budget.allocated).toLocaleString()}</b></div>
+    <div class="meta-item"><span>Total Expenses (Spent)</span><b style="color:#dc2626;font-size:13px">₹${Number(m.budget.spent).toLocaleString()}</b></div>
+    <div class="meta-item"><span>Remaining Balance</span><b style="color:#0f172a;font-size:13px">₹${Number(m.budget.allocated - m.budget.spent).toLocaleString()}</b></div>
+    <div class="meta-item"><span>Utilisation</span><b style="color:${m.util>90?'#dc2626':'#2563eb'};font-size:13px">${m.util}%</b></div>
   </div>
 
-  <div class="signatures">
-    <div class="sig-box">
-      <b>${esc(nameOf(bCoordinator))}</b><br>
-      Batch Coordinator
-    </div>
-    <div class="sig-box">
-      <b>${esc(nameOf(bIncharge))}</b><br>
-      BACE Incharge / Area Leader
-    </div>
+  <div class="report-footer">
+    <div>ISKCON Jia Sarai · BACE Preaching Ministry</div>
+    <div>Official Monthly Batch Progress Document</div>
   </div>
 </body>
 </html>`;
