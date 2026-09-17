@@ -2559,6 +2559,14 @@ function devoteeRoleObj(id){
   const r = devoteeRole(id);
   return ROLES[r] || ROLES.devotee;
 }
+function getHierarchyFacilitators(){
+  return (DB.devotees || []).filter(d => {
+    if(!d || !d.name) return false;
+    if(isBaceAdminEmail(d.email) || d.appointment === 'BACE Administrator' || d.appointment === 'System Administrator' || d.name === 'ISKCON BACE Admin') return false;
+    const rKey = devoteeRole(d);
+    return d.isFacilitator || rKey === 'facilitator' || (d.appointment && d.appointment.toLowerCase().includes('facilitator')) || (DB.users||[]).some(u => u.devotee === d.id && u.role === 'facilitator');
+  });
+}
 function dept(id){
   if(!id)return null;
   if(typeof id==='object'){if(id.name)return id;id=id.id||id.customId||id._id||'';}
@@ -4070,7 +4078,7 @@ function funnelRows(){
    DEVOTEE DIRECTORY + PROFILE
    ========================================================================= */
 function viewDevotees(){
-  const f=APP.filters.dev||(APP.filters.dev={q:'',status:'',dept:'',batch:'',level:'',careGroup:'',skill:'',attendance:'',swabhav:'',sort:'name_asc'});
+  const f=APP.filters.dev||(APP.filters.dev={q:'',status:'',dept:'',batch:'',level:'',careGroup:'',facilitator:'',skill:'',attendance:'',swabhav:'',sort:'name_asc'});
   if(!f.sort) f.sort='name_asc';
 
   let rows=DB.devotees.filter(d=>{
@@ -4094,7 +4102,8 @@ function viewDevotees(){
         (d.swabhav?.interests||[]).join(' '),
         (batch(d.batch)?.name||''),
         (dept(d.dept)?.name||''),
-        (group(d.careGroup)?.name||'')
+        (group(d.careGroup)?.name||''),
+        (d.facilitator ? nameOf(d.facilitator) : '')
       ].filter(Boolean).join(' ').toLowerCase();
       if(!searchable.includes(query)) return false;
     }
@@ -4115,6 +4124,10 @@ function viewDevotees(){
     if(f.careGroup){
       if(f.careGroup==='none'&&d.careGroup)return false;
       if(f.careGroup!=='none'&&d.careGroup!==f.careGroup)return false;
+    }
+    if(f.facilitator){
+      if(f.facilitator==='none'&&d.facilitator)return false;
+      if(f.facilitator!=='none'&&d.facilitator!==f.facilitator)return false;
     }
     if(f.skill&&(!d.skills||!d.skills.includes(f.skill)))return false;
     if(f.attendance){
@@ -4152,6 +4165,7 @@ function viewDevotees(){
   if(f.batch) activeFilterCount++;
   if(f.dept) activeFilterCount++;
   if(f.careGroup) activeFilterCount++;
+  if(f.facilitator) activeFilterCount++;
   if(f.skill) activeFilterCount++;
   if(f.attendance) activeFilterCount++;
   if(f.sort && f.sort !== 'name_asc') activeFilterCount++;
@@ -4191,6 +4205,7 @@ function viewDevotees(){
         ${mobSelect('batch', f.batch, [...(DB.batches||[]).map(b=>[b.id,b.name]),['none','No batch']], 'Batch')}
         ${mobSelect('dept', f.dept, [...activeDepts().map(d=>[d.id,d.name]),['none','No seva']], 'Department')}
         ${mobSelect('careGroup', f.careGroup, [...(DB.careGroups||[]).map(g=>[g.id,g.name]),['none','No group']], 'Care group')}
+        ${mobSelect('facilitator', f.facilitator, [...getHierarchyFacilitators().map(x=>[x.id,x.name]),['none','No facilitator']], 'Facilitator')}
         ${mobSelect('attendance', f.attendance, [['high','≥80%'],['mid','50-79%'],['low','<50%'],['critical','<30%']], 'Attendance')}
         ${mobSelect('skill', f.skill, SKILLS.map(s=>[s,s]), 'Skill')}
         ${activeFilterCount>0?'<div class="mob-filter-grid-reset" style="grid-column:1/-1;display:flex;justify-content:flex-end"><button data-act="clear-dev-filters" style="font-size:12px;color:var(--danger);background:none;border:none;padding:4px 2px;cursor:pointer;font-weight:600">✕ Clear all</button></div>':''}
@@ -4211,7 +4226,7 @@ function viewDevotees(){
     (scoped?`<div class="note" style="margin-bottom:14px">You can search and view the whole community directory. You can only <b>edit</b> people inside your own ${APP.user.role==='dept_head'?'department':APP.user.role==='preaching_coord'?'batch':'care list'}.</div>`:'')+
     dataTable({id:'dev',exportName:'devotees',toolbar,cols:[
      {
-       w:'26%',
+       w:'24%',
        h: `<div class="col-filter-wrap">
          <span>Devotee</span>
          ${colSelect('sort', f.sort, [
@@ -4234,7 +4249,7 @@ function viewDevotees(){
        }
      },
      {
-       w:'10%',
+       w:'9%',
        h: `<div class="col-filter-wrap">
          <span>Status</span>
          ${colSelect('status', f.status, [
@@ -4248,7 +4263,7 @@ function viewDevotees(){
        c: d => sbadge(d.status)
      },
      {
-       w:'16%',
+       w:'14%',
        h: `<div class="col-filter-wrap">
          <span>Batch</span>
          ${colSelect('batch', f.batch, [
@@ -4260,7 +4275,7 @@ function viewDevotees(){
        c: d => d.batch ? `<span class="tbl-trunc">${badge('L'+d.level,'indigo')} ${esc(batch(d.batch)?.name||'')}</span>` : '<span class="tiny">—</span>'
      },
      {
-       w:'13%',
+       w:'11%',
        h: `<div class="col-filter-wrap">
          <span>Dept</span>
          ${colSelect('dept', f.dept, [
@@ -4272,7 +4287,7 @@ function viewDevotees(){
        c: d => d.dept ? `<span class="tbl-trunc" title="${esc(dept(d.dept)?.name||'')}">${esc(dept(d.dept)?.name||'')}</span>` : '<span class="tiny">—</span>'
      },
      {
-       w:'13%',
+       w:'11%',
        h: `<div class="col-filter-wrap">
          <span>Care</span>
          ${colSelect('careGroup', f.careGroup, [
@@ -4284,7 +4299,22 @@ function viewDevotees(){
        c: d => d.careGroup ? `<span class="tbl-trunc" title="${esc(group(d.careGroup)?.name||'')}">${esc(group(d.careGroup)?.name||'')}</span>` : '<span class="tiny">—</span>'
      },
      {
-       w:'11%',
+       w:'13%',
+       h: `<div class="col-filter-wrap">
+         <span>Facilitator</span>
+         ${colSelect('facilitator', f.facilitator, [
+           ...getHierarchyFacilitators().map(x => [x.id, x.name]),
+           ['none', 'No facilitator']
+         ], 'All')}
+       </div>`,
+       label: 'Facilitator',
+       c: d => {
+         const facName = d.facilitator ? nameOf(d.facilitator) : '';
+         return facName ? `<span class="tbl-trunc" title="${esc(facName)}"><span class="badge b-teal" style="font-size:10.5px;padding:2px 6px">🤝 ${esc(facName)}</span></span>` : '<span class="tiny" style="color:var(--ink-3)">—</span>';
+       }
+     },
+     {
+       w:'8%',
        h: `<div class="col-filter-wrap">
          <span>Att.</span>
          ${colSelect('attendance', f.attendance, [
@@ -4298,7 +4328,7 @@ function viewDevotees(){
        c: d => `<div>${prog(d.attendancePct)}<span class="tiny" style="font-size:10.5px">${d.attendancePct}%</span></div>`
      },
      {
-       w:'11%',
+       w:'10%',
        h: `<div style="text-align:right">Actions</div>`,
        label: 'Actions',
        c: d => `<div style="display:flex;gap:4px;align-items:center;justify-content:flex-end">
@@ -10926,30 +10956,36 @@ function analyzeImportData(rows, targetBatchId){
 }
 
 function downloadDevoteeCsvTemplate(){
+  const facs = getHierarchyFacilitators();
+  const fNames = facs.map(f => f.name).filter(Boolean);
+  const f1 = fNames[0] || 'Audarya Gaur pr';
+  const f2 = fNames[1] || 'Dhirendra pr';
+  const f3 = fNames[2] || fNames[0] || 'Surya Kiran pr';
+
   const headers = [
     'Name', 'Phone', 'Email', 'Batch', 'Batch Role', 'Residence', 'Attendance Mode',
     'Level', 'Status', 'College/Org', 'Occupation', 'Highest Education', 'Present Studies or Job',
-    'Department', 'Care Group', 'Attendance %', 'Sadhana Rounds', 'Skills'
+    'Department', 'Care Group', 'Facilitator', 'Attendance %', 'Sadhana Rounds', 'Skills'
   ];
   const sampleRows = [
     [
       'Mukunda Datta Das', '9876543210', 'mukunda.datta@example.com', 'Gaurvani Sabha', 'Member',
       'Jia Sarai BACE', 'Offline at BACE', '3', 'Active', 'IIT Delhi', 'Student',
-      'B.Tech', 'IITD Mechanical Engineering', 'Morning Program', 'Care Group 1', '90', '16', 'Organising, Teaching'
+      'B.Tech', 'IITD Mechanical Engineering', 'Morning Program', 'Care Group 1', f1, '90', '16', 'Organising, Teaching'
     ],
     [
       'Vrindavan Chandra pr', '9876543211', 'vrindavan.chandra@example.com', 'Narad Sabha', 'Coordinator',
       'Nilachal Dham BACE', 'Offline at BACE', '3', 'Active', 'DTU', 'Job',
-      'M.Tech', 'Software Engineer', 'Deity Department', 'Care Group 2', '85', '16', 'Music, Deity Seva'
+      'M.Tech', 'Software Engineer', 'Deity Department', 'Care Group 2', f2, '85', '16', 'Music, Deity Seva'
     ],
     [
       'Bhakta Rohan Sharma', '9876543212', 'rohan.sharma@example.com', 'Taksharya', 'Member',
       'Kailash Hostel', 'Offline at BACE', '1', 'New', 'IIT Delhi', 'Student',
-      'B.Tech', 'IITD Chemical', 'Sankirtan Dept. & Inventory', 'Care Group 3', '75', '4', 'Reading'
+      'B.Tech', 'IITD Chemical', 'Sankirtan Dept. & Inventory', 'Care Group 3', f3, '75', '4', 'Reading'
     ]
   ];
   downloadCSV('bace_devotees_template.csv', [headers, ...sampleRows]);
-  toast('Template downloaded: bace_devotees_template.csv', '⬇️');
+  toast('Template downloaded: bace_devotees_template.csv (with Facilitator column)', '⬇️');
 }
 
 function handleDevoteeCsvFile(file){
@@ -11061,6 +11097,21 @@ async function executeDevoteeCsvImport(){
         cgId = matchCg ? matchCg.id : row.careGroup;
       }
 
+      let facId = null;
+      if(row.facilitator){
+        const cleanF = String(row.facilitator).toLowerCase().trim();
+        const allFacs = getHierarchyFacilitators();
+        const matchF = allFacs.find(f => 
+          f.id === row.facilitator || 
+          f.name.toLowerCase().trim() === cleanF ||
+          (f.email && f.email.toLowerCase().trim() === cleanF)
+        ) || (DB.devotees||[]).find(d => 
+          d.id === row.facilitator || 
+          d.name.toLowerCase().trim() === cleanF
+        );
+        facId = matchF ? matchF.id : row.facilitator;
+      }
+
       if(existing){
         if(row.phone) existing.phone = row.phone;
         if(row.email) existing.email = row.email;
@@ -11071,6 +11122,7 @@ async function executeDevoteeCsvImport(){
         if(bId) existing.batch = bId;
         if(dpId) existing.dept = dpId;
         if(cgId) existing.careGroup = cgId;
+        if(facId) existing.facilitator = facId;
         if(row.status) existing.status = row.status;
         if(row.level !== undefined && row.level !== '') existing.level = Number(row.level);
         if(row.org) existing.org = row.org;
@@ -11102,6 +11154,7 @@ async function executeDevoteeCsvImport(){
           batch: bId || null,
           dept: dpId || null,
           careGroup: cgId || null,
+          facilitator: facId || null,
           status: row.status || 'Active',
           level: row.level !== undefined && row.level !== '' ? Number(row.level) : (bId ? 1 : 0),
           org: row.org || 'IIT Delhi',
@@ -11235,6 +11288,7 @@ function importCsvModal(){
                     <th style="padding:6px 10px">Name</th>
                     <th style="padding:6px 10px">Phone</th>
                     <th style="padding:6px 10px">Batch</th>
+                    <th style="padding:6px 10px">Facilitator</th>
                     <th style="padding:6px 10px">Status</th>
                   </tr>
                 </thead>
@@ -11249,6 +11303,7 @@ function importCsvModal(){
                       <td style="padding:6px 10px;font-weight:600">${esc(row.name)}</td>
                       <td style="padding:6px 10px;color:var(--ink-2)">${esc(row.phone || '—')}</td>
                       <td style="padding:6px 10px">${esc(row.batch || (targetB ? targetB.name : '—'))}</td>
+                      <td style="padding:6px 10px">${row.facilitator ? `<span class="badge b-teal" style="font-size:10px">🤝 ${esc(row.facilitator)}</span>` : '<span class="tiny" style="color:var(--ink-3)">—</span>'}</td>
                       <td style="padding:6px 10px">${sbadge(row.status || 'Active')}</td>
                     </tr>
                   `).join('')}
@@ -11324,6 +11379,16 @@ async function syncDevoteesFromServer(){
             resolvedGroupId = typeof serverDev.careGroup === 'object' ? (serverDev.careGroup._id || serverDev.careGroup.id) : serverDev.careGroup;
           }
         }
+        let resolvedFacilitatorId = null;
+        if(serverDev.facilitator){
+          const fId = typeof serverDev.facilitator === 'object' ? (serverDev.facilitator._id || serverDev.facilitator.id) : serverDev.facilitator;
+          const fName = typeof serverDev.facilitator === 'object' ? serverDev.facilitator.name : null;
+          const localFac = DB.devotees.find(x => 
+            (fId && (String(x._id) === String(fId) || String(x.id) === String(fId) || String(x.customId) === String(fId))) ||
+            (fName && x.name && x.name.toLowerCase().trim() === fName.toLowerCase().trim())
+          );
+          resolvedFacilitatorId = localFac ? localFac.id : (fId || null);
+        }
 
         if(!localDev){
           localDev = normalizeDevotee({
@@ -11332,6 +11397,7 @@ async function syncDevoteesFromServer(){
             batch: resolvedBatchId,
             dept: resolvedDeptId,
             careGroup: resolvedGroupId,
+            facilitator: resolvedFacilitatorId || null,
             morningStandardTime: serverDev.morningStandardTime || '04:30',
             morningAttendance: serverDev.morningAttendance,
             sadhana: serverDev.sadhana || { morningProgram: 0 }
@@ -11345,6 +11411,7 @@ async function syncDevoteesFromServer(){
           if(resolvedBatchId && localDev.batch !== resolvedBatchId) { localDev.batch = resolvedBatchId; changed = true; }
           if(resolvedDeptId && localDev.dept !== resolvedDeptId) { localDev.dept = resolvedDeptId; changed = true; }
           if(resolvedGroupId && localDev.careGroup !== resolvedGroupId) { localDev.careGroup = resolvedGroupId; changed = true; }
+          if(resolvedFacilitatorId && localDev.facilitator !== resolvedFacilitatorId) { localDev.facilitator = resolvedFacilitatorId; changed = true; }
           if(serverDev.batchRole && localDev.batchRole !== serverDev.batchRole) { localDev.batchRole = serverDev.batchRole; changed = true; }
           if(serverDev.status && localDev.status !== serverDev.status) { localDev.status = serverDev.status; changed = true; }
           if(serverDev.level !== undefined && localDev.level !== serverDev.level) { localDev.level = serverDev.level; changed = true; }
@@ -11654,7 +11721,7 @@ function openGroupForm(id){
     FLD('name','Group name','text',{v:g?.name,ph:'e.g. Group 7 · Ganga'}),
     FLD('desc','Description','textarea',{v:g?.desc||'Weekly gathering with japa, reading and prasadam.'}),
     FLD('leader','Group leader','select',{v:g?.leader,opts:DB.devotees.map(x=>[x.id,x.name]),half:1}),
-    FLD('facilitator','Facilitator','select',{v:g?.facilitator,opts:DB.devotees.filter(x=>x.isFacilitator).map(x=>[x.id,x.name]),half:1}),
+    FLD('facilitator','Facilitator','select',{v:g?.facilitator,opts:[['','Not assigned'],...getHierarchyFacilitators().map(x=>[x.id,x.name])],half:1}),
     FLD('freq','Meeting frequency','select',{v:g?.freq||'Weekly',opts:['Weekly','Fortnightly','Monthly'],half:1}),
     FLD('day','Meeting day','select',{v:g?.day||'Mon',opts:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],half:1}),
     FLD('time','Meeting time','text',{v:g?.time||'7:30 pm',half:1}),
@@ -11700,7 +11767,7 @@ function openDevoteeForm(id){
     FLD('dept','Department','select',{v:d?.dept||'',opts:[['','No department'],...activeDepts().map(x=>[x.id,x.name])],half:1}),
     FLD('careGroup','Care group','select',{v:d?.careGroup||'',opts:[['','No group'],...DB.careGroups.map(x=>[x.id,x.name])],half:1}),
     FLD('role','Hierarchy Role','select',{v:curRole,opts:roleOpts,half:1}),
-    FLD('facilitator','Facilitator','select',{v:d?.facilitator||'',opts:[['','Not assigned'],...DB.devotees.filter(x=>x.isFacilitator||x.batchRole==='Coordinator').map(x=>[x.id,x.name])],half:1}),
+    FLD('facilitator','Facilitator','select',{v:d?.facilitator||'',opts:[['','Not assigned'],...getHierarchyFacilitators().map(x=>[x.id,x.name])],half:1}),
     FLD('sadhanaRounds','Sadhana rounds','number',{v:d?.sadhana?.rounds!==undefined?d.sadhana.rounds:16,half:1,ph:'16'}),
     FLD('morningStandardTime','Morning standard time','text',{v:d?.morningStandardTime||'04:30',half:1,ph:'e.g. 04:30, 05:00'}),
     FLD('skills','Skills (comma-separated)','text',{v:Array.isArray(d?.skills)?d.skills.join(', '):(d?.skills||''),half:1,ph:'e.g. Teaching, Kirtan, Cooking'}),

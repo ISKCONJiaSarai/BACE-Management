@@ -290,6 +290,20 @@ router.post('/import-csv', protect, requireDevoteeImportPermission, async (req, 
       careGroupMap.set(g.name.toLowerCase().trim(), g._id);
     });
 
+    // Load facilitators from hierarchy for mapping
+    const allFacilitatorDevs = await Devotee.find({
+      $or: [
+        { isFacilitator: true },
+        { appointment: /facilitator/i }
+      ]
+    });
+    const facMap = new Map();
+    allFacilitatorDevs.forEach(f => {
+      facMap.set(String(f._id), f._id);
+      if (f.customId) facMap.set(f.customId.toLowerCase(), f._id);
+      facMap.set(f.name.toLowerCase().trim(), f._id);
+    });
+
     // Check scope for Batch Coordinator
     const isRestrictedCoordinator = !req.importScope.all && req.importScope.isBatchCoordinator;
     const allowedBatchIds = (req.importScope.coordinatedBatchIds || []).map(String);
@@ -357,6 +371,24 @@ router.post('/import-csv', protect, requireDevoteeImportPermission, async (req, 
         }
       }
 
+      // Resolve facilitator from hierarchy
+      let resolvedFacilitatorId = null;
+      const facInput = row.facilitator || row['Facilitator'] || row.guide || row.mentor;
+      if (facInput) {
+        const cleanF = String(facInput).toLowerCase().trim();
+        if (facMap.has(cleanF)) {
+          resolvedFacilitatorId = facMap.get(cleanF);
+        } else {
+          const fallbackDev = await Devotee.findOne({
+            $or: [
+              { name: new RegExp(`^${escapeRegex(cleanF)}$`, 'i') },
+              { customId: cleanF }
+            ]
+          });
+          if (fallbackDev) resolvedFacilitatorId = fallbackDev._id;
+        }
+      }
+
       // 1. Search for existing devotee by Name (case-insensitive, exact match)
       const nameRegex = new RegExp(`^${escapeRegex(rawName)}$`, 'i');
       let existing = await Devotee.findOne({ name: nameRegex });
@@ -388,6 +420,7 @@ router.post('/import-csv', protect, requireDevoteeImportPermission, async (req, 
         if (resolvedBatchId) existing.batch = resolvedBatchId;
         if (resolvedDeptId) existing.dept = resolvedDeptId;
         if (resolvedCareGroupId) existing.careGroup = resolvedCareGroupId;
+        if (resolvedFacilitatorId) existing.facilitator = resolvedFacilitatorId;
 
         if (row.status) existing.status = String(row.status).trim();
         if (row.level !== undefined && row.level !== '') existing.level = Number(row.level);
@@ -445,6 +478,7 @@ router.post('/import-csv', protect, requireDevoteeImportPermission, async (req, 
           batch: resolvedBatchId || null,
           dept: resolvedDeptId || null,
           careGroup: resolvedCareGroupId || null,
+          facilitator: resolvedFacilitatorId || null,
           status: row.status ? String(row.status).trim() : 'Active',
           level: row.level !== undefined && row.level !== '' ? Number(row.level) : (resolvedBatchId ? 1 : 0),
           org: row.org ? String(row.org).trim() : 'IIT Delhi',
