@@ -1404,6 +1404,38 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
   }
 }
 
+/* Morning Programme Attendance Report responsiveness */
+@media(max-width:768px){
+  .morning-report-header{
+    flex-direction:column!important;
+    align-items:flex-start!important;
+    gap:12px!important;
+  }
+  .morning-report-controls{
+    width:100%!important;
+    flex-direction:row!important;
+    flex-wrap:wrap!important;
+    gap:8px!important;
+  }
+  .morning-report-controls > div,
+  .morning-report-controls > select,
+  .morning-report-controls > button{
+    flex:1 1 auto!important;
+    text-align:center!important;
+  }
+}
+@media(max-width:560px){
+  .morning-report-controls > div{
+    width:100%!important;
+    display:flex!important;
+  }
+  .morning-report-controls > div button{
+    flex:1!important;
+    padding:6px 6px!important;
+    font-size:11.5px!important;
+  }
+}
+
 @media(max-width:540px){
   /* Funnel chart fluid scaling */
   .funnel-row{gap:8px!important}
@@ -2811,6 +2843,8 @@ const stat=(lbl,val,foot='',o={})=>{
   if (o.k) attrs.push(`data-k="${esc(o.k)}"`);
   if (o.n) attrs.push(`data-n="${esc(o.n)}"`);
   if (o.v !== undefined) attrs.push(`data-v="${esc(o.v)}"`);
+  if (o.s !== undefined) attrs.push(`data-s="${esc(o.s)}"`);
+  if (o.b !== undefined) attrs.push(`data-b="${esc(o.b)}"`);
   return `<div class="stat ${o.tint?'tint':''} ${act?'click':''}" ${attrs.join(' ')}>
   <div class="lbl">${o.em?`<span>${o.em}</span>`:''}${esc(lbl)}</div><div class="val">${val}</div>${foot?`<div class="foot">${foot}</div>`:''}</div>`;
 };
@@ -6258,15 +6292,15 @@ function getRosterSlot(roster, dateStr, sId) {
 /* =========================================================================
    🌅 1. MORNING PROGRAMME (Devotees Progress Tracking & CSV Analysis)
    ========================================================================= */
-function renderMorningCharts(m, dateLabel) {
+function renderMorningCharts(m, dateLabel, filterSt = '', activeBucket = '') {
   const R = 44;
   const C = 2 * Math.PI * R;
   const total = m.total || (m.onTimeCount + m.graceCount + m.lateCount + m.absentCount) || 1;
   const parts = [
-    { count: m.onTimeCount, col: 'var(--green,#10B981)', label: 'On Time (\u2264 04:30 AM)' },
-    { count: m.graceCount, col: 'var(--mustard,#D97706)', label: 'Grace (\u2264 05:30 AM)' },
-    { count: m.lateCount, col: 'var(--danger,#DC2626)', label: 'Late (\u2264 06:30 AM)' },
-    { count: m.absentCount, col: '#94A3B8', label: 'Absent (> 07:00 AM)' }
+    { status: 'On Time', count: m.onTimeCount, col: 'var(--green,#10B981)', label: 'On Time (≤ 04:30 AM)' },
+    { status: 'Grace', count: m.graceCount, col: 'var(--mustard,#D97706)', label: 'Grace (≤ 05:30 AM)' },
+    { status: 'Late', count: m.lateCount, col: 'var(--danger,#DC2626)', label: 'Late (≤ 06:30 AM)' },
+    { status: 'Absent', count: m.absentCount, col: '#94A3B8', label: 'Absent (> 07:00 AM)' }
   ];
   let acc = 0;
   const donutSegments = parts.map(p => {
@@ -6274,7 +6308,8 @@ function renderMorningCharts(m, dateLabel) {
     const dash = (pc / 100) * C;
     const off = (acc / 100) * C;
     acc += pc;
-    return pc > 0 ? `<circle cx="60" cy="60" r="${R}" fill="none" stroke="${p.col}" stroke-width="14" stroke-dasharray="${dash.toFixed(2)} ${C.toFixed(2)}" stroke-dashoffset="${(-off).toFixed(2)}" transform="rotate(-90 60 60)" stroke-linecap="round"/>` : '';
+    const isSel = filterSt === p.status;
+    return pc > 0 ? `<circle cx="60" cy="60" r="${R}" fill="none" stroke="${p.col}" stroke-width="${isSel ? '17' : '14'}" stroke-dasharray="${dash.toFixed(2)} ${C.toFixed(2)}" stroke-dashoffset="${(-off).toFixed(2)}" transform="rotate(-90 60 60)" stroke-linecap="round" data-act="morning-filter-status" data-s="${p.status}" style="cursor:pointer;transition:all .2s ease" title="Click to view ${p.label}: ${p.count} devotees"/>` : '';
   }).join('');
 
   const buckets = m.buckets || [
@@ -6288,58 +6323,55 @@ function renderMorningCharts(m, dateLabel) {
   const onTimePct = m.onTimePct !== undefined ? m.onTimePct : (total > 0 ? Math.round((m.onTimeCount / total) * 100) : 0);
 
   return `<div class="grid g2" style="margin-bottom:16px">
-    <div class="card pad">
-      <div class="card-h" style="padding:0 0 12px;border-bottom:1px solid var(--line-2)">
-        <h3>🎯 Punctuality Breakdown</h3>
-        <span class="tiny" style="margin-left:auto">${dateLabel}</span>
+    <div class="card pad" style="position:relative">
+      <div class="card-h" style="padding:0 0 12px;border-bottom:1px solid var(--line-2);display:flex;align-items:center;justify-content:space-between">
+        <h3 style="margin:0">🎯 Punctuality Breakdown</h3>
+        <span class="tiny" style="margin-left:auto">${esc(dateLabel)}</span>
       </div>
       <div style="display:flex;align-items:center;justify-content:space-around;gap:20px;margin-top:14px;flex-wrap:wrap">
-        <div style="position:relative;width:120px;height:120px;flex:none">
-          <svg viewBox="0 0 120 120" style="width:120px;height:120px">
+        <div style="position:relative;width:120px;height:120px;flex:none" title="Interactive Donut Chart — click any section or center to filter">
+          <svg viewBox="0 0 120 120" style="width:120px;height:120px;overflow:visible">
             <circle cx="60" cy="60" r="${R}" fill="none" stroke="var(--paper-2)" stroke-width="14"/>
             ${donutSegments}
           </svg>
-          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+          <div class="click" data-act="morning-filter-status" data-s="" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;border-radius:50%" title="Click to view all registered devotees (${total})">
             <span style="font-family:var(--f-head);font-size:20px;font-weight:700;color:var(--ink);line-height:1">${onTimePct}%</span>
             <span style="font-size:9.5px;color:var(--ink-3);text-transform:uppercase;font-weight:600">On Time</span>
           </div>
         </div>
-        <div style="display:flex;flex-direction:column;gap:8px;min-width:150px">
-          <div style="display:flex;align-items:center;justify-content:space-between;font-size:12px">
-            <span style="display:inline-flex;align-items:center;gap:6px"><i style="width:10px;height:10px;border-radius:3px;background:var(--green);display:inline-block"></i> On Time (\u2264 4:30)</span>
-            <b>${m.onTimeCount} (${pct(m.onTimeCount, total)}%)</b>
-          </div>
-          <div style="display:flex;align-items:center;justify-content:space-between;font-size:12px">
-            <span style="display:inline-flex;align-items:center;gap:6px"><i style="width:10px;height:10px;border-radius:3px;background:var(--mustard);display:inline-block"></i> Grace (\u2264 5:30)</span>
-            <b>${m.graceCount} (${pct(m.graceCount, total)}%)</b>
-          </div>
-          <div style="display:flex;align-items:center;justify-content:space-between;font-size:12px">
-            <span style="display:inline-flex;align-items:center;gap:6px"><i style="width:10px;height:10px;border-radius:3px;background:var(--danger);display:inline-block"></i> Late (\u2264 6:30)</span>
-            <b>${m.lateCount} (${pct(m.lateCount, total)}%)</b>
-          </div>
-          <div style="display:flex;align-items:center;justify-content:space-between;font-size:12px">
-            <span style="display:inline-flex;align-items:center;gap:6px"><i style="width:10px;height:10px;border-radius:3px;background:#94A3B8;display:inline-block"></i> Absent (> 7:00)</span>
-            <b>${m.absentCount} (${pct(m.absentCount, total)}%)</b>
-          </div>
+        <div style="display:flex;flex-direction:column;gap:6px;min-width:160px;flex:1">
+          ${parts.map(p => {
+            const isSel = filterSt === p.status;
+            return `<div class="click click-row" data-act="morning-filter-status" data-s="${p.status}" style="display:flex;align-items:center;justify-content:space-between;font-size:12px;padding:6px 10px;border-radius:6px;cursor:pointer;transition:all .15s;${isSel ? 'background:var(--paper-2);font-weight:700;border-left:3px solid ' + p.col : 'background:transparent'}" title="Click to view ${p.label}: ${p.count} devotees">
+              <span style="display:inline-flex;align-items:center;gap:6px">
+                <i style="width:10px;height:10px;border-radius:3px;background:${p.col};display:inline-block"></i>
+                ${p.label}
+              </span>
+              <span class="badge ${isSel ? 'b-indigo' : 'b-grey'}" style="font-size:11px">${p.count} (${pct(p.count, total)}%)</span>
+            </div>`;
+          }).join('')}
         </div>
       </div>
+      <div class="tiny muted" style="margin-top:10px;text-align:center">💡 Tap any slice or row to filter devotees below</div>
     </div>
 
-    <div class="card pad">
-      <div class="card-h" style="padding:0 0 12px;border-bottom:1px solid var(--line-2)">
-        <h3>📈 Arrival Distribution Timeline</h3>
+    <div class="card pad" style="position:relative">
+      <div class="card-h" style="padding:0 0 12px;border-bottom:1px solid var(--line-2);display:flex;align-items:center;justify-content:space-between">
+        <h3 style="margin:0">📈 Arrival Distribution Timeline</h3>
         <span class="tiny" style="margin-left:auto">Earliest: <b>${m.earliestTime || '04:15 AM'}</b></span>
       </div>
       <div style="margin-top:14px;display:flex;align-items:flex-end;justify-content:space-between;gap:8px;height:130px;padding:10px 4px 0">
         ${buckets.map(b => {
-          const h = Math.max(14, Math.round((b.count / maxBucket) * 90));
-          return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px">
-            <div style="font-size:11px;font-weight:700;color:var(--ink)">${b.count}</div>
-            <div style="width:100%;max-width:42px;height:${h}px;background:${b.color};border-radius:6px 6px 2px 2px;transition:height .3s ease"></div>
+          const h = Math.max(16, Math.round((b.count / maxBucket) * 90));
+          const isSel = activeBucket === b.label;
+          return `<div class="click click-col" data-act="morning-filter-bucket" data-b="${esc(b.label)}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;padding:6px 2px;border-radius:6px;transition:all .2s;${isSel ? 'background:var(--paper-2);box-shadow:0 0 0 1.5px var(--indigo);font-weight:700' : ''}" title="Click to filter by ${b.label}: ${b.count} devotees">
+            <div style="font-size:11px;font-weight:700;color:${isSel ? 'var(--indigo)' : 'var(--ink)'}">${b.count}</div>
+            <div style="width:100%;max-width:42px;height:${h}px;background:${b.color};border-radius:6px 6px 2px 2px;transition:height .3s ease, transform .2s ease;${isSel ? 'transform:scaleY(1.05);filter:brightness(1.1)' : ''}"></div>
             <div style="font-size:9.5px;font-weight:600;color:var(--ink-3);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%" title="${b.label}">${b.label}</div>
           </div>`;
         }).join('')}
       </div>
+      <div class="tiny muted" style="margin-top:10px;text-align:center">💡 Tap any timeline bar to filter arrival window</div>
     </div>
   </div>`;
 }
@@ -6386,6 +6418,7 @@ function morningProgramPanel(){
 
   const m = data.metrics || computeMorningMetrics(data.rows || [], data.date || iso(TODAY));
   const filterSt = APP.morningFilterStatus || '';
+  const activeBucket = APP.morningFilterBucket || '';
   const q = (APP.morningSearch || '').toLowerCase().trim();
   const reportView = APP.morningReportView || 'today'; // 'today' | 'weekly' | 'monthly'
   const progTab = APP.morningSubTab || 'report'; // 'report' | 'progress'
@@ -6396,7 +6429,16 @@ function morningProgramPanel(){
 
   // Filter rows for Today's view
   let rows = (data.rows || []).filter(r => {
-    if(filterSt && r.status !== filterSt) return false;
+    if(filterSt){
+      if(filterSt === 'Attended'){
+        if(r.status === 'Absent') return false;
+      } else if(r.status !== filterSt){
+        return false;
+      }
+    }
+    if(activeBucket){
+      if(getRowBucket(r) !== activeBucket) return false;
+    }
     if(q && !r.name.toLowerCase().includes(q) && !(r.devoteeInfo||'').toLowerCase().includes(q)) return false;
     return true;
   });
@@ -6441,7 +6483,7 @@ function morningProgramPanel(){
     ${progTab === 'report' ? `
     <!-- ATTENDANCE REPORT: TODAY, WEEKLY, AND MONTHLY VIEW -->
     <div class="card" style="margin-bottom:16px">
-      <div class="card-h" style="border-bottom:1px solid var(--line-2);padding:12px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+      <div class="card-h morning-report-header" style="border-bottom:1px solid var(--line-2);padding:12px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
         <div>
           <h3 style="margin:0;display:flex;align-items:center;gap:8px">
             <span>📋</span> Morning Programme Attendance Report
@@ -6452,7 +6494,7 @@ function morningProgramPanel(){
         </div>
 
         <!-- Today, Weekly, and Monthly View Switcher Controls -->
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <div class="morning-report-controls" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
           <div style="display:inline-flex;border:1.5px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)">
             <button type="button" class="btn sm ${reportView === 'today' ? 'pri' : ''}" data-act="morning-report-view" data-v="today" style="border-radius:0;border:none;padding:5px 12px;font-weight:600">
               📅 Today's View
@@ -6482,14 +6524,27 @@ function morningProgramPanel(){
       <!-- TODAY'S VIEW: KPI CARDS, CHARTS, AND TABLE -->
       <div style="padding:16px 18px">
         <div class="grid g4" style="margin-bottom:16px">
-          ${stat('Registered Devotees', m.total, 'matched from database', {em:'👥',tint:false})}
-          ${stat('Attendance Rate', `${pct(m.attended, m.total)}%`, `${m.attended} present · ${m.absentCount} absent`, {em:'✅',tint:pct(m.attended, m.total)>=75})}
-          ${stat('On-Time Standard', `${m.onTimePct}%`, `${m.onTimeCount} on time (\u2264 04:30)`, {em:'⏱️',tint:m.onTimePct>=75})}
-          ${stat('Grace Arrivals', m.graceCount, 'arrived 04:30–05:30', {em:'🟡',tint:m.graceCount > 0})}
+          ${stat('Registered Devotees', m.total, 'matched from database · tap to show all', {em:'👥',tint:!filterSt&&!activeBucket,act:'morning-filter-status',s:''})}
+          ${stat('Attendance Rate', `${pct(m.attended, m.total)}%`, `${m.attended} present · ${m.absentCount} absent`, {em:'✅',tint:filterSt==='Attended',act:'morning-filter-status',s:'Attended'})}
+          ${stat('On-Time Standard', `${m.onTimePct}%`, `${m.onTimeCount} on time (≤ 04:30)`, {em:'⏱️',tint:filterSt==='On Time',act:'morning-filter-status',s:'On Time'})}
+          ${stat('Grace Arrivals', m.graceCount, 'arrived 04:30–05:30', {em:'🟡',tint:filterSt==='Grace',act:'morning-filter-status',s:'Grace'})}
         </div>
 
-        <!-- Charts: Donut & Histogram (Visible across Today, Weekly, and Monthly!) -->
-        ${renderMorningCharts(m, data.date)}
+        <!-- Charts: Donut & Histogram (Interactive Drill-Down) -->
+        ${renderMorningCharts(m, data.date, filterSt, activeBucket)}
+
+        <!-- Active Filter Indicator Banner -->
+        ${(filterSt || activeBucket) ? `
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 14px;background:var(--paper-2);border-radius:8px;margin-bottom:12px;font-size:12.5px;border-left:3px solid var(--indigo);flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:6px">
+            <span>🎯</span>
+            <span>Active Category: <b>${filterSt ? (filterSt === 'Attended' ? 'Present / Attended' : filterSt) : (activeBucket ? `Timeline: ${activeBucket}` : '')}</b> — <b>${rows.length}</b> devotee${rows.length !== 1 ? 's' : ''}</span>
+          </div>
+          <div style="display:flex;gap:6px">
+            <button class="btn sm pri" data-act="morning-category-modal" data-s="${esc(filterSt)}" data-b="${esc(activeBucket)}" style="padding:2px 10px;font-size:11.5px">🔍 Open Category Modal</button>
+            <button class="btn sm" data-act="morning-clear-filters" style="padding:2px 8px;font-size:11.5px">✕ Show All (${m.total})</button>
+          </div>
+        </div>` : ''}
 
         <!-- Filter & Search Toolbar -->
         <div class="toolbar" style="gap:10px;align-items:center;flex-wrap:wrap;padding:0;margin-bottom:12px">
@@ -6498,15 +6553,15 @@ function morningProgramPanel(){
             <span style="position:absolute;left:10px;top:8px;color:var(--ink-3)">${ic('search')}</span>
           </div>
           <div class="chips">
-            ${['','On Time','Grace','Late','Absent'].map(st => {
-              const cnt = !st ? m.total : (st==='On Time'?m.onTimeCount : (st==='Grace'?m.graceCount : (st==='Late'?m.lateCount : m.absentCount)));
+            ${['','Attended','On Time','Grace','Late','Absent'].map(st => {
+              const cnt = !st ? m.total : (st==='Attended'?m.attended : (st==='On Time'?m.onTimeCount : (st==='Grace'?m.graceCount : (st==='Late'?m.lateCount : m.absentCount))));
               return `<button class="chip ${filterSt===st?'on':''}" data-act="morning-filter-status" data-s="${st}">${st||'All'} (${cnt})</button>`;
             }).join('')}
           </div>
         </div>
 
         <!-- Devotee Rows Table -->
-        <div class="tbl-wrap">
+        <div class="tbl-wrap" id="morning-report-table">
           <table class="tbl">
             <thead>
               <tr>
@@ -9774,7 +9829,7 @@ function batchDashboardBody(b){
         ${m.members.map(d=>`<tr class="click" data-act="open-devotee" data-id="${d.id}">
           <td data-l="Devotee"><div class="who">${av(d.name)}<div><b>${esc(d.name)}</b><span>${esc(d.org)}</span></div></div></td>
           <td data-l="Status">${sbadge(d.status)}</td>
-          <td data-l="Attendance"><div style="min-width:88px">${prog(d.attendancePct)}<span class="tiny">${d.attendancePct}%</span></div></td>
+          <td data-l="Attendance"><div style="min-width:88px">${prog(devoteeBatchAttPct(d, b.id))}<span class="tiny">${devoteeBatchAttPct(d, b.id)}%</span></div></td>
           <td data-l="Rounds">${d.sadhana.rounds}</td><td data-l="Facilitator">${esc(nameOf(d.facilitator))}</td></tr>`).join('')}</tbody></table></div>`
         :emptyState('No members yet','Add members to this batch.',ownsBatch(b.id)?`<button class="btn pri" data-act="batch-members" data-id="${b.id}">Add members</button>`:'','people'),
         ownsBatch(b.id)?`
@@ -10216,6 +10271,117 @@ function loadPreachingFilters(){
   }catch(e){}
 }
 
+function getRowBucket(r){
+  if(!r || r.status === 'Absent' || r.timeInMin == null) return '> 07:00 AM';
+  const m = r.timeInMin;
+  if(m <= 270) return '< 04:30 AM';
+  if(m <= 330) return '04:30–05:30';
+  if(m <= 390) return '05:30–06:30';
+  if(m <= 420) return '06:30–07:00';
+  return '> 07:00 AM';
+}
+
+function devoteeBatchAttPct(d, batchId){
+  if(!d) return 0;
+  const bid = batchId || d.batch;
+  if(bid){
+    const bActs = batchActs(bid).filter(a => a.type === 'Class' || a.type === 'Event');
+    const bActIds = new Set(bActs.map(a => a.id));
+    const bAtts = (DB.attendance || []).filter(a => bActIds.has(a.ref));
+    const total = new Set(bAtts.map(a => a.ref)).size;
+    if(total > 0){
+      const pres = bAtts.filter(a => (a.devotee === d.id || a.devotee === d.customId || a.devotee === d.name) && (a.status === 'Present' || a.status === 'On Time')).length;
+      return Math.round((pres / total) * 100);
+    }
+  }
+  return d.attendancePct !== undefined ? d.attendancePct : 0;
+}
+
+function showMorningCategoryModal(filterKey, dateLabel){
+  const data = APP.morningData;
+  if(!data || !data.rows) return;
+  const rows = data.rows.filter(r => {
+    if(filterKey === 'Attended') return r.status !== 'Absent';
+    if(['On Time', 'Grace', 'Late', 'Absent'].includes(filterKey)) return r.status === filterKey;
+    if(filterKey) return getRowBucket(r) === filterKey;
+    return true;
+  });
+  const label = filterKey || 'All Registered Devotees';
+  
+  APP.customModalHtml = `<div class="modal" data-stop="1" style="max-width:780px;width:95%">
+    <div class="modal-h">
+      <div>
+        <div class="eyebrow">🌅 Morning Programme Category Drill-Down</div>
+        <h3 style="margin:2px 0 4px">${esc(label)} (${rows.length} devotee${rows.length!==1?'s':''})</h3>
+        <p class="sub">${esc(dateLabel || data.date || iso(TODAY))}</p>
+      </div>
+      <button class="icon-btn" style="margin-left:auto" data-act="close-scrim">${ic('x')}</button>
+    </div>
+    <div style="padding:0 18px 18px;max-height:60vh;overflow-y:auto">
+      ${rows.length ? `
+        <div class="list" style="border:1px solid var(--line);border-radius:10px">
+          ${rows.map(r => `
+            <div class="li" style="padding:10px 14px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--line-2);flex-wrap:wrap">
+              ${av(r.avatarName || r.name, 36)}
+              <div class="grow" style="min-width:180px">
+                <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+                  <b>${esc(r.name)}</b>
+                  <span class="badge b-${r.statusTone}">${r.status}</span>
+                </div>
+                <div class="tiny muted" style="margin-top:2px">
+                  ${esc(r.devoteeInfo || '')}
+                </div>
+              </div>
+              <div style="text-align:right">
+                <div style="font-family:monospace;font-weight:700;font-size:13px;color:${r.statusTone==='green'?'var(--green)':(r.statusTone==='amber'?'var(--mustard)':'var(--danger)')}">
+                  ${r.timeIn || '—'}
+                </div>
+                <div class="tiny muted">Std: ${r.standardTime} · ${r.badgeText}</div>
+              </div>
+              <button class="btn sm" data-act="edit-devotee-morning-std" data-id="${r.devoteeId}" style="padding:3px 8px;font-size:11.5px">✏️ Standard</button>
+            </div>
+          `).join('')}
+        </div>
+      ` : `<div style="text-align:center;padding:30px;color:var(--ink-3)">No devotees in this category.</div>`}
+    </div>
+    <div class="modal-f" style="display:flex;justify-content:space-between;align-items:center">
+      <button class="btn sm" data-act="export-morning-category-csv" data-key="${esc(filterKey)}">${ic('download')} Export Category CSV</button>
+      <button class="btn" data-act="close-scrim">Close</button>
+    </div>
+  </div>`;
+  APP.modal = 'custom';
+  render();
+}
+
+function exportMorningCategoryCSV(filterKey){
+  const data = APP.morningData;
+  if(!data || !data.rows) return;
+  const rows = data.rows.filter(r => {
+    if(filterKey === 'Attended') return r.status !== 'Absent';
+    if(['On Time', 'Grace', 'Late', 'Absent'].includes(filterKey)) return r.status === filterKey;
+    if(filterKey) return getRowBucket(r) === filterKey;
+    return true;
+  });
+  const headers = ['Devotee', 'Info', 'Standard Time', 'Time In', 'Variance Min', 'Status', 'Date'];
+  const dataRows = rows.map(r => [
+    r.name,
+    r.devoteeInfo || '',
+    r.standardTime,
+    r.timeIn || '—',
+    r.diffMin != null ? r.diffMin : '—',
+    r.status,
+    data.date || iso(TODAY)
+  ]);
+  const csvContent = 'data:text/csv;charset=utf-8,' + [headers, ...dataRows].map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+  const link = document.createElement('a');
+  link.href = encodeURI(csvContent);
+  link.download = `Morning_Report_${(filterKey||'All').replace(/[^a-zA-Z0-9]/g,'_')}_${data.date||iso(TODAY)}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  toast(`Exported ${rows.length} records (${filterKey || 'All'})`, '⬇️');
+}
+
 const STAGE_KEYS = ['registered', 'interested', 'attending', 'regular', 'sadhana', 'serving'];
 
 const STAGE_META = {
@@ -10244,25 +10410,45 @@ function getFunnelStageDevotees(bid, stageKey){
   if(stageKey === 'interested') return interested;
 
   // 3. Attending Class: members attending classes or sessions
-  const attending = interested.filter(d => {
-    if((d.attendancePct || 0) > 0) return true;
-    return (DB.attendance || []).some(a => 
-      (a.devotee === d.id || a.devotee === d.customId || (d.name && a.devotee === d.name)) && 
-      (a.status === 'Present' || a.status === 'On Time' || a.status === 'Grace' || a.status === 'Late')
+  // Find real attendance for this batch's classes and events
+  const bActs = batchActs(bid).filter(a => a.type === 'Class' || a.type === 'Event');
+  const bActIds = new Set(bActs.map(a => a.id));
+  const bAttRecords = (DB.attendance || []).filter(a => bActIds.has(a.ref));
+
+  let attending = [];
+  if(bAttRecords.length > 0){
+    // Real attendance records exist for this batch!
+    attending = interested.filter(d => 
+      bAttRecords.some(a => 
+        (a.devotee === d.id || a.devotee === d.customId || (d.name && a.devotee === d.name)) && 
+        (a.status === 'Present' || a.status === 'On Time' || a.status === 'Late')
+      )
     );
-  });
+  } else {
+    // If no attendance has ever been taken for this batch yet, check if devotee has attended any classes
+    attending = interested.filter(d => 
+      (DB.attendance || []).some(a => 
+        (a.devotee === d.id || a.devotee === d.customId || (d.name && a.devotee === d.name)) && 
+        (a.status === 'Present' || a.status === 'On Time')
+      )
+    );
+  }
   if(stageKey === 'attending') return attending;
 
   // 4. Regular: members with >=50% attendance or multiple sessions attended
-  const regular = attending.filter(d => {
-    if((d.attendancePct || 0) >= 50) return true;
-    const pMarks = (DB.attendance || []).filter(a => 
-      (a.devotee === d.id || a.devotee === d.customId || (d.name && a.devotee === d.name)) && 
-      (a.status === 'Present' || a.status === 'On Time')
-    ).length;
-    if(pMarks >= 2) return true;
-    return (d.status === 'Active' && (d.attendancePct || 0) >= 40);
-  });
+  let regular = [];
+  if(bAttRecords.length > 0){
+    const totalSessions = new Set(bAttRecords.map(a => a.ref)).size || 1;
+    regular = attending.filter(d => {
+      const presMarks = bAttRecords.filter(a => 
+        (a.devotee === d.id || a.devotee === d.customId || (d.name && a.devotee === d.name)) && 
+        (a.status === 'Present' || a.status === 'On Time')
+      ).length;
+      return (presMarks / totalSessions >= 0.5) || presMarks >= 2;
+    });
+  } else {
+    regular = attending.filter(d => (d.attendancePct || 0) >= 50 && d.status === 'Active');
+  }
   if(stageKey === 'regular') return regular;
 
   // 5. Sadhana: members in regular (or attending) who practice sadhana (chanting rounds, morning program, sadhana reports, level >= 2)
@@ -10277,17 +10463,16 @@ function getFunnelStageDevotees(bid, stageKey){
       (a.status === 'Present' || a.status === 'On Time' || a.status === 'Grace' || a.status === 'Late')
     );
     if(hasMorning) return true;
-    if(d.morningStandardTime || d.morningAttendance) return true;
-    if(d.sadhana?.morningProgram && d.sadhana.morningProgram > 0) return true;
+    if(d.morningStandardTime) return true;
+    if(d.sadhana?.morningProgram && Number(d.sadhana.morningProgram) > 0) return true;
     if(d.level && Number(d.level) >= 2) return true;
     if(d.sadhana?.lastReported) return true;
-    if(d.careStatus?.spiritual && d.careStatus.spiritual !== 'Not assessed') return true;
     return false;
   });
   if(stageKey === 'sadhana') return sadhana;
 
-  // 6. Actively Serving: members engaged in seva departments, ashram services, volunteer team
-  const serving = attending.filter(d => {
+  // 6. Actively Serving: batch members actively serving in seva/departments/volunteers
+  const serving = mems.filter(d => {
     if(d.dept && d.dept !== '') return true;
     if((DB.deptMembers || []).some(dm => (dm.devotee === d.id || dm.devotee === d.customId || (d.name && dm.devotee === d.name)) && dm.status === 'Active')) return true;
     if((DB.assignments || []).some(a => (a.devotee === d.id || a.actualPerformer === d.id) && a.state !== 'Declined' && a.state !== 'Missed')) return true;
@@ -15597,8 +15782,39 @@ document.addEventListener('click',e=>{
     break;
   }
   case 'morning-filter-status':stop();{
-    APP.morningFilter = t.dataset.s || '';
+    const s = t.dataset.s !== undefined ? t.dataset.s : (t.dataset.v || '');
+    APP.morningFilterStatus = s;
+    APP.morningFilterBucket = '';
     render();
+    const el = document.getElementById('morning-report-table');
+    if(el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    break;
+  }
+  case 'morning-filter-bucket':stop();{
+    const b = t.dataset.b || t.dataset.bucket || '';
+    APP.morningFilterBucket = b;
+    APP.morningFilterStatus = '';
+    render();
+    const el = document.getElementById('morning-report-table');
+    if(el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    break;
+  }
+  case 'morning-clear-filters':stop();{
+    APP.morningFilterStatus = '';
+    APP.morningFilterBucket = '';
+    APP.morningSearch = '';
+    render();
+    break;
+  }
+  case 'morning-category-modal':stop();{
+    const s = t.dataset.s || '';
+    const b = t.dataset.b || '';
+    showMorningCategoryModal(s || b, APP.morningData ? APP.morningData.date : '');
+    break;
+  }
+  case 'export-morning-category-csv':stop();{
+    const k = t.dataset.key || '';
+    exportMorningCategoryCSV(k);
     break;
   }
   case 'export-dept-matrix':stop();{
@@ -15631,8 +15847,27 @@ document.addEventListener('click',e=>{
     toast('Department matrix exported', '📊');
     break;
   }
-  case 'save-attendance':{saveAttendanceToStorage();logAudit('Attendance marked','Attendance saved by '+nameOf(APP.user.devotee));
-    toast('Attendance saved','✅');render();break}
+  case 'save-attendance':{
+    saveAttendanceToStorage();
+    const bId = APP.filters.attBatch || (APP.user.batch || (DB.batches && DB.batches[0] ? DB.batches[0].id : ''));
+    if(bId){
+      const bActs = batchActs(bId).filter(a => a.type === 'Class' || a.type === 'Event');
+      const bActIds = new Set(bActs.map(a => a.id));
+      const bAtts = (DB.attendance || []).filter(a => bActIds.has(a.ref));
+      const totalSessions = new Set(bAtts.map(a => a.ref)).size;
+      if(totalSessions > 0){
+        batchMembers(bId).forEach(d => {
+          const pres = bAtts.filter(a => (a.devotee === d.id || a.devotee === d.customId || a.devotee === d.name) && (a.status === 'Present' || a.status === 'On Time')).length;
+          d.attendancePct = Math.round((pres / totalSessions) * 100);
+        });
+        saveDevoteesToStorage();
+      }
+    }
+    logAudit('Attendance marked', 'Attendance saved by ' + nameOf(APP.user.devotee));
+    toast('Attendance saved and analytics updated', '✅');
+    render();
+    break;
+  }
   case 'go-attendance':APP.fabOpen=false;go('#/batch-attendance');break;
   case 'go-attendance-act':stop();{const a=act(id);APP.modal='';
     if(a.batch){
