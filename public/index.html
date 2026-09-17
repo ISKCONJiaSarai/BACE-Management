@@ -1503,6 +1503,11 @@ const ROLES={
   devotee:{name:'Devotee',emoji:'🙏',scope:'My seva, my classes, my calendar'},
   admin:{name:'BACE Administrator',emoji:'⚙️',scope:'System administration, database, users, roles and audit'}
 };
+const ROLE_PRIORITY = [
+  'admin', 'area_leader', 'coordinator', 'internal_manager',
+  'preaching_manager', 'care_manager', 'dept_head', 'preaching_coord',
+  'facilitator', 'devotee'
+];
 const isBaceAdminEmail = (email) => {
   if(!email) return false;
   const clean = String(email).toLowerCase().trim();
@@ -1542,18 +1547,47 @@ const can=(m,role)=>{
   // 1. Exclusive BACE Administrator (terkadambajs@gmail.com) has full, unrestricted access to everything (including devotee care)
   if(isSuperAdmin) return true;
 
-  role = role || curUser.role;
-  if(isSuryaEmail(curEmail) && role === 'admin') role = 'area_leader';
+  if(role){
+    if(isSuryaEmail(curEmail) && role === 'admin') role = 'area_leader';
+    if(m === 'admin') return role === 'area_leader' || isSuryaEmail(curEmail);
+    const a = ACCESS[m];
+    return a === '*' || (a || []).includes(role);
+  }
 
-  // 2. The Administration module is accessible to BACE Administrator and Area Leader (for approvals, user management, and configuration)
-  if(m === 'admin') return role === 'area_leader' || isSuryaEmail(curEmail);
+  const uDev = (typeof dv === 'function' && curUser.devotee) ? dv(curUser.devotee) : null;
+  const userRoles = new Set([
+    curUser.role,
+    ...(Array.isArray(curUser.roles) ? curUser.roles : []),
+    ...(typeof devoteeRoles === 'function' && uDev ? devoteeRoles(uDev) : [])
+  ].filter(Boolean));
+
+  if(isSuryaEmail(curEmail)) userRoles.add('area_leader');
+  if(m === 'admin') return userRoles.has('area_leader') || isSuryaEmail(curEmail);
 
   const a = ACCESS[m];
-  return a === '*' || (a || []).includes(role);
+  if(a === '*') return true;
+  if(!a || !Array.isArray(a)) return false;
+
+  for(const r of userRoles){
+    if(a.includes(r)) return true;
+  }
+  return false;
 };
 // can this user EDIT this department / batch?
-const ownsDept=id=>['admin','coordinator','area_leader','internal_manager'].includes(APP.user.role)||(APP.user.role==='dept_head'&&APP.user.dept===id);
-const ownsBatch=id=>['admin','coordinator','area_leader','preaching_manager'].includes(APP.user.role)||(APP.user.role==='preaching_coord'&&APP.user.batch===id);
+const ownsDept=id=>{
+  const curRoles = [APP?.user?.role, ...(APP?.user?.roles||[])].filter(Boolean);
+  const uDev = (typeof dv === 'function' && APP?.user?.devotee) ? dv(APP.user.devotee) : null;
+  if(typeof devoteeRoles === 'function' && uDev) curRoles.push(...devoteeRoles(uDev));
+  return curRoles.some(r => ['admin','coordinator','area_leader','internal_manager'].includes(r)) ||
+    (curRoles.includes('dept_head') && APP?.user?.dept === id);
+};
+const ownsBatch=id=>{
+  const curRoles = [APP?.user?.role, ...(APP?.user?.roles||[])].filter(Boolean);
+  const uDev = (typeof dv === 'function' && APP?.user?.devotee) ? dv(APP.user.devotee) : null;
+  if(typeof devoteeRoles === 'function' && uDev) curRoles.push(...devoteeRoles(uDev));
+  return curRoles.some(r => ['admin','coordinator','area_leader','preaching_manager'].includes(r)) ||
+    (curRoles.includes('preaching_coord') && APP?.user?.batch === id);
+};
 const canDeleteDevotee=()=>{
   if(!APP||!APP.user) return false;
   const curEmail=(APP.user.email||'').toLowerCase().trim();
@@ -1621,6 +1655,8 @@ const DB={devotees:[],departments:[],deptMembers:[],activities:[],templates:[],a
 function normalizeDevotee(d){
   if(!d||typeof d!=='object')return d;
   d.gender = (d.gender === 'Female' || d.gender === 'female' || d.gender === 'F') ? 'Female' : 'Male';
+  d.roles = Array.isArray(d.roles) ? d.roles : [];
+  d.appointments = Array.isArray(d.appointments) ? d.appointments : [];
   d.friends=Array.isArray(d.friends)?d.friends:[];
   d.skills=Array.isArray(d.skills)?d.skills:[];
   d.timeline=Array.isArray(d.timeline)?d.timeline:[];
@@ -2382,38 +2418,78 @@ function devoteeDisplayName(id){
   return 'Devotee';
 }
 function devoteePositionTitle(id, role){
-  const d=dv(id);
+  const d = typeof id === 'object' && id !== null ? id : dv(id);
   const curEmail = ((d&&d.email) || (APP.user&&APP.user.email) || '').toLowerCase().trim();
   if(isBaceAdminEmail(curEmail)) return '⚙️ BACE Administrator';
   if(isSuryaEmail(curEmail)) return '🪷 Area Leader';
-  if(d&&d.appointment){
-    const emojiMap={
-      'Area Leader':'🪷','Overall Coordinator':'🧭','Internal Manager':'🛕','Preaching Manager':'📖',
-      'Devotee Care Manager':'❤️','Department Head':'🛠','Preaching Coordinator':'🎓','Facilitator':'🤝',
-      'Senior Devotee':'🪷','Devotee':'🙏','System Administrator':'⚙️','BACE Administrator':'⚙️'
-    };
-    return `${emojiMap[d.appointment]||'🪷'} ${d.appointment}`;
+  if(d){
+    const rKeys = devoteeRoles(d).filter(k => k !== 'devotee');
+    if(rKeys.length > 0){
+      return rKeys.map(k => {
+        const r = ROLES[k] || ROLES.devotee;
+        return `${r.emoji} ${r.name}`;
+      }).join(' · ');
+    }
+    if(d.appointment){
+      const emojiMap={
+        'Area Leader':'🪷','Overall Coordinator':'🧭','Internal Manager':'🛕','Preaching Manager':'📖',
+        'Devotee Care Manager':'❤️','Department Head':'🛠','Preaching Coordinator':'🎓','Facilitator':'🤝',
+        'Senior Devotee':'🪷','Devotee':'🙏','System Administrator':'⚙️','BACE Administrator':'⚙️'
+      };
+      return `${emojiMap[d.appointment]||'🪷'} ${d.appointment}`;
+    }
   }
   const rKey=role||(APP.user&&APP.user.role)||'devotee';
   const r=ROLES[rKey]||ROLES.devotee;
   return `${r.emoji} ${r.name}`;
 }
-function devoteeRole(id){
+function devoteeRoles(id){
   const d = typeof id === 'object' && id !== null ? id : dv(id);
-  if(!d) return 'devotee';
+  if(!d) return ['devotee'];
   const curEmail = (d.email || '').toLowerCase().trim();
-  if(isBaceAdminEmail(curEmail)) return 'admin';
-  if(isSuryaEmail(curEmail)) return 'area_leader';
-  const u = (DB.users||[]).find(x => x.devotee === d.id);
-  if(u?.role && ROLES[u.role]) return u.role;
-  if(d.appointment){
-    const match = Object.entries(ROLES).find(([k, r]) => r.name.toLowerCase() === d.appointment.toLowerCase());
-    if(match) return match[0];
+  if(isBaceAdminEmail(curEmail)) return ['admin'];
+  
+  const found = new Set();
+  if(isSuryaEmail(curEmail)) found.add('area_leader');
+
+  if(Array.isArray(d.roles)){
+    d.roles.forEach(r => { if(r && ROLES[r] && r !== 'admin') found.add(r); });
   }
-  if(d.isFacilitator) return 'facilitator';
-  if((DB.departments||[]).some(dp => dp.head === d.id)) return 'dept_head';
-  if((DB.batches||[]).some(b => b.coordinator === d.id)) return 'preaching_coord';
-  return 'devotee';
+
+  if(Array.isArray(d.appointments)){
+    d.appointments.forEach(a => {
+      const match = Object.entries(ROLES).find(([k, r]) => r.name.toLowerCase() === String(a).toLowerCase().trim());
+      if(match && match[0] !== 'admin') found.add(match[0]);
+    });
+  }
+
+  if(typeof d.appointment === 'string' && d.appointment.trim()){
+    d.appointment.split(/[,;\/·]/).forEach(tok => {
+      const clean = tok.trim().toLowerCase();
+      if(!clean) return;
+      const match = Object.entries(ROLES).find(([k, r]) => r.name.toLowerCase() === clean);
+      if(match && match[0] !== 'admin') found.add(match[0]);
+    });
+  }
+
+  const u = (DB.users||[]).find(x => x.devotee === d.id);
+  if(u){
+    if(Array.isArray(u.roles)) u.roles.forEach(r => { if(r && ROLES[r] && r !== 'admin') found.add(r); });
+    if(u.role && ROLES[u.role] && u.role !== 'admin') found.add(u.role);
+  }
+
+  if(d.isFacilitator) found.add('facilitator');
+  if((DB.departments||[]).some(dp => dp.head === d.id)) found.add('dept_head');
+  if((DB.batches||[]).some(b => b.coordinator === d.id)) found.add('preaching_coord');
+
+  if(found.size > 1 && found.has('devotee')) found.delete('devotee');
+  if(found.size === 0) found.add('devotee');
+
+  return Array.from(found).sort((a,b) => ROLE_PRIORITY.indexOf(a) - ROLE_PRIORITY.indexOf(b));
+}
+function devoteeRole(id){
+  const roles = devoteeRoles(id);
+  return roles[0] || 'devotee';
 }
 function devoteeRoleObj(id){
   const r = devoteeRole(id);
@@ -2423,8 +2499,8 @@ function getHierarchyFacilitators(){
   return (DB.devotees || []).filter(d => {
     if(!d || !d.name) return false;
     if(isBaceAdminEmail(d.email) || d.appointment === 'BACE Administrator' || d.appointment === 'System Administrator' || d.name === 'ISKCON BACE Admin') return false;
-    const rKey = devoteeRole(d);
-    return d.isFacilitator || rKey === 'facilitator' || (d.appointment && d.appointment.toLowerCase().includes('facilitator')) || (DB.users||[]).some(u => u.devotee === d.id && u.role === 'facilitator');
+    const rKeys = devoteeRoles(d);
+    return d.isFacilitator || rKeys.includes('facilitator') || (d.appointment && d.appointment.toLowerCase().includes('facilitator')) || (DB.users||[]).some(u => u.devotee === d.id && (u.role === 'facilitator' || (u.roles||[]).includes('facilitator')));
   });
 }
 function dept(id){
@@ -2466,8 +2542,9 @@ function isBatchCoordinatorUser(user, batchId){
     return false;
   }
   
-  if (u.role === 'preaching_coord' || u.role === 'coordinator') return true;
-  if (d && (d.batchRole === 'Coordinator' || d.appointment === 'Coordinator')) return true;
+  const allRoles = d ? devoteeRoles(d) : [u.role];
+  if (allRoles.includes('preaching_coord') || allRoles.includes('coordinator')) return true;
+  if (d && (d.batchRole === 'Coordinator' || (d.appointment && d.appointment.toLowerCase().includes('coordinator')))) return true;
   if ((DB.batches||[]).some(b => b.coordinator === devId || (d && d.batchRole === 'Coordinator' && d.batch === b.id))) return true;
   return false;
 }
@@ -3967,7 +4044,7 @@ function viewDevotees(){
       ].filter(Boolean).join(' ').toLowerCase();
       if(!searchable.includes(query)) return false;
     }
-    if(f.role&&devoteeRole(d)!==f.role)return false;
+    if(f.role&&!devoteeRoles(d).includes(f.role))return false;
     if(f.status&&d.status!==f.status)return false;
     if(f.gender&&d.gender!==f.gender)return false;
     if(f.level){
@@ -4104,10 +4181,11 @@ function viewDevotees(){
        </div>`,
        label: 'Devotee',
        c: d => {
-         const rKey = devoteeRole(d);
-         const rObj = ROLES[rKey] || ROLES.devotee;
-         const isLeader = rKey !== 'devotee';
-         return `<div class="who"><div style="flex:none">${av(d.name,'s')}</div><div style="min-width:0;overflow:hidden"><b style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block">${esc(d.name)}${isLeader?` <span style="font-size:10px;font-weight:700;color:var(--accent)">${rObj.emoji}</span>`:''}</b><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(d.org||d.highestEducation||'BACE')}${isLeader?` · <span style="color:var(--accent);font-weight:600">${esc(rObj.name)}</span>`:''}</span></div></div>`;
+         const rKeys = devoteeRoles(d);
+         const isLeader = rKeys.some(k => k !== 'devotee');
+         const leaderRoles = rKeys.filter(k => k !== 'devotee');
+         const roleDisplay = leaderRoles.length ? leaderRoles.map(k => (ROLES[k]?.emoji || '') + ' ' + (ROLES[k]?.name || k)).join(', ') : '';
+         return `<div class="who"><div style="flex:none">${av(d.name,'s')}</div><div style="min-width:0;overflow:hidden"><b style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block">${esc(d.name)}${isLeader?` <span style="font-size:10px;font-weight:700;color:var(--accent)">${leaderRoles.map(k => ROLES[k]?.emoji || '').join('')}</span>`:''}</b><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(d.org||d.highestEducation||'BACE')}${isLeader?` · <span style="color:var(--accent);font-weight:600">${esc(roleDisplay)}</span>`:''}</span></div></div>`;
        }
      },
      {
@@ -4225,9 +4303,11 @@ function viewDevotee(id){
   const tabs=['Overview','Preaching','Seva','Attendance','Care','Sadhana','Timeline','Friends','Notes'];
   const careOK=can('care_notes')&&(APP.user.role!=='facilitator'||d.facilitator===APP.user.devotee||d.id===APP.user.devotee);
   const mine=DB.assignments.filter(a=>a.devotee===d.id).map(a=>({a,x:act(a.activity)})).filter(o=>o.x);
-  const rKey=devoteeRole(d);
-  const rObj=ROLES[rKey]||ROLES.devotee;
-  const roleBadge=`<span class="badge ${rKey==='area_leader'?'b-gold':rKey==='admin'?'b-ink':rKey==='devotee'?'b-grey':'b-saffron'}" style="font-weight:600" title="${esc(rObj.scope)}">${rObj.emoji} ${esc(rObj.name)}</span>`;
+  const rKeys=devoteeRoles(d);
+  const roleBadges=rKeys.map(rk=>{
+    const ro=ROLES[rk]||ROLES.devotee;
+    return `<span class="badge ${rk==='area_leader'?'b-gold':rk==='admin'?'b-ink':rk==='devotee'?'b-grey':'b-saffron'}" style="font-weight:600" title="${esc(ro.scope)}">${ro.emoji} ${esc(ro.name)}</span>`;
+  }).join(' ');
   const body={
    Overview:`<div class="grid g-2-1">
      <div class="card"><div class="card-h"><h3>Basic information</h3></div><div class="card-b">
@@ -4243,7 +4323,7 @@ function viewDevotee(id){
       <dt>Availability</dt><dd>${esc(d.availability||'Weekends')}</dd></dl></div>
       <div class="card-h" style="border-top:1px solid var(--line-2)"><h3>Community information</h3></div><div class="card-b">
       <dl class="kv"><dt>Joining date</dt><dd>${fmtD(d.joined)}</dd><dt>Status</dt><dd>${sbadge(d.status)}</dd>
-      <dt>Hierarchy role</dt><dd><span style="font-weight:700;color:var(--ink)">${rObj.emoji} ${esc(rObj.name)}</span> <span class="tiny muted">· ${esc(rObj.scope)}</span></dd>
+      <dt>Hierarchy ${rKeys.length>1?'roles':'role'}</dt><dd style="display:flex;flex-wrap:wrap;gap:6px">${roleBadges}</dd>
       <dt>Current level</dt><dd>${d.level?'Level '+d.level:'Not yet levelled'}</dd>
       <dt>Batch</dt><dd>${esc(batch(d.batch)?.name||'—')}</dd>
       <dt>Batch role</dt><dd><span class="badge b-grey">${esc(d.batchRole||'Member')}</span></dd>
@@ -4367,7 +4447,7 @@ function viewDevotee(id){
     ${av(d.name,'l')}
     <div style="min-width:190px"><h1 style="font-size:23px">${esc(d.name)}</h1>
       <div class="tiny" style="margin-top:4px">${esc(d.occupation)} · ${esc(d.org)} · joined ${fmtD(d.joined)}</div>
-      <div class="chips" style="margin-top:10px">${roleBadge}${sbadge(d.status)}${d.batch && batch(d.batch) ? badge('📖 ' + batch(d.batch).name, 'indigo') : ''}${d.dept && dept(d.dept) ? badge('🛕 ' + dept(d.dept).name, 'saffron') : ''}${d.careGroup && group(d.careGroup) ? badge('❤️ ' + group(d.careGroup).name, 'green') : ''}</div></div>
+      <div class="chips" style="margin-top:10px">${roleBadges}${sbadge(d.status)}${d.batch && batch(d.batch) ? badge('📖 ' + batch(d.batch).name, 'indigo') : ''}${d.dept && dept(d.dept) ? badge('🛕 ' + dept(d.dept).name, 'saffron') : ''}${d.careGroup && group(d.careGroup) ? badge('❤️ ' + group(d.careGroup).name, 'green') : ''}</div></div>
     <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn" data-act="dm" data-id="${d.id}">${ic('chat')}Message</button>
       <button class="btn" data-act="add-followup">${ic('clock')}Follow-up</button>
@@ -9660,7 +9740,7 @@ function viewContacts(){
 function contactDrawer(id){
   const c=contact(id);if(!c)return'';
   const fus=DB.followups.filter(f=>f.subject===c.id);
-  return `<div class="drawer-wrap" data-act="close-scrim"><div class="drawer" data-stop="1">
+  return `<div class="drawer-wrap"><div class="drawer" data-stop="1">
    <div class="modal-h">${av(c.name,'m')}<div><h2 style="font-size:18px">${esc(c.name)}</h2><div class="tiny">${esc(c.org)} · ${esc(c.profession)}</div></div>
      <button class="icon-btn" style="margin-left:auto" data-act="close-scrim">${ic('x')}</button></div>
    <div class="modal-b">
@@ -11418,6 +11498,36 @@ function fieldHTML(f){
       ${f.hint ? `<div class="hint">${esc(f.hint)}</div>` : ''}
     </div>`;
   }
+  if(f.t==='role_multicheck'){
+    const selSet = new Set([].concat(f.v||[]).map(String));
+    const opts = f.opts || [];
+    return `<div class="field" style="margin-bottom:14px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <label style="font-weight:600;margin:0;font-size:13.5px;color:var(--ink)">${esc(f.l)}</label>
+        <span class="tiny muted" id="role-sel-count" style="font-size:12px;font-weight:600;color:var(--accent)">${selSet.size} selected</span>
+      </div>
+      <div class="role-checkbox-list" style="display:flex;flex-direction:column;gap:7px;max-height:280px;overflow-y:auto;padding:8px;border:1px solid var(--line);border-radius:12px;background:var(--surface-2);box-sizing:border-box">
+        ${opts.map(([val, lab, scope, em]) => {
+          const chk = selSet.has(String(val));
+          return `
+            <label class="role-opt-item" style="display:flex;align-items:center;gap:12px;padding:10px 14px;border:1.5px solid ${chk ? 'var(--accent)' : 'var(--line)'};border-radius:10px;background:${chk ? 'var(--accent-soft)' : 'var(--card)'};cursor:pointer;transition:all 0.18s ease;user-select:none;box-sizing:border-box">
+              <input type="checkbox" name="${esc(f.n)}" value="${esc(val)}" ${chk ? 'checked' : ''} style="accent-color:var(--accent);width:18px;height:18px;cursor:pointer;flex:none;margin:0" onchange="const r=this.closest('.role-opt-item');r.style.background=this.checked?'var(--accent-soft)':'var(--card)';r.style.borderColor=this.checked?'var(--accent)':'var(--line)';const countEl=document.getElementById('role-sel-count');if(countEl){const n=document.querySelectorAll('.role-checkbox-list input[type=checkbox]:checked').length;countEl.textContent=n+' selected';}">
+              <div style="flex:1;min-width:0">
+                <div style="font-weight:600;font-size:13.5px;color:var(--ink);display:flex;align-items:center;gap:7px">
+                  <span style="font-size:16px">${em || '🪷'}</span>
+                  <span>${esc(lab)}</span>
+                </div>
+                ${scope ? `<div class="tiny" style="color:var(--ink-2);margin-top:2px;font-size:11.5px;line-height:1.3">${esc(scope)}</div>` : ''}
+              </div>
+            </label>
+          `;
+        }).join('')}
+      </div>
+      <div class="hint" style="font-size:11.5px;color:var(--ink-3);margin-top:5px">
+        Check all roles that this devotee is actively serving as. Multiple roles can be assigned simultaneously.
+      </div>
+    </div>`;
+  }
   if(f.t==='select')return `<div class="field"><label>${esc(f.l)}</label><select name="${f.n}">${(f.opts||[]).map(o=>{
     const val=Array.isArray(o)?o[0]:o,lab=Array.isArray(o)?o[1]:o;
     return `<option value="${esc(val)}" ${String(v)===String(val)?'selected':''}>${esc(lab)}</option>`}).join('')}</select>${f.hint?`<div class="hint">${esc(f.hint)}</div>`:''}</div>`;
@@ -12360,7 +12470,7 @@ async function syncDevoteesFromServer(forceImmediate){
 }
 
 function notifDrawer(){
-  return `<div class="drawer-wrap" data-act="close-scrim"><div class="drawer" data-stop="1">
+  return `<div class="drawer-wrap"><div class="drawer" data-stop="1">
    <div class="modal-h"><h2 style="font-size:18px">🔔 Notifications</h2>
      <button class="icon-btn" style="margin-left:auto" data-act="close-scrim">${ic('x')}</button></div>
    <div class="modal-b" style="padding:0"><div class="list">
@@ -12848,8 +12958,10 @@ async function syncDevoteeToBackend(d, roleKey){
   const token = localStorage.getItem('bace_token');
   if(!token) return;
   try{
-    const rKey = roleKey || devoteeRole(d);
+    const rKeys = devoteeRoles(d);
+    const rKey = roleKey || rKeys[0] || 'devotee';
     const rObj = ROLES[rKey] || ROLES.devotee;
+    const allTitles = rKeys.map(k => (ROLES[k]?.name || k));
     const payload = {
       name: d.name,
       phone: d.phone,
@@ -12877,8 +12989,10 @@ async function syncDevoteeToBackend(d, roleKey){
       sadhana: d.sadhana || { rounds: 16, morningProgram: 0 },
       morningStandardTime: d.morningStandardTime || '04:30',
       morningAttendance: d.morningAttendance || undefined,
-      appointment: rObj.name,
-      isFacilitator: (rKey === 'facilitator'),
+      appointment: d.appointment || allTitles.join(' · '),
+      appointments: d.appointments && d.appointments.length ? d.appointments : allTitles,
+      roles: d.roles && d.roles.length ? d.roles : rKeys,
+      isFacilitator: (rKey === 'facilitator' || rKeys.includes('facilitator')),
       role: rKey,
       customId: d.customId || d.id
     };
@@ -12888,6 +13002,11 @@ async function syncDevoteeToBackend(d, roleKey){
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
       body: JSON.stringify(payload)
     });
+    fetch(`/api/devotees/${targetId}/assign-role`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ role: rKey, roles: rKeys })
+    }).catch(()=>{});
     if(!res.ok && (res.status === 404 || res.status === 400)){
       const postRes = await fetch('/api/devotees', {
         method: 'POST',
@@ -13389,22 +13508,22 @@ document.addEventListener('click',e=>{
       toast('The BACE Administrator account cannot be modified.', '⚠️');
       break;
     }
-    const curRole=devoteeRole(d);
+    const curRoles=devoteeRoles(d);
     const roleOpts=[
-      ['devotee', '🙏 Devotee — General volunteer & member'],
-      ['facilitator', '🤝 Facilitator — Mentoring & personal care'],
-      ['dept_head', '🛠 Department Head — Managing seva & department'],
-      ['preaching_coord', '🎓 Preaching Coordinator — Batch leadership'],
-      ['care_manager', '❤️ Devotee Care Manager — Pillar leader: Care'],
-      ['preaching_manager', '📖 Preaching Manager — Pillar leader: Preaching'],
-      ['internal_manager', '🛕 Internal Manager — Pillar leader: BACE & Seva'],
-      ['coordinator', '🧭 Overall Coordinator — Operational executive'],
-      ['area_leader', '🪷 Area Leader — Strategic leadership & spiritual guidance']
+      ['area_leader', 'Area Leader', 'Strategic leadership & spiritual guidance', '🪷'],
+      ['coordinator', 'Overall Coordinator', 'Operational executive & overall coordination', '🧭'],
+      ['internal_manager', 'Internal Manager', 'Pillar leader: BACE Ashram & Seva management', '🛕'],
+      ['preaching_manager', 'Preaching Manager', 'Pillar leader: Preaching, colleges & youth outreach', '📖'],
+      ['care_manager', 'Devotee Care Manager', 'Pillar leader: Care, health & well-being', '❤️'],
+      ['dept_head', 'Department Head', 'Managing seva departments & roster execution', '🛠'],
+      ['preaching_coord', 'Preaching Coordinator', 'Batch coordinator & preaching leadership', '🎓'],
+      ['facilitator', 'Facilitator', 'Devotee mentoring, sadhana support & personal care', '🤝'],
+      ['devotee', 'Devotee', 'General volunteer, ashram resident & community member', '🙏']
     ];
-    openForm(`Assign Hierarchy Role: ${d.name}`,[
-      FLD('role','Select Role from Hierarchy','select',{v:curRole,opts:roleOpts}),
-      FLD('reason','Appointment Note (optional)','text',{ph:'e.g. Appointed as Preaching Coordinator for Batch 2'})
-    ],'save-devotee-role',{id:d.id},'Assigning a role updates the devotee profile, organization hierarchy, and user privileges.');
+    openForm(`Assign Hierarchy Roles: ${d.name}`,[
+      FLD('roles','Select All Assigned Roles','role_multicheck',{v:curRoles,opts:roleOpts}),
+      FLD('reason','Appointment Note (optional)','text',{ph:'e.g. Appointed as Facilitator & Department Head'})
+    ],'save-devotee-role',{id:d.id},'Select one or more roles. Multiple roles can be held simultaneously by a single devotee.');
     break;
   }
   case 'save-devotee-role':{
@@ -13412,39 +13531,72 @@ document.addEventListener('click',e=>{
     const d=dv(ctx.id);
     if(!d) break;
     if(isBaceAdminEmail(d.email) || d.appointment === 'BACE Administrator' || d.appointment === 'System Administrator') break;
-    const roleKey=(v.role === 'admin' ? 'devotee' : (v.role || 'devotee'));
-    const roleObj=ROLES[roleKey]||ROLES.devotee;
-    const prevRole=devoteeRole(d);
-    if(prevRole!==roleKey){
-      d.history.push({type:'Role',from:ROLES[prevRole]?.name||prevRole,to:roleObj.name,date:iso(TODAY)});
+
+    let selRoles = Array.isArray(v.roles) ? v.roles.filter(r => r && r !== 'admin' && ROLES[r]) : (v.roles ? [v.roles] : []);
+    if(selRoles.length > 1 && selRoles.includes('devotee')) {
+      selRoles = selRoles.filter(r => r !== 'devotee');
     }
-    d.appointment=roleObj.name;
-    d.isFacilitator=(roleKey==='facilitator');
-    if(roleKey==='dept_head'&&d.dept){const dp=dept(d.dept);if(dp)dp.head=d.id;}
-    if(roleKey==='preaching_coord'&&d.batch){const b=batch(d.batch);if(b)b.coordinator=d.id;}
+    if(selRoles.length === 0) selRoles = ['devotee'];
+
+    selRoles.sort((a,b) => ROLE_PRIORITY.indexOf(a) - ROLE_PRIORITY.indexOf(b));
+
+    const primaryRoleKey = selRoles[0] || 'devotee';
+    const primaryRoleObj = ROLES[primaryRoleKey] || ROLES.devotee;
+
+    const prevRoles = devoteeRoles(d);
+    const prevNames = prevRoles.map(r => ROLES[r]?.name || r).join(', ');
+    const newNames = selRoles.map(r => ROLES[r]?.name || r).join(', ');
+
+    if(prevNames !== newNames){
+      d.history.push({type:'Role', from: prevNames, to: newNames, date: iso(TODAY)});
+    }
+
+    d.roles = [...selRoles];
+    d.appointments = selRoles.map(r => ROLES[r]?.name || r);
+    d.appointment = selRoles.map(r => ROLES[r]?.name || r).join(' · ');
+    d.isFacilitator = selRoles.includes('facilitator');
+
+    if(selRoles.includes('dept_head') && d.dept){
+      const dp=dept(d.dept);
+      if(dp) dp.head=d.id;
+    }
+    if(selRoles.includes('preaching_coord') && d.batch){
+      const b=batch(d.batch);
+      if(b) b.coordinator=d.id;
+    }
 
     let u=DB.users.find(x=>x.devotee===d.id);
     if(u){
-      u.role=roleKey;
-      if(roleKey==='dept_head')u.dept=d.dept||undefined;
-      if(roleKey==='preaching_coord')u.batch=d.batch||undefined;
+      u.role=primaryRoleKey;
+      u.roles=[...selRoles];
+      if(selRoles.includes('dept_head')) u.dept=d.dept||undefined;
+      if(selRoles.includes('preaching_coord')) u.batch=d.batch||undefined;
     } else {
-      DB.users.push({id:uid('u'),role:roleKey,devotee:d.id,dept:roleKey==='dept_head'?d.dept:undefined,batch:roleKey==='preaching_coord'?d.batch:undefined});
+      DB.users.push({
+        id:uid('u'),
+        role:primaryRoleKey,
+        roles:[...selRoles],
+        devotee:d.id,
+        dept:selRoles.includes('dept_head')?d.dept:undefined,
+        batch:selRoles.includes('preaching_coord')?d.batch:undefined
+      });
     }
+
     const isMeRole = APP.user && (
       APP.user.devotee === d.id ||
       APP.user.devotee === d.customId ||
       (d.email && APP.user.email && d.email.toLowerCase().trim() === APP.user.email.toLowerCase().trim())
     );
     if(isMeRole){
-      APP.user.role=roleKey;
-      APP.user.appointment=roleObj.name;
+      APP.user.role=primaryRoleKey;
+      APP.user.roles=[...selRoles];
+      APP.user.appointment=d.appointment;
       localStorage.setItem('bace_user', JSON.stringify(APP.user));
-      // Preserve user navigation state
     }
-    syncDevoteeToBackend(d, roleKey);
-    logAudit('Role assigned',`${d.name} assigned to ${roleObj.name}${v.reason?' ('+v.reason+')':''}`);
-    toast(`${d.name} is now ${roleObj.emoji} ${roleObj.name}!`, '🪷');
+
+    syncDevoteeToBackend(d, primaryRoleKey);
+    logAudit('Roles assigned',`${d.name} assigned to ${newNames}${v.reason?' ('+v.reason+')':''}`);
+    toast(`${d.name} assigned: ${d.appointment}!`, '🪷');
     APP.modal='';render();break;
   }
   case 'save-devotee':{const v=collect(),ctx=APP.modal.ctx;

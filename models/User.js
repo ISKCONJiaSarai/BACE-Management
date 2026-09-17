@@ -49,6 +49,10 @@ const UserSchema = new mongoose.Schema({
     ],
     default: 'devotee'
   },
+  roles: [{
+    type: String,
+    trim: true
+  }],
   active: {
     type: Boolean,
     default: true

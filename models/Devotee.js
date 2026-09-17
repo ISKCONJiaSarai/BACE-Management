@@ -267,6 +267,14 @@ const DevoteeSchema = new mongoose.Schema({
     trim: true, // e.g. 'Area Leader', 'Coordinator', 'Department Head', 'Internal Manager'
     default: null
   },
+  appointments: [{
+    type: String,
+    trim: true
+  }],
+  roles: [{
+    type: String,
+    trim: true
+  }],
   isFacilitator: {
     type: Boolean,
     default: false

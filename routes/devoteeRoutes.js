@@ -146,9 +146,13 @@ router.put('/:id', async (req, res) => {
 
     const roleToSet = req.body.role || (req.body.appointment ? getRoleFromAppointment(req.body.appointment, devotee.isFacilitator) : null);
     if (roleToSet && roleToSet !== 'admin') {
+      const userUpdate = { role: roleToSet };
+      if (Array.isArray(req.body.roles)) {
+        userUpdate.roles = req.body.roles;
+      }
       await User.updateMany(
         { $or: [{ devotee: devotee._id }, ...(devotee.email ? [{ email: devotee.email.toLowerCase().trim() }] : [])] },
-        { $set: { role: roleToSet } }
+        { $set: userUpdate }
       );
     }
 
@@ -185,7 +189,7 @@ router.delete('/:id', protect, requireDeleteDevoteePermission, async (req, res) 
 });
 
 // @route   POST /api/devotees/:id/assign-role
-// @desc    Assign hierarchy role to devotee and update user account privileges immediately
+// @desc    Assign hierarchy role(s) to devotee and update user account privileges immediately
 router.post('/:id/assign-role', protect, async (req, res) => {
   try {
     const query = getDevoteeQuery(req.params.id);
@@ -193,10 +197,7 @@ router.post('/:id/assign-role', protect, async (req, res) => {
     if (!devotee || isAdminDevotee(devotee)) {
       return res.status(404).json({ success: false, message: 'Devotee not found' });
     }
-    const { role } = req.body;
-    if (!role || role === 'admin') {
-      return res.status(400).json({ success: false, message: 'Invalid role' });
-    }
+    const { role, roles } = req.body;
     const roleTitles = {
       area_leader: 'Area Leader',
       coordinator: 'Overall Coordinator',
@@ -208,21 +209,35 @@ router.post('/:id/assign-role', protect, async (req, res) => {
       facilitator: 'Facilitator',
       devotee: 'Devotee'
     };
-    const title = roleTitles[role] || 'Devotee';
-    devotee.appointment = title;
-    devotee.isFacilitator = (role === 'facilitator');
+    
+    let selectedRoles = Array.isArray(roles) && roles.length ? roles : (role ? [role] : ['devotee']);
+    selectedRoles = selectedRoles.filter(r => r && r !== 'admin' && roleTitles[r]);
+    if (selectedRoles.length === 0) selectedRoles = ['devotee'];
+
+    const rolePriority = ['admin', 'area_leader', 'coordinator', 'internal_manager', 'preaching_manager', 'care_manager', 'dept_head', 'preaching_coord', 'facilitator', 'devotee'];
+    selectedRoles.sort((a,b) => rolePriority.indexOf(a) - rolePriority.indexOf(b));
+
+    const primaryRole = selectedRoles[0];
+    const titles = selectedRoles.map(r => roleTitles[r] || 'Devotee');
+    const appointmentStr = titles.join(', ');
+
+    devotee.appointment = appointmentStr;
+    devotee.appointments = titles;
+    devotee.roles = selectedRoles;
+    devotee.isFacilitator = selectedRoles.includes('facilitator');
     await devotee.save();
 
     await User.updateMany(
       { $or: [{ devotee: devotee._id }, ...(devotee.email ? [{ email: devotee.email.toLowerCase().trim() }] : [])] },
-      { $set: { role: role } }
+      { $set: { role: primaryRole, roles: selectedRoles } }
     );
 
     res.json({
       success: true,
-      message: `${devotee.name} is now assigned as ${title}`,
+      message: `${devotee.name} is now assigned as ${appointmentStr}`,
       devotee,
-      role
+      role: primaryRole,
+      roles: selectedRoles
     });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
