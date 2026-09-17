@@ -132,8 +132,8 @@ const DevoteeSchema = new mongoose.Schema({
   },
   gender: {
     type: String,
-    enum: ['M', 'F', 'Other'],
-    default: 'M'
+    enum: ['Male', 'Female', 'M', 'F', 'Other'],
+    default: 'Male'
   },
   dob: {
     type: Date

@@ -451,6 +451,9 @@ router.post('/import-csv', protect, requireDevoteeImportPermission, async (req, 
           if (!isNaN(parsedDate.getTime())) existing.joined = parsedDate;
         }
 
+        if (row.gender) {
+          existing.gender = (String(row.gender).toLowerCase().startsWith('f')) ? 'Female' : 'Male';
+        }
         await existing.save();
 
         // Populate relationships for response
@@ -465,10 +468,11 @@ router.post('/import-csv', protect, requireDevoteeImportPermission, async (req, 
       } else {
         // CREATE new devotee
         const customId = `d_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+        const resolvedGender = (row.gender && String(row.gender).toLowerCase().startsWith('f')) ? 'Female' : 'Male';
         const newDevoteeData = {
           customId,
           name: rawName,
-          gender: row.gender || 'M',
+          gender: resolvedGender,
           phone: row.phone ? String(row.phone).trim() : '',
           email: row.email ? String(row.email).toLowerCase().trim() : undefined,
           residence: row.residence ? String(row.residence).trim() : '',
