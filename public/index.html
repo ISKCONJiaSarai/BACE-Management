@@ -2589,7 +2589,7 @@ function group(id){
 }
 function act(id){return DB.activities.find(a=>a.id===id)||null}
 const scopeName=a=>a.dept?dept(a.dept)?.name:a.batch?batch(a.batch)?.name:'Community';
-const subjectName=f=>f.kind==='Preaching'?(contact(f.subject)||{}).name||'Unknown contact':nameOf(f.subject);
+const subjectName=f=>{if(!f)return'—';const c=contact(f.subject);if(c&&c.name)return c.name;const d=dv(f.subject);if(d&&d.name)return d.name;return nameOf(f.subject)||f.subject||'Unknown person'};
 const isOverdue=f=>f.status==='Pending'&&f.due<iso(TODAY);
 const isDueToday=f=>f.status==='Pending'&&f.due===iso(TODAY);
 const dueIn=(f,n)=>f.status==='Pending'&&f.due===iso(dayOff(n));
@@ -2669,15 +2669,27 @@ function batchMetrics(id,from,to){
   const b=batch(id);const acts=batchActs(id).filter(a=>inRange(a.date,from,to));
   const classes=acts.filter(a=>a.type==='Class');const events=acts.filter(a=>a.type==='Event');
   const mem=batchMembers(id);
-  const att=DB.attendance.filter(a=>classes.some(c=>c.id===a.ref));
-  const perClass=classes.filter(c=>c.status==='Completed'||DB.attendance.some(a=>a.ref===c.id)).map(c=>{
-    const r=DB.attendance.filter(a=>a.ref===c.id);return {c,pctv:r.length?pct(r.filter(x=>x.status==='Present').length,r.length):100,present:r.filter(x=>x.status==='Present').length,total:r.length}});
-  const fus=DB.followups.filter(f=>f.kind==='Preaching'&&DB.contacts.some(c=>c.id===f.subject&&c.batch===id));
+  const allSessions=acts.filter(a=>a.type==='Class'||a.type==='Event');
+  const att=DB.attendance.filter(a=>allSessions.some(c=>c.id===a.ref));
+  const recordedSessions=allSessions.filter(c=>DB.attendance.some(a=>a.ref===c.id)||c.status==='Completed')
+    .sort((x,y)=>x.date<y.date?-1:1);
+  const perClass=recordedSessions.map(c=>{
+    const r=DB.attendance.filter(a=>a.ref===c.id);
+    const present=r.filter(x=>x.status==='Present').length;
+    const totalExpected=mem.length||r.length||1;
+    const pctv=r.length?pct(present,totalExpected):0;
+    return {c,pctv,present,total:totalExpected};
+  });
+  const memIds=new Set(mem.map(m=>m.id));
+  const conIds=new Set(batchContacts(id).map(c=>c.id));
+  const fus=DB.followups.filter(f=>f.batch===id||memIds.has(f.subject)||conIds.has(f.subject));
+  const totalAttMarks=att.filter(a=>a.status==='Present').length;
+  const avgAtt=perClass.length?Math.round(perClass.reduce((s,p)=>s+p.pctv,0)/perClass.length):0;
   return {b,acts,classes,events,members:mem,active:mem.filter(m=>m.status==='Active').length,
     neu:mem.filter(m=>m.joined>=iso(dayOff(-30))).length,inactive:mem.filter(m=>m.status==='Inactive').length,
-    attendance:pct(att.filter(a=>a.status==='Present').length,att.length),perClass,
+    attendance:avgAtt,perClass,
     best:perClass.length?Math.max(...perClass.map(p=>p.pctv)):0,low:perClass.length?Math.min(...perClass.map(p=>p.pctv)):0,
-    totalAtt:att.filter(a=>a.status==='Present').length,
+    totalAtt:totalAttMarks,
     fus:{total:fus.length,done:fus.filter(f=>f.status==='Completed').length,
       pending:fus.filter(f=>f.status==='Pending').length,overdue:fus.filter(isOverdue).length},
     budget:b.budget,util:pct(b.budget.spent,b.budget.allocated)};
@@ -2852,7 +2864,7 @@ function funnel(rows){
     const val = Number(r.v) || 0;
     const wpc = Math.min(100, Math.max(14, Math.round((val / max) * 100)));
     const prev = i > 0 ? (Number(rows[i-1].v) || 0) : val;
-    const conv = (i > 0 && prev > 0) ? pct(val, prev) : (val > 0 ? 100 : 0);
+    const conv = (i > 0 && prev > 0) ? Math.min(100, pct(val, prev)) : (val > 0 ? 100 : 0);
     return `<div class="funnel-row" style="${r.r?'cursor:pointer':''}" ${tipAttr(r.tip||`${r.l}: ${val}${i?` · ${conv}% from ${rows[i-1].l}`:''}`)} ${r.r?`data-act="drill" data-r="${r.r}"`:''}>
       <div class="funnel-lbl">${esc(r.l)}</div>
       <div class="funnel-bar-box" style="flex:1;min-width:0"><div class="funnel-bar" style="height:29px;width:${wpc}%;background:${r.color||'var(--indigo)'};opacity:${1-i*.06};border-radius:7px;display:flex;align-items:center;padding-left:10px;color:#fff;font-size:12.5px;font-weight:600">${val}</div></div>
@@ -4986,7 +4998,12 @@ function activityModal(id){
   return `<div class="drawer-wrap"><div class="drawer" data-stop="1">
    <div class="modal-h"><div><h2 style="font-size:18px">${typeEmoji(a.type)} ${esc(a.name)}</h2>
      <div class="tiny">${esc(scopeName(a))} · ${whenLabel}${a.start?` · ${a.start}–${a.end}`:''}</div></div>
-     <button class="icon-btn" style="margin-left:auto" data-act="close-scrim" title="Close panel">${ic('x')}</button></div>
+     <div style="display:flex;align-items:center;gap:6px;margin-left:auto">
+       ${manager?`<button class="btn sm" data-act="edit-activity-details" data-id="${a.id}" title="Edit programme details">${ic('edit')}Edit</button>`:''}
+       ${manager?`<button class="btn sm danger" data-act="delete-activity" data-id="${a.id}" title="Delete programme">${ic('trash')}</button>`:''}
+       <button class="icon-btn" data-act="close-scrim" title="Close panel">${ic('x')}</button>
+     </div>
+   </div>
    <div class="modal-b">
     <div class="chips" style="margin-bottom:13px">${sbadge(a.status)}${sbadge(a.priority)}${a.location?badge(a.location,'grey'):''}
       ${isMultiDay?badge('⛺ Multi-day Camp','indigo'):''}
@@ -5061,15 +5078,46 @@ function activityModal(id){
         <button class="li click" data-act="except-future" data-id="${a.id}"><span class="grow"><span class="t">Change this and all future occurrences</span>
           <span class="d">Updates the template from this date onward; history is retained</span></span>${ic('arrow')}</button></div>`:''}
    </div>
-   <div class="modal-f">
-     ${manager?`
-       <button class="btn" data-act="go-attendance-act" data-id="${a.id}">${ic('clock')}Mark attendance</button>
-       ${a.status==='Completed'?`
-         <button class="btn" style="background:var(--green);color:#fff;border-color:var(--green)" data-act="reopen-activity" data-id="${a.id}">${ic('check')}Completed (Reopen)</button>
-       `:`
-         <button class="btn pri" data-act="complete-activity" data-id="${a.id}">${ic('check')}Mark completed</button>
-       `}
-     `:''}</div></div></div>`;
+   <div class="modal-f" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+     <div>
+       ${manager?`<button class="btn sm danger" data-act="delete-activity" data-id="${a.id}">${ic('trash')}Delete program</button>`:''}
+     </div>
+     <div style="display:flex;gap:8px;flex-wrap:wrap">
+       ${manager?`
+         <button class="btn sm" data-act="edit-activity-details" data-id="${a.id}">${ic('edit')}Edit details</button>
+         <button class="btn sm" data-act="go-attendance-act" data-id="${a.id}">${ic('clock')}Mark attendance</button>
+         ${a.status==='Completed'?`
+           <button class="btn sm" style="background:var(--green);color:#fff;border-color:var(--green)" data-act="reopen-activity" data-id="${a.id}">${ic('check')}Completed</button>
+         `:`
+           <button class="btn sm pri" data-act="complete-activity" data-id="${a.id}">${ic('check')}Mark completed</button>
+         `}
+       `:''}
+     </div>
+   </div></div></div>`;
+}
+function openEditActivityForm(activityId){
+  const a = act(activityId);
+  if(!a) return toast('Programme not found', '⚠️');
+  
+  openForm(`Edit ${a.type || 'Programme'} Details`, [
+    FLD('name', 'Programme Title / Topic', 'text', { v: a.name || '', ph: 'e.g. Bhagavad-gita Foundation / Youth Fest' }),
+    FLD('type', 'Type', 'select', { v: a.type || 'Class', opts: ['Class', 'Event', 'Seva', 'Task'], half: 1 }),
+    FLD('batch', 'Batch', 'select', {
+      v: a.batch || '',
+      opts: [['', '-- All Batches / General / Dept --'], ...activeBatches().map(b => [b.id, `${b.name} (Level ${b.level})`])],
+      half: 1
+    }),
+    FLD('date', 'Start Date', 'date', { v: a.date || iso(TODAY), half: 1 }),
+    FLD('endDate', 'End Date (Multi-day / Camp)', 'date', { v: a.endDate || a.date || iso(TODAY), half: 1 }),
+    FLD('start', 'Start Time', 'time', { v: a.start || '17:30', half: 1 }),
+    FLD('end', 'End Time', 'time', { v: a.end || '20:30', half: 1 }),
+    FLD('location', 'Location / Venue', 'text', { v: a.location || '', ph: 'e.g. Main Temple Hall / BACE Centre / Seminar Room', half: 1 }),
+    FLD('priority', 'Priority', 'select', { v: a.priority || 'Medium', opts: ['High', 'Medium', 'Low'], half: 1 }),
+    FLD('responsible', 'Speaker / Teacher / Lead', 'text', { v: (dv(a.responsible)?.name || a.responsible || ''), ph: 'e.g. HG Sundar Gopal Das', half: 1 }),
+    FLD('expected', 'Expected Attendees', 'number', { v: a.expected || 0, half: 1 }),
+    FLD('budget', 'Budget Allocated (₹)', 'number', { v: (a.budget && a.budget.allocated) || 0, half: 1 }),
+    FLD('desc', 'Description / Agenda / Notes', 'textarea', { v: a.desc || '', ph: 'Rundown, prasadam arrangements, topic details…' })
+  ], 'save-edited-activity', { id: a.id }, 'All changes will update the program schedule, attendance lists, and reports');
 }
 function qrPanel(){
   const s=DB.qrSessions[DB.qrSessions.length-1];
@@ -10113,6 +10161,30 @@ function loadAttendanceFromStorage(){
   }catch(e){console.warn('loadAttendanceFromStorage error:', e)}
 }
 
+function saveFollowupsToStorage(){
+  try{
+    localStorage.setItem('bace_followups_store', JSON.stringify(DB.followups || []));
+  }catch(e){console.warn('saveFollowupsToStorage error:', e)}
+}
+
+function loadFollowupsFromStorage(){
+  try{
+    const raw = localStorage.getItem('bace_followups_store');
+    if(!raw) return;
+    const list = JSON.parse(raw);
+    if(Array.isArray(list)){
+      list.forEach(saved => {
+        const existing = (DB.followups||[]).find(f => f.id === saved.id);
+        if(existing){
+          Object.assign(existing, saved);
+        } else {
+          DB.followups.push(saved);
+        }
+      });
+    }
+  }catch(e){console.warn('loadFollowupsFromStorage error:', e)}
+}
+
 function savePreachingFilters(){
   try{
     if(APP.filters.repBatch) localStorage.setItem('bace_rep_batch', APP.filters.repBatch);
@@ -10137,38 +10209,43 @@ function batchPreachingFunnel(bid){
   const registered = mems.length;
 
   // 2. Interested: batch members who are active or interested (not inactive)
-  const interested = mems.filter(d => d.status === 'Active' || d.status === 'New').length;
+  const interested = Math.min(registered, mems.filter(d => d.status !== 'Inactive').length);
 
   // 3. Attending Class: batch members who attend classes (attendance marked or attendancePct > 0)
-  const attendingClass = mems.filter(d => (d.attendancePct || 0) > 0 || (DB.attendance||[]).some(a => a.devotee === d.id && a.status === 'Present')).length;
+  const attendedCount = mems.filter(d => (d.attendancePct || 0) > 0 || (DB.attendance||[]).some(a => a.devotee === d.id && a.status === 'Present')).length;
+  const attendingClass = Math.min(interested, attendedCount);
 
-  // 4. Regular: batch members who attend regularly (>=60% attendance and active)
-  const regular = mems.filter(d => (d.attendancePct || 0) >= 60 && d.status === 'Active').length;
+  // 4. Regular: batch members who attend regularly (>=50% attendance or multi-session)
+  const regularCount = mems.filter(d => ((d.attendancePct || 0) >= 50 || (DB.attendance||[]).filter(a => a.devotee === d.id && a.status === 'Present').length >= 2) && d.status === 'Active').length;
+  const regular = Math.min(attendingClass, regularCount);
 
-  // 5. Sadhana: batch members practicing sadhana (sadhana log, >=4 rounds, or morning program)
-  const sadhana = mems.filter(d => {
+  // 5. Sadhana: batch members practicing sadhana (sadhana log, >=1 round, morning program, or level >= 2)
+  const sadhanaCount = mems.filter(d => {
     const sRec = (DB.sadhana || []).find(s => s.devotee === d.id);
     const rounds = sRec?.rounds || d.sadhana?.rounds || 0;
     const prog = sRec?.program || d.sadhana?.morningProgram || 0;
-    return rounds >= 4 || prog > 0;
+    return rounds >= 1 || prog > 0 || (d.level && d.level >= 2);
   }).length;
+  const sadhana = Math.min(regular, sadhanaCount);
 
-  // 6. Actively Serving: batch members actively serving in seva/department
-  const activelyServing = mems.filter(d => {
+  // 6. Actively Serving: batch members actively serving in seva/department/volunteers
+  const servingCount = mems.filter(d => {
     return (d.dept && d.dept !== '') ||
       (d.service && d.service.length > 0) ||
       (d.swabhav && d.swabhav.engaged) ||
+      (b && b.volunteers && b.volunteers.includes(d.id)) ||
       (DB.assignments || []).some(asg => (asg.devotee === d.id || asg.actualPerformer === d.id) && asg.state !== 'Declined' && asg.state !== 'Missed') ||
       (DB.deptMembers || []).some(dm => dm.devotee === d.id && dm.status === 'Active');
   }).length;
+  const activelyServing = Math.min(sadhana || regular, servingCount);
 
   return [
     {l: 'Registered', v: registered, color: 'var(--indigo)', r: '#/devotees', tip: `Registered batch members: ${registered}`},
     {l: 'Interested', v: interested, color: '#4f46e5', r: '#/devotees', tip: `Interested & active members: ${interested}`},
-    {l: 'Attending Class', v: attendingClass, color: '#6366f1', r: '#/batch-attendance', tip: `Attending classes: ${attendingClass}`},
-    {l: 'Regular', v: regular, color: '#0ea5e9', r: '#/batch-attendance', tip: `Regular attendees (>=60%): ${regular}`},
+    {l: 'Attending Class', v: attendingClass, color: '#6366f1', r: '#/batch-attendance', tip: `Attending classes / sessions: ${attendingClass}`},
+    {l: 'Regular', v: regular, color: '#0ea5e9', r: '#/batch-attendance', tip: `Regular attendees (>=50%): ${regular}`},
     {l: 'Sadhana', v: sadhana, color: '#10b981', r: '#/sadhana', tip: `Practicing sadhana: ${sadhana}`},
-    {l: 'Actively Serving', v: activelyServing, color: '#f59e0b', r: '#/assign', tip: `Actively serving in seva: ${activelyServing}`}
+    {l: 'Actively Serving', v: activelyServing, color: '#f59e0b', r: '#/services', tip: `Actively serving in seva: ${activelyServing}`}
   ];
 }
 function showBatchFacilitatorsModal(batchId){
@@ -11595,7 +11672,7 @@ function fieldHTML(f){
       </div>
     </div>`;
   }
-  if(f.t==='select')return `<div class="field"><label>${esc(f.l)}</label><select name="${f.n}">${(f.opts||[]).map(o=>{
+  if(f.t==='select')return `<div class="field"><label>${esc(f.l)}</label><select name="${f.n}">${f.rawHtml || (f.opts||[]).map(o=>{
     const val=Array.isArray(o)?o[0]:o,lab=Array.isArray(o)?o[1]:o;
     return `<option value="${esc(val)}" ${String(v)===String(val)?'selected':''}>${esc(lab)}</option>`}).join('')}</select>${f.hint?`<div class="hint">${esc(f.hint)}</div>`:''}</div>`;
   if(f.t==='textarea')return `<div class="field"><label>${esc(f.l)}</label><textarea name="${f.n}" placeholder="${esc(f.ph||'')}">${esc(v)}</textarea>${f.hint?`<div class="hint">${esc(f.hint)}</div>`:''}</div>`;
@@ -12843,17 +12920,39 @@ function openContactForm(defaultBatch=''){
     FLD('notes','Notes','textarea')
   ],'save-contact',{});
 }
-function openFollowupForm(kind){
-  const k=kind||'Preaching';
-  openForm('Schedule follow-up',[
-    FLD('kind','Type','select',{v:k,opts:['Preaching','Care']}),
-    FLD('subject','Person','select',{opts:k==='Preaching'?DB.contacts.map(c=>[c.id,c.name]):DB.devotees.map(d=>[d.id,d.name])}),
-    FLD('purpose','Purpose','text',{ph:'Invite to Sunday class'}),
-    FLD('assigned','Assigned to','select',{opts:DB.devotees.filter(d=>d.level>=2).map(x=>[x.id,x.name]),half:1}),
-    FLD('due','Due date','date',{v:iso(dayOff(2)),half:1}),
-    FLD('priority','Priority','select',{opts:['High','Medium','Low'],half:1}),
-    FLD('notes','Notes','textarea')
-  ],'save-followup',{});
+function getFollowupSubjectOptions(kind, selectedId=''){
+  if(kind === 'Preaching'){
+    const contacts = [...(DB.contacts || [])].sort((a,b) => (a.name||'').localeCompare(b.name||''));
+    if(!contacts.length) return '<option value="">No contacts available — add contacts in Preaching</option>';
+    return contacts.map(c => `<option value="${c.id}" ${c.id===selectedId?'selected':''}>${esc(c.name)}${c.org ? ` (${esc(c.org)})` : (c.profession ? ` (${esc(c.profession)})` : '')}</option>`).join('');
+  } else {
+    const devs = [...(DB.devotees || [])].filter(d => d.status !== 'Inactive' && !isBaceAdminEmail(d.email));
+    if(!devs.length) return '<option value="">No devotees available</option>';
+    const byBatch = {};
+    devs.forEach(d => {
+      const bName = (d.batch && batch(d.batch)?.name) || 'Community / Unassigned';
+      if(!byBatch[bName]) byBatch[bName] = [];
+      byBatch[bName].push(d);
+    });
+    const batchNames = Object.keys(byBatch).sort((a,b) => a.localeCompare(b));
+    return batchNames.map(bName => {
+      const list = byBatch[bName].sort((a,b) => (a.name||'').localeCompare(b.name||''));
+      return `<optgroup label="${esc(bName)} (${list.length})">${list.map(d => `<option value="${d.id}" ${d.id===selectedId?'selected':''}>${esc(d.name)}</option>`).join('')}</optgroup>`;
+    }).join('');
+  }
+}
+
+function openFollowupForm(kind, defaultSubject=''){
+  const k = kind || 'Preaching';
+  openForm('Schedule follow-up', [
+    FLD('kind', 'Type', 'select', { v: k, opts: ['Preaching', 'Care'] }),
+    FLD('subject', 'Person', 'select', { rawHtml: getFollowupSubjectOptions(k, defaultSubject) }),
+    FLD('purpose', 'Purpose', 'text', { ph: k === 'Preaching' ? 'Invite to Sunday class / discuss book' : 'Care meeting / spiritual inquiry' }),
+    FLD('assigned', 'Assigned to', 'select', { opts: (DB.devotees||[]).filter(d => d.level >= 2 || d.isFacilitator || d.id === APP.user?.devotee).map(x => [x.id, x.name]), half: 1 }),
+    FLD('due', 'Due date', 'date', { v: iso(dayOff(2)), half: 1 }),
+    FLD('priority', 'Priority', 'select', { opts: ['High', 'Medium', 'Low'], half: 1 }),
+    FLD('notes', 'Notes', 'textarea', { ph: 'Context or background notes for the conversation' })
+  ], 'save-followup', {}, 'Preaching lists contacts / students; Care lists devotees grouped by batch');
 }
 function openReportForm(deptId,kind){
   if(kind==='preaching'){
@@ -13878,15 +13977,65 @@ document.addEventListener('click',e=>{
     logAudit('Contact converted',`${c.name} joined ${batch(v.batch).name}`);
     toast(c.name+' now has a devotee record in '+batch(v.batch).name,'🎓');APP.modal='';go('#/devotee/'+d.id);break}
   /* ---- follow-ups ---- */
-  case 'add-followup':openFollowupForm(t.dataset.kind);break;
-  case 'save-followup':{const v=collect();
-    DB.followups.push({id:uid('fu'),kind:v.kind,subject:v.subject,assigned:v.assigned,purpose:v.purpose,
-      last:iso(TODAY),due:v.due,status:'Pending',priority:v.priority,notes:v.notes});
-    logAudit('Follow-up created',v.purpose);toast('Follow-up scheduled','⏰');APP.modal='';render();break}
-  case 'complete-fu':stop();{const f=DB.followups.find(x=>x.id===id);f.status='Completed';f.last=iso(TODAY);
-    logAudit('Follow-up completed',subjectName(f));toast('Follow-up marked done');render();break}
-  case 'snooze-fu':stop();{const f=DB.followups.find(x=>x.id===id);f.due=iso(dayOff(3));
-    logAudit('Follow-up rescheduled',subjectName(f));toast('Moved to '+fmtD(f.due));render();break}
+  case 'add-followup':openFollowupForm(t.dataset.kind, t.dataset.subject || '');break;
+  case 'save-followup':{
+    const v=collect();
+    if(!v.subject){
+      toast('Please select a person for the follow-up', '⚠️');
+      break;
+    }
+    let personBatch = null;
+    if(v.kind === 'Preaching'){
+      const c = contact(v.subject);
+      if(c && c.batch) personBatch = c.batch;
+    } else {
+      const d = dv(v.subject);
+      if(d && d.batch) personBatch = d.batch;
+    }
+    const newFu = {
+      id: uid('fu'),
+      kind: v.kind || 'Preaching',
+      subject: v.subject,
+      batch: personBatch,
+      assigned: v.assigned || APP.user?.devotee,
+      purpose: v.purpose || 'Follow-up discussion',
+      last: iso(TODAY),
+      due: v.due || iso(dayOff(2)),
+      status: 'Pending',
+      priority: v.priority || 'Medium',
+      notes: v.notes || ''
+    };
+    DB.followups.push(newFu);
+    saveFollowupsToStorage();
+    logAudit('Follow-up created', `${v.kind}: ${subjectName(newFu)} (${v.purpose || ''})`);
+    toast('Follow-up scheduled', '⏰');
+    APP.modal = '';
+    render();
+    break;
+  }
+  case 'complete-fu':stop();{
+    const f = DB.followups.find(x => x.id === id);
+    if(f){
+      f.status = 'Completed';
+      f.last = iso(TODAY);
+      saveFollowupsToStorage();
+      logAudit('Follow-up completed', subjectName(f));
+      toast('Follow-up marked done', '✅');
+      render();
+    }
+    break;
+  }
+  case 'snooze-fu':stop();{
+    const f = DB.followups.find(x => x.id === id);
+    if(f){
+      f.due = iso(dayOff(3));
+      saveFollowupsToStorage();
+      logAudit('Follow-up rescheduled', subjectName(f));
+      toast('Moved to ' + fmtD(f.due), '⏰');
+      render();
+    }
+    break;
+  }
   /* ---- calendar program ---- */
   case 'open-calendar-program':{stop();
     APP.draft.calProgram = {
@@ -14155,6 +14304,65 @@ document.addEventListener('click',e=>{
     assignsFor(a.id).forEach(x=>{if(!x.state.startsWith('Completed')){x.state='Completed';x.actualPerformer=x.devotee;x.completedAt=`${iso(TODAY)} ${nowTime()}`}});
     saveActivitiesToStorage();saveAssignmentsToStorage();
     logAudit('Activity completed',a.name);toast('Marked completed','✅');render();break}
+
+  case 'edit-activity-details':stop();{
+    const aId = t.dataset.id || id;
+    openEditActivityForm(aId);
+    break;
+  }
+  case 'save-edited-activity':{
+    const aId = APP.modal?.ctx?.id;
+    const a = act(aId);
+    if(a){
+      const v = collect();
+      if(!v.name || !v.name.trim()){
+        toast('Programme title is required', '⚠️');
+        break;
+      }
+      a.name = v.name.trim();
+      a.type = v.type || a.type;
+      a.batch = v.batch || null;
+      a.date = v.date || a.date;
+      a.endDate = v.endDate || a.date;
+      a.start = v.start || a.start;
+      a.end = v.end || a.end;
+      a.location = v.location || '';
+      a.priority = v.priority || 'Medium';
+      a.responsible = v.responsible || '';
+      if(v.expected !== undefined && v.expected !== '') a.expected = Number(v.expected) || 0;
+      if(v.budget !== undefined && v.budget !== ''){
+        if(!a.budget) a.budget = { allocated: 0, spent: 0 };
+        a.budget.allocated = Number(v.budget) || 0;
+      }
+      a.desc = v.desc || '';
+      saveActivitiesToStorage();
+      logAudit('Programme updated', a.name);
+      toast('Programme details updated', '✅');
+      APP.modal = '';
+      render();
+    }
+    break;
+  }
+  case 'delete-activity':stop();{
+    const aId = t.dataset.id || id;
+    const a = act(aId);
+    if(!a) break;
+    if(confirm(`Are you sure you want to delete programme "${a.name}"? This cannot be undone.`)){
+      const idx = DB.activities.findIndex(x => x.id === aId);
+      if(idx !== -1) DB.activities.splice(idx, 1);
+      DB.assignments = (DB.assignments || []).filter(x => x.activity !== aId);
+      saveActivitiesToStorage();
+      saveAssignmentsToStorage();
+      if(APP.drawer === 'activity' && APP.drawerId === aId){
+        APP.drawer = null;
+        APP.drawerId = null;
+      }
+      logAudit('Programme deleted', a.name);
+      toast(`Programme "${a.name}" deleted`, '🗑️');
+      render();
+    }
+    break;
+  }
 
   case 'quick-add-item':stop();{
     const aId = t.dataset.id;
@@ -15226,6 +15434,13 @@ function syncAssign(){
 }
 /* change events: selects and checkboxes that carry data-act */
 document.addEventListener('change',e=>{
+  if(e.target && e.target.name === 'kind' && e.target.closest('#modalform')){
+    const sel = document.querySelector('#modalform select[name="subject"]');
+    if(sel && typeof getFollowupSubjectOptions === 'function'){
+      sel.innerHTML = getFollowupSubjectOptions(e.target.value);
+    }
+    return;
+  }
   const t=e.target.closest('[data-act]');if(!t)return;
   const a=t.dataset.act;
   switch(a){
@@ -15366,6 +15581,7 @@ loadReportsFromStorage();
 loadDevoteesFromStorage();
 loadPreachingFilters();
 loadAttendanceFromStorage();
+loadFollowupsFromStorage();
 try{
   const sbAttB = localStorage.getItem('bace_att_batch');
   if(sbAttB && (DB.batches||[]).some(b=>b.id===sbAttB)) APP.filters.attBatch = sbAttB;
