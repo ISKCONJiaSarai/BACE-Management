@@ -5001,7 +5001,7 @@ function activityModal(id){
   const mine=asg.find(x=>x.devotee===APP.user.devotee);
   const manager=ownsDept(a.dept)||ownsBatch(a.batch)||['coordinator','admin','area_leader','preaching_manager'].includes(APP.user.role);
 
-  // Determine current active batch for suggestions
+  // Determine current active batch for suggestions (default to activity batch if set)
   const selBatchId = APP.sideDevFilterBatch !== undefined ? APP.sideDevFilterBatch : (a.batch || '');
   let scopeDevs = [];
   let scopeTitle = '';
@@ -5025,10 +5025,10 @@ function activityModal(id){
     ? `${fmtD(a.date)} → ${fmtD(a.endDate)} (${Math.round((new Date(a.endDate)-new Date(a.date))/(864e5))+1} days)`
     : fmtD(a.date);
 
-  return `<div class="drawer-wrap" data-act="close-scrim"><div class="drawer" data-stop="1">
+  return `<div class="drawer-wrap"><div class="drawer" data-stop="1">
    <div class="modal-h"><div><h2 style="font-size:18px">${typeEmoji(a.type)} ${esc(a.name)}</h2>
      <div class="tiny">${esc(scopeName(a))} · ${whenLabel}${a.start?` · ${a.start}–${a.end}`:''}</div></div>
-     <button class="icon-btn" style="margin-left:auto" data-act="close-scrim">${ic('x')}</button></div>
+     <button class="icon-btn" style="margin-left:auto" data-act="close-scrim" title="Close panel">${ic('x')}</button></div>
    <div class="modal-b">
     <div class="chips" style="margin-bottom:13px">${sbadge(a.status)}${sbadge(a.priority)}${a.location?badge(a.location,'grey'):''}
       ${isMultiDay?badge('⛺ Multi-day Camp','indigo'):''}
@@ -5070,25 +5070,25 @@ function activityModal(id){
     </div>
     <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px">
       <span class="tiny muted" style="white-space:nowrap">From batch:</span>
-      <select data-act="side-filter-batch" data-a="${a.id}" style="padding:5px 8px;border:1px solid var(--line);border-radius:7px;font-size:12px;background:var(--card);color:var(--ink);flex:1">
+      <select data-act="side-filter-batch" data-a="${a.id}" style="padding:5px 8px;border:1px solid var(--line);border-radius:7px;font-size:12px;background:var(--card);color:var(--ink);flex:1;min-width:0">
         <option value="" ${!selBatchId?'selected':''}>All Batches / Community</option>
         ${DB.batches.map(b=>`<option value="${b.id}" ${selBatchId===b.id?'selected':''}>Batch: ${esc(b.name)} (${batchMembers(b.id).length} members)</option>`).join('')}
       </select>
     </div>
     <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
-      <select id="scope-devotee-sel" style="flex:1;padding:8px 10px;border:1px solid var(--line);border-radius:9px;font-size:13px;background:var(--card);color:var(--ink)">
+      <select id="scope-devotee-sel" style="flex:1 1 0%;min-width:0;padding:8px 10px;border:1px solid var(--line);border-radius:9px;font-size:13px;background:var(--card);color:var(--ink)">
         <option value="">Select devotee (${scopeDevs.length} available)...</option>
         ${scopeDevs.map(d=>`<option value="${d.id}">${esc(d.name)}${d.batch && d.batch!==selBatchId ? ` (${batch(d.batch)?.name||''})` : ''} · ${d.attendancePct}% attendance</option>`).join('')}
       </select>
-      <button class="btn sm pri" data-act="assign-from-sel" data-a="${a.id}">Assign</button>
+      <button class="btn sm pri" data-act="assign-from-sel" data-a="${a.id}" style="flex-shrink:0;padding:8px 14px;white-space:nowrap">${ic('plus')}Assign</button>
     </div>
     ${APP.customDevoteeAct===a.id?`<div style="display:flex;gap:8px;margin-bottom:12px;background:var(--surface-2);padding:10px 12px;border-radius:10px;border:1px solid var(--line);align-items:center">
-      <input type="text" id="custom-devotee-input" list="side-dev-datalist" placeholder="Search / type devotee name..." style="flex:1;padding:7px 11px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);font-size:13px" onkeydown="if(event.key==='Enter'){document.getElementById('assign-custom-btn').click();event.preventDefault();}">
+      <input type="text" id="custom-devotee-input" list="side-dev-datalist" placeholder="Search / type devotee name..." style="flex:1 1 0%;min-width:0;padding:7px 11px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);font-size:13px" onkeydown="if(event.key==='Enter'){document.getElementById('assign-custom-btn').click();event.preventDefault();}">
       <datalist id="side-dev-datalist">
         ${DB.devotees.filter(x=>x.status!=='Inactive').map(d=>`<option value="${esc(d.name)}">${esc(d.name)} (${esc(batch(d.batch)?.name||dept(d.dept)?.name||'Community')})</option>`).join('')}
       </datalist>
-      <button class="btn sm pri" id="assign-custom-btn" data-act="assign-custom-devotee" data-a="${a.id}">Assign</button>
-      <button class="btn sm" data-act="toggle-custom-devotee" data-a="${a.id}">✕</button>
+      <button class="btn sm pri" id="assign-custom-btn" data-act="assign-custom-devotee" data-a="${a.id}" style="flex-shrink:0">${ic('check')}Assign</button>
+      <button class="btn sm" data-act="toggle-custom-devotee" data-a="${a.id}" style="flex-shrink:0">✕</button>
     </div>`:''}`:''}
     <h3 style="margin:16px 0 8px">Action items</h3>${checklistBlock(a)}
     <h3 style="margin:16px 0 8px">Budget</h3>
@@ -9869,6 +9869,16 @@ function viewClasses(){
      {h:'Batch',c:a=>esc(a.batch?batch(a.batch).name:scopeName(a))},
      {h:'When',c:a=>`${fmtD(a.date)}<div class="tiny">${a.start}–${a.end}</div>`},
      {h:'Teacher / lead',c:a=>esc(nameOf(a.responsible))},
+      {h:'Volunteers',c:a=>{
+        const f=filled(a);
+        const asg=assignsFor(a.id);
+        if(!a.need && !asg.length) return '<span class="tiny muted">—</span>';
+        const names = asg.map(s=>nameOf(s.devotee)).join(', ');
+        return `<div style="min-width:96px" ${tipAttr(names ? 'Assigned: '+names : 'No devotees assigned yet')}>
+          ${prog(a.need?f/a.need*100:(f?100:0), f<a.need?'var(--danger)':'var(--green)')}
+          <span class="tiny">${f} of ${a.need||f}${names?` · ${esc(asg[0]?nameOf(asg[0].devotee):'')}${asg.length>1?` +${asg.length-1}`:''}`:''}</span>
+        </div>`;
+      }},
      {h:'Attendance',c:a=>{const r=DB.attendance.filter(x=>x.ref===a.id);
        return r.length?`${r.filter(x=>x.status==='Present').length} of ${r.length}`:`<span class="tiny">Expected ${a.expected||'—'}</span>`}},
      {h:'Budget',c:a=>a.budget.allocated?`${money(a.budget.spent)} / ${money(a.budget.allocated)}`:'<span class="tiny">—</span>'},
@@ -9926,6 +9936,54 @@ function getBatchVolunteers(batchId){
 
 
 /* ---------- LocalStorage Persistence Layer for Batches, Reports & Filters ---------- */
+function saveActivitiesToStorage(){
+  try{
+    localStorage.setItem('bace_activities_store', JSON.stringify(DB.activities || []));
+  }catch(e){console.warn('saveActivitiesToStorage error:', e)}
+}
+
+function loadActivitiesFromStorage(){
+  try{
+    const raw = localStorage.getItem('bace_activities_store');
+    if(!raw) return;
+    const list = JSON.parse(raw);
+    if(Array.isArray(list)){
+      list.forEach(saved => {
+        const a = (DB.activities||[]).find(x => x.id === saved.id);
+        if(a){
+          Object.assign(a, saved);
+        } else {
+          DB.activities.push(saved);
+        }
+      });
+    }
+  }catch(e){console.warn('loadActivitiesFromStorage error:', e)}
+}
+
+function saveAssignmentsToStorage(){
+  try{
+    localStorage.setItem('bace_assignments_store', JSON.stringify(DB.assignments || []));
+  }catch(e){console.warn('saveAssignmentsToStorage error:', e)}
+}
+
+function loadAssignmentsFromStorage(){
+  try{
+    const raw = localStorage.getItem('bace_assignments_store');
+    if(!raw) return;
+    const list = JSON.parse(raw);
+    if(Array.isArray(list)){
+      list.forEach(saved => {
+        const as = (DB.assignments||[]).find(x => x.id === saved.id);
+        if(as){
+          Object.assign(as, saved);
+        } else {
+          DB.assignments.push(saved);
+        }
+      });
+    }
+  }catch(e){console.warn('loadAssignmentsFromStorage error:', e)}
+}
+
 function saveBatchesToStorage(){
   try{
     const data = (DB.batches||[]).map(b => ({
@@ -12944,9 +13002,9 @@ document.addEventListener('click',e=>{
   case 'fab':APP.fabOpen=!APP.fabOpen;render();break;
   case 'notifications':APP.modal='notif';render();break;
   case 'close-scrim':{
-    const isExplicitCloseBtn = t.closest('[data-stop]');
-    const isBackdropClick = e.target.classList && (e.target.classList.contains('scrim') || e.target.classList.contains('drawer-wrap'));
-    if(!isExplicitCloseBtn && !isBackdropClick) break;
+    // Close ONLY if clicked an explicit close button (like the top right (x) button or a Cancel button)
+    const isExplicitBtn = t.closest('.icon-btn') || t.tagName==='BUTTON' || t.closest('button');
+    if(!isExplicitBtn) break; // clicking outside the panel will NOT close
     APP.modal='';APP.fabOpen=false;render();break}
   case 'toast':toast(t.dataset.msg||'Saved');break;
   case 'install-hint':toast('Use your browser menu → Add to Home Screen','📱');break;
@@ -13649,6 +13707,7 @@ document.addEventListener('click',e=>{
       logAudit('Seva assigned',`${d.name} — ${d.volunteers.length} assigned${created>1?', '+created+' occurrences generated':''}`);
       toast(created>1?`Seva assigned — ${created} occurrences generated`:`Seva assigned`,'📋');
     }
+    saveActivitiesToStorage();saveAssignmentsToStorage();
     APP.draft.assign=null;APP.modal='';render();break}
   /* ---- completion & performer ---- */
   case 'complete-self':stop();{const as=DB.assignments.find(x=>x.id===id);
@@ -13672,7 +13731,7 @@ document.addEventListener('click',e=>{
     toast('Declined — this activity now shows as short of volunteers','↩️');render();break}
   case 'unassign':stop();{const i=DB.assignments.findIndex(x=>x.id===id);const as=DB.assignments[i];
     DB.assignments.splice(i,1);logAudit('Assignment removed',nameOf(as.devotee)+' removed from '+act(as.activity).name);
-    toast('Removed');render();break}
+    saveAssignmentsToStorage();saveActivitiesToStorage();toast('Removed');render();break}
   case 'assign-one':stop();{const aId=t.dataset.a,dId=t.dataset.d;
     DB.assignments.push({id:uid('as'),activity:aId,devotee:dId,state:'Assigned',actualPerformer:null,completedAt:null});
     const a=act(aId);if(a.status==='Scheduled')a.status='Assigned';
@@ -13698,6 +13757,7 @@ document.addEventListener('click',e=>{
     APP.customDevoteeAct=null;
     logAudit('Devotee assigned',`${name} → ${a?.name||''}`);
     toast(name+' assigned');
+    saveAssignmentsToStorage();saveActivitiesToStorage();
     render();
     break}
   case 'assign-from-sel':stop();{
@@ -13710,6 +13770,7 @@ document.addEventListener('click',e=>{
     DB.notifications.unshift({id:uid('n'),em:'🪔',title:'Seva assigned',body:`${nameOf(dId)} assigned to ${a?.name||''}`,date:iso(TODAY),read:false,cat:'Management'});
     logAudit('Seva assigned',`${nameOf(dId)} → ${a?.name||''}`);
     toast(nameOf(dId)+' assigned');
+    saveAssignmentsToStorage();saveActivitiesToStorage();
     render();
     break}
   case 'toggle-edit-need':stop();{
@@ -13736,12 +13797,14 @@ document.addEventListener('click',e=>{
       a.vols=val;
       APP.editNeedAct=null;
       logAudit('Required volunteers updated',`${a.name}: ${val}`);
+      saveActivitiesToStorage();
       toast('Required volunteers set to '+val);
       render();
     }
     break}
   case 'complete-activity':stop();{const a=act(id);a.status='Completed';
     assignsFor(a.id).forEach(x=>{if(!x.state.startsWith('Completed')){x.state='Completed';x.actualPerformer=x.devotee;x.completedAt=`${iso(TODAY)} ${nowTime()}`}});
+    saveActivitiesToStorage();saveAssignmentsToStorage();
     logAudit('Activity completed',a.name);toast('Marked completed','✅');render();break}
   case 'side-filter-batch':stop();{
     APP.sideDevFilterBatch = t.value;
@@ -13757,6 +13820,7 @@ document.addEventListener('click',e=>{
       if(!a.actionItems) a.actionItems = [];
       a.actionItems.push({t: text, done: false});
       logAudit('Action item added', a.name + ': ' + text);
+      saveActivitiesToStorage();
       toast('Action item added');
       render();
     }
@@ -13767,6 +13831,7 @@ document.addEventListener('click',e=>{
     if(a && a.actionItems){
       a.actionItems.splice(idx, 1);
       logAudit('Action item removed', a.name);
+      saveActivitiesToStorage();
       toast('Action item removed');
       render();
     }
@@ -13775,6 +13840,7 @@ document.addEventListener('click',e=>{
     const a = act(id);
     if(a){
       a.status = 'Scheduled';
+      saveActivitiesToStorage();saveAssignmentsToStorage();
       logAudit('Activity reopened', a.name);
       toast('Activity reopened','🔄');
       render();
@@ -13787,7 +13853,7 @@ document.addEventListener('click',e=>{
     d.start = '17:30'; d.end = '20:30';
     APP.fabOpen = false; APP.modal = 'assign'; render(); break}
 
-  case 'toggle-item':{const a=act(id);a.actionItems[+t.dataset.i].done=!a.actionItems[+t.dataset.i].done;
+  case 'toggle-item':{const a=act(id);a.actionItems[+t.dataset.i].done=!a.actionItems[+t.dataset.i].done;saveActivitiesToStorage();
     logAudit('Action item updated',a.name);render();break}
   case 'add-item':stop();openForm('Add action item',[FLD('t','Action item','text',{ph:'Confirm venue'})],'save-item',{id});break;
   case 'save-item':{const v=collect(),a=act(APP.modal.ctx.id);
@@ -14620,6 +14686,7 @@ document.addEventListener('click',e=>{
     target.budget={allocated:+v.allocated||0,spent:+v.spent||0};
     logAudit('Budget updated',(target.name||'Activity')+' — '+money(target.budget.allocated));
     if(kind==='batch') saveBatchesToStorage();
+    if(kind==='activity') saveActivitiesToStorage();
     toast('Budget updated','🧾');APP.modal=kind==='activity'?{kind:'activity',id:bid}:'';render();break}
   /* ---- care extras ---- */
   case 'add-meeting':stop();openForm('Record personal meeting',[
@@ -14802,6 +14869,7 @@ document.addEventListener('change',e=>{
   const t=e.target.closest('[data-act]');if(!t)return;
   const a=t.dataset.act;
   switch(a){
+   case 'side-filter-batch':{APP.sideDevFilterBatch=t.value;render();break}
    case 'f':{const k=t.dataset.k,n=t.dataset.n;APP.filters[k]=APP.filters[k]||{};APP.filters[k][n]=t.value;APP.page[k]=1;render();break}
 case 'range':APP.range[t.dataset.n]=t.value;savePreachingFilters();render();break;
    case 'att-batch':APP.filters.attBatch=t.value;APP.filters.attClass=null;try{localStorage.setItem('bace_att_batch',t.value)}catch(e){}render();break;
@@ -14903,6 +14971,8 @@ document.addEventListener('drop',e=>{
 });
 window.addEventListener('hashchange',()=>{APP.route=location.hash||'#/';APP.modal='';APP.mobileDrawerOpen=false;render()});
 loadBatchesFromStorage();
+loadActivitiesFromStorage();
+loadAssignmentsFromStorage();
 loadReportsFromStorage();
 loadDevoteesFromStorage();
 loadPreachingFilters();
