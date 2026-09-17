@@ -4,7 +4,7 @@ const AttendanceSchema = new mongoose.Schema({
   devotee: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Devotee',
-    required: true,
+    required: false,
     index: true
   },
   activity: {

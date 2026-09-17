@@ -119,15 +119,18 @@ router.post('/morning-sync', async (req, res) => {
 
     // 2. Persist the raw biometric log into Attendance collection so reload is instant and records accumulate
     let rawLogDoc = await Attendance.findOne({ type: 'Morning programme', ref: 'mp_raw_log' });
-    const adminDev = allDevs.find(d => (d.email || '').includes('terkadamba') || d.appointment === 'Area Leader') || allDevs[0];
+    let adminDev = allDevs.find(d => (d.email || '').includes('terkadamba') || d.appointment === 'Area Leader') || allDevs[0];
+    if (!adminDev) {
+      try { adminDev = await Devotee.findOne(); } catch(e){}
+    }
     const mergedNotes = rawLogDoc ? mergeBiometricLines(rawLogDoc.notes, rawBiometricText) : rawBiometricText;
     if (rawLogDoc) {
       rawLogDoc.notes = mergedNotes;
       rawLogDoc.date = new Date();
       await rawLogDoc.save();
-    } else if (adminDev) {
+    } else {
       rawLogDoc = await Attendance.create({
-        devotee: adminDev._id,
+        devotee: adminDev ? adminDev._id : undefined,
         type: 'Morning programme',
         ref: 'mp_raw_log',
         notes: mergedNotes,
