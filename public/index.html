@@ -9905,26 +9905,188 @@ function batchDashboardBody(b){
       ${section('📊 Class attendance trend',trend.length?`<div class="card-b">${lineChart(trend,{unit:'%',color:'var(--indigo)'})}
         <div class="tiny" style="margin-top:8px">Hover a point for present / absent / total for that class</div></div>`
         :emptyState('No attendance yet','The trend appears once classes are held and attendance is marked.',''))}
-      ${section(`👥 Members <span class="badge b-grey" style="font-size:11.5px;padding:2px 8px;font-weight:600;vertical-align:middle;margin-left:6px">${m.members.length}</span>`,m.members.length?`
-        <div style="padding:10px 16px;background:var(--surface-2);border-bottom:1px solid var(--line-2);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
-          <div style="display:flex;align-items:center;gap:8px">
-            <span style="font-size:13px;font-weight:600;color:var(--ink-2)">Total Members:</span>
-            <span class="badge b-indigo" style="font-size:12.5px;font-weight:700;padding:2px 9px;border-radius:12px">${m.members.length}</span>
-            <span style="color:var(--ink-3);font-size:12px">(${m.active} active${m.inactive ? ` · ${m.inactive} inactive` : ''})</span>
+      ${(() => {
+        if (!m.members.length) {
+          return section(`👥 Members <span class="badge b-grey" style="font-size:11.5px;padding:2px 8px;font-weight:600;vertical-align:middle;margin-left:6px">0</span>`,
+            emptyState('No members yet','Add members to this batch.',ownsBatch(b.id)?`<button class="btn pri" data-act="batch-members" data-id="${b.id}">Add members</button>`:'','people'),
+            ownsBatch(b.id)?`
+              ${canImportCsv(b.id)?`<button class="btn sm" data-act="open-import-csv" data-batch="${b.id}" style="margin-right:6px">${ic('upload')}Import CSV</button>`:''}
+              <button class="btn sm" data-act="batch-members" data-id="${b.id}">${ic('plus')}Manage members</button>`:''
+          );
+        }
+
+        const bmf = APP.batchMemFilter || (APP.batchMemFilter = { q: '', status: '', att: '', rounds: '', facilitator: '', sortCol: 'name', sortDir: 'asc' });
+        const statusOptions = Array.from(new Set(m.members.map(d => d.status || 'Active'))).filter(Boolean).sort();
+        const facOptions = Array.from(new Set(m.members.map(d => d.facilitator).filter(Boolean)))
+          .map(fid => ({ id: fid, name: nameOf(fid) }))
+          .filter(f => f.name && f.name !== 'Unassigned')
+          .sort((x, y) => x.name.localeCompare(y.name));
+
+        const membersWithData = m.members.map(d => ({
+          d,
+          attPct: devoteeBatchAttPct(d, b.id),
+          rounds: Number((d.sadhana && d.sadhana.rounds !== undefined) ? d.sadhana.rounds : 0),
+          facName: nameOf(d.facilitator) || 'Unassigned',
+          status: d.status || 'Active'
+        }));
+
+        const isFiltered = !!(bmf.q || bmf.status || bmf.att || bmf.rounds || bmf.facilitator);
+
+        let filteredMembers = membersWithData.filter(item => {
+          const d = item.d;
+          if (bmf.q) {
+            const q = bmf.q.toLowerCase().trim();
+            const matchName = (d.name || '').toLowerCase().includes(q);
+            const matchOrg = (d.org || '').toLowerCase().includes(q);
+            const matchPhone = (d.phone || '').includes(q);
+            if (!matchName && !matchOrg && !matchPhone) return false;
+          }
+          if (bmf.status && item.status !== bmf.status) return false;
+          if (bmf.att) {
+            if (bmf.att === '75' && item.attPct < 75) return false;
+            if (bmf.att === '50' && (item.attPct < 50 || item.attPct >= 75)) return false;
+            if (bmf.att === '1' && (item.attPct < 1 || item.attPct >= 50)) return false;
+            if (bmf.att === '0' && item.attPct !== 0) return false;
+          }
+          if (bmf.rounds) {
+            if (bmf.rounds === '16' && item.rounds < 16) return false;
+            if (bmf.rounds === '8' && (item.rounds < 8 || item.rounds >= 16)) return false;
+            if (bmf.rounds === '1' && (item.rounds < 1 || item.rounds >= 8)) return false;
+            if (bmf.rounds === '0' && item.rounds !== 0) return false;
+          }
+          if (bmf.facilitator) {
+            if (bmf.facilitator === 'unassigned') {
+              if (d.facilitator && nameOf(d.facilitator) !== 'Unassigned') return false;
+            } else {
+              if (d.facilitator !== bmf.facilitator && nameOf(d.facilitator) !== bmf.facilitator) return false;
+            }
+          }
+          return true;
+        });
+
+        if (bmf.sortCol) {
+          filteredMembers.sort((a, b) => {
+            let res = 0;
+            if (bmf.sortCol === 'name') {
+              res = (a.d.name || '').localeCompare(b.d.name || '');
+            } else if (bmf.sortCol === 'status') {
+              res = (a.status || '').localeCompare(b.status || '');
+            } else if (bmf.sortCol === 'attendance') {
+              res = a.attPct - b.attPct;
+            } else if (bmf.sortCol === 'rounds') {
+              res = a.rounds - b.rounds;
+            } else if (bmf.sortCol === 'facilitator') {
+              res = (a.facName || '').localeCompare(b.facName || '');
+            }
+            return bmf.sortDir === 'desc' ? -res : res;
+          });
+        }
+
+        const sortIcon = (col) => {
+          if (bmf.sortCol === col) {
+            return `<span style="color:var(--indigo);font-weight:bold;margin-left:4px">${bmf.sortDir === 'desc' ? '▼' : '▲'}</span>`;
+          }
+          return `<span style="color:var(--ink-4);opacity:0.35;margin-left:4px;font-size:11px">↕</span>`;
+        };
+
+        const memSectionBody = `
+          <div style="padding:10px 16px;background:var(--surface-2);border-bottom:1px solid var(--line-2);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+              <span style="font-size:13px;font-weight:600;color:var(--ink-2)">Total Members:</span>
+              <span class="badge b-indigo" style="font-size:12.5px;font-weight:700;padding:2px 9px;border-radius:12px">${m.members.length}</span>
+              <span style="color:var(--ink-3);font-size:12px">(${m.active} active${m.inactive ? ` · ${m.inactive} inactive` : ''})</span>
+              ${isFiltered ? `
+                <span class="badge b-amber" style="font-size:11.5px;font-weight:600;padding:2px 8px">Showing ${filteredMembers.length} of ${m.members.length}</span>
+                <button type="button" class="btn xs ghost" data-act="bm-reset-filters" style="font-size:11.5px;color:var(--danger);padding:2px 6px;text-decoration:underline">Reset filters ✕</button>
+              ` : ''}
+            </div>
+            <div style="display:flex;align-items:center;gap:8px">
+              ${m.neu ? `<span class="badge b-saffron" style="font-size:11px;font-weight:600">${m.neu} new this month</span>` : ''}
+              ${bmf.sortCol ? `<span class="tiny muted" style="font-size:11px">Sorted by <b>${bmf.sortCol}</b> (${bmf.sortDir.toUpperCase()})</span>` : ''}
+            </div>
           </div>
-          ${m.neu ? `<span class="badge b-saffron" style="font-size:11px;font-weight:600">${m.neu} new this month</span>` : ''}
-        </div>
-        <div class="tbl-wrap"><table class="tbl"><thead><tr><th>Devotee</th><th>Status</th><th>Attendance</th><th>Rounds</th><th>Facilitator</th></tr></thead><tbody>
-        ${m.members.map(d=>`<tr class="click" data-act="open-devotee" data-id="${d.id}">
-          <td data-l="Devotee"><div class="who">${av(d.name)}<div><b>${esc(d.name)}</b><span>${esc(d.org)}</span></div></div></td>
-          <td data-l="Status">${sbadge(d.status)}</td>
-          <td data-l="Attendance"><div style="min-width:88px">${prog(devoteeBatchAttPct(d, b.id))}<span class="tiny">${devoteeBatchAttPct(d, b.id)}%</span></div></td>
-          <td data-l="Rounds">${d.sadhana.rounds}</td><td data-l="Facilitator">${esc(nameOf(d.facilitator))}</td></tr>`).join('')}</tbody></table></div>`
-        :emptyState('No members yet','Add members to this batch.',ownsBatch(b.id)?`<button class="btn pri" data-act="batch-members" data-id="${b.id}">Add members</button>`:'','people'),
-        ownsBatch(b.id)?`
-          ${canImportCsv(b.id)?`<button class="btn sm" data-act="open-import-csv" data-batch="${b.id}" style="margin-right:6px">${ic('upload')}Import CSV</button>`:''}
-          <button class="btn sm" data-act="batch-members" data-id="${b.id}">${ic('plus')}Manage members</button>`:''
-      )}
+          <div class="tbl-wrap">
+            <table class="tbl">
+              <thead>
+                <tr>
+                  <th class="click" data-act="bm-sort" data-col="name" style="cursor:pointer;user-select:none;white-space:nowrap" title="Click to sort by Devotee">
+                    <div style="display:flex;align-items:center;justify-content:space-between"><span>Devotee</span>${sortIcon('name')}</div>
+                  </th>
+                  <th class="click" data-act="bm-sort" data-col="status" style="cursor:pointer;user-select:none;white-space:nowrap" title="Click to sort by Status">
+                    <div style="display:flex;align-items:center;justify-content:space-between"><span>Status</span>${sortIcon('status')}</div>
+                  </th>
+                  <th class="click" data-act="bm-sort" data-col="attendance" style="cursor:pointer;user-select:none;white-space:nowrap" title="Click to sort by Attendance">
+                    <div style="display:flex;align-items:center;justify-content:space-between"><span>Attendance</span>${sortIcon('attendance')}</div>
+                  </th>
+                  <th class="click" data-act="bm-sort" data-col="rounds" style="cursor:pointer;user-select:none;white-space:nowrap" title="Click to sort by Rounds">
+                    <div style="display:flex;align-items:center;justify-content:space-between"><span>Rounds</span>${sortIcon('rounds')}</div>
+                  </th>
+                  <th class="click" data-act="bm-sort" data-col="facilitator" style="cursor:pointer;user-select:none;white-space:nowrap" title="Click to sort by Facilitator">
+                    <div style="display:flex;align-items:center;justify-content:space-between"><span>Facilitator</span>${sortIcon('facilitator')}</div>
+                  </th>
+                </tr>
+                <tr class="bm-filter-row" style="background:var(--surface-2);border-bottom:1px solid var(--line-2)">
+                  <th style="padding:6px 10px;font-weight:normal">
+                    <div style="position:relative;display:flex;align-items:center">
+                      <input type="text" class="inp" data-act="bm-filter-q" placeholder="Filter name/org..." value="${esc(bmf.q||'')}" style="font-size:11.5px;padding:3px 22px 3px 6px;height:27px;border-radius:6px;width:100%;min-width:110px;background:var(--surface)">
+                      ${bmf.q ? `<button type="button" class="btn ghost xs" data-act="bm-clear-q" style="position:absolute;right:2px;padding:0 5px;height:22px;color:var(--ink-3);font-size:14px;border:none" title="Clear">×</button>` : ''}
+                    </div>
+                  </th>
+                  <th style="padding:6px 10px;font-weight:normal">
+                    <select class="inp" data-act="bm-filter-status" style="font-size:11.5px;padding:2px 4px;height:27px;border-radius:6px;width:100%;min-width:85px;background:var(--surface)">
+                      <option value="">All Statuses</option>
+                      ${statusOptions.map(st => `<option value="${st}" ${bmf.status===st?'selected':''}>${st}</option>`).join('')}
+                    </select>
+                  </th>
+                  <th style="padding:6px 10px;font-weight:normal">
+                    <select class="inp" data-act="bm-filter-att" style="font-size:11.5px;padding:2px 4px;height:27px;border-radius:6px;width:100%;min-width:85px;background:var(--surface)">
+                      <option value="">All Attendance</option>
+                      <option value="75" ${bmf.att==='75'?'selected':''}>≥ 75% High</option>
+                      <option value="50" ${bmf.att==='50'?'selected':''}>50% – 74%</option>
+                      <option value="1" ${bmf.att==='1'?'selected':''}>1% – 49%</option>
+                      <option value="0" ${bmf.att==='0'?'selected':''}>0%</option>
+                    </select>
+                  </th>
+                  <th style="padding:6px 10px;font-weight:normal">
+                    <select class="inp" data-act="bm-filter-rounds" style="font-size:11.5px;padding:2px 4px;height:27px;border-radius:6px;width:100%;min-width:80px;background:var(--surface)">
+                      <option value="">All Rounds</option>
+                      <option value="16" ${bmf.rounds==='16'?'selected':''}>16+ Rounds</option>
+                      <option value="8" ${bmf.rounds==='8'?'selected':''}>8 – 15</option>
+                      <option value="1" ${bmf.rounds==='1'?'selected':''}>1 – 7</option>
+                      <option value="0" ${bmf.rounds==='0'?'selected':''}>0 Rounds</option>
+                    </select>
+                  </th>
+                  <th style="padding:6px 10px;font-weight:normal">
+                    <select class="inp" data-act="bm-filter-fac" style="font-size:11.5px;padding:2px 4px;height:27px;border-radius:6px;width:100%;min-width:95px;background:var(--surface)">
+                      <option value="">All Facilitators</option>
+                      <option value="unassigned" ${bmf.facilitator==='unassigned'?'selected':''}>Unassigned</option>
+                      ${facOptions.map(f => `<option value="${f.id}" ${bmf.facilitator===f.id?'selected':''}>${esc(f.name)}</option>`).join('')}
+                    </select>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                ${filteredMembers.length ? filteredMembers.map(item => {
+                  const d = item.d;
+                  return `<tr class="click" data-act="open-devotee" data-id="${d.id}">
+                    <td data-l="Devotee"><div class="who">${av(d.name)}<div><b>${esc(d.name)}</b><span>${esc(d.org)}</span></div></div></td>
+                    <td data-l="Status">${sbadge(d.status)}</td>
+                    <td data-l="Attendance"><div style="min-width:88px">${prog(item.attPct)}<span class="tiny">${item.attPct}%</span></div></td>
+                    <td data-l="Rounds">${d.sadhana?.rounds ?? 0}</td>
+                    <td data-l="Facilitator">${esc(nameOf(d.facilitator))}</td>
+                  </tr>`;
+                }).join('') : `<tr><td colspan="5" style="text-align:center;padding:24px 16px;color:var(--ink-3)">No members matching the current filters. <button type="button" class="btn xs ghost" data-act="bm-reset-filters" style="color:var(--indigo);margin-left:6px">Reset filters</button></td></tr>`}
+              </tbody>
+            </table>
+          </div>`;
+
+        return section(`👥 Members <span class="badge b-grey" style="font-size:11.5px;padding:2px 8px;font-weight:600;vertical-align:middle;margin-left:6px">${m.members.length}</span>`,
+          memSectionBody,
+          ownsBatch(b.id)?`
+            ${canImportCsv(b.id)?`<button class="btn sm" data-act="open-import-csv" data-batch="${b.id}" style="margin-right:6px">${ic('upload')}Import CSV</button>`:''}
+            <button class="btn sm" data-act="batch-members" data-id="${b.id}">${ic('plus')}Manage members</button>`:''
+        );
+      })()}
     </div>
     <div style="display:flex;flex-direction:column;gap:15px">
       ${section('🎯 Batch preaching funnel', `<div class="card-b">
@@ -14196,6 +14358,23 @@ document.addEventListener('click',e=>{
   case 'download-csv-template':{stop();downloadDevoteeCsvTemplate();break;}
   case 'confirm-import-csv':{stop();executeDevoteeCsvImport();break;}
   case 'clear-dev-filters':{stop();APP.filters.dev={q:'',role:'',status:'',dept:'',batch:'',careGroup:'',skill:'',attendance:'',sort:'name_asc'};APP.page.dev=1;toast('Filters reset');render();break}
+  case 'bm-sort':{stop();
+    const col=t.dataset.col;
+    const bmf=APP.batchMemFilter||(APP.batchMemFilter={q:'',status:'',att:'',rounds:'',facilitator:'',sortCol:'name',sortDir:'asc'});
+    if(bmf.sortCol===col){
+      bmf.sortDir=bmf.sortDir==='asc'?'desc':'asc';
+    }else{
+      bmf.sortCol=col;
+      bmf.sortDir=(col==='attendance'||col==='rounds')?'desc':'asc';
+    }
+    render();break}
+  case 'bm-clear-q':{stop();
+    if(APP.batchMemFilter)APP.batchMemFilter.q='';
+    render();refocus('[data-act="bm-filter-q"]');break}
+  case 'bm-reset-filters':{stop();
+    APP.batchMemFilter={q:'',status:'',att:'',rounds:'',facilitator:'',sortCol:'name',sortDir:'asc'};
+    toast('Batch member filters reset');
+    render();break}
   case 'toggle-mob-filters':{stop();APP.mobFilterOpen=!APP.mobFilterOpen;render();break}
   case 'set-dev-sort':{stop();APP.filters.dev=APP.filters.dev||{};APP.filters.dev.sort=t.dataset.v;APP.page.dev=1;render();break}
   case 'toggle-dev-sort':{stop();APP.filters.dev=APP.filters.dev||{};APP.filters.dev.sort=APP.filters.dev.sort==='name_asc'?'name_desc':'name_asc';APP.page.dev=1;render();break}
@@ -16322,6 +16501,10 @@ document.addEventListener('change',e=>{
      break}
    case 'f':{const k=t.dataset.k,n=t.dataset.n;APP.filters[k]=APP.filters[k]||{};APP.filters[k][n]=t.value;APP.page[k]=1;render();break}
 case 'range':APP.range[t.dataset.n]=t.value;savePreachingFilters();render();break;
+   case 'bm-filter-status':APP.batchMemFilter=APP.batchMemFilter||{};APP.batchMemFilter.status=t.value;render();break;
+   case 'bm-filter-att':APP.batchMemFilter=APP.batchMemFilter||{};APP.batchMemFilter.att=t.value;render();break;
+   case 'bm-filter-rounds':APP.batchMemFilter=APP.batchMemFilter||{};APP.batchMemFilter.rounds=t.value;render();break;
+   case 'bm-filter-fac':APP.batchMemFilter=APP.batchMemFilter||{};APP.batchMemFilter.facilitator=t.value;render();break;
    case 'att-batch':APP.filters.attBatch=t.value;APP.filters.attClass=null;try{localStorage.setItem('bace_att_batch',t.value)}catch(e){}render();break;
    case 'att-class':APP.filters.attClass=t.value;try{localStorage.setItem('bace_att_class',t.value)}catch(e){}render();break;
    case 'att-status-filter':APP.filters.attStatusFilter=t.value;render();break;
@@ -16397,6 +16580,7 @@ document.addEventListener('input',e=>{
   else if(a==='pick-q'){APP.modal.q=t.value;render();refocus('#pickq')}
   else if(a==='morning-q'){APP.morningSearch=t.value;render();refocus('[data-act="morning-q"]')}
   else if(a==='att-q'){APP.filters.attSearch=t.value;render();refocus('[data-act="att-q"]')}
+  else if(a==='bm-filter-q'){APP.batchMemFilter=APP.batchMemFilter||{};APP.batchMemFilter.q=t.value;render();refocus('[data-act="bm-filter-q"]')}
   else if(a==='global-search'){APP.search=t.value}
 });
 document.addEventListener('keydown',e=>{
