@@ -9636,59 +9636,25 @@ function batchDashboardBody(b){
       )}
     </div>
     <div style="display:flex;flex-direction:column;gap:15px">
-      ${(()=>{
-        const mode = APP.tab['bfunnel_'+b.id] || ((b.level === 1 && contacts.length > 0) ? 'outreach' : 'growth');
-        const mList = m.members;
-        
-        // Growth funnel (spiritual progression of enrolled devotees)
-        const activeDevs = mList.filter(d => d.status === 'Active');
-        const regularAttDevs = mList.filter(d => (d.attendancePct || 0) >= 60);
-        const sadhana16Devs = mList.filter(d => (d.sadhana?.rounds || 0) >= 16);
-        const engagedDevs = mList.filter(d => d.dept || d.service || d.swabhav?.engaged);
-
-        // Outreach pipeline (conversion from first contact to batch membership)
-        const interestedContacts = contacts.filter(c => STAGES.indexOf(c.stage) >= 2);
-        const classContacts = contacts.filter(c => c.classes > 0 || STAGES.indexOf(c.stage) >= 4);
-        const regularContacts = contacts.filter(c => STAGES.indexOf(c.stage) >= 5);
-        const totalSphere = contacts.length + mList.length;
-
-        const growthRows = [
-          { l: 'Enrolled members', v: mList.length, color: 'var(--indigo)', r: '#/batch/' + b.id, tip: `All enrolled devotees in ${b.name}: ${mList.length}` },
-          { l: 'Active status', v: activeDevs.length, color: 'var(--teal)', r: '#/devotees', tip: `Active devotees in this batch: ${activeDevs.length}` },
-          { l: 'Regular attendance', v: regularAttDevs.length, color: 'var(--green)', r: '#/batch-attendance', tip: `Devotees with ≥60% class attendance: ${regularAttDevs.length}` },
-          { l: '16 rounds japa', v: sadhana16Devs.length, color: 'var(--saffron)', r: '#/sadhana', tip: `Devotees chanting 16 rounds daily: ${sadhana16Devs.length}` },
-          { l: 'Engaged in seva', v: engagedDevs.length, color: 'var(--mustard)', r: '#/assign', tip: `Devotees actively serving in departments: ${engagedDevs.length}` }
-        ];
-
-        const outreachRows = [
-          { l: 'Total in orbit', v: totalSphere, r: '#/contacts', tip: `Total contacts reached (${contacts.length}) + enrolled devotees (${mList.length})` },
-          { l: 'Interested', v: interestedContacts.length + mList.length, r: '#/contacts', tip: `Expressed interest or attended intro discussions` },
-          { l: 'Attending classes', v: classContacts.length + regularAttDevs.length, r: '#/classes', tip: `Attending classes and weekly sessions` },
-          { l: 'Regular devotees', v: regularContacts.length + activeDevs.length, r: '#/batch-attendance', tip: `Consistent participants in programmes` },
-          { l: 'Enrolled in batch', v: mList.length, color: 'var(--teal)', r: '#/batch/' + b.id, tip: `Formally joined ${b.name}` }
-        ];
-
-        const rows = mode === 'outreach' ? outreachRows : growthRows;
-        
-        const tabsHtml = `<div style="display:inline-flex;border:1px solid var(--line);border-radius:8px;padding:2px;background:var(--surface-2);gap:2px">
-          <button type="button" class="btn sm ${mode==='growth'?'pri':''}" data-act="toggle-batch-funnel" data-id="${b.id}" data-mode="growth" style="padding:3px 9px;font-size:11px;border-radius:6px;border:none" title="Track member sadhana & seva growth">🪷 Devotee Growth</button>
-          <button type="button" class="btn sm ${mode==='outreach'?'pri':''}" data-act="toggle-batch-funnel" data-id="${b.id}" data-mode="outreach" style="padding:3px 9px;font-size:11px;border-radius:6px;border:none" title="Track contact outreach & admission">🌱 Outreach Pipeline</button>
-        </div>`;
-
-        return section('🌱 Batch funnel', `<div class="card-b">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
-            ${tabsHtml}
-            <button class="btn sm" data-act="open-contact-batch" data-batch="${b.id}" style="font-size:11.5px;padding:3px 8px">${ic('plus')}Add contact</button>
-          </div>
-          ${funnel(rows)}
-          <div class="tiny" style="margin-top:10px;display:flex;justify-content:space-between;align-items:center">
-            <span>${mode === 'growth' ? 'Tracks member progression from enrolment to 16 rounds & active seva.' : 'Tracks pipeline from first contact to batch enrolment.'}</span>
-            <span style="color:var(--ink-3)">Click any bar to drill down</span>
-          </div>
-        </div>`);
-      })()}
-      ${section('🧾 Budget',`<div class="card-b">${budgetBlock(b.budget)}
-        ${ownsBatch(b.id)?`<button class="btn block" style="margin-top:12px" data-act="edit-budget" data-kind="batch" data-id="${b.id}">${ic('edit')}Update budget</button>`:''}</div>`)}
+      ${section('🎯 Batch preaching funnel', `<div class="card-b">
+        <p class="tiny muted" style="margin-top:0;margin-bottom:12px">Conversion and progression of souls connected with ${esc(b.name)}</p>
+        ${funnel(batchPreachingFunnel(b.id))}
+        <div class="tiny" style="margin-top:10px;display:flex;justify-content:space-between;align-items:center">
+          <span>Tracks member progression from Registered to Actively Serving.</span>
+          <span style="color:var(--ink-3)">Click any bar to drill down</span>
+        </div>
+      </div>`, `<span class="badge b-purple" style="font-size:11px">6-Stage Funnel</span>`)}
+      ${section('🧾 Budget', `<div class="card-b click" data-act="open-budget" data-kind="batch" data-id="${b.id}" style="cursor:pointer" title="Click to update collected budget & expenses">
+        <div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:6px"><span class="muted">Budget Overview</span><b>${pct(b.budget.spent, b.budget.allocated)}% spent</b></div>
+        ${prog(pct(b.budget.spent, b.budget.allocated), pct(b.budget.spent, b.budget.allocated)>95?'var(--danger)':'var(--mustard)')}
+        <div class="grid g3" style="gap:8px;margin-top:10px">
+          <div><div class="tiny">Collected</div><b style="font-family:var(--f-head);font-size:15px;color:var(--green)">${money(b.budget.allocated)}</b></div>
+          <div><div class="tiny">Expenses</div><b style="font-family:var(--f-head);font-size:15px;color:var(--danger)">${money(b.budget.spent)}</b></div>
+          <div><div class="tiny">Remaining</div><b style="font-family:var(--f-head);font-size:15px;color:var(--ink)">${money(b.budget.allocated - b.budget.spent)}</b></div>
+        </div>
+        <div class="tiny muted" style="margin-top:8px;display:flex;align-items:center;gap:4px">
+          ${ic('edit')} Tap anywhere on budget to edit collection & expenses
+        </div></div>`, ownsBatch(b.id)?`<button class="btn sm" data-act="open-budget" data-kind="batch" data-id="${b.id}">${ic('edit')}Edit budget</button>`:null)}
       ${section('⏰ Follow-ups',`<div class="list">
         ${attnRow('var(--danger)',m.fus.overdue,'overdue','#/followups')}
         ${attnRow('var(--amber)',m.fus.pending,'pending','#/followups')}
@@ -9880,28 +9846,155 @@ function getBatchVolunteers(batchId){
   return Array.from(set).map(id => dv(id) || (DB.devotees||[]).find(x => x.id === id || x.customId === id)).filter(Boolean);
 }
 
+
+/* ---------- LocalStorage Persistence Layer for Batches, Reports & Filters ---------- */
+function saveBatchesToStorage(){
+  try{
+    const data = (DB.batches||[]).map(b => ({
+      id: b.id, name: b.name, level: b.level, desc: b.desc, freq: b.freq,
+      day: b.day, time: b.time, start: b.start, status: b.status,
+      incharge: b.incharge, coordinator: b.coordinator,
+      facilitators: b.facilitators || [], volunteers: b.volunteers || [],
+      budget: b.budget
+    }));
+    localStorage.setItem('bace_batches_store', JSON.stringify(data));
+  }catch(e){console.warn('saveBatchesToStorage error:', e)}
+}
+
+function loadBatchesFromStorage(){
+  try{
+    const raw = localStorage.getItem('bace_batches_store');
+    if(!raw) return;
+    const list = JSON.parse(raw);
+    if(Array.isArray(list)){
+      list.forEach(saved => {
+        const b = (DB.batches||[]).find(x => x.id === saved.id);
+        if(b){
+          Object.assign(b, saved);
+        } else {
+          DB.batches.push(saved);
+        }
+      });
+    }
+  }catch(e){console.warn('loadBatchesFromStorage error:', e)}
+}
+
+function saveReportsToStorage(){
+  try{
+    localStorage.setItem('bace_reports_store', JSON.stringify(DB.reports || []));
+  }catch(e){console.warn('saveReportsToStorage error:', e)}
+}
+
+function loadReportsFromStorage(){
+  try{
+    const raw = localStorage.getItem('bace_reports_store');
+    if(!raw) return;
+    const list = JSON.parse(raw);
+    if(Array.isArray(list)){
+      list.forEach(saved => {
+        const idx = (DB.reports||[]).findIndex(r => (saved.id && r.id === saved.id) || (saved.batch && r.batch === saved.batch));
+        if(idx >= 0){
+          Object.assign(DB.reports[idx], saved);
+        } else {
+          DB.reports.push(saved);
+        }
+      });
+    }
+  }catch(e){console.warn('loadReportsFromStorage error:', e)}
+}
+
+function saveDevoteesToStorage(){
+  try{
+    const list = (DB.devotees||[]).map(d => ({
+      id: d.id, batch: d.batch, level: d.level, facilitator: d.facilitator,
+      isFacilitator: d.isFacilitator, appointment: d.appointment, batchRole: d.batchRole,
+      dept: d.dept, status: d.status, attendancePct: d.attendancePct, batchHistory: d.batchHistory
+    }));
+    localStorage.setItem('bace_devotees_store', JSON.stringify(list));
+  }catch(e){console.warn('saveDevoteesToStorage error:', e)}
+}
+
+function loadDevoteesFromStorage(){
+  try{
+    const raw = localStorage.getItem('bace_devotees_store');
+    if(!raw) return;
+    const list = JSON.parse(raw);
+    if(Array.isArray(list)){
+      list.forEach(saved => {
+        const d = (DB.devotees||[]).find(x => x.id === saved.id);
+        if(d){
+          if(saved.batch !== undefined) d.batch = saved.batch;
+          if(saved.level !== undefined) d.level = saved.level;
+          if(saved.facilitator !== undefined) d.facilitator = saved.facilitator;
+          if(saved.isFacilitator !== undefined) d.isFacilitator = saved.isFacilitator;
+          if(saved.appointment !== undefined) d.appointment = saved.appointment;
+          if(saved.batchRole !== undefined) d.batchRole = saved.batchRole;
+          if(saved.dept !== undefined) d.dept = saved.dept;
+          if(saved.status !== undefined) d.status = saved.status;
+          if(saved.batchHistory !== undefined) d.batchHistory = saved.batchHistory;
+        }
+      });
+    }
+  }catch(e){console.warn('loadDevoteesFromStorage error:', e)}
+}
+
+function saveAttendanceToStorage(){
+  try{
+    localStorage.setItem('bace_attendance_store', JSON.stringify(DB.attendance || []));
+  }catch(e){console.warn('saveAttendanceToStorage error:', e)}
+}
+
+function loadAttendanceFromStorage(){
+  try{
+    const raw = localStorage.getItem('bace_attendance_store');
+    if(!raw) return;
+    const list = JSON.parse(raw);
+    if(Array.isArray(list)){
+      list.forEach(saved => {
+        const existing = (DB.attendance||[]).find(a => a.id === saved.id || (a.ref === saved.ref && a.devotee === saved.devotee));
+        if(existing){
+          Object.assign(existing, saved);
+        } else {
+          DB.attendance.push(saved);
+        }
+      });
+    }
+  }catch(e){console.warn('loadAttendanceFromStorage error:', e)}
+}
+
+function savePreachingFilters(){
+  try{
+    if(APP.filters.repBatch) localStorage.setItem('bace_rep_batch', APP.filters.repBatch);
+    if(APP.range) localStorage.setItem('bace_date_range', JSON.stringify(APP.range));
+  }catch(e){}
+}
+
+function loadPreachingFilters(){
+  try{
+    const sb = localStorage.getItem('bace_rep_batch');
+    if(sb && (DB.batches||[]).some(b => b.id === sb)) APP.filters.repBatch = sb;
+    const sr = localStorage.getItem('bace_date_range');
+    if(sr) APP.range = Object.assign(APP.range, JSON.parse(sr));
+  }catch(e){}
+}
+
 function batchPreachingFunnel(bid){
   const b = batch(bid);
   const mems = batchMembers(bid);
-  const conts = batchContacts(bid);
 
-  // 1. Contacts: Total prospective contacts and enrolled batch devotees
-  const totalContacts = Math.max(conts.length, mems.length);
+  // 1. Registered: all those in the batch members list
+  const registered = mems.length;
 
-  // 2. Interested (active): Contacts showing active interest or active devotees
-  const activeContacts = conts.filter(c =>
-    ['Interested', 'First contact', 'Regular participant', 'Batch assigned', 'Active devotee', 'Level 1', 'Level 2', 'Level 3'].includes(c.stage) ||
-    c.status === 'Active'
-  ).length;
-  const interestedActive = Math.max(activeContacts, mems.filter(d => d.status === 'Active').length);
+  // 2. Interested: batch members who are active or interested (not inactive)
+  const interested = mems.filter(d => d.status === 'Active' || d.status === 'New').length;
 
-  // 3. Attending class: Devotees/contacts with attendance records
+  // 3. Attending Class: batch members who attend classes (attendance marked or attendancePct > 0)
   const attendingClass = mems.filter(d => (d.attendancePct || 0) > 0 || (DB.attendance||[]).some(a => a.devotee === d.id && a.status === 'Present')).length;
 
-  // 4. Regular: Active devotees who attend classes regularly (>=60% attendance)
+  // 4. Regular: batch members who attend regularly (>=60% attendance and active)
   const regular = mems.filter(d => (d.attendancePct || 0) >= 60 && d.status === 'Active').length;
 
-  // 5. Sadhana: Devotees practicing sadhana (sadhana log, >=4 rounds, or morning program)
+  // 5. Sadhana: batch members practicing sadhana (sadhana log, >=4 rounds, or morning program)
   const sadhana = mems.filter(d => {
     const sRec = (DB.sadhana || []).find(s => s.devotee === d.id);
     const rounds = sRec?.rounds || d.sadhana?.rounds || 0;
@@ -9909,7 +10002,7 @@ function batchPreachingFunnel(bid){
     return rounds >= 4 || prog > 0;
   }).length;
 
-  // 6. Actively serving: Devotees engaged in department seva / service assignments
+  // 6. Actively Serving: batch members actively serving in seva/department
   const activelyServing = mems.filter(d => {
     return (d.dept && d.dept !== '') ||
       (d.service && d.service.length > 0) ||
@@ -9919,15 +10012,14 @@ function batchPreachingFunnel(bid){
   }).length;
 
   return [
-    {l: 'Contacts', v: totalContacts, color: 'var(--indigo)', r: '#/contacts', tip: `Batch contacts: ${totalContacts}`},
-    {l: 'Interested (active)', v: interestedActive, color: '#4f46e5', r: '#/contacts', tip: `Interested & active: ${interestedActive}`},
-    {l: 'Attending class', v: attendingClass, color: '#6366f1', r: '#/batch-attendance', tip: `Attending classes: ${attendingClass}`},
+    {l: 'Registered', v: registered, color: 'var(--indigo)', r: '#/devotees', tip: `Registered batch members: ${registered}`},
+    {l: 'Interested', v: interested, color: '#4f46e5', r: '#/devotees', tip: `Interested & active members: ${interested}`},
+    {l: 'Attending Class', v: attendingClass, color: '#6366f1', r: '#/batch-attendance', tip: `Attending classes: ${attendingClass}`},
     {l: 'Regular', v: regular, color: '#0ea5e9', r: '#/batch-attendance', tip: `Regular attendees (>=60%): ${regular}`},
     {l: 'Sadhana', v: sadhana, color: '#10b981', r: '#/sadhana', tip: `Practicing sadhana: ${sadhana}`},
-    {l: 'Actively serving', v: activelyServing, color: '#f59e0b', r: '#/assign', tip: `Actively serving in seva: ${activelyServing}`}
+    {l: 'Actively Serving', v: activelyServing, color: '#f59e0b', r: '#/assign', tip: `Actively serving in seva: ${activelyServing}`}
   ];
 }
-
 function showBatchFacilitatorsModal(batchId){
   const b = batch(batchId);
   if(!b) return;
@@ -10315,6 +10407,14 @@ function exportBatchMonthlyReportPDF(bid){
     ${(DB.reports.find(r => r.batch === bid) || {}).next ? `<p style="margin:4px 0"><b>Next Month Plan:</b> ${esc((DB.reports.find(r => r.batch === bid) || {}).next)}</p>` : ''}
   </div>` : ''}
 
+  <div class="section-title">🧾 Budget & Accounts (Collection & Expenses)</div>
+  <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px 14px;margin-bottom:16px;display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
+    <div class="meta-item"><span>Collected Budget</span><b style="color:#16a34a;font-size:14px">₹${Number(m.budget.allocated).toLocaleString()}</b></div>
+    <div class="meta-item"><span>Total Expenses (Spent)</span><b style="color:#dc2626;font-size:14px">₹${Number(m.budget.spent).toLocaleString()}</b></div>
+    <div class="meta-item"><span>Remaining Balance</span><b style="color:#0f172a;font-size:14px">₹${Number(m.budget.allocated - m.budget.spent).toLocaleString()}</b></div>
+    <div class="meta-item"><span>Utilisation</span><b style="color:${m.util>90?'#dc2626':'#2563eb'};font-size:14px">${m.util}%</b></div>
+  </div>
+
   <div class="signatures">
     <div class="sig-box">
       <b>${esc(nameOf(bCoordinator))}</b><br>
@@ -10401,7 +10501,17 @@ function viewPreachingReports(){
     </div>
 
     <div style="display:flex;flex-direction:column;gap:15px">
-      ${section('🧾 Budget',`<div class="card-b">${budgetBlock(b.budget)}</div>`)}
+      ${section('🧾 Budget', `<div class="card-b click" data-act="open-budget" data-kind="batch" data-id="${bid}" style="cursor:pointer" title="Click to update collected budget & expenses">
+        <div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:6px"><span class="muted">Budget Overview</span><b>${pct(b.budget.spent, b.budget.allocated)}% spent</b></div>
+        ${prog(pct(b.budget.spent, b.budget.allocated), pct(b.budget.spent, b.budget.allocated)>95?'var(--danger)':'var(--mustard)')}
+        <div class="grid g3" style="gap:8px;margin-top:10px">
+          <div><div class="tiny">Collected</div><b style="font-family:var(--f-head);font-size:15px;color:var(--green)">${money(b.budget.allocated)}</b></div>
+          <div><div class="tiny">Expenses</div><b style="font-family:var(--f-head);font-size:15px;color:var(--danger)">${money(b.budget.spent)}</b></div>
+          <div><div class="tiny">Remaining</div><b style="font-family:var(--f-head);font-size:15px;color:var(--ink)">${money(b.budget.allocated - b.budget.spent)}</b></div>
+        </div>
+        <div class="tiny muted" style="margin-top:8px;display:flex;align-items:center;gap:4px">
+          ${ic('edit')} Tap anywhere on budget to edit collection & expenses
+        </div></div>`, `<button class="btn sm" data-act="open-budget" data-kind="batch" data-id="${bid}">${ic('edit')}Edit budget</button>`)}
       ${section('⏰ Follow-ups',`<div class="grid g2" style="padding:16px 18px;gap:9px">
         ${stat('Total',m.fus.total,'',{r:'#/followups'})}${stat('Completed',m.fus.done,'',{r:'#/followups'})}
         ${stat('Pending',m.fus.pending,'',{r:'#/followups'})}${stat('Overdue',m.fus.overdue,'',{tint:m.fus.overdue>0,r:'#/followups'})}</div>`)}
@@ -12253,7 +12363,7 @@ function openDeptForm(id){
     FLD('color','Colour','select',{v:d?.color||'saffron',opts:['saffron','green','indigo','teal','mustard','sky','brown','amber'],half:1}),
     FLD('reportFreq','Default reporting frequency','select',{v:d?.reportFreq||'Weekly',opts:['Daily','Weekly','Monthly','Per request','As required'],half:1}),
     FLD('status','Status','select',{v:d?.status||'Active',opts:['Active','Inactive','Archived'],half:1}),
-    FLD('allocated','Budget allocated (₹)','number',{v:d?.budget.allocated||0,half:1}),
+    FLD('allocated','Collected budget (₹)','number',{v:d?.budget.allocated||0,half:1}),
     FLD('spent','Budget spent (₹)','number',{v:d?.budget.spent||0,half:1})
   ],'save-dept',{id},'Departments are archived, never deleted — historical reports stay intact.');
 }
@@ -12387,10 +12497,13 @@ function openReportForm(deptId,kind){
   ],'save-report',{kind:'dept'});
 }
 function openBudgetForm(kind,id){
-  const b=kind==='dept'?dept(id).budget:kind==='batch'?batch(id).budget:act(id).budget;
-  openForm('Update budget',[FLD('allocated','Budget allocated (₹)','number',{v:b.allocated,half:1}),
-    FLD('spent','Amount spent (₹)','number',{v:b.spent,half:1})],'save-budget',{kind,id},
-    `Remaining and utilisation are calculated automatically.`);
+  const isBatch = kind==='batch';
+  const b=kind==='dept'?dept(id).budget:isBatch?batch(id).budget:act(id).budget;
+  openForm(isBatch ? 'Update batch budget (collection & expenses)' : 'Update budget',[
+    FLD('allocated', isBatch ? 'Collected budget (₹)' : 'Budget allocated (₹)','number',{v:b.allocated,half:1}),
+    FLD('spent', isBatch ? 'Expenses spent (₹)' : 'Amount spent (₹)','number',{v:b.spent,half:1})
+  ],'save-budget',{kind,id},
+  `Remaining balance and utilisation rate are calculated automatically.`);
 }
 function drillList(title,acts,sub){
   APP.modal={kind:'list',title,sub,
@@ -12923,14 +13036,14 @@ document.addEventListener('click',e=>{
       if(v.facilitators !== undefined){
         b.facilitators = Array.isArray(v.facilitators) ? v.facilitators : (v.facilitators ? [v.facilitators] : []);
       }
-      logAudit('Batch updated',b.name);toast('Batch updated')}
+      saveBatchesToStorage();logAudit('Batch updated',b.name);toast('Batch updated')}
     else{
       const facList = v.facilitators ? (Array.isArray(v.facilitators) ? v.facilitators : [v.facilitators]) : [];
       const b={id:uid('b'),name:v.name,desc:v.desc,level:+v.level,day:v.day,time:v.time,freq:v.freq,status:v.status,
         incharge:v.incharge||'d1',coordinator:v.coordinator,facilitators:facList,start:v.start,budget:{allocated:+v.allocated||0,spent:+v.spent||0}};
       DB.batches.push(b);
       DB.threads.push({id:uid('th'),type:'batch',name:b.name+' chat',members:[b.coordinator],ref:b.id,messages:[],pinnedNote:null});
-      logAudit('Batch created',v.name);toast('Batch created with its own group chat')}
+      saveBatchesToStorage();logAudit('Batch created',v.name);toast('Batch created with its own group chat')}
     APP.modal='';render();break}
   case 'edit-batch-facilitators':stop();{
     const b=batch(id);
@@ -12952,6 +13065,7 @@ document.addEventListener('click',e=>{
   case 'save-batch-facilitators':{const m=APP.modal;const b=batch(m.ctx.id);
     if(b){
       b.facilitators=m.selected;
+      saveBatchesToStorage();
       logAudit('Batch facilitators updated',`${b.name} — ${m.selected.length} facilitator(s)`);
       toast(`Facilitators updated — ${m.selected.length} assigned`);
     }
@@ -12965,6 +13079,7 @@ document.addEventListener('click',e=>{
       selected:(b.volunteers||[]),multi:true,save:'save-batch-team',ctx:{id}});
     break}
   case 'save-batch-team':{const m=APP.modal;const b=batch(m.ctx.id);
+    saveBatchesToStorage();
     if(b){b.volunteers=m.selected;logAudit('Batch team updated',b.name);toast('Team updated — '+m.selected.length+' volunteer(s)');}
     APP.modal='';render();break}
   case 'edit-dept-team':stop();{
@@ -12988,6 +13103,7 @@ document.addEventListener('click',e=>{
     before.filter(x=>!m.selected.includes(x)).forEach(x=>{const d=dv(x);d.history.push({type:'Batch',from:batch(m.ctx.id).name,to:'—',date:iso(TODAY)});d.batch=null});
     m.selected.forEach(x=>{const d=dv(x);if(d.batch!==m.ctx.id){if(d.batch)d.history.push({type:'Batch',from:batch(d.batch).name,to:batch(m.ctx.id).name,date:iso(TODAY)});
       d.batch=m.ctx.id;if(!d.level)d.level=batch(m.ctx.id).level}});
+    saveDevoteesToStorage();saveBatchesToStorage();
     logAudit('Batch members updated',batch(m.ctx.id).name+' now has '+m.selected.length+' members');
     toast('Members updated — previous batch kept in history');APP.modal='';render();break}
   case 'batch-report':stop();go('#/preaching-reports');APP.filters.repBatch=id;render();break;
@@ -12997,6 +13113,7 @@ document.addEventListener('click',e=>{
     let r=DB.reports.find(x=>x.batch===id);
     if(!r){r={id:uid('rp'),kind:'Preaching weekly',batch:id,dept:null,period:'Month of '+MONTHS[TODAY.getMonth()],status:'Submitted',by:APP.user.devotee};DB.reports.push(r)}
     r.challenges=ch;r.story=su;r.next=np;r.submitted=iso(TODAY);
+    saveReportsToStorage();
     logAudit('Batch report saved',b.name);toast('Report narrative saved');render();break}
   /* ---- devotees ---- */
   case 'add-devotee':openDevoteeForm(null);break;
@@ -13136,6 +13253,7 @@ document.addEventListener('click',e=>{
         // Preserve user navigation state
       }
       syncDevoteeToBackend(d, roleKey);
+      saveDevoteesToStorage();saveBatchesToStorage();
       logAudit('Devotee updated',`${d.name} (${roleObj.name})`);toast('Profile updated')}
     else{
       const d = normalizeDevotee({
@@ -13189,6 +13307,7 @@ document.addEventListener('click',e=>{
         DB.users.push({id:uid('u'),role:roleKey,devotee:d.id,dept:roleKey==='dept_head'?d.dept:undefined,batch:roleKey==='preaching_coord'?d.batch:undefined});
       }
       syncDevoteeToBackend(d, roleKey);
+      saveDevoteesToStorage();saveBatchesToStorage();
       logAudit('Devotee created',`${d.name} (${roleObj.name})`);toast('Devotee added to the directory','👥')}
     APP.modal='';render();break}
   case 'set-care':stop();{const d=dv(id);
@@ -13271,6 +13390,7 @@ document.addEventListener('click',e=>{
       attendancePct:0,timeline:[{date:c.firstContact,title:'First contact',desc:c.firstInteraction,tone:'saffron'},
         {date:iso(TODAY),title:'Joined '+batch(v.batch).name,desc:'Converted from the preaching pipeline.',tone:'indigo'}],history:[]};
     DB.devotees.push(d);
+    saveDevoteesToStorage();
     logAudit('Contact converted',`${c.name} joined ${batch(v.batch).name}`);
     toast(c.name+' now has a devotee record in '+batch(v.batch).name,'🎓');APP.modal='';go('#/devotee/'+d.id);break}
   /* ---- follow-ups ---- */
@@ -14282,7 +14402,7 @@ document.addEventListener('click',e=>{
     toast('Department matrix exported', '📊');
     break;
   }
-  case 'save-attendance':{logAudit('Attendance marked','Attendance saved by '+nameOf(APP.user.devotee));
+  case 'save-attendance':{saveAttendanceToStorage();logAudit('Attendance marked','Attendance saved by '+nameOf(APP.user.devotee));
     toast('Attendance saved','✅');render();break}
   case 'go-attendance':APP.fabOpen=false;go('#/batch-attendance');break;
   case 'go-attendance-act':stop();{const a=act(id);APP.modal='';
@@ -14359,11 +14479,13 @@ document.addEventListener('click',e=>{
     DB.notifications.unshift({id:uid('n'),em:'👍',title:'Report approved',body:(dept(r.dept)?.name||batch(r.batch)?.name)+' report approved',date:iso(TODAY),read:false,cat:'Management'});
     logAudit('Report approved',dept(r.dept)?.name||batch(r.batch)?.name);toast('Report approved');render();break}
   case 'dept-report-range':stop();go('#/dept-reports');break;
-  case 'edit-budget':stop();openBudgetForm(t.dataset.kind,id);break;
+  case 'open-budget':
+  case 'edit-budget':stop();openBudgetForm(t.dataset.kind||'batch',id||t.dataset.id);break;
   case 'save-budget':{const v=collect(),{kind,id:bid}=APP.modal.ctx;
     const target=kind==='dept'?dept(bid):kind==='batch'?batch(bid):act(bid);
     target.budget={allocated:+v.allocated||0,spent:+v.spent||0};
     logAudit('Budget updated',(target.name||'Activity')+' — '+money(target.budget.allocated));
+    if(kind==='batch') saveBatchesToStorage();
     toast('Budget updated','🧾');APP.modal=kind==='activity'?{kind:'activity',id:bid}:'';render();break}
   /* ---- care extras ---- */
   case 'add-meeting':stop();openForm('Record personal meeting',[
@@ -14505,13 +14627,13 @@ document.addEventListener('click',e=>{
       ['Batch Name', b.name], ['Batch Level', 'Level ' + b.level],
       ['Incharge', nameOf(bIncharge)], ['Coordinator', nameOf(bCoordinator)],
       ['Report Period', `${fmtD(APP.range.from)} to ${fmtD(APP.range.to)}`],
-      ['Total members', m.members.length], ['Active members', m.active], ['New members', m.neu], ['Inactive members', m.inactive],
+      ['Total members (Registered)', m.members.length], ['Active members', m.active], ['New members', m.neu], ['Inactive members', m.inactive],
       ['Facilitators', facs.length], ['Volunteers', vols.length],
       ...funnelStages.map(fs => ['Funnel — ' + fs.l, fs.v]),
       ['Classes', m.classes.length], ['Events', m.events.length], ['Average attendance %', m.attendance],
       ['Best class attendance %', m.best], ['Lowest class attendance %', m.low], ['Total attendance marks', m.totalAtt],
       ['Follow-ups total', m.fus.total], ['Follow-ups completed', m.fus.done], ['Follow-ups pending', m.fus.pending], ['Follow-ups overdue', m.fus.overdue],
-      ['Budget allocated', m.budget.allocated], ['Budget spent', m.budget.spent], ['Budget remaining', m.budget.allocated - m.budget.spent], ['Utilisation %', m.util]]);
+      ['Collected budget', m.budget.allocated], ['Expenses (spent)', m.budget.spent], ['Remaining balance', m.budget.allocated - m.budget.spent], ['Utilisation %', m.util]]);
     toast('Batch report exported','⬇️');break}
   case 'export-analytics':{const acts=DB.activities.filter(a=>inRange(a.date,APP.range.from,APP.range.to));
     exportReport('Community analytics',['Activity','Type','Scope','Date','Status','Responsible','Assigned','Required'],
@@ -14547,9 +14669,9 @@ document.addEventListener('change',e=>{
   const a=t.dataset.act;
   switch(a){
    case 'f':{const k=t.dataset.k,n=t.dataset.n;APP.filters[k]=APP.filters[k]||{};APP.filters[k][n]=t.value;APP.page[k]=1;render();break}
-   case 'range':APP.range[t.dataset.n]=t.value;render();break;
-   case 'att-batch':APP.filters.attBatch=t.value;APP.filters.attClass=null;render();break;
-   case 'att-class':APP.filters.attClass=t.value;render();break;
+case 'range':APP.range[t.dataset.n]=t.value;savePreachingFilters();render();break;
+   case 'att-batch':APP.filters.attBatch=t.value;APP.filters.attClass=null;try{localStorage.setItem('bace_att_batch',t.value)}catch(e){}render();break;
+   case 'att-class':APP.filters.attClass=t.value;try{localStorage.setItem('bace_att_class',t.value)}catch(e){}render();break;
    case 'att-dept':APP.filters.attDept=t.value;APP.filters.attAct=null;render();break;
    case 'att-act':APP.filters.attAct=t.value;render();break;
    case 'att-date':APP.filters.attDate=t.value;render();break;
@@ -14573,7 +14695,7 @@ document.addEventListener('change',e=>{
      break;
    }
    case 'cal-cat':APP.filters.calCat=t.value;render();break;
-   case 'rep-batch':APP.filters.repBatch=t.value;render();break;
+case 'rep-batch':APP.filters.repBatch=t.value;savePreachingFilters();render();break;
    case 'vol-f':{syncAssign();assignDraft()[t.dataset.n]=t.value;render();break}
    case 'import-csv-file':{
      const file = e.target.files && e.target.files[0];
@@ -14646,6 +14768,17 @@ document.addEventListener('drop',e=>{
   logAudit('Contact stage changed',`${c.name} → ${st}`);toast(c.name+' moved to '+st);render();
 });
 window.addEventListener('hashchange',()=>{APP.route=location.hash||'#/';APP.modal='';APP.mobileDrawerOpen=false;render()});
+loadBatchesFromStorage();
+loadReportsFromStorage();
+loadDevoteesFromStorage();
+loadPreachingFilters();
+loadAttendanceFromStorage();
+try{
+  const sbAttB = localStorage.getItem('bace_att_batch');
+  if(sbAttB && (DB.batches||[]).some(b=>b.id===sbAttB)) APP.filters.attBatch = sbAttB;
+  const sbAttC = localStorage.getItem('bace_att_class');
+  if(sbAttC) APP.filters.attClass = sbAttC;
+}catch(e){}
 
 /* =========================================================================
    BOOT
