@@ -1966,34 +1966,7 @@ const logAudit=(action,record)=>DB.audit.unshift({id:uid('au'),user:(APP.user?na
     timeline: [{ date: iso(dayOff(-45)), title: 'Festival seva', desc: 'Volunteered during festival.', tone: 'green' }]
   });
 
-  /* 1 Sample Preaching follow-up + 1 Sample Care follow-up (only if no stored follow-ups) */
-  const storedFus = (typeof localStorage !== 'undefined') ? localStorage.getItem('bace_followups_store') : null;
-  if (!storedFus) {
-    DB.followups.push({
-      id: 'fu1',
-      kind: 'Preaching',
-      subject: 'c1',
-      assigned: dhirendraId || 'd1',
-      purpose: 'Invite to Sunday class',
-      last: iso(dayOff(-2)),
-      due: iso(dayOff(1)),
-      status: 'Pending',
-      priority: 'High',
-      notes: 'Call in the evening after classes.'
-    });
-    DB.followups.push({
-      id: 'fu2',
-      kind: 'Care',
-      subject: 'd_sample',
-      assigned: audaryaId || 'd1',
-      purpose: 'Weekly check-in',
-      last: iso(dayOff(-7)),
-      due: iso(dayOff(2)),
-      status: 'Pending',
-      priority: 'Medium',
-      notes: 'Check on exam preparations.'
-    });
-  }
+  /* Follow-ups start empty — only real created follow-ups are retained */
 
   /* 1 Sample Seva Template & Activity + Narad & Gaurvani weekly classes + 1 Event + 1 Task */
   const kitchenDept = DB.departments.find(d => d.name.includes('Kitchen')) || DB.departments[0];
@@ -2743,7 +2716,12 @@ function batchMetrics(id,from,to){
   });
   const memIds=new Set(mem.map(m=>m.id));
   const conIds=new Set(batchContacts(id).map(c=>c.id));
-  const fus=DB.followups.filter(f=>f.batch===id||memIds.has(f.subject)||conIds.has(f.subject));
+  const dummyFuIds = new Set(['fu1', 'fu2', 'fu_vd2guv']);
+  const fus = DB.followups.filter(f => {
+    if(dummyFuIds.has(f.id)) return false;
+    if(f.kind && f.kind !== 'Preaching') return false;
+    return f.batch === id || memIds.has(f.subject) || conIds.has(f.subject);
+  });
   const totalAttMarks=att.filter(a=>a.status==='Present').length;
   const avgAtt=perClass.length?Math.round(perClass.reduce((s,p)=>s+p.pctv,0)/perClass.length):0;
   return {b,acts,classes,events,members:mem,active:mem.filter(m=>m.status==='Active').length,
@@ -4514,7 +4492,7 @@ function viewDevotee(id){
           return {
             l: label,
             v: v,
-            tip: `${label}\nChanted: ${v} rounds\nTarget: ${targetRounds} rounds\nMorning Programme: ${d.sadhana?.morningProgram || 85}%\nStatus: ${v >= targetRounds ? 'Target achieved' : 'In progress'}`
+            tip: `${label}\nChanted: ${v} rounds\nTarget: ${targetRounds} rounds\nMorning Programme: ${Number(d.sadhana?.morningProgram) || 0}%\nStatus: ${v >= targetRounds ? 'Target achieved' : 'In progress'}`
           };
         });
         return barChart(weeklyPoints, { color: 'var(--green)' });
@@ -10534,7 +10512,8 @@ function loadFollowupsFromStorage(){
     if(raw !== null){
       const list = JSON.parse(raw);
       if(Array.isArray(list)){
-        DB.followups = list.filter(f => f && f.id && !deletedIds.has(f.id));
+        const dummyIds = new Set(['fu1', 'fu2', 'fu_vd2guv']);
+        DB.followups = list.filter(f => f && f.id && !deletedIds.has(f.id) && !dummyIds.has(f.id));
         return;
       }
     }
@@ -10807,10 +10786,12 @@ function getFunnelStageDevotees(bid, stageKey){
   }
   if(stageKey === 'regular') return regular;
 
-  // 5. Sadhana: members in regular (or attending) who practice sadhana (chanting rounds, morning program, sadhana reports, level >= 2)
+  // 5. Sadhana: members in attending who genuinely practice sadhana (chanting rounds >= 1, morning program > 0, or sadhana reports)
   const sadhana = attending.filter(d => {
     const rounds = Number(d.sadhana?.rounds) || 0;
     if(rounds >= 1) return true;
+    const morningProg = Number(d.sadhana?.morningProgram) || 0;
+    if(morningProg > 0) return true;
     const sRec = (DB.sadhana || []).find(s => s.devotee === d.id || s.devotee === d.customId || (d.name && s.devotee === d.name));
     if(sRec && ((Number(sRec.rounds)||0) >= 1 || (Number(sRec.program)||0) > 0)) return true;
     const hasMorning = (DB.attendance || []).some(a => 
@@ -10819,10 +10800,6 @@ function getFunnelStageDevotees(bid, stageKey){
       (a.status === 'Present' || a.status === 'On Time' || a.status === 'Grace' || a.status === 'Late')
     );
     if(hasMorning) return true;
-    if(d.morningStandardTime) return true;
-    if(d.sadhana?.morningProgram && Number(d.sadhana.morningProgram) > 0) return true;
-    if(d.level && Number(d.level) >= 2) return true;
-    if(d.sadhana?.lastReported) return true;
     return false;
   });
   if(stageKey === 'sadhana') return sadhana;
@@ -10996,7 +10973,7 @@ function openSetSadhanaModal(devoteeId, batchId){
   const d = dv(devoteeId);
   if(!d) return;
   const curRounds = d.sadhana?.rounds || 0;
-  const curProg = d.sadhana?.morningProgram || (d.attendancePct || 80);
+  const curProg = Number(d.sadhana?.morningProgram) || 0;
   openForm(`Record Sadhana: ${d.name}`, [
     FLD('rounds', 'Chanting Rounds (Japa)', 'select', { v: String(curRounds || 16), opts: [['0','0 rounds'], ['1','1 round'], ['2','2 rounds'], ['4','4 rounds'], ['8','8 rounds'], ['16','16 rounds (Daily minimum)']] }),
     FLD('program', 'Morning Attendance %', 'number', { v: curProg, half: 1 }),
@@ -11034,7 +11011,7 @@ function openStageSadhanaModal(batchId){
       opts: mems.map(d => [d.id, `${d.name} (${d.sadhana?.rounds||0} rounds, ${d.attendancePct||0}% att)`])
     }),
     FLD('rounds', 'Chanting Rounds (Japa)', 'select', { v: '16', opts: [['1','1 round'], ['2','2 rounds'], ['4','4 rounds'], ['8','8 rounds'], ['16','16 rounds (Daily minimum)']] }),
-    FLD('program', 'Morning Attendance %', 'number', { v: 85, half: 1 }),
+    FLD('program', 'Morning Attendance %', 'number', { v: 0, half: 1 }),
     FLD('wake', 'Average Rising Time', 'text', { v: '05:00 am', ph: 'e.g. 05:00 am', half: 1 })
   ], 'save-quick-sadhana', { batchId }, 'Record chanting and sadhana for this member to advance them into the Sadhana stage.');
 }
