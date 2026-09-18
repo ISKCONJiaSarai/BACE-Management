@@ -7537,8 +7537,8 @@ const DEFAULT_DEITY_SERVICES = [
   { id: 'd1', name: 'Temple Hall Cleaning', time: '04:30 AM', sort: 1 },
   { id: 'd2', name: 'Deity Wake-up', time: '05:15 AM', sort: 2 },
   { id: 'd3', name: 'Deity Worship', time: '06:30 AM', sort: 3 },
-  { id: 'd4', name: 'Mangla Aarti singing', time: '04:30 AM', sort: 4 },
-  { id: 'd5', name: 'Narsimha Aarti singing', time: '05:00 AM', sort: 5 },
+  { id: 'd4', name: 'Mangal Aarti singing', time: '', sort: 4, isSub: true, parentId: 'd3', parentName: 'Deity Worship' },
+  { id: 'd5', name: 'Narasimha Aarti singing', time: '', sort: 5, isSub: true, parentId: 'd3', parentName: 'Deity Worship' },
   { id: 'd6', name: 'Morning Bhoga offering', time: '07:30 AM', sort: 6 },
   { id: 'd7', name: 'Evening Bhoga offering', time: '05:30 PM', sort: 7 },
   { id: 'd8', name: 'Deity Rest', time: '08:45 PM', sort: 8 }
@@ -7561,12 +7561,20 @@ function getStoredRoster(key, defaultServices, defaultToday, defaultTomorrow) {
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed && parsed.services && parsed.services.length) {
-        // Automatically sync updated names and times from temple schedule
+        // Automatically sync updated names, times and subcategory metadata from temple schedule
         defaultServices.forEach(defS => {
-          const s = parsed.services.find(x => x.id === defS.id);
+          let s = parsed.services.find(x => x.id === defS.id);
+          if (!s && (defS.id === 'd4' || defS.id === 'd5')) {
+            s = parsed.services.find(x => x.name && (x.name.includes('Mangl') || x.name.includes('Narsimh') || x.name.includes('Aarti')));
+          }
           if (s) {
+            s.id = defS.id;
             s.name = defS.name;
             s.time = defS.time;
+            s.isSub = !!defS.isSub;
+            s.parentId = defS.parentId || null;
+            s.parentName = defS.parentName || null;
+            s.sort = defS.sort;
           }
         });
         if (parsed.slots) {
@@ -7601,13 +7609,39 @@ function initDepartmentRosters() {
   if (APP.deityRoster && (!APP.deityRoster.dressingSchedule || !APP.deityRoster.dressingSchedule.length)) {
     APP.deityRoster.dressingSchedule = getDefaultDressingSchedule();
   }
+  if (APP.deityRoster) {
+    DEFAULT_DEITY_SERVICES.forEach(defS => {
+      let s = APP.deityRoster.services && APP.deityRoster.services.find(x => x.id === defS.id);
+      if (!s && (defS.id === 'd4' || defS.id === 'd5')) {
+        s = APP.deityRoster.services && APP.deityRoster.services.find(x => x.name && (x.name.includes('Mangl') || x.name.includes('Narsimh')));
+      }
+      if (s) {
+        s.id = defS.id;
+        s.name = defS.name;
+        s.time = defS.time;
+        s.isSub = !!defS.isSub;
+        s.parentId = defS.parentId || null;
+        s.parentName = defS.parentName || null;
+        s.sort = defS.sort;
+      }
+    });
+    if (APP.deityRoster.slots) {
+      Object.values(APP.deityRoster.slots).forEach(daySlots => {
+        DEFAULT_DEITY_SERVICES.forEach(defS => {
+          if (daySlots[defS.id]) {
+            daySlots[defS.id].time = defS.time;
+          }
+        });
+      });
+    }
+  }
   if (!APP.deityRoster) {
     APP.deityRoster = getStoredRoster('deity', DEFAULT_DEITY_SERVICES, {
       d1: { devotees: 'Sai Sriram Pr & Neetesh', time: '04:30 AM', status: 'done' },
       d2: { devotees: 'Dhirendra Pr', time: '05:15 AM', status: 'done' },
       d3: { devotees: 'HG Janardan Shyam Pr', time: '06:30 AM', status: 'done' },
-      d4: { devotees: 'Sameer Pr', time: '04:30 AM', status: 'done' },
-      d5: { devotees: 'Sumit Pr', time: '05:00 AM', status: 'done' },
+      d4: { devotees: 'Sameer Pr', time: '', status: 'done' },
+      d5: { devotees: 'Sumit Pr', time: '', status: 'done' },
       d6: { devotees: 'Mayank Pr', time: '07:30 AM', status: 'done' },
       d7: { devotees: 'Sumit Pr', time: '05:30 PM', status: 'done' },
       d8: { devotees: 'Suraj Pr ❌ Aman Pr', time: '08:45 PM', status: 'done' }
@@ -7615,8 +7649,8 @@ function initDepartmentRosters() {
       d1: { devotees: 'Suraj Pr & Sumit Pr', time: '04:30 AM', status: 'pending' },
       d2: { devotees: 'Neetesh', time: '05:15 AM', status: 'pending' },
       d3: { devotees: 'Neetesh', time: '06:30 AM', status: 'pending' },
-      d4: { devotees: 'Mayank Pr', time: '04:30 AM', status: 'pending' },
-      d5: { devotees: 'Rajesh Roy Pr', time: '05:00 AM', status: 'pending' },
+      d4: { devotees: 'Mayank Pr', time: '', status: 'pending' },
+      d5: { devotees: 'Rajesh Roy Pr', time: '', status: 'pending' },
       d6: { devotees: 'Himanshu Pr', time: '07:30 AM', status: 'pending' },
       d7: { devotees: 'Mayank Pr', time: '05:30 PM', status: 'pending' },
       d8: { devotees: 'Suresh Pr', time: '08:45 PM', status: 'pending' }
@@ -8635,25 +8669,34 @@ function generateRosterCanvas(deptKey) {
     ctx.textBaseline = 'middle';
     ctx.font = '14.5px "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
 
-    const sWords = s.name.split(' ');
-    if (s.name.length > 22) {
-      // Split into 2 or 3 lines
-      let line1 = '', line2 = '', line3 = '';
-      if (s.name.includes('(')) {
-        const parts = s.name.split('(');
-        line1 = parts[0].trim();
-        line2 = '(' + parts[1].trim();
-        ctx.fillText(line1, col0W / 2, y + (rowH / 2) - 10);
-        ctx.fillText(line2, col0W / 2, y + (rowH / 2) + 10);
-      } else {
-        const mid = Math.ceil(sWords.length / 2);
-        line1 = sWords.slice(0, mid).join(' ');
-        line2 = sWords.slice(mid).join(' ');
-        ctx.fillText(line1, col0W / 2, y + (rowH / 2) - 10);
-        ctx.fillText(line2, col0W / 2, y + (rowH / 2) + 10);
-      }
+    const isSub = isDeity && (s.isSub || s.id === 'd4' || s.id === 'd5');
+    if (isSub) {
+      ctx.font = 'bold 13.5px "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+      ctx.fillText(`↳ ${s.name}`, col0W / 2, y + (rowH / 2) - 8);
+      ctx.font = 'italic 10.5px "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+      ctx.fillStyle = '#854d0e';
+      ctx.fillText('Deity Worship Sub-category', col0W / 2, y + (rowH / 2) + 10);
     } else {
-      ctx.fillText(s.name, col0W / 2, y + (rowH / 2));
+      const sWords = s.name.split(' ');
+      if (s.name.length > 22) {
+        // Split into 2 or 3 lines
+        let line1 = '', line2 = '', line3 = '';
+        if (s.name.includes('(')) {
+          const parts = s.name.split('(');
+          line1 = parts[0].trim();
+          line2 = '(' + parts[1].trim();
+          ctx.fillText(line1, col0W / 2, y + (rowH / 2) - 10);
+          ctx.fillText(line2, col0W / 2, y + (rowH / 2) + 10);
+        } else {
+          const mid = Math.ceil(sWords.length / 2);
+          line1 = sWords.slice(0, mid).join(' ');
+          line2 = sWords.slice(mid).join(' ');
+          ctx.fillText(line1, col0W / 2, y + (rowH / 2) - 10);
+          ctx.fillText(line2, col0W / 2, y + (rowH / 2) + 10);
+        }
+      } else {
+        ctx.fillText(s.name, col0W / 2, y + (rowH / 2));
+      }
     }
 
     // Render Today Devotees + Status Emojis
@@ -8822,11 +8865,22 @@ function generateWeeklyChartCanvas(deptKey) {
 
     ctx.fillStyle = '#111111';
     ctx.textAlign = 'center';
-    ctx.font = 'bold 14px "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
-    ctx.fillText(s.name, col0W / 2, y + (rowH / 2) - 8);
-    ctx.font = 'normal 11.5px "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
-    ctx.fillStyle = '#444444';
-    ctx.fillText(s.time, col0W / 2, y + (rowH / 2) + 11);
+    const isSub = isDeity && (s.isSub || s.id === 'd4' || s.id === 'd5');
+    if (isSub) {
+      ctx.font = 'bold 13px "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+      ctx.fillText(`↳ ${s.name}`, col0W / 2, y + (rowH / 2) - 8);
+      ctx.font = 'italic 10px "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+      ctx.fillStyle = '#854d0e';
+      ctx.fillText('Deity Worship Sub-category', col0W / 2, y + (rowH / 2) + 10);
+    } else {
+      ctx.font = 'bold 14px "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+      ctx.fillText(s.name, col0W / 2, s.time ? (y + (rowH / 2) - 8) : (y + (rowH / 2)));
+      if (s.time) {
+        ctx.font = 'normal 11.5px "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+        ctx.fillStyle = '#444444';
+        ctx.fillText(s.time, col0W / 2, y + (rowH / 2) + 11);
+      }
+    }
 
     // 7 Days Cells (Pale Lavender #E5DCF7)
     days.forEach((d, i) => {
@@ -8896,7 +8950,12 @@ async function shareWeeklyChartPhotoDirectly(deptKey) {
   roster.services.forEach(s => {
     const todaySlot = getRosterSlot(roster, iso(TODAY), s.id);
     const tmSlot = getRosterSlot(roster, iso(dayOff(1)), s.id);
-    msg += `• *${s.name}* (${s.time}): Today [${todaySlot.devotees || 'Unassigned'}], Tomorrow [${tmSlot.devotees || 'Unassigned'}]\n`;
+    const isSub = isDeity && (s.isSub || s.id === 'd4' || s.id === 'd5');
+    if (isSub) {
+      msg += `   ↳ *${s.name}* (Sub-category): Today [${todaySlot.devotees || 'Unassigned'}], Tomorrow [${tmSlot.devotees || 'Unassigned'}]\n`;
+    } else {
+      msg += `• *${s.name}*${s.time ? ` (${s.time})` : ''}: Today [${todaySlot.devotees || 'Unassigned'}], Tomorrow [${tmSlot.devotees || 'Unassigned'}]\n`;
+    }
   });
   msg += `\n_Please find attached the official Weekly Service Chart photo._\n_Your servant,_\n_BACE Management_`;
 
@@ -9008,12 +9067,22 @@ async function shareRosterPhotoDirectly(deptKey) {
   roster.services.forEach(s => {
     const sl = getRosterSlot(roster, iso(TODAY), s.id);
     const st = sl.status === 'done' ? '✅' : (sl.status === 'missed' ? '❌' : '⏳');
-    msg += `• *${s.name}*: ${sl.devotees || 'Unassigned'} ${st}\n`;
+    const isSub = isDeity && (s.isSub || s.id === 'd4' || s.id === 'd5');
+    if (isSub) {
+      msg += `   ↳ *${s.name}* (Sub-category): ${sl.devotees || 'Unassigned'} ${st}\n`;
+    } else {
+      msg += `• *${s.name}*: ${sl.devotees || 'Unassigned'} ${st}\n`;
+    }
   });
   msg += `\n*TOMORROW'S SERVICES SCHEDULE:*\n`;
   roster.services.forEach(s => {
     const sl = getRosterSlot(roster, iso(dayOff(1)), s.id);
-    msg += `• *${s.name}*: ${sl.devotees || 'Unassigned'}\n`;
+    const isSub = isDeity && (s.isSub || s.id === 'd4' || s.id === 'd5');
+    if (isSub) {
+      msg += `   ↳ *${s.name}* (Sub-category): ${sl.devotees || 'Unassigned'}\n`;
+    } else {
+      msg += `• *${s.name}*: ${sl.devotees || 'Unassigned'}\n`;
+    }
   });
   msg += `\n_Please find attached services report photo._\n_Your servant,_\n_BACE Management_`;
 
@@ -11250,12 +11319,16 @@ function renderDepartmentRosterPanel(deptKey) {
                   ? '<span class="badge b-red">❌ Missed</span>'
                   : '<span class="badge b-amber">⏳ Pending</span>');
               const rowBg = isDone ? 'rgba(5,150,105,0.04)' : (isMissed ? 'rgba(220,38,38,0.04)' : 'transparent');
+              const isSubService = isDeity && (s.isSub || s.id === 'd4' || s.id === 'd5');
               return `<tr data-status="${statusLabel}" data-time="${esc(s.time)}" data-service="${esc(s.name.toLowerCase())}" data-devotee="${esc(devText.toLowerCase())}" style="background:${rowBg};${isHidden ? 'display:none;' : ''}">
                 <td data-l="Service">
-                  <div style="font-weight:700;font-size:13.5px">${esc(s.name)}</div>
-                  <div class="tiny" style="color:var(--ink-3)">${s.time}</div>
+                  <div style="font-weight:700;font-size:13.5px;display:flex;align-items:center;gap:6px">
+                    ${isSubService ? '<span style="color:var(--saffron);font-weight:bold">↳</span>' : ''}
+                    <span>${esc(s.name)}</span>
+                  </div>
+                  ${isSubService ? '<div class="tiny" style="color:#b45309;font-style:italic">Deity Worship Sub-category</div>' : (s.time ? `<div class="tiny" style="color:var(--ink-3)">${s.time}</div>` : '')}
                 </td>
-                <td data-l="Time" style="text-align:center;font-size:13px;color:var(--ink-2);font-weight:600">${s.time}</td>
+                <td data-l="Time" style="text-align:center;font-size:13px;color:var(--ink-2);font-weight:600">${s.time || '—'}</td>
                 <td data-l="Assigned Devotee">
                   <span style="font-weight:600;font-size:13.5px;cursor:pointer" data-act="edit-roster-slot" data-dept="${deptKey}" data-dt="${sdDate}" data-s="${s.id}" data-src="single-day" title="Click to edit">${esc(devText)}</span>
                 </td>
@@ -11303,10 +11376,15 @@ function renderDepartmentRosterPanel(deptKey) {
             </tr>
           </thead>
           <tbody>
-            ${services.map(s => `<tr>
+            ${services.map(s => {
+              const isSub = isDeity && (s.isSub || s.id === 'd4' || s.id === 'd5');
+              return `<tr>
               <td data-l="Service">
-                <b>${esc(s.name)}</b>
-                <div class="tiny" style="color:var(--ink-3)">${s.time}</div>
+                <div style="font-weight:700;font-size:13px;display:flex;align-items:center;gap:5px">
+                  ${isSub ? '<span style="color:var(--saffron);font-weight:bold">↳</span>' : ''}
+                  <span>${esc(s.name)}</span>
+                </div>
+                ${isSub ? '<div class="tiny" style="color:#b45309;font-style:italic">Deity Worship Sub-category</div>' : (s.time ? `<div class="tiny" style="color:var(--ink-3)">${s.time}</div>` : '')}
               </td>
               ${days.map(d => {
                 const sl = getRosterSlot(roster, d, s.id);
@@ -11317,7 +11395,8 @@ function renderDepartmentRosterPanel(deptKey) {
                   </div>
                 </td>`;
               }).join('')}
-            </tr>`).join('')}
+            </tr>`;
+            }).join('')}
           </tbody>
         </table>
       </div>
