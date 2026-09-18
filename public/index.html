@@ -7290,9 +7290,9 @@ function morningProgramPanel(){
             <button class="btn sm ${data.date === (typeof TODAY !== 'undefined' ? iso(TODAY) : '') ? 'pri' : ''}" data-act="morning-go-today" title="Jump to Today's date" style="padding:4px 9px;font-size:11.5px;font-weight:600">
               📅 Today
             </button>
-            <input type="date" value="${data.date || (typeof TODAY !== 'undefined' ? iso(TODAY) : '')}" data-act="morning-change-date-input" title="Pick an exact date" style="padding:4px 8px;font-size:12px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);cursor:pointer">
+            <input type="date" value="${data.date || (typeof TODAY !== 'undefined' ? iso(TODAY) : '')}" data-act="morning-change-date-input" onchange="if(APP.morningData){ if(APP.morningData.rawBiometricText){ APP.morningData = parseMorningCSV(APP.morningData.rawBiometricText, this.value); } else { APP.morningData.date = this.value; } render(); }" title="Pick an exact date" style="padding:4px 8px;font-size:12px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);cursor:pointer">
             ${data.availableDates && data.availableDates.length > 1 ? `
-            <select data-act="morning-change-date" style="padding:4px 8px;font-size:12px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);cursor:pointer;max-width:240px">
+            <select data-act="morning-change-date" onchange="if(APP.morningData){ if(APP.morningData.rawBiometricText){ APP.morningData = parseMorningCSV(APP.morningData.rawBiometricText, this.value); } else { APP.morningData.date = this.value; } render(); }" style="padding:4px 8px;font-size:12px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);cursor:pointer;max-width:240px">
               ${data.availableDates.slice().reverse().map(dt => `<option value="${dt}" ${dt === data.date ? 'selected' : ''}>${fmtExactDate(dt)}${dt === data.availableDates[data.availableDates.length-1] ? ' (Latest)' : ''}</option>`).join('')}
             </select>` : ''}
           </div>` : ''}
@@ -7340,10 +7340,10 @@ function morningProgramPanel(){
           <div class="chips" style="margin:0">
             ${['','Attended','On Time','Grace','Late','Very late','Absent'].map(st => {
               const cnt = !st ? m.total : (st==='Attended'?m.attended : (st==='On Time'?m.onTimeCount : (st==='Grace'?m.graceCount : (st==='Late'?m.lateCount : (st==='Very late'?(m.veryLateCount||0) : m.absentCount)))));
-              return `<button class="chip ${filterSt===st?'on':''}" data-act="morning-filter-status" data-s="${st}" style="font-size:11.5px;padding:3px 9px">${st||'All'} (${cnt})</button>`;
+              return `<button class="chip ${filterSt===st?'on':''}" data-act="morning-filter-status" data-s="${st}" onclick="APP.morningFilterStatus='${st}';APP.morningFilterBucket='';render();" style="font-size:11.5px;padding:3px 9px;cursor:pointer">${st||'All'} (${cnt})</button>`;
             }).join('')}
           </div>
-          <select data-act="morning-daily-sort" style="padding:6px 10px;font-size:12px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);cursor:pointer;margin-left:auto">
+          <select data-act="morning-daily-sort" onchange="APP.morningDailySort=this.value;render();" style="padding:6px 10px;font-size:12px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);cursor:pointer;margin-left:auto">
             <option value="punch_asc" ${APP.morningDailySort==='punch_asc'||!APP.morningDailySort?'selected':''}>Sort: Earliest Punch First</option>
             <option value="punch_desc" ${APP.morningDailySort==='punch_desc'?'selected':''}>Sort: Latest Punch First</option>
             <option value="status" ${APP.morningDailySort==='status'?'selected':''}>Sort: Status (On Time → Absent)</option>
@@ -7433,7 +7433,7 @@ function morningProgramPanel(){
             <span style="position:absolute;left:10px;top:7px;color:var(--ink-3)">${ic('search')}</span>
           </div>
 
-          <select data-act="morning-att-filter" style="padding:6px 10px;font-size:12px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);cursor:pointer">
+          <select data-act="morning-att-filter" onchange="APP.morningAttFilter=this.value;render();" style="padding:6px 10px;font-size:12px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);cursor:pointer">
             <option value="">All Attendance</option>
             <option value="star" ${APP.morningAttFilter==='star'?'selected':''}>🌟 Star (≥80%)</option>
             <option value="regular" ${APP.morningAttFilter==='regular'?'selected':''}>🟠 Regular (50–79%)</option>
@@ -7441,14 +7441,14 @@ function morningProgramPanel(){
             <option value="zero" ${APP.morningAttFilter==='zero'?'selected':''}>⚪ Zero Punches (0%)</option>
           </select>
 
-          <select data-act="morning-punc-filter" style="padding:6px 10px;font-size:12px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);cursor:pointer">
+          <select data-act="morning-punc-filter" onchange="APP.morningPuncFilter=this.value;render();" style="padding:6px 10px;font-size:12px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);cursor:pointer">
             <option value="">All Punctuality</option>
             <option value="high" ${APP.morningPuncFilter==='high'?'selected':''}>⏱️ High (≥80%)</option>
             <option value="mid" ${APP.morningPuncFilter==='mid'?'selected':''}>🟡 Moderate (50–79%)</option>
             <option value="low" ${APP.morningPuncFilter==='low'?'selected':''}>🔴 Low (<50%)</option>
           </select>
 
-          <select data-act="morning-sort" style="padding:6px 10px;font-size:12px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);cursor:pointer">
+          <select data-act="morning-sort" onchange="APP.morningSort=this.value;render();" style="padding:6px 10px;font-size:12px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);cursor:pointer">
             <option value="att_desc" ${APP.morningSort==='att_desc'||!APP.morningSort?'selected':''}>Sort: Highest Attendance %</option>
             <option value="att_asc" ${APP.morningSort==='att_asc'?'selected':''}>Sort: Lowest Attendance %</option>
             <option value="punc_desc" ${APP.morningSort==='punc_desc'?'selected':''}>Sort: Highest Punctuality %</option>
@@ -7458,7 +7458,7 @@ function morningProgramPanel(){
           </select>
 
           ${(APP.morningSearch || APP.morningAttFilter || APP.morningPuncFilter || (APP.morningSort && APP.morningSort !== 'att_desc')) ? `
-            <button class="btn sm ghost" data-act="morning-reset-table-filters" style="padding:4px 10px;font-size:11.5px">✕ Reset</button>
+            <button class="btn sm ghost" data-act="morning-reset-table-filters" onclick="APP.morningSearch='';APP.morningAttFilter='';APP.morningPuncFilter='';APP.morningSort='att_desc';render();" style="padding:4px 10px;font-size:11.5px">✕ Reset</button>
           ` : ''}
         </div>
 
@@ -7545,7 +7545,7 @@ function morningProgramPanel(){
             <span style="position:absolute;left:10px;top:7px;color:var(--ink-3)">${ic('search')}</span>
           </div>
 
-          <select data-act="morning-att-filter" style="padding:6px 10px;font-size:12px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);cursor:pointer">
+          <select data-act="morning-att-filter" onchange="APP.morningAttFilter=this.value;render();" style="padding:6px 10px;font-size:12px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);cursor:pointer">
             <option value="">All Attendance</option>
             <option value="star" ${APP.morningAttFilter==='star'?'selected':''}>🌟 Star (≥80%)</option>
             <option value="regular" ${APP.morningAttFilter==='regular'?'selected':''}>🟠 Regular (50–79%)</option>
@@ -7553,14 +7553,14 @@ function morningProgramPanel(){
             <option value="zero" ${APP.morningAttFilter==='zero'?'selected':''}>⚪ Zero Punches (0%)</option>
           </select>
 
-          <select data-act="morning-punc-filter" style="padding:6px 10px;font-size:12px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);cursor:pointer">
+          <select data-act="morning-punc-filter" onchange="APP.morningPuncFilter=this.value;render();" style="padding:6px 10px;font-size:12px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);cursor:pointer">
             <option value="">All Punctuality</option>
             <option value="high" ${APP.morningPuncFilter==='high'?'selected':''}>⏱️ High (≥80%)</option>
             <option value="mid" ${APP.morningPuncFilter==='mid'?'selected':''}>🟡 Moderate (50–79%)</option>
             <option value="low" ${APP.morningPuncFilter==='low'?'selected':''}>🔴 Low (<50%)</option>
           </select>
 
-          <select data-act="morning-sort" style="padding:6px 10px;font-size:12px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);cursor:pointer">
+          <select data-act="morning-sort" onchange="APP.morningSort=this.value;render();" style="padding:6px 10px;font-size:12px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);cursor:pointer">
             <option value="att_desc" ${APP.morningSort==='att_desc'||!APP.morningSort?'selected':''}>Sort: Highest Attendance %</option>
             <option value="att_asc" ${APP.morningSort==='att_asc'?'selected':''}>Sort: Lowest Attendance %</option>
             <option value="punc_desc" ${APP.morningSort==='punc_desc'?'selected':''}>Sort: Highest Punctuality %</option>
@@ -7570,7 +7570,7 @@ function morningProgramPanel(){
           </select>
 
           ${(APP.morningSearch || APP.morningAttFilter || APP.morningPuncFilter || (APP.morningSort && APP.morningSort !== 'att_desc')) ? `
-            <button class="btn sm ghost" data-act="morning-reset-table-filters" style="padding:4px 10px;font-size:11.5px">✕ Reset</button>
+            <button class="btn sm ghost" data-act="morning-reset-table-filters" onclick="APP.morningSearch='';APP.morningAttFilter='';APP.morningPuncFilter='';APP.morningSort='att_desc';render();" style="padding:4px 10px;font-size:11.5px">✕ Reset</button>
           ` : ''}
         </div>
 
@@ -17686,9 +17686,38 @@ case 'range':APP.range[t.dataset.n]=t.value;savePreachingFilters();render();brea
    case 'att-act':APP.filters.attAct=t.value;render();break;
    case 'att-date':APP.filters.attDate=t.value;render();break;
    case 'att-dept-matrix':APP.filters.attDeptMatrix=t.value;render();break;
+   case 'morning-att-filter':{
+     APP.morningAttFilter = t.value;
+     render();
+     break;
+   }
+   case 'morning-punc-filter':{
+     APP.morningPuncFilter = t.value;
+     render();
+     break;
+   }
+   case 'morning-sort':{
+     APP.morningSort = t.value;
+     render();
+     break;
+   }
+   case 'morning-daily-sort':{
+     APP.morningDailySort = t.value;
+     render();
+     break;
+   }
+   case 'morning-change-date-input':
    case 'morning-change-date':{
-     if(APP.morningData && APP.morningData.rawBiometricText){
-       APP.morningData = parseMorningCSV(APP.morningData.rawBiometricText, t.value);
+     const val = t.value;
+     if(val && APP.morningData){
+       if(APP.morningData.rawBiometricText){
+         APP.morningData = parseMorningCSV(APP.morningData.rawBiometricText, val);
+       } else {
+         APP.morningData.date = val;
+         if(APP.morningData.byDateRows && APP.morningData.byDateRows[val]){
+           APP.morningData.rows = APP.morningData.byDateRows[val];
+         }
+       }
        render();
      }
      break;
