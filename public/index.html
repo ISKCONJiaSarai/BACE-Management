@@ -3225,8 +3225,6 @@ const PILLARS=[
    {t:'Departments',em:'🏛',r:'#/depts',m:'management'},
    {t:'Assign Seva',em:'📋',r:'#/assign',m:'assign'},
    {t:'Attendance',em:'✅',r:'#/attendance',m:'management'},
-   {t:'Department reports',em:'📄',r:'#/dept-reports',m:'reports'},
-   {t:'Inventory & BBT',em:'📦',r:'#/inventory',m:'inventory'},
    {t:'SOPs & standards',em:'📘',r:'#/sops',m:'sops'},
    {t:'Action items',em:'🎯',r:'#/actions',m:'actions',badge:'actionsOverdue'}]},
  {key:'preach',t:'BACE Preaching',em:'📖',pill:'var(--indigo)',m:'preaching',items:[
@@ -4070,12 +4068,10 @@ function needsAttention(){
   const rows=[['var(--danger)',s.fuOverdue,'overdue preaching follow-ups','#/followups'],
     ['var(--danger)',s.unfilled,'activities short of volunteers','#/assign'],
     ['var(--amber)',s.careOverdue+s.careToday,'care follow-ups due or overdue','#/care-followups'],
-    ['var(--amber)',s.pendingReports,'weekly reports not submitted','#/dept-reports'],
     ['var(--mustard)',s.actionsOverdue,'overdue action items','#/actions'],
-    ['var(--sky)',s.invPending,'inventory requests awaiting approval','#/inventory'],
     ['var(--green)',s.attention,'devotees flagged for personal attention','#/care']].filter(r=>r[1]>0);
   return section('⚠️ Needs attention today',rows.length?`<div class="list">${rows.map(r=>attnRow(...r)).join('')}</div>`
-    :emptyState('Everything is clear','No overdue follow-ups, reports or unfilled seva right now.','','calm'));
+    :emptyState('Everything is clear','No overdue follow-ups or unfilled seva right now.','','calm'));
 }
 function insightsCard(){
   const s=STATS();
@@ -4088,8 +4084,7 @@ function insightsCard(){
     [`🌱`,`${s.newContacts} new contacts were recorded in the last 30 days.`,'#/contacts'],
     noService?[`🎯`,`${noService} devotees have no active seva allocation.`,'#/swabhav']:null,
     readyL1?[`🎓`,`${readyL1} Level 1 devotees may be ready for a progression review.`,'#/preaching-reports']:null,
-    s.careWeek?[`❤️`,`${s.careWeek} care follow-ups are due this week.`,'#/care-followups']:null,
-    s.invOverdue?[`📦`,`${s.invOverdue} issued items are past their return date.`,'#/inventory']:null
+    s.careWeek?[`❤️`,`${s.careWeek} care follow-ups are due this week.`,'#/care-followups']:null
   ].filter(Boolean);
   return section('✨ What the data is saying',`<div class="list">${items.map(([em,t,r])=>`<a class="insight" href="${r}"><span class="ic">${em}</span><span>${esc(t)}</span></a>`).join('')}</div>`,
     `<span class="tiny">Generated from stored records only</span>`);
@@ -4226,7 +4221,7 @@ function viewDashboard(){
      ${stat('Departments',s.depts,'all with a named head',{em:'🏛',act:'go',r:'#/depts'})}
      ${stat('Active volunteers',s.volunteers,'engaged in seva',{em:'🛠',r:'#/assign'})}
      ${stat('Scheduled',s.scheduled,'activities ahead',{em:'📋',act:'go',r:'#/assign'})}
-     ${stat('Completed',tot.done,`${tot.missed} missed`,{em:'✅',r:'#/dept-reports'})}
+     ${stat('Completed',tot.done,`${tot.missed} missed`,{em:'✅',r:'#/depts'})}
      ${stat('Completion',pct(tot.done,tot.done+tot.missed)+'%','this period',{em:'📈',r:'#/reports'})}
      ${stat('Unfilled',s.unfilled,'need volunteers',{em:'⚠️',tint:s.unfilled>0,act:'go',r:'#/assign'})}</div>
      <div class="grid g-2-1" style="margin-bottom:15px">
@@ -5263,7 +5258,7 @@ function deptDashboardBody(dp){
     ${stat('Attendance',m.attendance+'%',`${m.attRecords} records`,{em:'✅',r:'#/attendance'})}
     ${stat('Today',today.length,'activities scheduled',{em:'📅',r:'#/today'})}
     ${stat('Pending actions',actions.length,actions.filter(a=>a.due<iso(TODAY)).length+' overdue',{em:'🎯',tint:actions.length>3,r:'#/actions'})}
-    ${stat('Budget used',m.util+'%',money(dp.budget.spent)+' of '+money(dp.budget.allocated),{em:'🧾',r:'#/dept-reports'})}</div>
+    ${stat('Budget used',m.util+'%',money(dp.budget.spent)+' of '+money(dp.budget.allocated),{em:'🧾',r:'#/reports'})}</div>
    ${teamSection({incharge:dp.incharge,coordinator:dp.head,volunteers:(dp.volunteers||[]),canEdit:ownsDept(dp.id),editAct:'edit-dept',editId:dp.id})}
    <div class="grid g-2-1" style="margin-bottom:15px">
     ${section("📅 Today's activities",today.length?`<div class="tbl-wrap">${actTable(today)}</div>`
@@ -5273,7 +5268,7 @@ function deptDashboardBody(dp){
       ${section('📄 Weekly report',rep?`<div class="card-b"><div class="note" style="border-left-color:var(--amber)">The report for ${esc(rep.period)} has not been submitted.</div>
         <button class="btn pri block" style="margin-top:12px" data-act="add-report" data-id="${dp.id}">${ic('doc')}Submit report</button></div>`
         :`<div class="card-b"><div class="note" style="border-left-color:var(--green)">This week's report is submitted. Reports run ${esc(dp.reportFreq.toLowerCase())}.</div>
-          <button class="btn block" style="margin-top:12px" data-act="go" data-r="#/dept-reports">View report history</button></div>`)}
+          <button class="btn block" style="margin-top:12px" data-act="go" data-r="#/reports">View report history</button></div>`)}
       ${section('🎯 Open action items',actions.length?`<div class="list">${actions.slice(0,5).map(t=>`<div class="li click" data-act="open-activity" data-id="${t.id}">
         <span class="grow"><span class="t">${esc(t.name)}</span><span class="d">${esc(nameOf(t.responsible))} · due ${relD(t.due)}</span></span>${sbadge(t.priority)}</div>`).join('')}</div>`
         :emptyState('No open action items','Everything in this department is closed out.','','calm'))}
@@ -9185,12 +9180,14 @@ window.filterDevoteeReportTable = function(q) {
 
 /* ─── Single Day View helpers ─────────────────────────────────────────── */
 
-/** Set date for Single Day View and re-render */
+/** Set date for Single Day View and re-render smoothly */
 window.setSingleDayDate = function(deptKey, dateStr) {
-  if (!dateStr) return;
+  if (!dateStr || !dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) return;
   APP.singleDayDate = APP.singleDayDate || {};
   APP.singleDayDate[deptKey] = dateStr;
+  const sy = window.scrollY;
   render();
+  window.scrollTo(0, sy);
 };
 
 /** Navigate Single Day View date by direction (-1 = prev day, 1 = next day, 0 = today) */
@@ -9201,37 +9198,46 @@ window.navSingleDayDate = function(deptKey, dir) {
     toast('Jumped to Today', '📅');
   } else {
     const cur = APP.singleDayDate[deptKey] || iso(TODAY);
-    const parts = cur.split('-').map(Number);
-    const dt = new Date(parts[0], parts[1] - 1, parts[2] + dir);
-    APP.singleDayDate[deptKey] = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+    const parts = (cur || '').split('-').map(Number);
+    if (parts.length === 3 && !isNaN(parts[0]) && !isNaN(parts[1]) && !isNaN(parts[2])) {
+      const dt = new Date(parts[0], parts[1] - 1, parts[2] + dir);
+      APP.singleDayDate[deptKey] = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+    } else {
+      APP.singleDayDate[deptKey] = iso(TODAY);
+    }
   }
+  const sy = window.scrollY;
   render();
+  window.scrollTo(0, sy);
 };
 
-/** Text search across service name + devotee name columns */
-window.filterSingleDayTable = function(deptKey, q) {
+/** Combined filter & text search across status, service name and devotee name */
+window.applySingleDayFiltersAndSearch = function(deptKey) {
   const table = document.getElementById('single-day-tbl-' + deptKey);
   if (!table) return;
-  const query = String(q || '').toLowerCase().trim();
-  const rows = table.querySelectorAll('tbody tr');
-  rows.forEach(r => {
-    const svc  = r.getAttribute('data-service') || '';
-    const dev  = r.getAttribute('data-devotee') || '';
-    r.style.display = (!query || svc.includes(query) || dev.includes(query)) ? '' : 'none';
-  });
-};
-
-/** Filter Single Day rows by status; highlights the active filter button */
-window.applySingleDayFilter = function(deptKey, filterVal) {
-  APP.singleDayFilter = APP.singleDayFilter || {};
-  APP.singleDayFilter[deptKey] = filterVal;
-  const table = document.getElementById('single-day-tbl-' + deptKey);
-  if (!table) return;
+  const filterVal = (APP.singleDayFilter && APP.singleDayFilter[deptKey]) || 'all';
+  const searchInp = document.getElementById('sd-search-' + deptKey);
+  const query = searchInp ? searchInp.value.toLowerCase().trim() : '';
   const rows = table.querySelectorAll('tbody tr');
   rows.forEach(r => {
     const status = r.getAttribute('data-status') || '';
-    r.style.display = (filterVal === 'all' || status === filterVal) ? '' : 'none';
+    const svc = (r.getAttribute('data-service') || '').toLowerCase();
+    const dev = (r.getAttribute('data-devotee') || '').toLowerCase();
+    const matchStatus = (filterVal === 'all' || status === filterVal);
+    const matchSearch = (!query || svc.includes(query) || dev.includes(query));
+    r.style.display = (matchStatus && matchSearch) ? '' : 'none';
   });
+};
+
+/** Text search input handler */
+window.filterSingleDayTable = function(deptKey, q) {
+  window.applySingleDayFiltersAndSearch(deptKey);
+};
+
+/** Status filter button handler with active highlight */
+window.applySingleDayFilter = function(deptKey, filterVal) {
+  APP.singleDayFilter = APP.singleDayFilter || {};
+  APP.singleDayFilter[deptKey] = filterVal;
   ['all','done','pending','missed'].forEach(f => {
     const btn = document.getElementById('sd-filter-' + f + '-' + deptKey);
     if (btn) {
@@ -9241,6 +9247,7 @@ window.applySingleDayFilter = function(deptKey, filterVal) {
       btn.style.borderColor = active ? 'var(--pri)' : '';
     }
   });
+  window.applySingleDayFiltersAndSearch(deptKey);
 };
 
 /** Sort Single Day table rows by chosen key without full re-render */
@@ -9252,9 +9259,9 @@ window.sortSingleDayTable = function(deptKey, sortKey) {
   const tbody = table.querySelector('tbody');
   if (!tbody) return;
   const rows = Array.from(tbody.querySelectorAll('tr'));
-  const statusOrder = { done:1, pending:2, missed:3 };
+  const statusOrder = { done: 1, pending: 2, missed: 3 };
   const toMin = s => {
-    const m = s.match(/(\d+):(\d+)\s*(AM|PM)?/i);
+    const m = (s || '').match(/(\d+):(\d+)\s*(AM|PM)?/i);
     if (!m) return 9999;
     let h = parseInt(m[1]), mn = parseInt(m[2]);
     const pm = (m[3]||'').toUpperCase() === 'PM';
@@ -9270,8 +9277,8 @@ window.sortSingleDayTable = function(deptKey, sortKey) {
       const sb = statusOrder[b.getAttribute('data-status')] || 9;
       return sa - sb;
     }
-    const ta = a.cells[1] ? a.cells[1].textContent.trim() : '';
-    const tb = b.cells[1] ? b.cells[1].textContent.trim() : '';
+    const ta = a.getAttribute('data-time') || (a.cells[1] ? a.cells[1].textContent.trim() : '');
+    const tb = b.getAttribute('data-time') || (b.cells[1] ? b.cells[1].textContent.trim() : '');
     const diff = toMin(ta) - toMin(tb);
     return sortKey === 'time-desc' ? -diff : diff;
   });
@@ -11128,6 +11135,28 @@ function renderDepartmentRosterPanel(deptKey) {
         s,
         sl: getRosterSlot(roster, sdDate, s.id)
       }));
+      const toMin = str => {
+        const m = (str || '').match(/(\d+):(\d+)\s*(AM|PM)?/i);
+        if (!m) return 9999;
+        let h = parseInt(m[1]), mn = parseInt(m[2]);
+        const pm = (m[3]||'').toUpperCase() === 'PM';
+        if (pm && h < 12) h += 12;
+        if (!pm && h === 12) h = 0;
+        return h * 60 + mn;
+      };
+      if (activeSort === 'name-asc') {
+        sdSlots.sort((a, b) => a.s.name.localeCompare(b.s.name));
+      } else if (activeSort === 'status') {
+        sdSlots.sort((a, b) => {
+          const sa = (a.sl.status === 'done' || (a.sl.devotees && a.sl.devotees.includes('❌'))) ? 1 : (a.sl.status === 'missed' ? 3 : 2);
+          const sb = (b.sl.status === 'done' || (b.sl.devotees && b.sl.devotees.includes('❌'))) ? 1 : (b.sl.status === 'missed' ? 3 : 2);
+          return sa - sb;
+        });
+      } else if (activeSort === 'time-desc') {
+        sdSlots.sort((a, b) => toMin(b.s.time) - toMin(a.s.time));
+      } else {
+        sdSlots.sort((a, b) => toMin(a.s.time) - toMin(b.s.time));
+      }
       const totalCount = sdSlots.length;
       const doneC = sdSlots.filter(({sl}) => sl.status === 'done' || (sl.devotees && sl.devotees.includes('❌'))).length;
       const missedC = sdSlots.filter(({sl}) => sl.status === 'missed').length;
@@ -11221,7 +11250,7 @@ function renderDepartmentRosterPanel(deptKey) {
                   ? '<span class="badge b-red">❌ Missed</span>'
                   : '<span class="badge b-amber">⏳ Pending</span>');
               const rowBg = isDone ? 'rgba(5,150,105,0.04)' : (isMissed ? 'rgba(220,38,38,0.04)' : 'transparent');
-              return `<tr data-status="${statusLabel}" data-service="${esc(s.name.toLowerCase())}" data-devotee="${esc(devText.toLowerCase())}" style="background:${rowBg};${isHidden ? 'display:none;' : ''}">
+              return `<tr data-status="${statusLabel}" data-time="${esc(s.time)}" data-service="${esc(s.name.toLowerCase())}" data-devotee="${esc(devText.toLowerCase())}" style="background:${rowBg};${isHidden ? 'display:none;' : ''}">
                 <td data-l="Service">
                   <div style="font-weight:700;font-size:13.5px">${esc(s.name)}</div>
                   <div class="tiny" style="color:var(--ink-3)">${s.time}</div>
