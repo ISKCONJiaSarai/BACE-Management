@@ -12642,7 +12642,7 @@ window.getPreachingEntities = function() {
       icon: b.level === 'Level 1' ? '🎓' : (b.level === 'Level 2' ? '📖' : '🪷'),
       type: 'Batch Outreach',
       level: b.level || 'Preaching Batch',
-      allocated: (b.budget && b.budget.allocated) || 15000,
+      allocated: (b.budget && b.budget.allocated) || 0,
       spent: (b.budget && b.budget.spent) || 0
     });
   });
@@ -12656,7 +12656,7 @@ window.getPreachingEntities = function() {
         icon: d.icon || '📖',
         type: 'Preaching Course',
         level: d.desc || 'Preaching Course',
-        allocated: (d.budget && d.budget.allocated) || 20000,
+        allocated: (d.budget && d.budget.allocated) || 0,
         spent: (d.budget && d.budget.spent) || 0
       });
     }
@@ -12689,7 +12689,7 @@ window.getDepartmentEntities = function() {
     icon: d.icon || '🏢',
     type: 'Operational Department',
     category: d.category || 'General',
-    allocated: (d.budget && d.budget.allocated) || 25000,
+    allocated: (d.budget && d.budget.allocated) || 0,
     spent: (d.budget && d.budget.spent) || 0
   }));
 
@@ -13019,29 +13019,6 @@ window.submitBudgetUpdate = async function(e) {
   }
 };
 
-window.seedSampleTempleExpenses = async function() {
-  if (!confirm('Re-seed sample preaching and department expenses in MongoDB? This will populate realistic expenses for both outreach batches and temple departments.')) {
-    return;
-  }
-  try {
-    toast('Seeding sample expenses in MongoDB...', '⏳');
-    const res = await fetch('/api/expenses/seed-sample', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ force: true })
-    });
-    const data = await res.json();
-    if (data.success) {
-      toast('🌱 Seeded ' + data.count + ' sample expenses in MongoDB!', '🎉');
-      window.loadDepartmentAccounts(true);
-    } else {
-      throw new Error(data.message);
-    }
-  } catch (err) {
-    toast('Error seeding expenses: ' + err.message, '⚠️');
-  }
-};
-
 window.exportDepartmentExpensesCSV = function(section) {
   window.initAccountsState();
   const sec = section || APP.accountsState.subSection || 'preaching';
@@ -13309,7 +13286,7 @@ function deptAccountsPanel() {
         <form id="budget-modal-form" onsubmit="window.submitBudgetUpdate(event)" style="padding:18px;display:flex;flex-direction:column;gap:14px">
           <div>
             <label style="font-weight:600;font-size:12.5px;display:block;margin-bottom:5px">Select ${isModalPreach ? 'Preaching Batch / Program' : 'Department'} <span style="color:var(--danger)">*</span></label>
-            <select name="deptId" id="budget-dept-select" required style="width:100%;padding:8px 10px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:13px" onchange="const list=${isModalPreach ? 'window.getPreachingEntities()' : 'window.getDepartmentEntities()'};const sel=list.find(x=>x.id===this.value||x.name===this.value);if(sel)document.getElementById('budget-alloc-input').value=sel.allocated||15000;">
+            <select name="deptId" id="budget-dept-select" required style="width:100%;padding:8px 10px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:13px" onchange="const list=${isModalPreach ? 'window.getPreachingEntities()' : 'window.getDepartmentEntities()'};const sel=list.find(x=>x.id===this.value||x.name===this.value);if(sel)document.getElementById('budget-alloc-input').value=sel.allocated||0;">
               ${modalEntities.map(d => `<option value="${d.id}"${(prefill === d.name || prefill === d.id) ? ' selected' : ''}>${d.icon || (isModalPreach ? '🎓' : '🏢')} ${esc(d.name)} (${esc(d.level || d.category || '')})</option>`).join('')}
             </select>
           </div>
@@ -13317,7 +13294,7 @@ function deptAccountsPanel() {
             <label style="font-weight:600;font-size:12.5px;display:block;margin-bottom:5px">New Allocated Budget (₹) <span style="color:var(--danger)">*</span></label>
             <input type="number" id="budget-alloc-input" name="allocated" min="0" step="500" required value="${(() => {
               const sel = prefill ? modalEntities.find(x => x.name === prefill || x.id === prefill) : modalEntities[0];
-              return (sel && sel.allocated) || (isModalPreach ? 15000 : 25000);
+              return (sel && sel.allocated) || 0;
             })()}" style="width:100%;padding:8px 10px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:14px;font-weight:bold">
             <div class="tiny" style="color:var(--ink-3);margin-top:4px">Sets total sanctioned spending budget in MongoDB.</div>
           </div>
@@ -13395,9 +13372,6 @@ function deptAccountsPanel() {
           <button type="button" class="btn" onclick="window.exportDepartmentExpensesCSV('${subSection}')" style="display:inline-flex;align-items:center;gap:5px">
             <span>📥</span> Export CSV
           </button>
-          <button type="button" class="btn sm" onclick="window.seedSampleTempleExpenses()" title="Seed Realistic Sample Expenses" style="padding:6px 10px;font-size:11px;color:var(--ink-3)">
-            <span>🌱</span> Seed Data
-          </button>
         </div>
       </div>
     </div>
@@ -13446,9 +13420,9 @@ function deptAccountsPanel() {
           <span>🏆</span> ${isPreaching ? 'Top Preaching Program' : 'Top Spending Dept'}
         </div>
         <div class="val" style="font-size:16px;font-weight:800;color:#8B5CF6;margin:6px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
-          ${topEntity.icon || (isPreaching ? '🎓' : '🏢')} ${esc(topEntity.name)}
+          ${topEntity.spent > 0 ? `${topEntity.icon || (isPreaching ? '🎓' : '🏢')} ${esc(topEntity.name)}` : '—'}
         </div>
-        <div class="foot" style="font-size:11px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${fmtC(topEntity.spent)} spent (${topEntity.pct}%)</div>
+        <div class="foot" style="font-size:11px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${topEntity.spent > 0 ? `${fmtC(topEntity.spent)} spent (${topEntity.pct}%)` : 'No expenses recorded'}</div>
       </div>
     </div>
 
@@ -13491,7 +13465,7 @@ function deptAccountsPanel() {
                 <!-- Spent Bar -->
                 <rect x="${xBase + 26}" y="${sY}" width="22" height="${sH}" rx="3" fill="${d.pct > 90 ? '#DC2626' : '#0D9488'}"/>
                 <!-- Value tag on spent bar -->
-                <text x="${xBase + 37}" y="${Math.max(22, sY - 5)}" text-anchor="middle" font-size="9.5" font-weight="700" fill="var(--ink-2)">${Math.round(d.spent / 1000)}k</text>
+                <text x="${xBase + 37}" y="${Math.max(22, sY - 5)}" text-anchor="middle" font-size="9.5" font-weight="700" fill="var(--ink-2)">${d.spent > 0 ? Math.round(d.spent / 1000) + 'k' : '₹0'}</text>
                 <!-- Label below -->
                 <text x="${xBase + 24}" y="178" text-anchor="middle" font-size="10" font-weight="600" fill="${isSelected ? 'var(--pri)' : 'var(--ink)'}">${d.icon || ''}</text>
                 <text x="${xBase + 24}" y="193" text-anchor="middle" font-size="9" fill="${isSelected ? 'var(--pri)' : 'var(--ink-3)'}">${esc(shortName)}</text>
@@ -13512,7 +13486,7 @@ function deptAccountsPanel() {
           <div style="position:relative;width:150px;height:150px;flex-shrink:0">
             <svg viewBox="0 0 120 120" style="width:100%;height:100%;transform:rotate(-90deg)">
               <circle cx="60" cy="60" r="45" fill="none" stroke="var(--paper-2)" stroke-width="20"/>
-              ${donutSlices.map(({ d, dashLen, offset, color }) => `
+              ${totalSpent > 0 ? donutSlices.map(({ d, dashLen, offset, color }) => `
                 <circle cx="60" cy="60" r="45" fill="none" stroke="${color}" stroke-width="${deptFilter === d.name ? 24 : 18}"
                   stroke-dasharray="${dashLen} ${circumference - dashLen}"
                   stroke-dashoffset="${offset}"
@@ -13521,7 +13495,7 @@ function deptAccountsPanel() {
                 >
                   <title>${esc(d.name)}: ${fmtC(d.spent)}</title>
                 </circle>
-              `).join('')}
+              `).join('') : ''}
             </svg>
             <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none">
               <span class="tiny" style="color:var(--ink-3);font-size:9.5px;font-weight:600">TOTAL</span>
@@ -13530,7 +13504,7 @@ function deptAccountsPanel() {
           </div>
           <!-- Donut Legend -->
           <div style="display:flex;flex-direction:column;gap:6px;flex:1;min-width:140px;max-height:160px;overflow-y:auto">
-            ${donutSlices.map(({ d, share, color }) => `
+            ${totalSpent > 0 ? donutSlices.filter(s => s.d.spent > 0).map(({ d, share, color }) => `
               <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:3px 6px;border-radius:4px;font-size:11.5px;${deptFilter === d.name ? 'background:rgba(201,96,27,0.1);font-weight:700' : ''}"
                    onclick="window.setAccountsDeptFilter('${esc(d.name)}')" title="Filter by ${esc(d.name)}">
                 <div style="display:flex;align-items:center;gap:6px;overflow:hidden">
@@ -13539,7 +13513,7 @@ function deptAccountsPanel() {
                 </div>
                 <div style="font-weight:700;color:var(--ink-2);margin-left:6px">${share}%</div>
               </div>
-            `).join('')}
+            `).join('') : '<div style="text-align:center;padding:24px 8px;color:var(--ink-3);font-size:11.5px">No expense records yet</div>'}
           </div>
         </div>
       </div>
@@ -13551,7 +13525,7 @@ function deptAccountsPanel() {
           <div class="tiny" style="color:var(--ink-3)">Click any category to filter expense records</div>
         </div>
         <div style="display:flex;flex-direction:column;gap:9px;max-height:165px;overflow-y:auto;padding-right:4px">
-          ${catBreakdown.slice(0, 6).map((c, i) => {
+          ${catBreakdown.length > 0 ? catBreakdown.slice(0, 6).map((c, i) => {
             const catPct = totalSpent > 0 ? Math.round((c.amount / totalSpent) * 100) : 0;
             const isSelected = catFilter === c.category;
             const barColor = chartColors[i % chartColors.length];
@@ -13566,7 +13540,7 @@ function deptAccountsPanel() {
                 <div style="width:${catPct}%;height:100%;background:${barColor};border-radius:4px"></div>
               </div>
             </div>`;
-          }).join('')}
+          }).join('') : '<div style="text-align:center;padding:32px 10px;color:var(--ink-3);font-size:11.5px">No expense categories yet</div>'}
         </div>
       </div>
     </div>
