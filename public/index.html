@@ -11540,6 +11540,7 @@ function deptAttendanceMatrix(){
   const data = getAshramThreeDepartmentsSummary(period);
   const summaryList = data.summaryList;
   const kpis = data.stats;
+  const days = Array.from({length: 7}, (_, i) => dayOff(-6 + i));
 
   return `<div style="margin-bottom:24px">
     <!-- Action Banner & Period Filter -->
