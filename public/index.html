@@ -9203,7 +9203,7 @@ function exportDevoteeReportPDF(deptKey, period) {
   const totalMissed = stats.reduce((acc, d) => acc + d.missed, 0);
   const totalSubs = stats.reduce((acc, d) => acc + d.substitutions, 0);
   const activeCount = stats.filter(d => d.assigned > 0 || d.completed > 0 || d.substitutions > 0).length;
-  const overallRate = totalAssigned > 0 ? Math.round((totalCompleted / totalAssigned) * 100) : 100;
+  const overallRate = totalAssigned > 0 ? Math.round((totalCompleted / totalAssigned) * 100) : 0;
 
   const printDoc = `<!DOCTYPE html>
 <html>
@@ -11541,21 +11541,22 @@ function exportThreeDepartmentsMatrixPDF(period = 'weekly') {
       </tr>
     </thead>
     <tbody>
-      <tr>
-        <td><b>🌅 Morning Program</b></td>
-        ${days.map(d => {
+      ${(() => {
+        let mTotPres = 0, mTotSlots = 0;
+        const mCells = days.map(d => {
           const dStr = iso(d);
           const dRows = (APP.morningData && APP.morningData.byDateRows && APP.morningData.byDateRows[dStr]) || [];
           const pres = dRows.filter(r => r.status !== 'Absent').length;
           const tot = dRows.length;
-          const p = tot > 0 ? Math.round((pres / tot) * 100) : (kpis.avgMorning || 0);
+          const p = tot > 0 ? Math.round((pres / tot) * 100) : 0;
+          mTotPres += pres;
+          mTotSlots += tot;
           return `<td style="text-align:center;font-weight:700;color:#15803d">${p}%</td>`;
-        }).join('')}
-        <td style="text-align:center;font-weight:700;color:#15803d">${kpis.avgMorning}%</td>
-      </tr>
-      <tr>
-        <td><b>🛕 Deity Department</b></td>
-        ${days.map(d => {
+        }).join('');
+        const mAvg = mTotSlots > 0 ? Math.round((mTotPres / mTotSlots) * 100) : 0;
+
+        let dTotComp = 0, dTotSlots = 0;
+        const dCells = days.map(d => {
           const dStr = iso(d);
           let comp = 0, tot = APP.deityRoster.services.length;
           APP.deityRoster.services.forEach(s => {
@@ -11563,14 +11564,15 @@ function exportThreeDepartmentsMatrixPDF(period = 'weekly') {
             if (sl.status === 'done' || (sl.devotees && sl.devotees.includes('❌'))) comp++;
             else if (dStr > iso(TODAY) && sl.devotees && sl.devotees !== '—') comp++;
           });
-          const p = tot > 0 ? Math.round((comp / tot) * 100) : 100;
+          const p = tot > 0 ? Math.round((comp / tot) * 100) : 0;
+          dTotComp += comp;
+          dTotSlots += tot;
           return `<td style="text-align:center;font-weight:700;color:#ea580c">${p}%</td>`;
-        }).join('')}
-        <td style="text-align:center;font-weight:700;color:#ea580c">${kpis.avgDeity}%</td>
-      </tr>
-      <tr>
-        <td><b>🧹 Cleaning Department</b></td>
-        ${days.map(d => {
+        }).join('');
+        const dAvg = dTotSlots > 0 ? Math.round((dTotComp / dTotSlots) * 100) : 0;
+
+        let cTotComp = 0, cTotSlots = 0;
+        const cCells = days.map(d => {
           const dStr = iso(d);
           let comp = 0, tot = APP.cleaningRoster.services.length;
           APP.cleaningRoster.services.forEach(s => {
@@ -11578,11 +11580,29 @@ function exportThreeDepartmentsMatrixPDF(period = 'weekly') {
             if (sl.status === 'done' || (sl.devotees && sl.devotees.includes('❌'))) comp++;
             else if (dStr > iso(TODAY) && sl.devotees && sl.devotees !== '—') comp++;
           });
-          const p = tot > 0 ? Math.round((comp / tot) * 100) : 100;
+          const p = tot > 0 ? Math.round((comp / tot) * 100) : 0;
+          cTotComp += comp;
+          cTotSlots += tot;
           return `<td style="text-align:center;font-weight:700;color:#0d9488">${p}%</td>`;
-        }).join('')}
-        <td style="text-align:center;font-weight:700;color:#0d9488">${kpis.avgCleaning}%</td>
-      </tr>
+        }).join('');
+        const cAvg = cTotSlots > 0 ? Math.round((cTotComp / cTotSlots) * 100) : 0;
+
+        return `<tr>
+          <td><b>🌅 Morning Program</b></td>
+          ${mCells}
+          <td style="text-align:center;font-weight:700;color:#15803d">${mAvg}%</td>
+        </tr>
+        <tr>
+          <td><b>🛕 Deity Department</b></td>
+          ${dCells}
+          <td style="text-align:center;font-weight:700;color:#ea580c">${dAvg}%</td>
+        </tr>
+        <tr>
+          <td><b>🧹 Cleaning Department</b></td>
+          ${cCells}
+          <td style="text-align:center;font-weight:700;color:#0d9488">${cAvg}%</td>
+        </tr>`;
+      })()}
     </tbody>
   </table>
   ` : ''}
@@ -11682,10 +11702,15 @@ function getAshramThreeDepartmentsSummary(period = 'weekly') {
     totalCleanDone += d.completed;
   });
 
-  // Department Health Totals
-  const overallDeityHealth = totalDeityAssigned > 0 ? Math.round((totalDeityDone / totalDeityAssigned) * 100) : 100;
-  const overallCleanHealth = totalCleanAssigned > 0 ? Math.round((totalCleanDone / totalCleanAssigned) * 100) : 100;
-  const overallMorningHealth = totalMorningDevsCount > 0 ? Math.round(totalMorningPresent / totalMorningDevsCount) : 0;
+  // Department Health Totals (0/0 is strictly 0%, NOT 100%)
+  const overallDeityHealth = totalDeityAssigned > 0 ? Math.round((totalDeityDone / totalDeityAssigned) * 100) : 0;
+  const overallCleanHealth = totalCleanAssigned > 0 ? Math.round((totalCleanDone / totalCleanAssigned) * 100) : 0;
+  let overallMorningHealth = 0;
+  if (pMetrics && pMetrics.avgAttendancePct !== undefined) {
+    overallMorningHealth = pMetrics.avgAttendancePct;
+  } else if (totalMorningDevsCount > 0) {
+    overallMorningHealth = Math.round(totalMorningPresent / totalMorningDevsCount);
+  }
 
   // 4. COLLECT ONLY DEVOTEES WHOSE NAMES ARE PRESENT IN INDIVIDUAL DEPARTMENTS LISTS
   const activeDevsMap = new Map();
@@ -11791,8 +11816,8 @@ function getAshramThreeDepartmentsSummary(period = 'weekly') {
     // Strict check: Devotee MUST be present in at least one individual department
     if (!hasMorning && !hasDeity && !hasCleaning) return null;
 
-    const deityRate = hasDeity ? (dDeity.rate !== null ? dDeity.rate : Math.round((dDeity.completed / (dDeity.assigned || dDeity.completed || 1)) * 100)) : null;
-    const cleanRate = hasCleaning ? (dCleaning.rate !== null ? dCleaning.rate : Math.round((dCleaning.completed / (dCleaning.assigned || dCleaning.completed || 1)) * 100)) : null;
+    const deityRate = hasDeity && (dDeity.assigned > 0 || dDeity.completed > 0) ? (dDeity.rate !== null ? dDeity.rate : Math.round((dDeity.completed / (dDeity.assigned || dDeity.completed)) * 100)) : 0;
+    const cleanRate = hasCleaning && (dCleaning.assigned > 0 || dCleaning.completed > 0) ? (dCleaning.rate !== null ? dCleaning.rate : Math.round((dCleaning.completed / (dCleaning.assigned || dCleaning.completed)) * 100)) : 0;
 
     // FAIR & ACCURATE COMBINED SEVA SCORE:
     // Base score is weighted by the departments the devotee is active in
@@ -12094,19 +12119,25 @@ function deptAttendanceMatrix(){
                   <div><b>Morning Program</b><div class="tiny" style="color:var(--ink-3)">Punctuality & Sadhana</div></div>
                 </div>
               </td>
-              ${days.map(d => {
-                const dStr = iso(d);
-                const dRows = (APP.morningData && APP.morningData.byDateRows && APP.morningData.byDateRows[dStr]) || [];
-                const pres = dRows.filter(r => r.status !== 'Absent').length;
-                const tot = dRows.length;
-                const p = tot > 0 ? Math.round((pres / tot) * 100) : (kpis.avgMorning || 0);
-                const onT = dRows.filter(r => r.status === 'On Time' || r.status === 'Grace').length;
-                return `<td data-l="${fmtD(d)}" style="text-align:center">
-                  <div style="font-weight:700;color:${p>=80?'var(--green)':'var(--saffron)'}">${p}%</div>
-                  <div class="tiny" style="color:var(--ink-3)">${onT}/${tot || pres || 1} on-time</div>
-                </td>`;
-              }).join('')}
-              <td data-l="Average" style="text-align:center;font-weight:700;color:var(--green)">${kpis.avgMorning}%</td>
+              ${(() => {
+                let mTotPres = 0, mTotSlots = 0;
+                const cells = days.map(d => {
+                  const dStr = iso(d);
+                  const dRows = (APP.morningData && APP.morningData.byDateRows && APP.morningData.byDateRows[dStr]) || [];
+                  const pres = dRows.filter(r => r.status !== 'Absent').length;
+                  const tot = dRows.length;
+                  const onT = dRows.filter(r => r.status === 'On Time' || r.status === 'Grace').length;
+                  const p = tot > 0 ? Math.round((pres / tot) * 100) : 0;
+                  mTotPres += pres;
+                  mTotSlots += tot;
+                  return `<td data-l="${fmtD(d)}" style="text-align:center">
+                    <div style="font-weight:700;color:${p>=80?'var(--green)':(p>0?'var(--saffron)':'var(--ink-3)')}">${p}%</div>
+                    <div class="tiny" style="color:var(--ink-3)">${onT}/${tot} on-time</div>
+                  </td>`;
+                }).join('');
+                const avgP = mTotSlots > 0 ? Math.round((mTotPres / mTotSlots) * 100) : 0;
+                return cells + `<td data-l="Average" style="text-align:center;font-weight:700;color:${avgP>=80?'var(--green)':(avgP>0?'var(--saffron)':'var(--ink-3)')}">${avgP}%</td>`;
+              })()}
             </tr>
 
             <!-- Row 2: Deity Department -->
@@ -12117,21 +12148,27 @@ function deptAttendanceMatrix(){
                   <div><b>Deity Department</b><div class="tiny" style="color:var(--ink-3)">Altar & Worship Sevas</div></div>
                 </div>
               </td>
-              ${days.map(d => {
-                const dStr = iso(d);
-                let comp = 0, tot = APP.deityRoster.services.length;
-                APP.deityRoster.services.forEach(s => {
-                  const sl = getRosterSlot(APP.deityRoster, dStr, s.id);
-                  if (sl.status === 'done' || (sl.devotees && sl.devotees.includes('❌'))) comp++;
-                  else if (dStr > iso(TODAY) && sl.devotees && sl.devotees !== '—') comp++;
-                });
-                const p = tot > 0 ? Math.round((comp / tot) * 100) : 100;
-                return `<td data-l="${fmtD(d)}" style="text-align:center">
-                  <div style="font-weight:700;color:${p>=90?'var(--green)':'var(--saffron)'}">${p}%</div>
-                  <div class="tiny" style="color:var(--ink-3)">${comp}/${tot} sevas</div>
-                </td>`;
-              }).join('')}
-              <td data-l="Average" style="text-align:center;font-weight:700;color:var(--green)">${kpis.avgDeity}%</td>
+              ${(() => {
+                let dTotComp = 0, dTotSlots = 0;
+                const cells = days.map(d => {
+                  const dStr = iso(d);
+                  let comp = 0, tot = APP.deityRoster.services.length;
+                  APP.deityRoster.services.forEach(s => {
+                    const sl = getRosterSlot(APP.deityRoster, dStr, s.id);
+                    if (sl.status === 'done' || (sl.devotees && sl.devotees.includes('❌'))) comp++;
+                    else if (dStr > iso(TODAY) && sl.devotees && sl.devotees !== '—') comp++;
+                  });
+                  const p = tot > 0 ? Math.round((comp / tot) * 100) : 0;
+                  dTotComp += comp;
+                  dTotSlots += tot;
+                  return `<td data-l="${fmtD(d)}" style="text-align:center">
+                    <div style="font-weight:700;color:${p>=90?'var(--green)':(p>0?'var(--saffron)':'var(--ink-3)')}">${p}%</div>
+                    <div class="tiny" style="color:var(--ink-3)">${comp}/${tot} sevas</div>
+                  </td>`;
+                }).join('');
+                const avgP = dTotSlots > 0 ? Math.round((dTotComp / dTotSlots) * 100) : 0;
+                return cells + `<td data-l="Average" style="text-align:center;font-weight:700;color:${avgP>=90?'var(--green)':(avgP>0?'var(--saffron)':'var(--ink-3)')}">${avgP}%</td>`;
+              })()}
             </tr>
 
             <!-- Row 3: Cleaning Department -->
@@ -12142,21 +12179,27 @@ function deptAttendanceMatrix(){
                   <div><b>Cleaning Department</b><div class="tiny" style="color:var(--ink-3)">Temple & Ashram Cleanliness</div></div>
                 </div>
               </td>
-              ${days.map(d => {
-                const dStr = iso(d);
-                let comp = 0, tot = APP.cleaningRoster.services.length;
-                APP.cleaningRoster.services.forEach(s => {
-                  const sl = getRosterSlot(APP.cleaningRoster, dStr, s.id);
-                  if (sl.status === 'done' || (sl.devotees && sl.devotees.includes('❌'))) comp++;
-                  else if (dStr > iso(TODAY) && sl.devotees && sl.devotees !== '—') comp++;
-                });
-                const p = tot > 0 ? Math.round((comp / tot) * 100) : 100;
-                return `<td data-l="${fmtD(d)}" style="text-align:center">
-                  <div style="font-weight:700;color:${p>=90?'var(--green)':'var(--saffron)'}">${p}%</div>
-                  <div class="tiny" style="color:var(--ink-3)">${comp}/${tot} sevas</div>
-                </td>`;
-              }).join('')}
-              <td data-l="Average" style="text-align:center;font-weight:700;color:var(--green)">${kpis.avgCleaning}%</td>
+              ${(() => {
+                let cTotComp = 0, cTotSlots = 0;
+                const cells = days.map(d => {
+                  const dStr = iso(d);
+                  let comp = 0, tot = APP.cleaningRoster.services.length;
+                  APP.cleaningRoster.services.forEach(s => {
+                    const sl = getRosterSlot(APP.cleaningRoster, dStr, s.id);
+                    if (sl.status === 'done' || (sl.devotees && sl.devotees.includes('❌'))) comp++;
+                    else if (dStr > iso(TODAY) && sl.devotees && sl.devotees !== '—') comp++;
+                  });
+                  const p = tot > 0 ? Math.round((comp / tot) * 100) : 0;
+                  cTotComp += comp;
+                  cTotSlots += tot;
+                  return `<td data-l="${fmtD(d)}" style="text-align:center">
+                    <div style="font-weight:700;color:${p>=90?'var(--green)':(p>0?'var(--teal)':'var(--ink-3)')}">${p}%</div>
+                    <div class="tiny" style="color:var(--ink-3)">${comp}/${tot} sevas</div>
+                  </td>`;
+                }).join('');
+                const avgP = cTotSlots > 0 ? Math.round((cTotComp / cTotSlots) * 100) : 0;
+                return cells + `<td data-l="Average" style="text-align:center;font-weight:700;color:${avgP>=90?'var(--teal)':(avgP>0?'var(--teal)':'var(--ink-3)')}">${avgP}%</td>`;
+              })()}
             </tr>
           </tbody>
         </table>
