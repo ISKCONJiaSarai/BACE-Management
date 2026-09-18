@@ -16,6 +16,12 @@ const ExpenseSchema = new mongoose.Schema({
     required: [true, 'Department name is required'],
     index: true
   },
+  section: {
+    type: String,
+    enum: ['preaching', 'departments'],
+    default: 'departments',
+    index: true
+  },
   title: {
     type: String,
     required: [true, 'Expense title or description is required'],
