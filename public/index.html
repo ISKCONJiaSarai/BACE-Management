@@ -2811,10 +2811,12 @@ function getDevoteeRealAttendance(d) {
   const totalAttended = mPresent + dCompleted + cCleanCompleted + clPresent;
 
   let overall = 0;
-  if (totalHeld > 0 && (totalAttended > 0 || !d.attendancePct || d.attendancePct === 85)) {
+  if (totalHeld > 0) {
+    // When real attendance sessions have been held, overall is strictly the attended ratio (0% if 0 sessions attended)
     overall = Math.round((totalAttended / totalHeld) * 100);
-  } else if (d.attendancePct && d.attendancePct !== 85) {
-    overall = d.attendancePct;
+  } else if (d.attendancePct != null && d.attendancePct !== '') {
+    // Only fall back to profile default base percentage when no sessions have been held in any pillar
+    overall = Number(d.attendancePct) || 0;
   }
 
   return {
@@ -6269,11 +6271,13 @@ function parseMorningCSV(text, specificDate){
       }
     }
 
-    const availableDates = Object.keys(byDatePunches).sort();
-    if(!availableDates.length) return null;
+    const fileDates = Object.keys(byDatePunches).sort();
+    if(!fileDates.length) return null;
 
-    // Use requested date or default to the most recent date present in the file
-    const targetDate = (specificDate && byDatePunches[specificDate]) ? specificDate : availableDates[availableDates.length - 1];
+    const todayStr = typeof TODAY !== 'undefined' ? iso(TODAY) : new Date().toISOString().slice(0, 10);
+    // Use requested specific date, or default to today if in file, or the latest date in the file
+    const targetDate = specificDate || (byDatePunches[todayStr] ? todayStr : fileDates[fileDates.length - 1]);
+    const availableDates = Array.from(new Set([...fileDates, targetDate, todayStr])).sort();
 
     // Collect master list of ALL unique devotees appearing anywhere in the uploaded file
     const masterDevsMap = new Map();
@@ -7078,6 +7082,18 @@ function renderMorningCharts(m, dateLabel, filterSt = '', activeBucket = '') {
 }
 
 
+
+function fmtExactDate(s) {
+  if (!s) return '—';
+  const d = parseDate(s);
+  if (!d) return String(s);
+  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  const isToday = typeof TODAY !== 'undefined' && s === iso(TODAY);
+  const formatted = `${days[d.getDay()]}, ${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+  return isToday ? `Today · ${formatted}` : formatted;
+}
+
 function filterAndSortMorningPeriodDevs(devList, q = '', attFilter = '', puncFilter = '', sortMode = 'att_desc') {
   let list = (devList || []).slice();
   if (q) {
@@ -7251,15 +7267,15 @@ function morningProgramPanel(){
             <span>📋</span> Morning Programme Attendance Report
           </h3>
           <div class="tiny" style="color:var(--ink-2);margin-top:2px">
-            ${reportView === 'today' ? `Single-day check-ins & punctuality (${fmtD(data.date)})` : (reportView === 'weekly' ? `Last 7 Sessions (${fmtD(weekly.startDate)} – ${fmtD(weekly.endDate)})` : `Last 30 Sessions (${fmtD(monthly.startDate)} – ${fmtD(monthly.endDate)})`)}
+            ${reportView === 'today' ? `Single-day check-ins & punctuality (${fmtExactDate(data.date)})` : (reportView === 'weekly' ? `Last 7 Sessions (${fmtD(weekly.startDate)} – ${fmtD(weekly.endDate)})` : `Last 30 Sessions (${fmtD(monthly.startDate)} – ${fmtD(monthly.endDate)})`)}
           </div>
         </div>
 
         <!-- Today, Weekly, and Monthly View Switcher Controls -->
         <div class="morning-report-controls" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
           <div class="morning-view-btn-group">
-            <button type="button" class="btn sm ${reportView === 'today' ? 'pri' : ''}" data-act="morning-report-view" data-v="today" style="border-radius:0;border:none;padding:5px 12px;font-weight:600">
-              📅 Today's View
+            <button type="button" class="btn sm ${reportView === 'today' ? 'pri' : ''}" data-act="morning-report-view" data-v="today" style="border-radius:0;border:none;padding:5px 12px;font-weight:600" title="${fmtExactDate(data.date)}">
+              ${data.date === (typeof TODAY !== 'undefined' ? iso(TODAY) : '') ? "📅 Today's View" : "📅 Daily View"}
             </button>
             <button type="button" class="btn sm ${reportView === 'weekly' ? 'pri' : ''}" data-act="morning-report-view" data-v="weekly" style="border-radius:0;border:none;padding:5px 12px;font-weight:600">
               🗓️ Weekly View
@@ -7269,10 +7285,17 @@ function morningProgramPanel(){
             </button>
           </div>
 
-          ${reportView === 'today' && data.availableDates && data.availableDates.length > 1 ? `
-          <select data-act="morning-change-date" style="padding:5px 10px;font-size:12.5px;border:1px solid var(--line);border-radius:6px;background:var(--surface)">
-            ${data.availableDates.slice().reverse().map(dt => `<option value="${dt}" ${dt === data.date ? 'selected' : ''}>${fmtD(dt)} ${dt === data.availableDates[data.availableDates.length-1] ? '(Latest)' : ''}</option>`).join('')}
-          </select>` : ''}
+          ${reportView === 'today' ? `
+          <div class="morning-exact-date-picker" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            <button class="btn sm ${data.date === (typeof TODAY !== 'undefined' ? iso(TODAY) : '') ? 'pri' : ''}" data-act="morning-go-today" title="Jump to Today's date" style="padding:4px 9px;font-size:11.5px;font-weight:600">
+              📅 Today
+            </button>
+            <input type="date" value="${data.date || (typeof TODAY !== 'undefined' ? iso(TODAY) : '')}" data-act="morning-change-date-input" title="Pick an exact date" style="padding:4px 8px;font-size:12px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);cursor:pointer">
+            ${data.availableDates && data.availableDates.length > 1 ? `
+            <select data-act="morning-change-date" style="padding:4px 8px;font-size:12px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);cursor:pointer;max-width:240px">
+              ${data.availableDates.slice().reverse().map(dt => `<option value="${dt}" ${dt === data.date ? 'selected' : ''}>${fmtExactDate(dt)}${dt === data.availableDates[data.availableDates.length-1] ? ' (Latest)' : ''}</option>`).join('')}
+            </select>` : ''}
+          </div>` : ''}
 
           ${reportView === 'today' ? `
           <button class="btn sm" data-act="export-morning-report">${ic('download')} Export CSV</button>
@@ -17273,6 +17296,17 @@ document.addEventListener('click',e=>{
     APP.morningAttFilter = '';
     APP.morningPuncFilter = '';
     APP.morningSort = 'att_desc';
+    render();
+    break;
+  }
+  case 'morning-go-today':stop();{
+    const todayStr = typeof TODAY !== 'undefined' ? iso(TODAY) : new Date().toISOString().slice(0, 10);
+    if(APP.morningData && APP.morningData.rawBiometricText){
+      APP.morningData = parseMorningCSV(APP.morningData.rawBiometricText, todayStr);
+    } else if(APP.morningData) {
+      APP.morningData.date = todayStr;
+    }
+    APP.morningReportView = 'today';
     render();
     break;
   }
