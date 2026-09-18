@@ -13630,7 +13630,7 @@ function viewAttendance(){
   const tabs = ['Morning programme', 'Deity Department', 'Cleaning', 'Department Matrix', 'Accounts'];
   if (!tabs.includes(tab)) tab = 'Morning programme';
 
-  return head('🏢 BACE Pillars', 'BACE Pillars', 'Morning sadhana punctuality, Deity & Cleaning rosters, Department Matrix, and Financial Accounts & Budgets')+
+  return head('🏢 BACE Pillars', 'Central Departments Hub', 'Morning sadhana punctuality, Deity & Cleaning rosters, Department Matrix, and Financial Accounts & Budgets')+
    `<div class="tabs">${tabs.map(t => `<button class="${t===tab?'on':''}" data-act="tab" data-k="att" data-v="${t}">${t}</button>`).join('')}</div>`+
    (tab === 'Morning programme' ? morningProgramPanel()
    : tab === 'Deity Department' ? deityDepartmentPanel()
