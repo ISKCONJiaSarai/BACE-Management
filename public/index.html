@@ -3224,7 +3224,7 @@ const PILLARS=[
    {t:'Management dashboard',em:'📊',r:'#/mgmt',m:'management'},
    {t:'Departments',em:'🏢',r:'#/depts',m:'management'},
    {t:'Assign Seva',em:'📋',r:'#/assign',m:'assign'},
-   {t:'BACE Pillars',em:'🏛️',r:'#/attendance',m:'management'},
+   {t:'Central Departments Hub',em:'🏢',r:'#/attendance',m:'management'},
    {t:'SOPs & standards',em:'📘',r:'#/sops',m:'sops'},
    {t:'Action items',em:'🎯',r:'#/actions',m:'actions',badge:'actionsOverdue'}]},
  {key:'preach',t:'BACE Preaching',em:'📖',pill:'var(--indigo)',m:'preaching',items:[
@@ -3341,7 +3341,7 @@ function sidebar(){
    </div></aside>`;
 }
 const CRUMBS={'':'Dashboard',today:'Today',devotees:'Devotees',devotee:'Devotee',org:'Organisation',mgmt:'BACE Management',
- depts:'Departments',dept:'Department',assign:'Assign Seva',attendance:'BACE Pillars','dept-reports':'Department reports',
+ depts:'Departments',dept:'Department',assign:'Assign Seva',attendance:'Central Departments Hub','dept-reports':'Department reports',
  inventory:'Inventory & BBT',sops:'SOPs & standards',actions:'Action items',preaching:'BACE Preaching',batches:'Batch management',
  batch:'Batch',contacts:'Contacts & pipeline',followups:'Follow-ups',classes:'Classes & events','batch-attendance':'Batch attendance',
  'preaching-reports':'Preaching reports',care:'Devotee Care',friends:'Friends',groups:'Groups',group:'Group',swabhav:'Swabhav engagement',
@@ -12546,20 +12546,1085 @@ function deptAttendanceMatrix(){
 }
 
 
+
+const fmtC = n => '₹' + Number(n || 0).toLocaleString('en-IN');
+
+
 /* =========================================================================
-   🛕 4 SECTIONS ATTENDANCE HUB (Morning, Deity, Cleaning, Matrix)
+   🏢 CENTRAL DEPARTMENTS HUB - ACCOUNTS & BUDGETS MODULE
+   ========================================================================= */
+
+window.initAccountsState = function() {
+  if (!APP.accountsState) {
+    APP.accountsState = {
+      deptFilter: 'all',
+      categoryFilter: 'all',
+      statusFilter: 'all',
+      sortKey: 'date-desc',
+      searchQuery: '',
+      viewMode: 'all',
+      expenses: [],
+      departments: [],
+      summary: null,
+      isLoading: false,
+      hasLoadedFromMongo: false,
+      lastSync: null,
+      activeModal: null,
+      editingExpense: null,
+      editingBudgetDept: null
+    };
+  }
+};
+
+window.loadDepartmentAccounts = async function(forceReload) {
+  window.initAccountsState();
+  if (APP.accountsState.isLoading && !forceReload) return;
+  APP.accountsState.isLoading = true;
+
+  try {
+    const res = await fetch('/api/expenses');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    if (data && data.success) {
+      APP.accountsState.expenses = data.expenses || [];
+      APP.accountsState.departments = data.departments || [];
+      APP.accountsState.summary = data.summary || null;
+      APP.accountsState.hasLoadedFromMongo = true;
+      APP.accountsState.lastSync = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+      // Sync budget spent and allocated into local DB.departments if present
+      if (Array.isArray(DB.departments) && Array.isArray(data.departments)) {
+        data.departments.forEach(sd => {
+          const local = DB.departments.find(d => d.id === sd.id || d.name === sd.name);
+          if (local) {
+            local.budget = local.budget || {};
+            local.budget.allocated = sd.allocated;
+            local.budget.spent = sd.spent;
+          }
+        });
+      }
+    }
+  } catch (err) {
+    console.warn('Could not load accounts from MongoDB, using local fallback:', err);
+    APP.accountsState.hasLoadedFromMongo = false;
+  } finally {
+    APP.accountsState.isLoading = false;
+    if (APP.tab && APP.tab.att === 'Accounts') {
+      render();
+    }
+  }
+};
+
+window.setAccountsDeptFilter = function(deptName) {
+  window.initAccountsState();
+  APP.accountsState.deptFilter = deptName;
+  render();
+  const el = document.getElementById('accounts-expenses-table-card');
+  if (el) el.scrollIntoView({ behavior: 'smooth' });
+};
+
+window.setAccountsCategoryFilter = function(category) {
+  window.initAccountsState();
+  APP.accountsState.categoryFilter = category;
+  render();
+  const el = document.getElementById('accounts-expenses-table-card');
+  if (el) el.scrollIntoView({ behavior: 'smooth' });
+};
+
+window.setAccountsStatusFilter = function(status) {
+  window.initAccountsState();
+  APP.accountsState.statusFilter = status;
+  render();
+};
+
+window.setAccountsSortKey = function(sortKey) {
+  window.initAccountsState();
+  APP.accountsState.sortKey = sortKey;
+  render();
+};
+
+window.setAccountsSearch = function(q) {
+  window.initAccountsState();
+  APP.accountsState.searchQuery = q || '';
+  render();
+};
+
+window.openAddExpenseModal = function(prefillDeptName) {
+  window.initAccountsState();
+  APP.accountsState.activeModal = 'add-expense';
+  APP.accountsState.editingExpense = {
+    deptName: prefillDeptName || (DB.departments[0] ? DB.departments[0].name : 'Deity Department'),
+    title: '',
+    category: 'General',
+    amount: '',
+    date: new Date().toISOString().slice(0, 10),
+    paidBy: (APP.user && APP.user.devotee ? nameOf(APP.user.devotee) : 'Dhirendra pr'),
+    paymentMode: 'UPI',
+    billRef: '',
+    status: 'Approved',
+    notes: ''
+  };
+  render();
+};
+
+window.openEditExpenseModal = function(expenseId) {
+  window.initAccountsState();
+  const exp = (APP.accountsState.expenses || []).find(e => (e._id === expenseId || e.customId === expenseId));
+  if (!exp) {
+    toast('Expense not found', '⚠️');
+    return;
+  }
+  APP.accountsState.activeModal = 'edit-expense';
+  APP.accountsState.editingExpense = { ...exp };
+  render();
+};
+
+window.openBudgetModal = function(prefillDeptName) {
+  window.initAccountsState();
+  APP.accountsState.activeModal = 'manage-budget';
+  APP.accountsState.editingBudgetDept = prefillDeptName || '';
+  render();
+};
+
+window.closeAccountsModal = function() {
+  window.initAccountsState();
+  APP.accountsState.activeModal = null;
+  APP.accountsState.editingExpense = null;
+  APP.accountsState.editingBudgetDept = null;
+  render();
+};
+
+window.submitExpenseForm = async function(e) {
+  if (e && e.preventDefault) e.preventDefault();
+  window.initAccountsState();
+  const exp = APP.accountsState.editingExpense;
+  if (!exp) return;
+
+  const form = document.getElementById('expense-modal-form');
+  if (form) {
+    const fd = new FormData(form);
+    exp.deptName = fd.get('deptName') || exp.deptName;
+    exp.title = (fd.get('title') || '').trim();
+    exp.category = (fd.get('category') || '').trim() || 'General';
+    exp.amount = Number(fd.get('amount'));
+    exp.date = fd.get('date') || exp.date;
+    exp.paidBy = (fd.get('paidBy') || '').trim();
+    exp.paymentMode = fd.get('paymentMode') || 'UPI';
+    exp.billRef = (fd.get('billRef') || '').trim();
+    exp.status = fd.get('status') || 'Approved';
+    exp.notes = (fd.get('notes') || '').trim();
+  }
+
+  if (!exp.title) {
+    toast('Please enter an expense title / description', '⚠️');
+    return;
+  }
+  if (!exp.amount || isNaN(exp.amount) || exp.amount <= 0) {
+    toast('Please enter a valid expense amount', '⚠️');
+    return;
+  }
+
+  const dObj = DB.departments.find(d => d.name === exp.deptName);
+  exp.deptId = dObj ? dObj.id : 'dp1';
+
+  const isEdit = APP.accountsState.activeModal === 'edit-expense';
+  const url = isEdit ? ('/api/expenses/' + (exp._id || exp.customId)) : '/api/expenses';
+  const method = isEdit ? 'PUT' : 'POST';
+
+  try {
+    toast('Saving expense to MongoDB...', '⏳');
+    const res = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(exp)
+    });
+    const data = await res.json();
+    if (data.success) {
+      toast(isEdit ? '🎉 Expense updated in MongoDB!' : '🎉 Expense recorded & synced to MongoDB!', '✅');
+      window.closeAccountsModal();
+      window.loadDepartmentAccounts(true);
+    } else {
+      throw new Error(data.message || 'Error saving to MongoDB');
+    }
+  } catch (err) {
+    console.error('Mongo save error, saving locally:', err);
+    if (isEdit) {
+      const idx = APP.accountsState.expenses.findIndex(x => x._id === exp._id || x.customId === exp.customId);
+      if (idx !== -1) APP.accountsState.expenses[idx] = { ...exp };
+    } else {
+      exp.customId = 'exp-' + Date.now();
+      APP.accountsState.expenses.unshift({ ...exp });
+    }
+    toast('Saved to local store (will sync on reconnect)', '💾');
+    window.closeAccountsModal();
+    render();
+  }
+};
+
+window.deleteExpenseItem = async function(expenseId, title) {
+  if (!confirm('Are you sure you want to delete this expense:\n"' + (title || 'Selected expense') + '"?')) {
+    return;
+  }
+  try {
+    toast('Deleting expense from MongoDB...', '⏳');
+    const res = await fetch('/api/expenses/' + expenseId, { method: 'DELETE' });
+    const data = await res.json();
+    if (data.success) {
+      toast('🗑️ Expense deleted from MongoDB', '✅');
+      window.loadDepartmentAccounts(true);
+    } else {
+      throw new Error(data.message || 'Error deleting expense');
+    }
+  } catch (err) {
+    console.warn('Mongo delete error, removing locally:', err);
+    APP.accountsState.expenses = (APP.accountsState.expenses || []).filter(e => e._id !== expenseId && e.customId !== expenseId);
+    toast('🗑️ Expense removed locally', '✅');
+    render();
+  }
+};
+
+window.quickApproveExpense = async function(expenseId) {
+  try {
+    toast('Approving expense in MongoDB...', '⏳');
+    const res = await fetch('/api/expenses/' + expenseId, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'Approved' })
+    });
+    const data = await res.json();
+    if (data.success) {
+      toast('✅ Expense approved in MongoDB', '🎉');
+      window.loadDepartmentAccounts(true);
+    } else {
+      throw new Error(data.message);
+    }
+  } catch (err) {
+    const exp = (APP.accountsState.expenses || []).find(e => e._id === expenseId || e.customId === expenseId);
+    if (exp) exp.status = 'Approved';
+    toast('✅ Expense approved locally', '🎉');
+    render();
+  }
+};
+
+window.submitBudgetUpdate = async function(e) {
+  if (e && e.preventDefault) e.preventDefault();
+  const form = document.getElementById('budget-modal-form');
+  if (!form) return;
+  const fd = new FormData(form);
+  const deptId = fd.get('deptId');
+  const allocated = Number(fd.get('allocated'));
+
+  if (!deptId) {
+    toast('Please select a department', '⚠️');
+    return;
+  }
+  if (isNaN(allocated) || allocated < 0) {
+    toast('Please enter a valid budget amount', '⚠️');
+    return;
+  }
+
+  try {
+    toast('Updating department budget in MongoDB...', '⏳');
+    const res = await fetch('/api/expenses/budget/' + deptId, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ allocated })
+    });
+    const data = await res.json();
+    if (data.success) {
+      toast('💼 Department budget updated in MongoDB!', '✅');
+      window.closeAccountsModal();
+      window.loadDepartmentAccounts(true);
+    } else {
+      throw new Error(data.message);
+    }
+  } catch (err) {
+    console.warn('Mongo update error, updating locally:', err);
+    const d = DB.departments.find(x => x.id === deptId || x.name === deptId);
+    if (d) {
+      d.budget = d.budget || {};
+      d.budget.allocated = allocated;
+    }
+    toast('💼 Budget updated locally', '✅');
+    window.closeAccountsModal();
+    render();
+  }
+};
+
+window.seedSampleTempleExpenses = async function() {
+  if (!confirm('Re-seed sample department expenses in MongoDB? This will populate realistic expenses for Deity, Kitchen, Cleaning, Preaching & Maintenance.')) {
+    return;
+  }
+  try {
+    toast('Seeding sample expenses in MongoDB...', '⏳');
+    const res = await fetch('/api/expenses/seed-sample', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ force: true })
+    });
+    const data = await res.json();
+    if (data.success) {
+      toast('🌱 Seeded ' + data.count + ' sample temple expenses in MongoDB!', '🎉');
+      window.loadDepartmentAccounts(true);
+    } else {
+      throw new Error(data.message);
+    }
+  } catch (err) {
+    toast('Error seeding expenses: ' + err.message, '⚠️');
+  }
+};
+
+window.exportDepartmentExpensesCSV = function() {
+  window.initAccountsState();
+  const expenses = APP.accountsState.expenses || [];
+  if (expenses.length === 0) {
+    toast('No expenses to export', '⚠️');
+    return;
+  }
+  const headers = ['Date', 'Department', 'Category', 'Title', 'Amount (INR)', 'Paid By', 'Payment Mode', 'Bill Ref', 'Status', 'Notes'];
+  const rows = expenses.map(e => [
+    e.date || '',
+    e.deptName || '',
+    e.category || '',
+    e.title || '',
+    e.amount || 0,
+    e.paidBy || '',
+    e.paymentMode || '',
+    e.billRef || '',
+    e.status || '',
+    e.notes || ''
+  ]);
+  downloadCSV('bace-department-expenses.csv', [headers, ...rows]);
+  toast('📥 Exported ' + expenses.length + ' expenses to CSV', '✅');
+};
+
+/** Main Department Accounts & Budgets Panel */
+function deptAccountsPanel() {
+  window.initAccountsState();
+
+  // Trigger load from MongoDB if not loaded yet
+  if (!APP.accountsState.hasLoadedFromMongo && !APP.accountsState.isLoading) {
+    setTimeout(() => window.loadDepartmentAccounts(), 20);
+  }
+
+  const allExpenses = APP.accountsState.expenses || [];
+  const deptFilter = APP.accountsState.deptFilter || 'all';
+  const catFilter = APP.accountsState.categoryFilter || 'all';
+  const statusFilter = APP.accountsState.statusFilter || 'all';
+  const sortKey = APP.accountsState.sortKey || 'date-desc';
+  const query = (APP.accountsState.searchQuery || '').toLowerCase().trim();
+
+  // Filter expenses
+  let filtered = allExpenses.filter(e => {
+    if (deptFilter !== 'all' && e.deptName !== deptFilter && e.deptId !== deptFilter) return false;
+    if (catFilter !== 'all' && e.category !== catFilter) return false;
+    if (statusFilter !== 'all' && e.status !== statusFilter) return false;
+    if (query) {
+      const matchTitle = (e.title || '').toLowerCase().includes(query);
+      const matchPayee = (e.paidBy || '').toLowerCase().includes(query);
+      const matchBill = (e.billRef || '').toLowerCase().includes(query);
+      const matchDept = (e.deptName || '').toLowerCase().includes(query);
+      const matchCat = (e.category || '').toLowerCase().includes(query);
+      if (!matchTitle && !matchPayee && !matchBill && !matchDept && !matchCat) return false;
+    }
+    return true;
+  });
+
+  // Sort expenses
+  filtered.sort((a, b) => {
+    if (sortKey === 'date-asc') return (a.date || '').localeCompare(b.date || '');
+    if (sortKey === 'amount-desc') return Number(b.amount || 0) - Number(a.amount || 0);
+    if (sortKey === 'amount-asc') return Number(a.amount || 0) - Number(b.amount || 0);
+    if (sortKey === 'dept-asc') return (a.deptName || '').localeCompare(b.deptName || '');
+    return (b.date || '').localeCompare(a.date || ''); // default date-desc
+  });
+
+  // Compute department metrics
+  const activeDepts = DB.departments || [];
+  const deptStats = activeDepts.map(d => {
+    const allocated = (d.budget && d.budget.allocated) || 30000;
+    // Calculate total spent for this department from allExpenses
+    const dSpent = allExpenses
+      .filter(e => (e.deptId === d.id || e.deptName === d.name) && e.status !== 'Rejected')
+      .reduce((sum, e) => sum + Number(e.amount || 0), 0);
+    const spent = dSpent > 0 ? dSpent : ((d.budget && d.budget.spent) || 0);
+    const remaining = Math.max(0, allocated - spent);
+    const pct = allocated > 0 ? Math.min(100, Math.round((spent / allocated) * 100)) : 0;
+    return { ...d, allocated, spent, remaining, pct };
+  });
+
+  // Summary figures
+  const totalAllocated = deptStats.reduce((sum, d) => sum + d.allocated, 0);
+  const totalSpent = allExpenses.filter(e => e.status !== 'Rejected').reduce((sum, e) => sum + Number(e.amount || 0), 0);
+  const totalRemaining = Math.max(0, totalAllocated - totalSpent);
+  const overallUtilPct = totalAllocated > 0 ? Math.min(100, Math.round((totalSpent / totalAllocated) * 100)) : 0;
+  const pendingExpenses = allExpenses.filter(e => e.status === 'Pending');
+  const pendingAmount = pendingExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
+
+  // Top spending department
+  const sortedBySpend = [...deptStats].sort((a, b) => b.spent - a.spent);
+  const topDept = sortedBySpend[0] || { name: 'None', spent: 0, icon: '🏢' };
+
+  // All unique categories
+  const allCategories = [...new Set(allExpenses.map(e => e.category).filter(Boolean))];
+
+  // Category breakdown
+  const catMap = {};
+  allExpenses.filter(e => e.status !== 'Rejected').forEach(e => {
+    const c = e.category || 'General';
+    catMap[c] = (catMap[c] || 0) + Number(e.amount || 0);
+  });
+  const catBreakdown = Object.entries(catMap)
+    .map(([category, amount]) => ({ category, amount }))
+    .sort((a, b) => b.amount - a.amount);
+
+  // Color palette for charts
+  const chartColors = ['#C9601B', '#0D9488', '#6366F1', '#D97706', '#E11D48', '#8B5CF6', '#0284C7', '#10B981', '#64748B'];
+
+  // Donut chart circles
+  const circumference = 314.159; // 2 * pi * 50
+  let accumulatedPct = 0;
+  const donutSlices = sortedBySpend.slice(0, 7).map((d, i) => {
+    const share = totalSpent > 0 ? (d.spent / totalSpent) * 100 : 0;
+    const dashLen = (share / 100) * circumference;
+    const offset = -(accumulatedPct / 100) * circumference;
+    accumulatedPct += share;
+    const color = chartColors[i % chartColors.length];
+    return { d, share: Math.round(share), dashLen, offset, color };
+  });
+
+  // Dual Bar Chart calculations (top 7 depts)
+  const barDepts = sortedBySpend.slice(0, 7);
+  const maxBarVal = Math.max(1, ...barDepts.map(d => Math.max(d.allocated, d.spent)));
+
+  // Active filters count
+  let activeFilterCount = 0;
+  if (deptFilter !== 'all') activeFilterCount++;
+  if (catFilter !== 'all') activeFilterCount++;
+  if (statusFilter !== 'all') activeFilterCount++;
+  if (query) activeFilterCount++;
+
+  // Modal rendering
+  let modalHtml = '';
+  if (APP.accountsState.activeModal === 'add-expense' || APP.accountsState.activeModal === 'edit-expense') {
+    const isEdit = APP.accountsState.activeModal === 'edit-expense';
+    const exp = APP.accountsState.editingExpense || {};
+    modalHtml = `
+    <div class="scrim" style="display:flex;align-items:center;justify-content:center;position:fixed;inset:0;background:rgba(15,23,42,0.65);z-index:9999;backdrop-filter:blur(3px)" onclick="if(event.target===this)window.closeAccountsModal()">
+      <div class="card" style="width:100%;max-width:540px;max-height:92vh;overflow-y:auto;box-shadow:0 24px 48px rgba(0,0,0,0.28);border-radius:14px;border:1.5px solid var(--line);background:var(--surface)">
+        <div class="card-h" style="border-bottom:1px solid var(--line);padding:14px 18px;display:flex;align-items:center;justify-content:space-between">
+          <h3 style="margin:0;font-size:16px;display:flex;align-items:center;gap:8px">
+            <span>${isEdit ? '✏️ Edit Department Expense' : '➕ Record Department Expense'}</span>
+          </h3>
+          <button type="button" class="btn sm" onclick="window.closeAccountsModal()" style="padding:2px 8px;border-radius:50%;font-size:14px">✕</button>
+        </div>
+        <form id="expense-modal-form" onsubmit="window.submitExpenseForm(event)" style="padding:18px;display:flex;flex-direction:column;gap:14px">
+          <div>
+            <label style="font-weight:600;font-size:12.5px;display:block;margin-bottom:5px">🏢 Department <span style="color:var(--danger)">*</span></label>
+            <select name="deptName" required style="width:100%;padding:8px 10px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:13px">
+              ${activeDepts.map(d => `<option value="${esc(d.name)}"${exp.deptName === d.name ? ' selected' : ''}>${d.icon || '🏢'} ${esc(d.name)}</option>`).join('')}
+            </select>
+          </div>
+          <div>
+            <label style="font-weight:600;font-size:12.5px;display:block;margin-bottom:5px">📝 Expense Title / Item Description <span style="color:var(--danger)">*</span></label>
+            <input type="text" name="title" required value="${esc(exp.title || '')}" placeholder="e.g. Fresh Roses for Mangala Aarti" style="width:100%;padding:8px 10px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:13px">
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div>
+              <label style="font-weight:600;font-size:12.5px;display:block;margin-bottom:5px">🏷️ Category</label>
+              <input type="text" name="category" list="expense-categories-list" value="${esc(exp.category || 'General')}" placeholder="e.g. Flowers, Bhoga, Cleaning" style="width:100%;padding:8px 10px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:13px">
+              <datalist id="expense-categories-list">
+                <option value="Flowers & Garlands">
+                <option value="Bhoga & Groceries">
+                <option value="Cleaning Supplies">
+                <option value="Maintenance & Electrical">
+                <option value="Sound & AV">
+                <option value="Printing & Literature">
+                <option value="Transport & Travel">
+                <option value="Medical & First Aid">
+                <option value="Pooja Items">
+                <option value="Utensils">
+                <option value="Utilities & Bills">
+                <option value="Miscellaneous">
+              </datalist>
+            </div>
+            <div>
+              <label style="font-weight:600;font-size:12.5px;display:block;margin-bottom:5px">💰 Amount (₹) <span style="color:var(--danger)">*</span></label>
+              <input type="number" name="amount" min="1" step="any" required value="${exp.amount || ''}" placeholder="e.g. 1500" style="width:100%;padding:8px 10px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:13px;font-weight:bold">
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div>
+              <label style="font-weight:600;font-size:12.5px;display:block;margin-bottom:5px">📅 Date <span style="color:var(--danger)">*</span></label>
+              <input type="date" name="date" required value="${exp.date || new Date().toISOString().slice(0, 10)}" style="width:100%;padding:8px 10px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:13px">
+            </div>
+            <div>
+              <label style="font-weight:600;font-size:12.5px;display:block;margin-bottom:5px">💳 Payment Mode</label>
+              <select name="paymentMode" style="width:100%;padding:8px 10px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:13px">
+                <option value="UPI"${exp.paymentMode === 'UPI' ? ' selected' : ''}>UPI / GPay / Paytm</option>
+                <option value="Cash"${exp.paymentMode === 'Cash' ? ' selected' : ''}>Cash</option>
+                <option value="Bank Transfer"${exp.paymentMode === 'Bank Transfer' ? ' selected' : ''}>Bank Transfer / NEFT</option>
+                <option value="Card"${exp.paymentMode === 'Card' ? ' selected' : ''}>Debit / Credit Card</option>
+                <option value="Cheque"${exp.paymentMode === 'Cheque' ? ' selected' : ''}>Cheque</option>
+              </select>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div>
+              <label style="font-weight:600;font-size:12.5px;display:block;margin-bottom:5px">👤 Paid By Devotee</label>
+              <input type="text" name="paidBy" list="expense-devotees-list" value="${esc(exp.paidBy || '')}" placeholder="Devotee name" style="width:100%;padding:8px 10px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:13px">
+              <datalist id="expense-devotees-list">
+                ${(DB.devotees || []).map(d => `<option value="${esc(d.name)}">`).join('')}
+              </datalist>
+            </div>
+            <div>
+              <label style="font-weight:600;font-size:12.5px;display:block;margin-bottom:5px">🧾 Bill / Invoice Ref</label>
+              <input type="text" name="billRef" value="${esc(exp.billRef || '')}" placeholder="e.g. INV-1049" style="width:100%;padding:8px 10px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:13px">
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div>
+              <label style="font-weight:600;font-size:12.5px;display:block;margin-bottom:5px">📊 Status</label>
+              <select name="status" style="width:100%;padding:8px 10px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:13px">
+                <option value="Approved"${exp.status === 'Approved' ? ' selected' : ''}>✅ Approved</option>
+                <option value="Pending"${exp.status === 'Pending' ? ' selected' : ''}>⏳ Pending</option>
+                <option value="Reimbursed"${exp.status === 'Reimbursed' ? ' selected' : ''}>🔄 Reimbursed</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-weight:600;font-size:12.5px;display:block;margin-bottom:5px">📌 Additional Notes</label>
+              <input type="text" name="notes" value="${esc(exp.notes || '')}" placeholder="Optional details / shop name" style="width:100%;padding:8px 10px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:13px">
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-top:8px;border-top:1px solid var(--line);padding-top:14px">
+            <button type="button" class="btn" onclick="window.closeAccountsModal()">Cancel</button>
+            <button type="submit" class="btn pri" style="min-width:140px">${isEdit ? '💾 Update in MongoDB' : '🚀 Save to MongoDB'}</button>
+          </div>
+        </form>
+      </div>
+    </div>`;
+  } else if (APP.accountsState.activeModal === 'manage-budget') {
+    const prefill = APP.accountsState.editingBudgetDept;
+    modalHtml = `
+    <div class="scrim" style="display:flex;align-items:center;justify-content:center;position:fixed;inset:0;background:rgba(15,23,42,0.65);z-index:9999;backdrop-filter:blur(3px)" onclick="if(event.target===this)window.closeAccountsModal()">
+      <div class="card" style="width:100%;max-width:480px;box-shadow:0 24px 48px rgba(0,0,0,0.28);border-radius:14px;border:1.5px solid var(--line);background:var(--surface)">
+        <div class="card-h" style="border-bottom:1px solid var(--line);padding:14px 18px;display:flex;align-items:center;justify-content:space-between">
+          <h3 style="margin:0;font-size:16px">💼 Set Department Allocated Budget</h3>
+          <button type="button" class="btn sm" onclick="window.closeAccountsModal()" style="padding:2px 8px;border-radius:50%">✕</button>
+        </div>
+        <form id="budget-modal-form" onsubmit="window.submitBudgetUpdate(event)" style="padding:18px;display:flex;flex-direction:column;gap:14px">
+          <div>
+            <label style="font-weight:600;font-size:12.5px;display:block;margin-bottom:5px">Select Department <span style="color:var(--danger)">*</span></label>
+            <select name="deptId" id="budget-dept-select" required style="width:100%;padding:8px 10px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:13px" onchange="const d=DB.departments.find(x=>x.id===this.value||x.name===this.value);if(d&&d.budget)document.getElementById('budget-alloc-input').value=d.budget.allocated||30000;">
+              ${activeDepts.map(d => `<option value="${d.id}"${(prefill === d.name || prefill === d.id) ? ' selected' : ''}>${d.icon || '🏢'} ${esc(d.name)}</option>`).join('')}
+            </select>
+          </div>
+          <div>
+            <label style="font-weight:600;font-size:12.5px;display:block;margin-bottom:5px">New Allocated Budget (₹) <span style="color:var(--danger)">*</span></label>
+            <input type="number" id="budget-alloc-input" name="allocated" min="0" step="500" required value="${(() => {
+              const sel = prefill ? activeDepts.find(x => x.name === prefill || x.id === prefill) : activeDepts[0];
+              return (sel && sel.budget && sel.budget.allocated) || 30000;
+            })()}" style="width:100%;padding:8px 10px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:14px;font-weight:bold">
+            <div class="tiny" style="color:var(--ink-3);margin-top:4px">Sets total sanctioned spending budget for the department in MongoDB.</div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-top:8px;border-top:1px solid var(--line);padding-top:14px">
+            <button type="button" class="btn" onclick="window.closeAccountsModal()">Cancel</button>
+            <button type="submit" class="btn pri" style="min-width:130px">💾 Update Budget</button>
+          </div>
+        </form>
+      </div>
+    </div>`;
+  }
+
+  return `
+  ${modalHtml}
+  <div style="margin-top:16px">
+
+    <!-- Top Action Banner & Sync Status -->
+    <div class="card" style="margin-bottom:16px;background:linear-gradient(135deg, var(--surface) 0%, rgba(201,96,27,0.06) 100%);border:1.5px solid var(--saffron)">
+      <div style="padding:16px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px">
+        <div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-size:24px">💰</span>
+            <div>
+              <div style="font-size:17px;font-weight:800;color:var(--ink)">Department Financial Accounts & Budgets</div>
+              <div class="tiny" style="color:var(--ink-2)">Real-time expense ledgers, department budgets, interactive graphs & live MongoDB synchronization</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap">
+            <span style="background:${APP.accountsState.hasLoadedFromMongo ? 'rgba(5,150,105,0.12)' : 'rgba(234,179,8,0.15)'};color:${APP.accountsState.hasLoadedFromMongo ? '#059669' : '#b45309'};padding:3px 10px;border-radius:20px;font-size:11.5px;font-weight:700;display:inline-flex;align-items:center;gap:5px">
+              ${APP.accountsState.hasLoadedFromMongo ? '🟢 Live MongoDB Connected' : '🟡 Local Mode / Syncing'}
+            </span>
+            <span class="tiny" style="color:var(--ink-3)">
+              📦 ${allExpenses.length} Total Records ${APP.accountsState.lastSync ? '• Synced ' + APP.accountsState.lastSync : ''}
+            </span>
+          </div>
+        </div>
+
+        <!-- Quick Action Buttons -->
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <button type="button" class="btn pri" onclick="window.openAddExpenseModal()" style="font-weight:700;display:inline-flex;align-items:center;gap:6px">
+            <span>➕</span> Record Expense
+          </button>
+          <button type="button" class="btn" onclick="window.openBudgetModal()" style="display:inline-flex;align-items:center;gap:5px">
+            <span>💼</span> Allocate Budgets
+          </button>
+          <button type="button" class="btn" onclick="window.exportDepartmentExpensesCSV()" style="display:inline-flex;align-items:center;gap:5px">
+            <span>📥</span> Export CSV
+          </button>
+          <button type="button" class="btn sm" onclick="window.loadDepartmentAccounts(true)" title="Force Refresh with MongoDB" style="padding:6px 10px">
+            <span>🔄</span> Sync
+          </button>
+          <button type="button" class="btn sm" onclick="window.seedSampleTempleExpenses()" title="Seed Realistic Temple Expenses" style="padding:6px 10px;font-size:11px;color:var(--ink-3)">
+            <span>🌱</span> Seed Data
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5 Summary KPI Cards -->
+    <div class="stats" style="grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;margin-bottom:18px">
+      <!-- Card 1: Total Allocated -->
+      <div class="card stat click" onclick="window.setAccountsDeptFilter('all')" title="Click to view all department budgets" style="border-left:4px solid var(--indigo);cursor:pointer;padding:16px">
+        <div class="lbl" style="font-size:12px;color:var(--ink-2);font-weight:600;display:flex;align-items:center;gap:6px">
+          <span>🏛️</span> Total Budget Sanctioned
+        </div>
+        <div class="val" style="font-size:22px;font-weight:800;color:var(--indigo);margin:6px 0">${fmtC(totalAllocated)}</div>
+        <div class="foot" style="font-size:11.5px;color:var(--ink-3)">Across ${activeDepts.length} active departments</div>
+      </div>
+
+      <!-- Card 2: Total Spent -->
+      <div class="card stat click" onclick="window.setAccountsDeptFilter('all')" title="Click to view all expenses" style="border-left:4px solid var(--saffron);cursor:pointer;padding:16px">
+        <div class="lbl" style="font-size:12px;color:var(--ink-2);font-weight:600;display:flex;align-items:center;gap:6px">
+          <span>💸</span> Total Expenses Incurred
+        </div>
+        <div class="val" style="font-size:22px;font-weight:800;color:var(--saffron);margin:6px 0">${fmtC(totalSpent)}</div>
+        <div class="foot" style="font-size:11.5px;color:var(--ink-3)">${overallUtilPct}% of sanctioned budget</div>
+      </div>
+
+      <!-- Card 3: Remaining Balance -->
+      <div class="card stat click" onclick="window.setAccountsDeptFilter('all')" style="border-left:4px solid #059669;cursor:pointer;padding:16px">
+        <div class="lbl" style="font-size:12px;color:var(--ink-2);font-weight:600;display:flex;align-items:center;gap:6px">
+          <span>🛡️</span> Remaining Net Surplus
+        </div>
+        <div class="val" style="font-size:22px;font-weight:800;color:#059669;margin:6px 0">${fmtC(totalRemaining)}</div>
+        <div class="foot" style="font-size:11.5px;color:#059669;font-weight:600">✓ Healthy treasury balance</div>
+      </div>
+
+      <!-- Card 4: Pending Approvals -->
+      <div class="card stat click" onclick="window.setAccountsStatusFilter('Pending')" title="Click to view pending approvals" style="border-left:4px solid #D97706;cursor:pointer;padding:16px">
+        <div class="lbl" style="font-size:12px;color:var(--ink-2);font-weight:600;display:flex;align-items:center;gap:6px">
+          <span>⏳</span> Pending Approvals
+        </div>
+        <div class="val" style="font-size:22px;font-weight:800;color:#D97706;margin:6px 0">${fmtC(pendingAmount)}</div>
+        <div class="foot" style="font-size:11.5px;color:#D97706;font-weight:600">${pendingExpenses.length} bills pending reimbursement</div>
+      </div>
+
+      <!-- Card 5: Top Spending Dept -->
+      <div class="card stat click" onclick="window.setAccountsDeptFilter('${esc(topDept.name)}')" title="Click to filter by ${esc(topDept.name)}" style="border-left:4px solid #8B5CF6;cursor:pointer;padding:16px">
+        <div class="lbl" style="font-size:12px;color:var(--ink-2);font-weight:600;display:flex;align-items:center;gap:6px">
+          <span>🏆</span> Top Spending Department
+        </div>
+        <div class="val" style="font-size:18px;font-weight:800;color:#8B5CF6;margin:6px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+          ${topDept.icon || '🏢'} ${esc(topDept.name)}
+        </div>
+        <div class="foot" style="font-size:11.5px;color:var(--ink-3)">${fmtC(topDept.spent)} spent (${topDept.pct}%)</div>
+      </div>
+    </div>
+
+    <!-- Interactive Clickable Graphs Row -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:16px;margin-bottom:18px">
+
+      <!-- GRAPH 1: Department Budget vs Actual Spent (Dual Bar Chart) -->
+      <div class="card" style="padding:16px;display:flex;flex-direction:column;justify-content:space-between">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div>
+            <div style="font-weight:700;font-size:14px;color:var(--ink)">📊 Budget vs Spent (By Department)</div>
+            <div class="tiny" style="color:var(--ink-3)">Click any bar to filter expense records below</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;font-size:11px;font-weight:600">
+            <span style="display:inline-flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:#6366F1;border-radius:2px;display:inline-block"></span> Budget</span>
+            <span style="display:inline-flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:#0D9488;border-radius:2px;display:inline-block"></span> Spent</span>
+          </div>
+        </div>
+        <!-- Dual Bar SVG -->
+        <div style="overflow-x:auto;padding-top:10px">
+          <svg viewBox="0 0 540 210" style="width:100%;height:210px;font-family:inherit">
+            <!-- Grid lines -->
+            <line x1="30" y1="30" x2="520" y2="30" stroke="var(--line)" stroke-dasharray="3 3"/>
+            <line x1="30" y1="95" x2="520" y2="95" stroke="var(--line)" stroke-dasharray="3 3"/>
+            <line x1="30" y1="160" x2="520" y2="160" stroke="var(--line)"/>
+            ${barDepts.map((d, i) => {
+              const colW = 68;
+              const xBase = 45 + i * colW;
+              const bH = Math.max(4, Math.round((d.allocated / maxBarVal) * 125));
+              const sH = Math.max(4, Math.round((d.spent / maxBarVal) * 125));
+              const bY = 160 - bH;
+              const sY = 160 - sH;
+              const isSelected = deptFilter === d.name;
+              const shortName = d.name.length > 9 ? d.name.slice(0, 8) + '..' : d.name;
+              return `
+              <g style="cursor:pointer;transition:transform 0.15s" onclick="window.setAccountsDeptFilter('${esc(d.name)}')" title="${esc(d.name)}: Allocated ${fmtC(d.allocated)}, Spent ${fmtC(d.spent)} (${d.pct}%)">
+                ${isSelected ? `<rect x="${xBase - 3}" y="15" width="56" height="150" rx="4" fill="rgba(201,96,27,0.12)" stroke="var(--saffron)" stroke-width="1.5"/>` : ''}
+                <!-- Budget Bar -->
+                <rect x="${xBase}" y="${bY}" width="22" height="${bH}" rx="3" fill="#6366F1" opacity="0.85"/>
+                <!-- Spent Bar -->
+                <rect x="${xBase + 26}" y="${sY}" width="22" height="${sH}" rx="3" fill="${d.pct > 90 ? '#DC2626' : '#0D9488'}"/>
+                <!-- Value tag on spent bar -->
+                <text x="${xBase + 37}" y="${Math.max(22, sY - 5)}" text-anchor="middle" font-size="9.5" font-weight="700" fill="var(--ink-2)">${Math.round(d.spent / 1000)}k</text>
+                <!-- Label below -->
+                <text x="${xBase + 24}" y="178" text-anchor="middle" font-size="10" font-weight="600" fill="${isSelected ? 'var(--pri)' : 'var(--ink)'}">${d.icon || ''}</text>
+                <text x="${xBase + 24}" y="193" text-anchor="middle" font-size="9" fill="${isSelected ? 'var(--pri)' : 'var(--ink-3)'}">${esc(shortName)}</text>
+              </g>`;
+            }).join('')}
+          </svg>
+        </div>
+      </div>
+
+      <!-- GRAPH 2: Department Expense Distribution (Donut Chart) -->
+      <div class="card" style="padding:16px;display:flex;flex-direction:column;justify-content:space-between">
+        <div style="margin-bottom:12px">
+          <div style="font-weight:700;font-size:14px;color:var(--ink)">🍩 Expense Share By Department</div>
+          <div class="tiny" style="color:var(--ink-3)">Click any slice or legend item to filter expenses</div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:18px;flex-wrap:wrap">
+          <!-- Donut SVG -->
+          <div style="position:relative;width:150px;height:150px;flex-shrink:0">
+            <svg viewBox="0 0 120 120" style="width:100%;height:100%;transform:rotate(-90deg)">
+              <circle cx="60" cy="60" r="45" fill="none" stroke="var(--paper-2)" stroke-width="20"/>
+              ${donutSlices.map(({ d, dashLen, offset, color }) => `
+                <circle cx="60" cy="60" r="45" fill="none" stroke="${color}" stroke-width="${deptFilter === d.name ? 24 : 18}"
+                  stroke-dasharray="${dashLen} ${circumference - dashLen}"
+                  stroke-dashoffset="${offset}"
+                  style="cursor:pointer;transition:stroke-width 0.2s"
+                  onclick="window.setAccountsDeptFilter('${esc(d.name)}')"
+                >
+                  <title>${esc(d.name)}: ${fmtC(d.spent)}</title>
+                </circle>
+              `).join('')}
+            </svg>
+            <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none">
+              <span class="tiny" style="color:var(--ink-3);font-size:9.5px;font-weight:600">TOTAL</span>
+              <span style="font-size:12.5px;font-weight:800;color:var(--ink)">${fmtC(totalSpent)}</span>
+            </div>
+          </div>
+          <!-- Donut Legend -->
+          <div style="display:flex;flex-direction:column;gap:6px;flex:1;min-width:140px;max-height:160px;overflow-y:auto">
+            ${donutSlices.map(({ d, share, color }) => `
+              <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:3px 6px;border-radius:4px;font-size:11.5px;${deptFilter === d.name ? 'background:rgba(201,96,27,0.1);font-weight:700' : ''}"
+                   onclick="window.setAccountsDeptFilter('${esc(d.name)}')" title="Filter by ${esc(d.name)}">
+                <div style="display:flex;align-items:center;gap:6px;overflow:hidden">
+                  <span style="width:8px;height:8px;border-radius:50%;background:${color};flex-shrink:0"></span>
+                  <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:105px">${d.icon || ''} ${esc(d.name)}</span>
+                </div>
+                <div style="font-weight:700;color:var(--ink-2);margin-left:6px">${share}%</div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      </div>
+
+      <!-- GRAPH 3: Top Expense Categories Breakdown -->
+      <div class="card" style="padding:16px;display:flex;flex-direction:column;justify-content:space-between">
+        <div style="margin-bottom:12px">
+          <div style="font-weight:700;font-size:14px;color:var(--ink)">🏷️ Spending By Category</div>
+          <div class="tiny" style="color:var(--ink-3)">Click any category to filter expense records</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:9px;max-height:165px;overflow-y:auto;padding-right:4px">
+          ${catBreakdown.slice(0, 6).map((c, i) => {
+            const catPct = totalSpent > 0 ? Math.round((c.amount / totalSpent) * 100) : 0;
+            const isSelected = catFilter === c.category;
+            const barColor = chartColors[i % chartColors.length];
+            return `
+            <div style="cursor:pointer;padding:4px 6px;border-radius:6px;${isSelected ? 'background:rgba(201,96,27,0.1)' : ''}"
+                 onclick="window.setAccountsCategoryFilter('${esc(c.category)}')">
+              <div style="display:flex;align-items:center;justify-content:space-between;font-size:11.5px;margin-bottom:3px">
+                <span style="font-weight:${isSelected ? '700' : '600'};color:${isSelected ? 'var(--pri)' : 'var(--ink)'}">${esc(c.category)}</span>
+                <span style="font-weight:700;color:var(--ink-2)">${fmtC(c.amount)} <span class="tiny" style="color:var(--ink-3)">(${catPct}%)</span></span>
+              </div>
+              <div style="width:100%;height:6px;background:var(--paper-2);border-radius:4px;overflow:hidden">
+                <div style="width:${catPct}%;height:100%;background:${barColor};border-radius:4px"></div>
+              </div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+    </div>
+
+    <!-- Department Budgets Overview Matrix Table -->
+    <div class="card" style="margin-bottom:18px">
+      <div class="card-h" style="padding:12px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+        <div>
+          <h3 style="margin:0;font-size:15px;display:flex;align-items:center;gap:8px">
+            <span>🏛️</span> Department Budget Allocations & Utilization
+          </h3>
+          <div class="tiny" style="color:var(--ink-3)">Click "Edit" on any department to adjust allocated budget in MongoDB</div>
+        </div>
+        <button type="button" class="btn sm" onclick="window.openBudgetModal()" style="display:inline-flex;align-items:center;gap:5px">
+          <span>✏️</span> Adjust All Budgets
+        </button>
+      </div>
+      <div class="tbl-wrap" style="max-height:280px;overflow-y:auto">
+        <table class="tbl" style="min-width:680px">
+          <thead>
+            <tr>
+              <th style="min-width:180px">Department</th>
+              <th style="min-width:100px">Category</th>
+              <th style="min-width:110px;text-align:right">Allocated Budget</th>
+              <th style="min-width:100px;text-align:right">Spent (₹)</th>
+              <th style="min-width:100px;text-align:right">Net Balance</th>
+              <th style="min-width:130px">Budget Utilization</th>
+              <th style="min-width:120px;text-align:center">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${deptStats.map(d => {
+              const isFiltered = deptFilter === d.name;
+              const barColor = d.pct > 90 ? '#DC2626' : (d.pct > 70 ? '#D97706' : '#059669');
+              return `
+              <tr style="${isFiltered ? 'background:rgba(201,96,27,0.06);font-weight:600' : ''}">
+                <td data-l="Department">
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <span style="font-size:16px">${d.icon || '🏢'}</span>
+                    <span style="font-weight:700">${esc(d.name)}</span>
+                  </div>
+                </td>
+                <td data-l="Category">
+                  <span class="badge" style="font-size:11px;background:var(--paper-2);color:var(--ink-2)">${esc(d.category || 'General')}</span>
+                </td>
+                <td data-l="Allocated Budget" style="text-align:right;font-weight:700;color:var(--indigo)">
+                  ${fmtC(d.allocated)}
+                  <button type="button" class="btn sm" onclick="window.openBudgetModal('${esc(d.name)}')" title="Edit budget" style="padding:1px 5px;margin-left:4px;font-size:11px">✏️</button>
+                </td>
+                <td data-l="Spent (₹)" style="text-align:right;font-weight:700;color:var(--ink)">
+                  ${fmtC(d.spent)}
+                </td>
+                <td data-l="Net Balance" style="text-align:right;font-weight:700;color:#059669">
+                  ${fmtC(d.remaining)}
+                </td>
+                <td data-l="Budget Utilization">
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <div style="flex:1;height:7px;background:var(--paper-2);border-radius:4px;overflow:hidden">
+                      <div style="width:${d.pct}%;height:100%;background:${barColor};border-radius:4px"></div>
+                    </div>
+                    <span style="font-size:11.5px;font-weight:700;color:${barColor};min-width:32px;text-align:right">${d.pct}%</span>
+                  </div>
+                </td>
+                <td data-l="Actions" style="text-align:center">
+                  <div style="display:inline-flex;align-items:center;gap:6px">
+                    <button type="button" class="btn sm${isFiltered ? ' pri' : ''}" onclick="window.setAccountsDeptFilter('${isFiltered ? 'all' : esc(d.name)}')" style="padding:3px 8px;font-size:11px" title="Filter expenses for this dept">
+                      ${isFiltered ? '✓ Showing' : '🔍 View'}
+                    </button>
+                    <button type="button" class="btn sm" onclick="window.openAddExpenseModal('${esc(d.name)}')" style="padding:3px 8px;font-size:11px" title="Add expense to this dept">
+                      + Add
+                    </button>
+                  </div>
+                </td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Full Expenses Log / Ledger Table with Filters, Sorting & Search -->
+    <div class="card" id="accounts-expenses-table-card">
+      <!-- Toolbar -->
+      <div style="padding:14px 18px;border-bottom:1px solid var(--line);background:var(--surface)">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:12px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:18px">🧾</span>
+            <span style="font-weight:700;font-size:15px;color:var(--ink)">Department Expenses Ledger</span>
+            <span class="badge" style="background:var(--pri);color:#fff;font-size:11px;padding:2px 8px;border-radius:12px">${filtered.length} Records</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            ${activeFilterCount > 0 ? `
+              <button type="button" class="btn sm" onclick="APP.accountsState.deptFilter='all';APP.accountsState.categoryFilter='all';APP.accountsState.statusFilter='all';APP.accountsState.searchQuery='';render();" style="color:var(--danger);font-size:11.5px">
+                ✕ Clear ${activeFilterCount} Filters
+              </button>
+            ` : ''}
+            <button type="button" class="btn sm pri" onclick="window.openAddExpenseModal()" style="font-weight:700">
+              ➕ Add Expense
+            </button>
+          </div>
+        </div>
+
+        <!-- Filter Controls Row -->
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <!-- Dept Filter -->
+          <div style="display:flex;align-items:center;gap:5px">
+            <span class="tiny" style="font-weight:600;color:var(--ink-2)">Dept:</span>
+            <select style="padding:5px 8px;font-size:12px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink)"
+                    onchange="window.setAccountsDeptFilter(this.value)">
+              <option value="all"${deptFilter === 'all' ? ' selected' : ''}>All Departments</option>
+              ${activeDepts.map(d => `<option value="${esc(d.name)}"${deptFilter === d.name ? ' selected' : ''}>${d.icon || ''} ${esc(d.name)}</option>`).join('')}
+            </select>
+          </div>
+
+          <!-- Category Filter -->
+          <div style="display:flex;align-items:center;gap:5px">
+            <span class="tiny" style="font-weight:600;color:var(--ink-2)">Category:</span>
+            <select style="padding:5px 8px;font-size:12px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink)"
+                    onchange="window.setAccountsCategoryFilter(this.value)">
+              <option value="all"${catFilter === 'all' ? ' selected' : ''}>All Categories</option>
+              ${allCategories.map(c => `<option value="${esc(c)}"${catFilter === c ? ' selected' : ''}>${esc(c)}</option>`).join('')}
+            </select>
+          </div>
+
+          <!-- Status Pills -->
+          <div style="display:flex;align-items:center;gap:4px">
+            <span class="tiny" style="font-weight:600;color:var(--ink-2)">Status:</span>
+            <button type="button" class="btn sm" onclick="window.setAccountsStatusFilter('all')" style="padding:2px 8px;font-size:11.5px;${statusFilter==='all'?'background:var(--pri);color:#fff;border-color:var(--pri)':''}">All</button>
+            <button type="button" class="btn sm" onclick="window.setAccountsStatusFilter('Approved')" style="padding:2px 8px;font-size:11.5px;${statusFilter==='Approved'?'background:var(--pri);color:#fff;border-color:var(--pri)':''}">✅ Approved</button>
+            <button type="button" class="btn sm" onclick="window.setAccountsStatusFilter('Pending')" style="padding:2px 8px;font-size:11.5px;${statusFilter==='Pending'?'background:var(--pri);color:#fff;border-color:var(--pri)':''}">⏳ Pending</button>
+            <button type="button" class="btn sm" onclick="window.setAccountsStatusFilter('Reimbursed')" style="padding:2px 8px;font-size:11.5px;${statusFilter==='Reimbursed'?'background:var(--pri);color:#fff;border-color:var(--pri)':''}">🔄 Reimbursed</button>
+          </div>
+
+          <!-- Sort Select -->
+          <div style="display:flex;align-items:center;gap:5px;margin-left:auto">
+            <span class="tiny" style="font-weight:600;color:var(--ink-2)">Sort:</span>
+            <select style="padding:5px 8px;font-size:12px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink)"
+                    onchange="window.setAccountsSortKey(this.value)">
+              <option value="date-desc"${sortKey === 'date-desc' ? ' selected' : ''}>📅 Date (Newest)</option>
+              <option value="date-asc"${sortKey === 'date-asc' ? ' selected' : ''}>📅 Date (Oldest)</option>
+              <option value="amount-desc"${sortKey === 'amount-desc' ? ' selected' : ''}>💰 Amount (Highest)</option>
+              <option value="amount-asc"${sortKey === 'amount-asc' ? ' selected' : ''}>💰 Amount (Lowest)</option>
+              <option value="dept-asc"${sortKey === 'dept-asc' ? ' selected' : ''}>🏢 Department (A-Z)</option>
+            </select>
+          </div>
+
+          <!-- Search Input -->
+          <input type="text" placeholder="🔍 Search item, devotee, bill..." value="${esc(query)}"
+                 oninput="window.setAccountsSearch(this.value)"
+                 style="padding:5px 10px;font-size:12px;border:1px solid var(--line);border-radius:6px;background:var(--surface);min-width:180px">
+        </div>
+      </div>
+
+      <!-- Ledger Rows Table -->
+      <div class="tbl-wrap">
+        <table class="tbl" style="min-width:760px">
+          <thead>
+            <tr>
+              <th style="min-width:90px">Date</th>
+              <th style="min-width:140px">Department</th>
+              <th style="min-width:180px">Expense Title & Description</th>
+              <th style="min-width:110px">Category</th>
+              <th style="min-width:100px;text-align:right">Amount</th>
+              <th style="min-width:120px">Paid By</th>
+              <th style="min-width:90px;text-align:center">Mode</th>
+              <th style="min-width:90px;text-align:center">Bill Ref</th>
+              <th style="min-width:90px;text-align:center">Status</th>
+              <th style="min-width:100px;text-align:center">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filtered.length === 0 ? `
+              <tr>
+                <td colspan="10" style="text-align:center;padding:40px 20px;color:var(--ink-3)">
+                  <div style="font-size:28px;margin-bottom:8px">🔍</div>
+                  <div style="font-weight:700;font-size:14px;color:var(--ink)">No expense records found matching filters</div>
+                  <div class="tiny" style="margin-top:4px">Try clearing filters or click "+ Add Expense" to record a new one in MongoDB.</div>
+                  <button type="button" class="btn sm pri" onclick="window.openAddExpenseModal()" style="margin-top:12px">➕ Record Expense</button>
+                </td>
+              </tr>` : ''}
+            ${filtered.map(e => {
+              const expId = e._id || e.customId;
+              const isPending = e.status === 'Pending';
+              const statusBadge = e.status === 'Approved'
+                ? '<span class="badge b-green">✅ Approved</span>'
+                : (e.status === 'Pending'
+                  ? '<span class="badge b-amber">⏳ Pending</span>'
+                  : '<span class="badge b-blue">🔄 Reimbursed</span>');
+              const dMatch = DB.departments.find(x => x.name === e.deptName || x.id === e.deptId);
+              const icon = dMatch ? (dMatch.icon || '🏢') : '🏢';
+              return `
+              <tr>
+                <td data-l="Date" style="white-space:nowrap;font-size:12px;font-weight:600;color:var(--ink-2)">
+                  ${esc(e.date || '')}
+                </td>
+                <td data-l="Department">
+                  <div style="font-weight:700;font-size:12.5px;display:flex;align-items:center;gap:6px;cursor:pointer" onclick="window.setAccountsDeptFilter('${esc(e.deptName)}')">
+                    <span>${icon}</span>
+                    <span style="color:var(--pri)">${esc(e.deptName || 'General')}</span>
+                  </div>
+                </td>
+                <td data-l="Expense Title">
+                  <div style="font-weight:700;font-size:13px;color:var(--ink)">${esc(e.title)}</div>
+                  ${e.notes ? `<div class="tiny" style="color:var(--ink-3);margin-top:2px">${esc(e.notes)}</div>` : ''}
+                </td>
+                <td data-l="Category">
+                  <span class="badge" style="background:var(--paper-2);color:var(--ink-2);font-size:11px;cursor:pointer" onclick="window.setAccountsCategoryFilter('${esc(e.category)}')">
+                    ${esc(e.category || 'General')}
+                  </span>
+                </td>
+                <td data-l="Amount" style="text-align:right;font-weight:800;font-size:13.5px;color:var(--ink)">
+                  ${fmtC(e.amount)}
+                </td>
+                <td data-l="Paid By" style="font-size:12px;color:var(--ink-2)">
+                  ${esc(e.paidBy || '—')}
+                </td>
+                <td data-l="Mode" style="text-align:center">
+                  <span style="font-size:11px;font-weight:600;background:var(--paper-2);padding:2px 7px;border-radius:4px;color:var(--ink-2)">
+                    ${esc(e.paymentMode || 'UPI')}
+                  </span>
+                </td>
+                <td data-l="Bill Ref" style="text-align:center;font-size:11.5px;color:var(--ink-3);font-family:monospace">
+                  ${esc(e.billRef || '—')}
+                </td>
+                <td data-l="Status" style="text-align:center">
+                  ${statusBadge}
+                </td>
+                <td data-l="Actions" style="text-align:center">
+                  <div style="display:inline-flex;align-items:center;gap:4px">
+                    ${isPending ? `
+                      <button type="button" class="btn sm" onclick="window.quickApproveExpense('${expId}')" title="Approve this expense" style="padding:2px 6px;font-size:11px;color:#059669">
+                        ✓
+                      </button>
+                    ` : ''}
+                    <button type="button" class="btn sm" onclick="window.openEditExpenseModal('${expId}')" title="Edit expense" style="padding:2px 6px;font-size:11px">
+                      ✏️
+                    </button>
+                    <button type="button" class="btn sm" onclick="window.deleteExpenseItem('${expId}', '${esc(e.title)}')" title="Delete expense" style="padding:2px 6px;font-size:11px;color:var(--danger)">
+                      🗑️
+                    </button>
+                  </div>
+                </td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Ledger Footer Info -->
+      <div style="padding:10px 18px;border-top:1px solid var(--line);background:var(--surface);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+        <div class="tiny" style="color:var(--ink-3)">
+          Showing ${filtered.length} of ${allExpenses.length} expense entries • Filtered Spend: <b style="color:var(--ink)">${fmtC(filtered.reduce((s, e) => s + Number(e.amount || 0), 0))}</b>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <button type="button" class="btn sm" onclick="window.exportDepartmentExpensesCSV()">📥 Export Filtered CSV</button>
+          <button type="button" class="btn sm pri" onclick="window.openAddExpenseModal()">➕ Add Expense</button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+
+/* =========================================================================
+   🏢 CENTRAL DEPARTMENTS HUB (Morning, Deity, Cleaning, Matrix, Accounts)
    ========================================================================= */
 function viewAttendance(){
   let tab = APP.tab.att || 'Morning programme';
-  const tabs = ['Morning programme', 'Deity Department', 'Cleaning', 'Department Matrix'];
+  const tabs = ['Morning programme', 'Deity Department', 'Cleaning', 'Department Matrix', 'Accounts'];
   if (!tabs.includes(tab)) tab = 'Morning programme';
 
-  return head('🏛️ BACE Pillars', 'Operational Seva & Punctuality Hub', 'Morning sadhana punctuality, Deity & Cleaning rosters and Department Matrix')+
+  return head('🏢 Central Departments Hub', 'Central Departments Hub', 'Morning sadhana punctuality, Deity & Cleaning rosters, Department Matrix, and Financial Accounts & Budgets')+
    `<div class="tabs">${tabs.map(t => `<button class="${t===tab?'on':''}" data-act="tab" data-k="att" data-v="${t}">${t}</button>`).join('')}</div>`+
    (tab === 'Morning programme' ? morningProgramPanel()
    : tab === 'Deity Department' ? deityDepartmentPanel()
    : tab === 'Cleaning' ? cleaningDepartmentPanel()
-   : deptAttendanceMatrix());
+   : tab === 'Department Matrix' ? deptAttendanceMatrix()
+   : deptAccountsPanel());
 }
 
 function batchAttendancePanel(){
