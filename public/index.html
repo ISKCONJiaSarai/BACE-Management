@@ -11236,7 +11236,7 @@ function renderDepartmentRosterPanel(deptKey) {
               ${devoteeStats.map(d => {
                 const tier = d.rate === 100 && d.completed >= 3 ? '🌟 Perfect' : (d.rate >= 85 ? '✅ Reliable' : (d.missed > 0 ? '⚠️ Needs Follow-up' : '⚡ Active'));
                 const tierClass = d.rate === 100 ? 'b-green' : (d.rate >= 85 ? 'b-blue' : (d.missed > 0 ? 'b-amber' : 'b-gray'));
-                return `<tr data-name="${esc(d.name.toLowerCase())}">
+                return `<tr data-name="${esc(d.name.toLowerCase())}" data-score="${d.overallScore}" data-morning-pct="${d.morning.pct}" data-deity-sevas="${d.deity.completed}" data-cleaning-sevas="${d.cleaning.completed}" data-status="${esc(d.statusText)}" data-has-morning="${d.morning.present > 0}" data-has-deity="${d.deity.isAssigned}" data-has-cleaning="${d.cleaning.isAssigned}" data-all3="${d.isAllRounder}">
                   <td data-l="Devotee">
                     <div style="display:flex;align-items:center;gap:8px">
                       ${av(d.name)}
@@ -11281,16 +11281,328 @@ function cleaningDepartmentPanel(){
 }
 
 
-window.filterSummaryMatrixTable = function(q) {
+window.filterSummaryMatrixTable = function() {
   const table = document.getElementById('summary-matrix-tbl');
   if (!table) return;
-  const query = String(q || '').toLowerCase().trim();
+  const searchInp = document.getElementById('summary-matrix-search');
+  const deptSelect = document.getElementById('summary-matrix-dept-filter');
+  const statusSelect = document.getElementById('summary-matrix-status-filter');
+
+  const query = searchInp ? searchInp.value.toLowerCase().trim() : '';
+  const deptFilter = deptSelect ? deptSelect.value : 'all';
+  const statusFilter = statusSelect ? statusSelect.value : 'all';
+
   const rows = table.querySelectorAll('tbody tr');
+  let visibleCount = 0;
   rows.forEach(r => {
+    if (r.classList.contains('empty-row')) return;
+
     const name = r.getAttribute('data-name') || '';
-    r.style.display = (!query || name.includes(query)) ? '' : 'none';
+    const status = r.getAttribute('data-status') || '';
+    const hasMorning = r.getAttribute('data-has-morning') === 'true';
+    const hasDeity = r.getAttribute('data-has-deity') === 'true';
+    const hasCleaning = r.getAttribute('data-has-cleaning') === 'true';
+    const isAll3 = r.getAttribute('data-all3') === 'true';
+
+    let matchSearch = !query || name.includes(query);
+    let matchDept = true;
+    if (deptFilter === 'all3') matchDept = isAll3;
+    else if (deptFilter === 'deity') matchDept = hasDeity;
+    else if (deptFilter === 'cleaning') matchDept = hasCleaning;
+    else if (deptFilter === 'morning') matchDept = hasMorning;
+
+    let matchStatus = (statusFilter === 'all') || status.includes(statusFilter);
+
+    const isVisible = matchSearch && matchDept && matchStatus;
+    r.style.display = isVisible ? '' : 'none';
+    if (isVisible) visibleCount++;
   });
+
+  let emptyRow = table.querySelector('.empty-row');
+  if (visibleCount === 0) {
+    if (!emptyRow) {
+      const tbody = table.querySelector('tbody');
+      if (tbody) {
+        const tr = document.createElement('tr');
+        tr.className = 'empty-row';
+        tr.innerHTML = '<td colspan="6" style="text-align:center;padding:28px;color:var(--ink-3);font-style:italic">No devotees match the selected filters.</td>';
+        tbody.appendChild(tr);
+      }
+    } else {
+      emptyRow.style.display = '';
+    }
+  } else if (emptyRow) {
+    emptyRow.style.display = 'none';
+  }
 };
+
+window.sortSummaryMatrixTable = function(sortKey) {
+  const table = document.getElementById('summary-matrix-tbl');
+  if (!table) return;
+  const tbody = table.querySelector('tbody');
+  if (!tbody) return;
+  const rows = Array.from(tbody.querySelectorAll('tr:not(.empty-row)'));
+
+  rows.sort((a, b) => {
+    if (sortKey === 'score-desc') {
+      return (parseFloat(b.getAttribute('data-score')) || 0) - (parseFloat(a.getAttribute('data-score')) || 0);
+    } else if (sortKey === 'score-asc') {
+      return (parseFloat(a.getAttribute('data-score')) || 0) - (parseFloat(b.getAttribute('data-score')) || 0);
+    } else if (sortKey === 'morning-desc') {
+      return (parseFloat(b.getAttribute('data-morning-pct')) || 0) - (parseFloat(a.getAttribute('data-morning-pct')) || 0);
+    } else if (sortKey === 'deity-desc') {
+      return (parseInt(b.getAttribute('data-deity-sevas')) || 0) - (parseInt(a.getAttribute('data-deity-sevas')) || 0);
+    } else if (sortKey === 'cleaning-desc') {
+      return (parseInt(b.getAttribute('data-cleaning-sevas')) || 0) - (parseInt(a.getAttribute('data-cleaning-sevas')) || 0);
+    } else if (sortKey === 'name-asc') {
+      return (a.getAttribute('data-name') || '').localeCompare(b.getAttribute('data-name') || '');
+    } else if (sortKey === 'name-desc') {
+      return (b.getAttribute('data-name') || '').localeCompare(a.getAttribute('data-name') || '');
+    }
+    return 0;
+  });
+
+  rows.forEach(r => tbody.appendChild(r));
+};
+
+function exportThreeDepartmentsMatrixPDF(period = 'weekly') {
+  initDepartmentRosters();
+  const data = getAshramThreeDepartmentsSummary(period);
+  const list = data.summaryList;
+  const kpis = data.stats;
+  const periodTitle = period === 'weekly' ? 'Weekly View (Last 7 Days)' : 'Monthly View (Last 30 Days)';
+  const days = Array.from({length: 7}, (_, i) => dayOff(-6 + i));
+
+  const printDoc = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>3-Department Seva Summary Matrix - ${periodTitle} - ISKCON Jia Sarai BACE</title>
+  <style>
+    @page { size: landscape; margin: 10mm 12mm; }
+    * { box-sizing: border-box; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #0f172a; margin: 0; padding: 16px; background: #fff; }
+    .no-print-bar { display: flex; justify-content: space-between; align-items: center; background: #f8fafc; border: 1px solid #cbd5e1; padding: 10px 16px; border-radius: 8px; margin-bottom: 16px; }
+    .btn-print { background: #ea580c; color: white; border: none; padding: 8px 18px; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 13px; }
+    .btn-close { background: #e2e8f0; color: #334155; border: none; padding: 8px 14px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px; margin-left: 8px; }
+    .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #ea580c; padding-bottom: 12px; margin-bottom: 16px; }
+    .org-title { font-size: 11px; font-weight: 700; text-transform: uppercase; color: #ea580c; letter-spacing: 0.5px; }
+    .report-title { font-size: 22px; font-weight: 800; color: #0f172a; margin: 3px 0 2px; }
+    .report-sub { font-size: 12px; color: #475569; }
+    .period-badge { display: inline-block; background: #ffedd5; color: #c2410c; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; }
+    .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+    .kpi-card { background: #fafaf9; border: 1px solid #e7e5e4; border-radius: 8px; padding: 10px 14px; }
+    .kpi-title { font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: #64748b; margin-bottom: 2px; }
+    .kpi-val { font-size: 24px; font-weight: 800; color: #0f172a; line-height: 1.1; }
+    .kpi-sub { font-size: 10.5px; color: #64748b; margin-top: 2px; }
+    .tbl { width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 11px; }
+    .tbl th { background: #f1f5f9; color: #334155; text-align: left; padding: 8px 10px; font-size: 10.5px; border-bottom: 1px solid #cbd5e1; text-transform: uppercase; letter-spacing: 0.3px; }
+    .tbl td { padding: 8px 10px; border-bottom: 1px solid #e2e8f0; vertical-align: middle; }
+    .tbl tr:nth-child(even) { background: #fafafa; }
+    .badge { display: inline-block; padding: 3px 8px; border-radius: 12px; font-size: 10px; font-weight: 700; }
+    .b-green { background: #dcfce7; color: #15803d; }
+    .b-blue { background: #dbeafe; color: #1d4ed8; }
+    .b-indigo { background: #e0e7ff; color: #4338ca; }
+    .b-teal { background: #ccfbf1; color: #0f766e; }
+    .b-amber { background: #fef3c7; color: #b45309; }
+    .b-gray { background: #f1f5f9; color: #475569; }
+    .bar-wrap { width: 90px; height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden; display: inline-block; vertical-align: middle; margin-right: 6px; }
+    .bar-fill { height: 100%; }
+    .footer { display: flex; justify-content: space-between; border-top: 1px solid #e2e8f0; padding-top: 10px; font-size: 10px; color: #64748b; margin-top: 20px; }
+    @media print {
+      .no-print-bar { display: none !important; }
+      body { padding: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="no-print-bar">
+    <div><strong>ISKCON Jia Sarai BACE</strong> — 3-Department Seva Summary Matrix PDF Preview</div>
+    <div>
+      <button class="btn-print" onclick="window.print()">🖨️ Print / Save as PDF</button>
+      <button class="btn-close" onclick="window.close()">✕ Close</button>
+    </div>
+  </div>
+
+  <div class="header">
+    <div>
+      <div class="org-title">ISKCON Jia Sarai · BACE Preaching & Sadhana Ministry</div>
+      <h1 class="report-title">🏛️ 3-Department Seva Summary Matrix</h1>
+      <div class="report-sub">Unified matrix across <b>Morning Programme</b>, <b>Deity Department</b>, and <b>Cleaning</b> · <span class="period-badge">${periodTitle}</span></div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-size:10px;color:#64748b">Report Generated:</div>
+      <div style="font-weight:700;color:#0f172a">${fmtExactDate(iso(TODAY))}</div>
+      <div style="font-size:10.5px;color:#ea580c;font-weight:600">Jia Sarai BACE Ashram</div>
+    </div>
+  </div>
+
+  <!-- Executive KPIs -->
+  <div class="kpi-grid">
+    <div class="kpi-card" style="border-left:4px solid #ea580c">
+      <div class="kpi-title">🌅 Morning Sadhana</div>
+      <div class="kpi-val">${kpis.avgMorning}%</div>
+      <div class="kpi-sub">average attendance rate</div>
+    </div>
+    <div class="kpi-card" style="border-left:4px solid #f59e0b">
+      <div class="kpi-title">🛕 Deity Seva Health</div>
+      <div class="kpi-val">${kpis.avgDeity}%</div>
+      <div class="kpi-sub">${kpis.totalDeityDone} / ${kpis.totalDeityAssigned} sevas completed</div>
+    </div>
+    <div class="kpi-card" style="border-left:4px solid #0d9488">
+      <div class="kpi-title">🧹 Cleaning Seva Health</div>
+      <div class="kpi-val">${kpis.avgCleaning}%</div>
+      <div class="kpi-sub">${kpis.totalCleanDone} / ${kpis.totalCleanAssigned} sevas completed</div>
+    </div>
+    <div class="kpi-card" style="border-left:4px solid #10b981">
+      <div class="kpi-title">✨ All-Rounder Servants</div>
+      <div class="kpi-val">${kpis.allRounders} Devotees</div>
+      <div class="kpi-sub">active across all 3 depts</div>
+    </div>
+  </div>
+
+  <!-- Regularity Matrix Table -->
+  <div style="margin-bottom:8px;font-size:13px;font-weight:800;color:#0f172a;display:flex;align-items:center;justify-content:space-between">
+    <div>📊 Devotee Regularity Matrix (${list.length} Devotees Engaged)</div>
+    <div style="font-size:11px;font-weight:normal;color:#64748b">Morning Program · Deity Department · Cleaning</div>
+  </div>
+
+  <table class="tbl">
+    <thead>
+      <tr>
+        <th style="width:24%">Devotee Name</th>
+        <th style="width:16%;text-align:center">🌅 Morning Program</th>
+        <th style="width:17%;text-align:center">🛕 Deity Department</th>
+        <th style="width:17%;text-align:center">🧹 Cleaning Department</th>
+        <th style="width:14%">✨ Combined Seva Score</th>
+        <th style="width:12%;text-align:center">BACE Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${list.map((d, i) => `
+        <tr>
+          <td>
+            <b>${esc(d.name)}</b>
+            <div style="font-size:9.5px;color:#64748b">${esc(d.phone || d.bace)}</div>
+          </td>
+          <td style="text-align:center">
+            ${d.morning.present > 0 ? `
+              <div style="font-weight:700;color:#0f172a">${d.morning.pct}%</div>
+              <div style="font-size:9.5px;color:#64748b">${d.morning.present}/${d.morning.total} days attended</div>
+            ` : `
+              <div style="font-weight:600;color:#94a3b8">0%</div>
+              <div style="font-size:9.5px;color:#94a3b8;font-style:italic">0/${d.morning.total} days</div>
+            `}
+          </td>
+          <td style="text-align:center">
+            ${d.deity.isAssigned ? `
+              <div style="font-weight:700;color:${d.deity.completed>0?'#15803d':'#0f172a'}">${d.deity.completed}/${d.deity.assigned || d.deity.completed} sevas</div>
+              <div style="font-size:9.5px;color:#64748b">${d.deity.rate}% reliability${d.deity.missed>0?` · <b style="color:#b91c1c">${d.deity.missed} missed</b>`:''}${d.deity.subs>0?` · <b style="color:#2563eb">+${d.deity.subs} sub</b>`:''}</div>
+            ` : `
+              <div style="font-weight:600;color:#94a3b8">0/0 sevas</div>
+              <div style="font-size:9.5px;color:#94a3b8;font-style:italic">Not assigned</div>
+            `}
+          </td>
+          <td style="text-align:center">
+            ${d.cleaning.isAssigned ? `
+              <div style="font-weight:700;color:${d.cleaning.completed>0?'#0f766e':'#0f172a'}">${d.cleaning.completed}/${d.cleaning.assigned || d.cleaning.completed} sevas</div>
+              <div style="font-size:9.5px;color:#64748b">${d.cleaning.rate}% reliability${d.cleaning.missed>0?` · <b style="color:#b91c1c">${d.cleaning.missed} missed</b>`:''}${d.cleaning.subs>0?` · <b style="color:#2563eb">+${d.cleaning.subs} sub</b>`:''}</div>
+            ` : `
+              <div style="font-weight:600;color:#94a3b8">0/0 sevas</div>
+              <div style="font-size:9.5px;color:#94a3b8;font-style:italic">Not assigned</div>
+            `}
+          </td>
+          <td>
+            <div style="display:flex;align-items:center">
+              <div class="bar-wrap">
+                <div class="bar-fill" style="width:${d.overallScore}%;background:${d.overallScore>=90?'#15803d':(d.overallScore>=75?'#2563eb':'#d97706')}"></div>
+              </div>
+              <b style="font-size:11px">${d.overallScore}%</b>
+            </div>
+          </td>
+          <td style="text-align:center">
+            <span class="badge ${d.statusClass}">${d.statusText}</span>
+          </td>
+        </tr>
+      `).join('')}
+    </tbody>
+  </table>
+
+  ${period === 'weekly' ? `
+  <div style="margin:16px 0 6px;font-size:12.5px;font-weight:800;color:#0f172a">
+    📅 7-Day Cross-Department Operational Timeline
+  </div>
+  <table class="tbl" style="font-size:10px">
+    <thead>
+      <tr>
+        <th style="width:20%">Department</th>
+        ${days.map(d => `<th style="text-align:center">${fmtD(d)}</th>`).join('')}
+        <th style="text-align:center">Weekly Average</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><b>🌅 Morning Program</b></td>
+        ${days.map(d => {
+          const dStr = iso(d);
+          const dRows = (APP.morningData && APP.morningData.byDateRows && APP.morningData.byDateRows[dStr]) || [];
+          const pres = dRows.filter(r => r.status !== 'Absent').length;
+          const tot = dRows.length;
+          const p = tot > 0 ? Math.round((pres / tot) * 100) : (kpis.avgMorning || 0);
+          return `<td style="text-align:center;font-weight:700;color:#15803d">${p}%</td>`;
+        }).join('')}
+        <td style="text-align:center;font-weight:700;color:#15803d">${kpis.avgMorning}%</td>
+      </tr>
+      <tr>
+        <td><b>🛕 Deity Department</b></td>
+        ${days.map(d => {
+          const dStr = iso(d);
+          let comp = 0, tot = APP.deityRoster.services.length;
+          APP.deityRoster.services.forEach(s => {
+            const sl = getRosterSlot(APP.deityRoster, dStr, s.id);
+            if (sl.status === 'done' || (sl.devotees && sl.devotees.includes('❌'))) comp++;
+            else if (dStr > iso(TODAY) && sl.devotees && sl.devotees !== '—') comp++;
+          });
+          const p = tot > 0 ? Math.round((comp / tot) * 100) : 100;
+          return `<td style="text-align:center;font-weight:700;color:#ea580c">${p}%</td>`;
+        }).join('')}
+        <td style="text-align:center;font-weight:700;color:#ea580c">${kpis.avgDeity}%</td>
+      </tr>
+      <tr>
+        <td><b>🧹 Cleaning Department</b></td>
+        ${days.map(d => {
+          const dStr = iso(d);
+          let comp = 0, tot = APP.cleaningRoster.services.length;
+          APP.cleaningRoster.services.forEach(s => {
+            const sl = getRosterSlot(APP.cleaningRoster, dStr, s.id);
+            if (sl.status === 'done' || (sl.devotees && sl.devotees.includes('❌'))) comp++;
+            else if (dStr > iso(TODAY) && sl.devotees && sl.devotees !== '—') comp++;
+          });
+          const p = tot > 0 ? Math.round((comp / tot) * 100) : 100;
+          return `<td style="text-align:center;font-weight:700;color:#0d9488">${p}%</td>`;
+        }).join('')}
+        <td style="text-align:center;font-weight:700;color:#0d9488">${kpis.avgCleaning}%</td>
+      </tr>
+    </tbody>
+  </table>
+  ` : ''}
+
+  <div class="footer">
+    <div>ISKCON Jia Sarai · BACE Management System</div>
+    <div>Official 3-Department Seva Summary Matrix Documentation · Verified by BACE Preaching Ministry</div>
+  </div>
+</body>
+</html>`;
+
+  const win = window.open('', '_blank');
+  if (win) {
+    win.document.open();
+    win.document.write(printDoc);
+    win.document.close();
+  } else {
+    toast('Popup blocker prevented opening the PDF preview', '⚠️');
+  }
+}
 
 function getAshramThreeDepartmentsSummary(period = 'weekly') {
   initDepartmentRosters();
@@ -11626,7 +11938,8 @@ function deptAttendanceMatrix(){
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn sm ${period==='weekly'?'pri':''}" data-act="summary-matrix-period" data-period="weekly">📅 Weekly View</button>
           <button class="btn sm ${period==='monthly'?'pri':''}" data-act="summary-matrix-period" data-period="monthly">🗓️ Monthly View</button>
-          <button class="btn sm" data-act="export-summary-matrix-csv">${ic('download')} Export Matrix CSV</button>
+          <button class="btn sm pri" data-act="export-summary-matrix-pdf" style="background:#ea580c;color:white">📄 Export Matrix PDF</button>
+          <button class="btn sm" data-act="export-summary-matrix-csv" title="Export as CSV spreadsheet">${ic('download')} CSV</button>
         </div>
       </div>
     </div>
@@ -11650,8 +11963,34 @@ function deptAttendanceMatrix(){
             Unified view of morning punctuality, altar worship sevas, and temple cleaning
           </div>
         </div>
-        <div style="display:flex;gap:8px">
-          <input type="text" id="summary-matrix-search" placeholder="🔍 Filter devotee name..." oninput="filterSummaryMatrixTable(this.value)" style="padding:6px 10px;font-size:12.5px;border:1px solid var(--line);border-radius:6px;background:var(--surface)">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <input type="text" id="summary-matrix-search" placeholder="🔍 Filter devotee..." oninput="filterSummaryMatrixTable()" style="padding:6px 10px;font-size:12px;border:1px solid var(--line);border-radius:6px;background:var(--surface);width:145px">
+          <select id="summary-matrix-dept-filter" onchange="filterSummaryMatrixTable()" style="padding:6px 8px;font-size:12px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink)">
+            <option value="all">🏢 All Departments</option>
+            <option value="all3">✨ All 3 Depts (All-Rounders)</option>
+            <option value="deity">🛕 Deity Active</option>
+            <option value="cleaning">🧹 Cleaning Active</option>
+            <option value="morning">🌅 Morning Active</option>
+          </select>
+          <select id="summary-matrix-status-filter" onchange="filterSummaryMatrixTable()" style="padding:6px 8px;font-size:12px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink)">
+            <option value="all">🏷️ All BACE Statuses</option>
+            <option value="All-Rounder">🌟 All-Rounder</option>
+            <option value="Dual Seva">⚡ Dual Seva</option>
+            <option value="Pujari Sadhaka">🛕 Pujari Sadhaka</option>
+            <option value="Cleanliness Sevak">🧹 Cleanliness Sevak</option>
+            <option value="Regular Sadhaka">🌅 Regular Sadhaka</option>
+            <option value="Steady Sadhaka">🌿 Steady Sadhaka</option>
+            <option value="Needs Attention">⚠️ Needs Attention</option>
+          </select>
+          <select id="summary-matrix-sort" onchange="sortSummaryMatrixTable(this.value)" style="padding:6px 8px;font-size:12px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink)">
+            <option value="score-desc">🔼 Score (High → Low)</option>
+            <option value="score-asc">🔽 Score (Low → High)</option>
+            <option value="morning-desc">🌅 Morning Attendance</option>
+            <option value="deity-desc">🛕 Deity Sevas</option>
+            <option value="cleaning-desc">🧹 Cleaning Sevas</option>
+            <option value="name-asc">🔤 Name (A → Z)</option>
+            <option value="name-desc">🔤 Name (Z → A)</option>
+          </select>
         </div>
       </div>
 
@@ -11664,7 +12003,7 @@ function deptAttendanceMatrix(){
               <th style="text-align:center">🛕 Deity Department</th>
               <th style="text-align:center">🧹 Cleaning Department</th>
               <th style="min-width:140px">✨ Combined Seva Score</th>
-              <th style="text-align:center">Ashram Status</th>
+              <th style="text-align:center">BACE Status</th>
             </tr>
           </thead>
           <tbody>
@@ -18750,13 +19089,18 @@ document.addEventListener('click',e=>{
     toast('WhatsApp share message prepared!', '💬');
     break;
   }
+  case 'export-summary-matrix-pdf':stop();{
+    const period = APP.summaryMatrixPeriod || 'weekly';
+    exportThreeDepartmentsMatrixPDF(period);
+    break;
+  }
   case 'export-summary-matrix-csv':
   case 'export-dept-matrix':stop();{
     const period = APP.summaryMatrixPeriod || 'weekly';
     const data = getAshramThreeDepartmentsSummary(period);
     const list = data.summaryList;
     const rows = [
-      ['Devotee Name', 'Morning Program Attendance (%)', 'Morning Days Present', 'Deity Sevas Completed', 'Deity Reliability (%)', 'Cleaning Sevas Completed', 'Cleaning Reliability (%)', 'Combined Ashram Seva Score (%)', 'Ashram Status'],
+      ['Devotee Name', 'Morning Program Attendance (%)', 'Morning Days Present', 'Deity Sevas Completed', 'Deity Reliability (%)', 'Cleaning Sevas Completed', 'Cleaning Reliability (%)', 'Combined BACE Seva Score (%)', 'BACE Status'],
       ...list.map(d => [
         d.name,
         d.morning.pct + '%',
