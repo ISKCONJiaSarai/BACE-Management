@@ -11642,9 +11642,10 @@ function getAshramThreeDepartmentsSummary(period = 'weekly') {
   let totalMorningDevsCount = 0;
   let morningSessionsCount = numDays;
   let morningDevList = [];
+  let pMetrics = null; // declared in outer scope so it's always accessible
 
   if (mData && mData.byDateRows) {
-    const pMetrics = (period === 'weekly' ? mData.weekly : mData.monthly) ||
+    pMetrics = (period === 'weekly' ? mData.weekly : mData.monthly) ||
       computePeriodMorningMetrics(mData.byDateRows, mData.availableDates || [mData.date], mData.date, numDays);
 
     if (pMetrics) {
