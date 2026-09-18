@@ -11296,12 +11296,20 @@ function getAshramThreeDepartmentsSummary(period = 'weekly') {
   initDepartmentRosters();
   const numDays = period === 'weekly' ? 7 : 30;
 
+  function normName(s) {
+    return String(s || '').toLowerCase()
+      .replace(/\b(pr|prabhu|das|dasa|ji|brahmachari)\b/gi, '')
+      .replace(/[^a-z0-9]/gi, '')
+      .trim();
+  }
+
   // 1. EXTRACT REAL MORNING SADHANA DATA FROM APP.morningData
   const mData = APP.morningData;
   const morningDevMap = {};
   let totalMorningPresent = 0;
   let totalMorningDevsCount = 0;
   let morningSessionsCount = numDays;
+  let morningDevList = [];
 
   if (mData && mData.byDateRows) {
     const pMetrics = (period === 'weekly' ? mData.weekly : mData.monthly) ||
@@ -11309,8 +11317,10 @@ function getAshramThreeDepartmentsSummary(period = 'weekly') {
 
     if (pMetrics) {
       morningSessionsCount = pMetrics.totalSessions || numDays;
-      (pMetrics.devStats || []).forEach(ds => {
+      morningDevList = pMetrics.devStats || [];
+      morningDevList.forEach(ds => {
         const kName = (ds.name || '').toLowerCase().trim();
+        const kNorm = normName(ds.name);
         const kId = ds.devotee && ds.devotee.id ? ds.devotee.id : '';
         const item = {
           pct: ds.attendanceRate !== undefined ? ds.attendanceRate : 0,
@@ -11323,9 +11333,8 @@ function getAshramThreeDepartmentsSummary(period = 'weekly') {
           absent: ds.absentCount || 0
         };
         if (kName) morningDevMap[kName] = item;
+        if (kNorm) morningDevMap['n_' + kNorm] = item;
         if (kId) morningDevMap[kId] = item;
-        const fName = kName.split(' ')[0];
-        if (fName && !morningDevMap['first_' + fName]) morningDevMap['first_' + fName] = item;
 
         if (item.present > 0) {
           totalMorningPresent += item.pct;
@@ -11341,9 +11350,9 @@ function getAshramThreeDepartmentsSummary(period = 'weekly') {
   let totalDeityAssigned = 0, totalDeityDone = 0;
   deityStats.forEach(d => {
     const kName = (d.name || '').toLowerCase().trim();
+    const kNorm = normName(d.name);
     deityMap[kName] = d;
-    const fName = kName.split(' ')[0];
-    if (fName && !deityMap['first_' + fName]) deityMap['first_' + fName] = d;
+    if (kNorm) deityMap['n_' + kNorm] = d;
     totalDeityAssigned += d.assigned;
     totalDeityDone += d.completed;
   });
@@ -11354,9 +11363,9 @@ function getAshramThreeDepartmentsSummary(period = 'weekly') {
   let totalCleanAssigned = 0, totalCleanDone = 0;
   cleaningStats.forEach(d => {
     const kName = (d.name || '').toLowerCase().trim();
+    const kNorm = normName(d.name);
     cleaningMap[kName] = d;
-    const fName = kName.split(' ')[0];
-    if (fName && !cleaningMap['first_' + fName]) cleaningMap['first_' + fName] = d;
+    if (kNorm) cleaningMap['n_' + kNorm] = d;
     totalCleanAssigned += d.assigned;
     totalCleanDone += d.completed;
   });
@@ -11366,15 +11375,75 @@ function getAshramThreeDepartmentsSummary(period = 'weekly') {
   const overallCleanHealth = totalCleanAssigned > 0 ? Math.round((totalCleanDone / totalCleanAssigned) * 100) : 100;
   const overallMorningHealth = totalMorningDevsCount > 0 ? Math.round(totalMorningPresent / totalMorningDevsCount) : 0;
 
-  const allDevs = DB.devotees || [];
+  // 4. COLLECT ONLY DEVOTEES WHOSE NAMES ARE PRESENT IN INDIVIDUAL DEPARTMENTS LISTS
+  const activeDevsMap = new Map();
 
-  const summaryList = allDevs.map(d => {
+  function registerActiveDevotee(rawName, dObj) {
+    if (!rawName || rawName === '—' || rawName === 'Unassigned') return;
+    const name = rawName.trim();
+    const key = name.toLowerCase();
+    const kNorm = normName(name);
+
+    // Look for existing key or normalized key
+    let foundKey = null;
+    if (activeDevsMap.has(key)) {
+      foundKey = key;
+    } else {
+      for (const [ek, ev] of activeDevsMap.entries()) {
+        if (normName(ek) === kNorm) {
+          foundKey = ek;
+          break;
+        }
+      }
+    }
+
+    if (!foundKey) {
+      // Find matching devotee from DB if available for phone and canonical name
+      const dbMatch = (DB && DB.devotees || []).find(x => 
+        x.name.toLowerCase().trim() === key || 
+        normName(x.name) === kNorm ||
+        (dObj && dObj.id && x.id === dObj.id)
+      );
+
+      activeDevsMap.set(key, {
+        id: dbMatch ? dbMatch.id : (dObj && dObj.id ? dObj.id : ('dev_' + Math.random().toString(36).substr(2, 6))),
+        name: dbMatch ? dbMatch.name : name,
+        phone: dbMatch ? dbMatch.phone || '' : (dObj && dObj.phone ? dObj.phone : ''),
+        bace: dbMatch ? dbMatch.bace || 'Jia Sarai BACE' : 'Jia Sarai BACE'
+      });
+    }
+  }
+
+  // Add all devotees from Deity Department list
+  deityStats.forEach(d => {
+    if (d.assigned > 0 || d.completed > 0 || d.substitutions > 0) {
+      registerActiveDevotee(d.name, d);
+    }
+  });
+
+  // Add all devotees from Cleaning Department list
+  cleaningStats.forEach(d => {
+    if (d.assigned > 0 || d.completed > 0 || d.substitutions > 0) {
+      registerActiveDevotee(d.name, d);
+    }
+  });
+
+  // Add all devotees from Morning Programme list who attended
+  morningDevList.forEach(ds => {
+    if (ds.presentCount > 0) {
+      registerActiveDevotee(ds.name, ds.devotee);
+    }
+  });
+
+  const activeDevsList = Array.from(activeDevsMap.values());
+
+  const summaryList = activeDevsList.map(d => {
     const dName = d.name || '';
     const nLower = dName.toLowerCase().trim();
-    const fName = nLower.split(' ')[0];
+    const dNorm = normName(dName);
 
     // Real Morning stats lookup
-    const mInfo = morningDevMap[d.id] || morningDevMap[nLower] || morningDevMap['first_' + fName] || {
+    const mInfo = morningDevMap[d.id] || morningDevMap[nLower] || morningDevMap['n_' + dNorm] || {
       pct: 0,
       present: 0,
       total: morningSessionsCount,
@@ -11386,7 +11455,7 @@ function getAshramThreeDepartmentsSummary(period = 'weekly') {
     };
 
     // Real Deity stats lookup
-    const dDeity = deityMap[nLower] || deityMap['first_' + fName] || {
+    const dDeity = deityMap[nLower] || deityMap['n_' + dNorm] || {
       assigned: 0,
       completed: 0,
       missed: 0,
@@ -11395,7 +11464,7 @@ function getAshramThreeDepartmentsSummary(period = 'weekly') {
     };
 
     // Real Cleaning stats lookup
-    const dCleaning = cleaningMap[nLower] || cleaningMap['first_' + fName] || {
+    const dCleaning = cleaningMap[nLower] || cleaningMap['n_' + dNorm] || {
       assigned: 0,
       completed: 0,
       missed: 0,
@@ -11404,14 +11473,17 @@ function getAshramThreeDepartmentsSummary(period = 'weekly') {
     };
 
     const hasMorning = mInfo.present > 0;
-    const hasDeity = dDeity.assigned > 0 || dDeity.completed > 0;
-    const hasCleaning = dCleaning.assigned > 0 || dCleaning.completed > 0;
+    const hasDeity = dDeity.assigned > 0 || dDeity.completed > 0 || dDeity.substitutions > 0;
+    const hasCleaning = dCleaning.assigned > 0 || dCleaning.completed > 0 || dCleaning.substitutions > 0;
+
+    // Strict check: Devotee MUST be present in at least one individual department
+    if (!hasMorning && !hasDeity && !hasCleaning) return null;
 
     const deityRate = hasDeity ? (dDeity.rate !== null ? dDeity.rate : Math.round((dDeity.completed / (dDeity.assigned || dDeity.completed || 1)) * 100)) : null;
     const cleanRate = hasCleaning ? (dCleaning.rate !== null ? dCleaning.rate : Math.round((dCleaning.completed / (dCleaning.assigned || dCleaning.completed || 1)) * 100)) : null;
 
     // FAIR & ACCURATE COMBINED SEVA SCORE:
-    // Base score is weighted by the departments the devotee is active / assigned in
+    // Base score is weighted by the departments the devotee is active in
     let baseScore = 0;
     if (hasMorning && hasDeity && hasCleaning) {
       baseScore = (mInfo.pct * 0.40) + (deityRate * 0.35) + (cleanRate * 0.25);
@@ -11501,9 +11573,9 @@ function getAshramThreeDepartmentsSummary(period = 'weekly') {
       statusText,
       statusClass
     };
-  });
+  }).filter(Boolean);
 
-  // Sort: All-Rounders first, then active devotees by score desc, inactive devotees at bottom
+  // Sort: All-Rounders first, then active devotees by score desc
   summaryList.sort((a, b) => {
     if (a.isAllRounder && !b.isAllRounder) return -1;
     if (!a.isAllRounder && b.isAllRounder) return 1;
@@ -11529,9 +11601,6 @@ function getAshramThreeDepartmentsSummary(period = 'weekly') {
   };
 }
 
-/* =========================================================================
-   🏛️ 4. THREE DEPARTMENTS SUMMARY MATRIX (Morning, Deity, Cleaning)
-   ========================================================================= */
 function deptAttendanceMatrix(){
   initDepartmentRosters();
   APP.summaryMatrixPeriod = APP.summaryMatrixPeriod || 'weekly';
