@@ -3236,7 +3236,7 @@ const PILLARS=[
    {t:'Management dashboard',em:'📊',r:'#/mgmt',m:'management'},
    {t:'Departments',em:'🏢',r:'#/depts',m:'management'},
    {t:'Assign Seva',em:'📋',r:'#/assign',m:'assign'},
-   {t:'Central Departments Hub',em:'🏢',r:'#/attendance',m:'management'},
+   {t:'BACE Pillars',em:'🏢',r:'#/attendance',m:'management'},
    {t:'SOPs & standards',em:'📘',r:'#/sops',m:'sops'},
    {t:'Action items',em:'🎯',r:'#/actions',m:'actions',badge:'actionsOverdue'}]},
  {key:'preach',t:'BACE Preaching',em:'📖',pill:'var(--indigo)',m:'preaching',items:[
@@ -3353,7 +3353,7 @@ function sidebar(){
    </div></aside>`;
 }
 const CRUMBS={'':'Dashboard',today:'Today',devotees:'Devotees',devotee:'Devotee',org:'Organisation',mgmt:'BACE Management',
- depts:'Departments',dept:'Department',assign:'Assign Seva',attendance:'Central Departments Hub','dept-reports':'Department reports',
+ depts:'Departments',dept:'Department',assign:'Assign Seva',attendance:'BACE Pillars','dept-reports':'Department reports',
  inventory:'Inventory & BBT',sops:'SOPs & standards',actions:'Action items',preaching:'BACE Preaching',batches:'Batch management',
  batch:'Batch',contacts:'Contacts & pipeline',followups:'Follow-ups',classes:'Classes & events','batch-attendance':'Batch attendance',
  'preaching-reports':'Preaching reports',care:'Devotee Care',friends:'Friends',groups:'Groups',group:'Group',swabhav:'Swabhav engagement',
@@ -13630,7 +13630,7 @@ function viewAttendance(){
   const tabs = ['Morning programme', 'Deity Department', 'Cleaning', 'Department Matrix', 'Accounts'];
   if (!tabs.includes(tab)) tab = 'Morning programme';
 
-  return head('🏢 Central Departments Hub', 'Central Departments Hub', 'Morning sadhana punctuality, Deity & Cleaning rosters, Department Matrix, and Financial Accounts & Budgets')+
+  return head('🏢 BACE Pillars', 'BACE Pillars', 'Morning sadhana punctuality, Deity & Cleaning rosters, Department Matrix, and Financial Accounts & Budgets')+
    `<div class="tabs">${tabs.map(t => `<button class="${t===tab?'on':''}" data-act="tab" data-k="att" data-v="${t}">${t}</button>`).join('')}</div>`+
    (tab === 'Morning programme' ? morningProgramPanel()
    : tab === 'Deity Department' ? deityDepartmentPanel()
