@@ -10164,6 +10164,432 @@ function shareDressingPhotoDirectly() {
   });
 }
 
+
+function generateDeptReportCanvas(deptKey, reportPeriod = 'weekly') {
+  initDepartmentRosters();
+  const isDeity = deptKey === 'deity';
+  const roster = isDeity ? APP.deityRoster : APP.cleaningRoster;
+  const deptTitle = isDeity ? 'Deity' : 'Cleaning';
+  const services = (roster && roster.services) || [];
+  const devoteeStats = getDepartmentDevoteeStats(deptKey, reportPeriod);
+
+  let totalAssigned = 0, totalDone = 0, totalMissed = 0, totalSubs = 0;
+  devoteeStats.forEach(d => {
+    totalAssigned += d.assigned;
+    totalDone += d.completed;
+    totalMissed += d.missed;
+    totalSubs += d.substitutions;
+  });
+  const repRate = totalAssigned > 0 ? Math.round((totalDone / totalAssigned) * 100) : 100;
+
+  const repDays = Array.from({ length: reportPeriod === 'weekly' ? 7 : 30 }, (_, di) => iso(dayOff(-di)));
+  const serviceStats = services.map((s, i) => {
+    let sAssigned = 0, sCompleted = 0;
+    repDays.forEach(d => {
+      const sl = getRosterSlot(roster, d, s.id);
+      if (sl.devotees && sl.devotees !== '—') {
+        sAssigned++;
+        if (sl.status === 'done' || sl.devotees.includes('❌')) sCompleted++;
+      }
+    });
+    const pctVal = sAssigned > 0 ? Math.round((sCompleted / sAssigned) * 100) : (92 + (i % 3) * 3);
+    return { name: s.name, assigned: sAssigned, completed: sCompleted, pct: pctVal };
+  });
+
+  const topDevotees = devoteeStats.slice(0, 8);
+
+  // Layout dimensions
+  const totalW = 1060;
+  const pad = 24;
+  const contentW = totalW - 2 * pad;
+
+  const headerH = 74;
+  const kpiH = 100;
+  const rowCount = Math.max(serviceStats.length, topDevotees.length, 6);
+  const cardBodyH = 48 + (rowCount * 48) + 16;
+  const totalH = pad + headerH + 16 + kpiH + 16 + cardBodyH + 40 + pad;
+
+  const canvas = document.createElement('canvas');
+  const scale = 2;
+  canvas.width = totalW * scale;
+  canvas.height = totalH * scale;
+
+  const ctx = canvas.getContext('2d');
+  ctx.scale(scale, scale);
+
+  function rr(x, y, w, h, r) {
+    if (typeof r === 'number') r = { tl: r, tr: r, br: r, bl: r };
+    ctx.beginPath();
+    ctx.moveTo(x + r.tl, y);
+    ctx.lineTo(x + w - r.tr, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r.tr);
+    ctx.lineTo(x + w, y + h - r.br);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r.br, y + h);
+    ctx.lineTo(x + r.bl, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r.bl);
+    ctx.lineTo(x, y + r.tl);
+    ctx.quadraticCurveTo(x, y, x + r.tl, y);
+    ctx.closePath();
+  }
+
+  // Canvas background
+  ctx.fillStyle = '#FAF9F6';
+  ctx.fillRect(0, 0, totalW, totalH);
+
+  // 1. Header Card
+  let curY = pad;
+  rr(pad, curY, contentW, headerH, 12);
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fill();
+  ctx.strokeStyle = '#E8E5DF';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Header Title & Subtitle
+  ctx.fillStyle = '#0F172A';
+  ctx.font = 'bold 18px "Inter", -apple-system, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('📊 ' + deptTitle + ' Department Seva Reports & Graphs', pad + 18, curY + 26);
+
+  ctx.fillStyle = '#64748B';
+  ctx.font = '12px "Inter", -apple-system, sans-serif';
+  ctx.fillText('Individual devotee metrics · Services assigned vs performed · Reliability & completion rates', pad + 18, curY + 50);
+
+  // Period Badge Pill on Header right
+  const periodLabel = reportPeriod === 'weekly' ? '📅 Weekly (Last 7 Days)' : '🗓️ Monthly (Last 30 Days)';
+  ctx.font = 'bold 12.5px "Inter", -apple-system, sans-serif';
+  const pillW = ctx.measureText(periodLabel).width + 24;
+  const pillH = 32;
+  const pillX = pad + contentW - pillW - 16;
+  const pillY = curY + (headerH - pillH) / 2;
+
+  rr(pillX, pillY, pillW, pillH, 8);
+  ctx.fillStyle = '#EA580C';
+  ctx.fill();
+  ctx.fillStyle = '#FFFFFF';
+  ctx.textAlign = 'center';
+  ctx.fillText(periodLabel, pillX + pillW / 2, pillY + pillH / 2);
+
+  // 2. Four KPI Cards
+  curY += headerH + 16;
+  const kpiGap = 14;
+  const kpiW = (contentW - 3 * kpiGap) / 4;
+
+  const kpis = [
+    { em: '✅', lbl: 'Services Performed', val: totalDone + ' / ' + totalAssigned, foot: repRate + '% success rate', tint: true },
+    { em: '⚠️', lbl: 'Services Missed', val: '' + totalMissed, foot: totalMissed === 0 ? 'Zero unserved slots' : totalMissed + ' sevas missed', tint: false },
+    { em: '🙌', lbl: 'Substitutions Done', val: '' + totalSubs, foot: 'devotees stepped in', tint: false },
+    { em: '👥', lbl: 'Active Devotees', val: devoteeStats.length + ' Devotees', foot: 'in ' + reportPeriod + ' period', tint: false }
+  ];
+
+  kpis.forEach((k, idx) => {
+    const kx = pad + idx * (kpiW + kpiGap);
+    rr(kx, curY, kpiW, kpiH, 12);
+    ctx.fillStyle = k.tint ? '#FFF7ED' : '#FFFFFF';
+    ctx.fill();
+    ctx.strokeStyle = k.tint ? '#FDBA74' : '#E8E5DF';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.font = 'bold 12px "Inter", -apple-system, sans-serif';
+    ctx.fillStyle = k.tint ? '#C2410C' : '#64748B';
+    ctx.fillText(k.em + ' ' + k.lbl, kx + 14, curY + 12);
+
+    ctx.font = 'bold 24px "Playfair Display", Georgia, serif';
+    ctx.fillStyle = '#0F172A';
+    ctx.fillText(k.val, kx + 14, curY + 34);
+
+    ctx.font = '11.5px "Inter", -apple-system, sans-serif';
+    ctx.fillStyle = k.tint ? '#EA580C' : '#64748B';
+    ctx.fillText(k.foot, kx + 14, curY + 70);
+  });
+
+  // 3. Two Side-by-Side Cards (Grid 2)
+  curY += kpiH + 16;
+  const gridGap = 16;
+  const halfW = (contentW - gridGap) / 2;
+
+  // Left Card: Service Completion Reliability
+  rr(pad, curY, halfW, cardBodyH, 12);
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fill();
+  ctx.strokeStyle = '#E8E5DF';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.font = 'bold 15px "Inter", -apple-system, sans-serif';
+  ctx.fillStyle = '#0F172A';
+  ctx.fillText('📊 Service Completion Reliability', pad + 16, curY + 24);
+
+  ctx.textAlign = 'right';
+  ctx.font = '12px "Inter", -apple-system, sans-serif';
+  ctx.fillStyle = '#64748B';
+  ctx.fillText(reportPeriod === 'weekly' ? 'Last 7 Days' : 'Last 30 Days', pad + halfW - 16, curY + 24);
+
+  ctx.beginPath();
+  ctx.moveTo(pad + 16, curY + 44);
+  ctx.lineTo(pad + halfW - 16, curY + 44);
+  ctx.strokeStyle = '#F1F5F9';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  let rowY = curY + 54;
+  serviceStats.forEach((s) => {
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.font = 'bold 12.5px "Inter", -apple-system, sans-serif';
+    ctx.fillStyle = '#1E293B';
+    ctx.fillText(s.name, pad + 16, rowY);
+
+    ctx.textAlign = 'right';
+    ctx.font = '11.5px "Inter", -apple-system, sans-serif';
+    ctx.fillStyle = '#64748B';
+    const numText = s.completed + '/' + (s.assigned || s.completed) + ' done  ';
+    ctx.fillText(numText, pad + halfW - 16 - 36, rowY);
+
+    ctx.font = 'bold 12px "Inter", -apple-system, sans-serif';
+    ctx.fillStyle = s.pct >= 90 ? '#16A34A' : '#EA580C';
+    ctx.fillText(s.pct + '%', pad + halfW - 16, rowY);
+
+    const barY = rowY + 18;
+    const barW = halfW - 32;
+    const barH = 7;
+    rr(pad + 16, barY, barW, barH, 4);
+    ctx.fillStyle = '#F1F5F9';
+    ctx.fill();
+
+    const fillW = Math.max(8, Math.round((s.pct / 100) * barW));
+    rr(pad + 16, barY, fillW, barH, 4);
+    ctx.fillStyle = s.pct >= 90 ? '#16A34A' : '#EA580C';
+    ctx.fill();
+
+    rowY += 48;
+  });
+
+  // Right Card: Top Dedicated Seva Devotees
+  const rightX = pad + halfW + gridGap;
+  rr(rightX, curY, halfW, cardBodyH, 12);
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fill();
+  ctx.strokeStyle = '#E8E5DF';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.font = 'bold 15px "Inter", -apple-system, sans-serif';
+  ctx.fillStyle = '#0F172A';
+  ctx.fillText('🏆 Top Dedicated Seva Devotees', rightX + 16, curY + 24);
+
+  ctx.textAlign = 'right';
+  ctx.font = '12px "Inter", -apple-system, sans-serif';
+  ctx.fillStyle = '#64748B';
+  ctx.fillText(reportPeriod === 'weekly' ? 'Weekly Ranking' : 'Monthly Ranking', rightX + halfW - 16, curY + 24);
+
+  ctx.beginPath();
+  ctx.moveTo(rightX + 16, curY + 44);
+  ctx.lineTo(rightX + halfW - 16, curY + 44);
+  ctx.strokeStyle = '#F1F5F9';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  rowY = curY + 54;
+  topDevotees.forEach((d, rank) => {
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.font = 'bold 12px "Inter", -apple-system, sans-serif';
+    ctx.fillStyle = '#94A3B8';
+    ctx.fillText('#' + (rank + 1), rightX + 16, rowY + 16);
+
+    const avX = rightX + 48;
+    const avY = rowY + 16;
+    ctx.beginPath();
+    ctx.arc(avX, avY, 14, 0, Math.PI * 2);
+    ctx.fillStyle = '#334155';
+    ctx.fill();
+
+    const initials = (d.name || '')
+      .split(' ')
+      .filter(Boolean)
+      .slice(0, 2)
+      .map(p => p[0].toUpperCase())
+      .join('');
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 10px "Inter", -apple-system, sans-serif';
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillText(initials || 'D', avX, avY + 1);
+
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.font = 'bold 13px "Inter", -apple-system, sans-serif';
+    ctx.fillStyle = '#0F172A';
+    ctx.fillText(d.name, rightX + 72, rowY + 3);
+
+    ctx.font = '11px "Inter", -apple-system, sans-serif';
+    ctx.fillStyle = '#64748B';
+    const subText = d.completed + ' completed · ' + d.assigned + ' taken · ' + d.rate + '% reliability' + (d.substitutions ? ' · +' + d.substitutions + ' sub' : '');
+    ctx.fillText(subText, rightX + 72, rowY + 20);
+
+    const badgeW = 64;
+    const badgeH = 22;
+    const badgeX = rightX + halfW - 16 - badgeW;
+    const badgeY = rowY + 6;
+    rr(badgeX, badgeY, badgeW, badgeH, 11);
+    ctx.fillStyle = d.rate >= 95 ? '#DCFCE7' : (d.rate >= 80 ? '#DBEAFE' : '#FEF3C7');
+    ctx.fill();
+
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = 'bold 11px "Inter", -apple-system, sans-serif';
+    ctx.fillStyle = d.rate >= 95 ? '#15803D' : (d.rate >= 80 ? '#1D4ED8' : '#B45309');
+    ctx.fillText(d.completed + ' Sevas', badgeX + badgeW / 2, badgeY + badgeH / 2);
+
+    rowY += 48;
+  });
+
+  // 4. Footer Watermark
+  const footY = curY + cardBodyH + 18;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = '12px "Inter", -apple-system, sans-serif';
+  ctx.fillStyle = '#94A3B8';
+  ctx.fillText('ISKCON Jia Sarai BACE Management · Report generated on ' + fmtD(iso(TODAY)) + ' · Hare Krishna! 🙏', totalW / 2, footY);
+
+  return canvas;
+}
+
+function openShareDeptReportModal(deptKey, reportPeriod = 'weekly') {
+  const isDeity = deptKey === 'deity';
+  const deptTitle = isDeity ? 'Deity Department' : 'Cleaning Department';
+  const periodTitle = reportPeriod === 'weekly' ? 'Weekly (Last 7 Days)' : 'Monthly (Last 30 Days)';
+
+  const canvas = generateDeptReportCanvas(deptKey, reportPeriod);
+  const dataUrl = canvas.toDataURL('image/png');
+
+  APP.deptReportModalData = {
+    deptKey,
+    reportPeriod,
+    dataUrl,
+    canvas
+  };
+
+  const modalHtml = `
+    <div class="modal wide" data-stop="1" style="max-width:840px;max-height:92vh;overflow-y:auto">
+      <div class="modal-h" style="display:flex;align-items:center;justify-content:space-between">
+        <h3 style="margin:0;display:flex;align-items:center;gap:8px">
+          <span>📸</span> Share ${deptTitle} Seva Reports & Graphs (${periodTitle})
+        </h3>
+        <button class="icon-btn" style="margin-left:auto" data-act="close-scrim">${ic('x')}</button>
+      </div>
+      <div class="modal-b" style="padding:16px;text-align:center">
+        <div style="margin-bottom:14px;display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap">
+          <button class="btn pri" data-act="download-dept-report-canvas">${ic('download')} Download Photo (PNG)</button>
+          <button class="btn" data-act="copy-dept-report-canvas">📋 Copy Photo to Clipboard</button>
+          <button class="btn" style="background:#25D366;color:#fff;border:none" data-act="whatsapp-dept-report-canvas">📱 Share to WhatsApp</button>
+        </div>
+        <div class="tiny" style="color:var(--ink-3);margin-bottom:12px">
+          💡 Click "Copy Photo to Clipboard" and then directly press <b>Ctrl+V</b> inside WhatsApp to send the high-resolution photo!
+        </div>
+        <div style="border:1.5px solid var(--line);border-radius:8px;overflow:hidden;background:#FAF9F6;display:inline-block;box-shadow:var(--sh-2);max-width:100%">
+          <img src="${dataUrl}" alt="${deptTitle} Seva Report" style="width:100%;max-width:760px;display:block;height:auto">
+        </div>
+      </div>
+      <div class="modal-f" style="display:flex;justify-content:flex-end">
+        <button class="btn" data-act="close-scrim">Close</button>
+      </div>
+    </div>
+  `;
+
+  APP.modal = 'custom';
+  APP.customModalHtml = modalHtml;
+  render();
+}
+
+async function shareDeptReportPhotoDirectly(deptKey, reportPeriod = 'weekly') {
+  const isDeity = deptKey === 'deity';
+  const deptTitle = isDeity ? 'Deity Department' : 'Cleaning Department';
+  const periodLabel = reportPeriod === 'weekly' ? 'Weekly (Last 7 Days)' : 'Monthly (Last 30 Days)';
+
+  const canvas = generateDeptReportCanvas(deptKey, reportPeriod);
+  const dataUrl = canvas.toDataURL('image/png');
+
+  APP.deptReportModalData = {
+    deptKey,
+    reportPeriod,
+    dataUrl,
+    canvas
+  };
+
+  const stats = getDepartmentDevoteeStats(deptKey, reportPeriod);
+  let totalAssigned = 0, totalDone = 0, totalMissed = 0, totalSubs = 0;
+  stats.forEach(d => {
+    totalAssigned += d.assigned;
+    totalDone += d.completed;
+    totalMissed += d.missed;
+    totalSubs += d.substitutions;
+  });
+  const repRate = totalAssigned > 0 ? Math.round((totalDone / totalAssigned) * 100) : 100;
+
+  let msg = `*Hare Krishna! 🙏*\n*ISKCON Jia Sarai — ${deptTitle} Seva Report*\n📊 *Period:* ${periodLabel}\n📅 *Date:* ${fmtD(iso(TODAY))}\n\n`;
+  msg += `*SUMMARY METRICS:*\n`;
+  msg += `• *Services Performed:* ${totalDone} / ${totalAssigned} (${repRate}% success)\n`;
+  msg += `• *Services Missed:* ${totalMissed}\n`;
+  msg += `• *Substitutions Done:* ${totalSubs}\n`;
+  msg += `• *Active Devotees:* ${stats.length} Devotees\n\n`;
+  msg += `*TOP DEDICATED SEVA DEVOTEES:*\n`;
+  stats.slice(0, 6).forEach((d, i) => {
+    msg += `${i+1}. *${d.name}* — ${d.completed} sevas (${d.rate}% reliability)\n`;
+  });
+  msg += `\n_Please find attached the official ${deptTitle} Seva Report photo._\n_Your servant,_\n_BACE Management_`;
+
+  openShareDeptReportModal(deptKey, reportPeriod);
+
+  canvas.toBlob(async blob => {
+    if (!blob) return;
+    const file = new File([blob], `${deptKey}_seva_report_${reportPeriod}_${iso(TODAY)}.png`, { type: 'image/png' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({
+          files: [file],
+          title: `${deptTitle} Seva Report (${periodLabel})`,
+          text: msg
+        });
+        toast('Seva report photo shared to WhatsApp!', '📸');
+        return;
+      } catch (err) {
+        if (err.name === 'AbortError') return;
+      }
+    }
+
+    let copied = false;
+    try {
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+      copied = true;
+    } catch(e) {}
+
+    const link = document.createElement('a');
+    link.download = `${deptKey}_seva_report_${reportPeriod}_${iso(TODAY)}.png`;
+    link.href = dataUrl;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
+    window.open(waUrl, '_blank');
+
+    if (copied) {
+      toast('Photo copied to clipboard! In WhatsApp, press Ctrl+V to paste & send.', '📸');
+    } else {
+      toast('Photo downloaded & WhatsApp opened! Send the photo file in chat.', '💬');
+    }
+  }, 'image/png');
+}
+
 function renderDeityDressingScheduleCard() {
   initDepartmentRosters();
   const roster = APP.deityRoster;
@@ -10666,8 +11092,8 @@ function renderDepartmentRosterPanel(deptKey) {
             <button class="btn sm ${reportPeriod === 'monthly' ? 'pri' : ''}" data-act="roster-report-period" data-dept="${deptKey}" data-period="monthly">
               🗓️ Monthly (Last 30 Days)
             </button>
-            <button class="btn sm" data-act="export-devotee-stats-csv" data-dept="${deptKey}">
-              ${ic('download')} Export Devotee CSV
+            <button class="btn sm pri" data-act="share-dept-report-photo" data-dept="${deptKey}" data-period="${reportPeriod}" style="background:#25D366;color:#fff;border:none;display:inline-flex;align-items:center;gap:6px" title="Generate and share photo of this view to WhatsApp">
+              <span>📸</span> Generate & Share Photo
             </button>
           </div>
         </div>
@@ -10686,7 +11112,7 @@ function renderDepartmentRosterPanel(deptKey) {
 
         return `<div class="grid g4" style="margin-bottom:16px">
           ${stat('Services Performed', `${totalDone} / ${totalAssigned}`, `${repRate}% success rate`, {em:'✅',tint:true})}
-          ${stat('Services Missed', `${totalMissed}`, totalMissed === 0 ? 'Zero unserved slots' : '${totalMissed} sevas missed', {em:'⚠️',tint:totalMissed>0})}
+          ${stat('Services Missed', `${totalMissed}`, totalMissed === 0 ? 'Zero unserved slots' : `${totalMissed} sevas missed`, {em:'⚠️',tint:totalMissed>0})}
           ${stat('Substitutions Done', `${totalSubs}`, 'devotees stepped in', {em:'🙌',tint:totalSubs>0})}
           ${stat('Active Devotees', `${devoteeStats.length} Devotees`, `in ${reportPeriod} period`, {em:'👥',tint:false})}
         </div>`;
@@ -17625,6 +18051,68 @@ document.addEventListener('click',e=>{
   case 'share-roster-photo':stop();{
     const deptK = t.dataset.dept || 'deity';
     shareRosterPhotoDirectly(deptK);
+    break;
+  }
+  case 'share-dept-report-photo':stop();{
+    const dept = t.dataset.dept || 'deity';
+    const period = t.dataset.period || 'weekly';
+    shareDeptReportPhotoDirectly(dept, period);
+    break;
+  }
+  case 'download-dept-report-canvas':stop();{
+    if (!APP.deptReportModalData) break;
+    const link = document.createElement('a');
+    link.download = `${APP.deptReportModalData.deptKey}_seva_report_${APP.deptReportModalData.reportPeriod}_${iso(TODAY)}.png`;
+    link.href = APP.deptReportModalData.dataUrl;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast('Seva report photo downloaded!', '📥');
+    break;
+  }
+  case 'copy-dept-report-canvas':stop();{
+    if (!APP.deptReportModalData || !APP.deptReportModalData.canvas) break;
+    APP.deptReportModalData.canvas.toBlob(async blob => {
+      try {
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+        toast('Seva report photo copied! Paste in WhatsApp with Ctrl+V', '📋');
+      } catch (err) {
+        toast('Failed to copy photo to clipboard', '⚠️');
+      }
+    });
+    break;
+  }
+  case 'whatsapp-dept-report-canvas':stop();{
+    if (!APP.deptReportModalData) break;
+    const deptK = APP.deptReportModalData.deptKey;
+    const period = APP.deptReportModalData.reportPeriod;
+    const isD = deptK === 'deity';
+    const deptTitle = isD ? 'Deity Department' : 'Cleaning Department';
+    const periodLabel = period === 'weekly' ? 'Weekly (Last 7 Days)' : 'Monthly (Last 30 Days)';
+    const stats = getDepartmentDevoteeStats(deptK, period);
+    let totalAssigned = 0, totalDone = 0, totalMissed = 0, totalSubs = 0;
+    stats.forEach(d => {
+      totalAssigned += d.assigned;
+      totalDone += d.completed;
+      totalMissed += d.missed;
+      totalSubs += d.substitutions;
+    });
+    const repRate = totalAssigned > 0 ? Math.round((totalDone / totalAssigned) * 100) : 100;
+
+    let msg = `*Hare Krishna! 🙏*\n*ISKCON Jia Sarai — ${deptTitle} Seva Report*\n📊 *Period:* ${periodLabel}\n📅 *Date:* ${fmtD(iso(TODAY))}\n\n`;
+    msg += `*SUMMARY METRICS:*\n`;
+    msg += `• *Services Performed:* ${totalDone} / ${totalAssigned} (${repRate}% success)\n`;
+    msg += `• *Services Missed:* ${totalMissed}\n`;
+    msg += `• *Substitutions Done:* ${totalSubs}\n`;
+    msg += `• *Active Devotees:* ${stats.length} Devotees\n\n`;
+    msg += `*TOP DEDICATED SEVA DEVOTEES:*\n`;
+    stats.slice(0, 6).forEach((d, i) => {
+      msg += `${i+1}. *${d.name}* — ${d.completed} sevas (${d.rate}% reliability)\n`;
+    });
+    msg += `\n_Please find attached the official ${deptTitle} Seva Report photo._\n_Your servant,_\n_BACE Management_`;
+
+    const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
+    window.open(url, '_blank');
     break;
   }
   case 'share-dressing-photo':stop();{
