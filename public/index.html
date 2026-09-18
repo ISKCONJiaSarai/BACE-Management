@@ -1995,6 +1995,7 @@ const logAudit=(action,record)=>DB.audit.unshift({id:uid('au'),user:(APP.user?na
     if(delRaw) deletedActIds = new Set(JSON.parse(delRaw));
   } catch(e){}
   const addSeedAct = a => {
+    if(!a.prasadamMenu) a.prasadamMenu = '';
     if(!deletedActIds.has(a.id)) DB.activities.push(a);
   };
 
@@ -5116,7 +5117,7 @@ function actTable(rows){
   if(!rows.length)return emptyState('Nothing scheduled','No activities in this period.','<button class="btn pri" data-act="open-assign" data-type="Seva">📋 Assign seva</button>');
   return `<table class="tbl"><thead><tr><th>Activity</th><th>Scope</th><th>When</th><th>Responsible</th><th>Volunteers</th><th>Status</th><th style="width:90px;text-align:right"></th></tr></thead><tbody>
    ${rows.slice().sort((a,b)=>a.date<b.date?-1:1).map(a=>{const f=filled(a);return `<tr>
-    <td data-l="Activity"><b>${typeEmoji(a.type)} ${esc(a.name)}</b><div class="tiny">${esc(a.location||'')}${a.recurrence&&a.recurrence!=='One time'?' · '+a.recurrence:''}</div></td>
+    <td data-l="Activity"><b>${typeEmoji(a.type)} ${esc(a.name)}</b><div class="tiny">${esc(a.location||'')}${a.recurrence&&a.recurrence!=='One time'?' · '+a.recurrence:''}${a.prasadamMenu?` · <span style="color:var(--amber, #d97706);font-weight:600">🍲 ${esc(a.prasadamMenu)}</span>`:''}</div></td>
     <td data-l="Scope">${esc(scopeName(a))}</td>
     <td data-l="When">${fmtD(a.date)}<div class="tiny">${a.start?a.start+'–'+a.end:relD(a.date)}</div></td>
     <td data-l="Responsible"><div class="who">${av(nameOf(a.responsible))}<b>${esc(nameOf(a.responsible))}</b></div></td>
@@ -5368,6 +5369,35 @@ function checklistBlock(a){
      <button class="btn sm pri" id="btn-add-item-${a.id}" data-act="quick-add-item" data-id="${a.id}">+ Add item</button>
    </div>`;
 }
+
+function prasadamBlock(a){
+  const menuStr = (a.prasadamMenu || '').trim();
+  const items = menuStr ? menuStr.split(/[,;\n\r]+/).map(s=>s.trim()).filter(Boolean) : [];
+  
+  return `<div style="background:var(--surface-2, #f8fafc);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:8px">
+    ${items.length ? `
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">
+        ${items.map(item => `
+          <span style="display:inline-flex;align-items:center;gap:4px;background:rgba(234,88,12,0.1);color:#c2410c;border:1px solid rgba(234,88,12,0.25);padding:3px 10px;border-radius:20px;font-size:11.5px;font-weight:700">
+            <span>🍲</span> ${esc(item)}
+          </span>
+        `).join('')}
+      </div>
+    ` : `
+      <div class="tiny muted" style="margin-bottom:8px">No prasadam menu set yet. Type items below and click Save Prasadam Menu.</div>
+    `}
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <textarea id="act-prasadam-inp-${a.id}" placeholder="Type prasadam menu (e.g. Puri, Paneer Sabji, Basmati Rice, Kheer, Sweet Chutney, Salad...)" style="width:100%;min-height:62px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px;background:var(--card);color:var(--ink);resize:vertical;line-height:1.4">${esc(menuStr)}</textarea>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:2px;flex-wrap:wrap;gap:6px">
+        <span class="tiny muted">Separate items with commas or new lines</span>
+        <div style="display:flex;gap:6px">
+          ${menuStr ? `<button class="btn sm ghost" data-act="clear-act-prasadam" data-id="${a.id}" style="padding:3px 10px;font-size:12px">Clear</button>` : ''}
+          <button class="btn sm pri" data-act="save-act-prasadam" data-id="${a.id}" style="padding:4px 14px;font-size:12px;background:#ea580c;border-color:#ea580c">💾 Save Prasadam Menu</button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
 function viewDept(id){
   const dp=dept(id);if(!dp)return emptyState('Department not found','','<a class="btn" href="#/depts">Back to departments</a>');
   APP.crumbLeaf=dp.name;
@@ -5421,7 +5451,7 @@ function viewAssign(){
 function assignDraft(){
   if(!APP.draft.assign)APP.draft.assign={type:'Seva',name:'',dept:(APP.user.dept||activeDepts()[0].id),batch:(activeBatches()[0]||{}).id||'',responsible:'',
     date:iso(TODAY),start:'07:00',end:'09:00',location:'',desc:'',priority:'Medium',need:3,recurrence:'One time',
-    volunteers:[],items:[],q:'',fdept:'',fbatch:'',fskill:'',budget:0};
+    volunteers:[],items:[],q:'',fdept:'',fbatch:'',fskill:'',budget:0,prasadamMenu:''};
   return APP.draft.assign;
 }
 function assignModal(){
@@ -5452,7 +5482,8 @@ function assignModal(){
         <input type="text" name="responsible" value="${esc(dv(d.responsible)?.name || d.responsible || '')}" placeholder="e.g. HG Sundar Gopal Das"></div></div>
       <div class="form-row"><div class="field"><label>Expected Attendees</label><input type="number" name="expected" value="${esc(d.expected||50)}" min="0" placeholder="e.g. 50"></div>
         <div class="field"><label>Budget Allocated (₹)</label><input type="number" name="budget" value="${esc(d.budget||0)}" min="0" placeholder="e.g. 5000"></div></div>
-      <div class="field"><label>Description / Agenda & Prasadam arrangements</label><textarea name="desc" placeholder="Special programme rundown, kirtan lead, speaker topic, prasadam arrangements, or guidelines for devotees…">${esc(d.desc)}</textarea></div>
+      <div class="field"><label>🍲 Prasadam Menu</label><input name="prasadamMenu" value="${esc(d.prasadamMenu||'')}" placeholder="e.g. Puri, Paneer Sabji, Kheer, Sweet Chutney, Fruit Salad…"></div>
+      <div class="field"><label>Description / Agenda & Notes</label><textarea name="desc" placeholder="Special programme rundown, kirtan lead, speaker topic, guidelines for devotees…">${esc(d.desc)}</textarea></div>
       <div class="field"><label>🔁 Repeats</label>
         <div class="chips">${['One time','Weekly','Monthly','Annual'].map(r=>`<button class="chip ${d.recurrence===r?'on':''}" data-act="draft" data-n="recurrence" data-v="${r}">${r}</button>`).join('')}</div>
         ${d.recurrence!=='One time'?'<div class="hint">A recurring event schedule will be created and future event sessions generated automatically.</div>':''}</div>
@@ -5477,6 +5508,7 @@ function assignModal(){
       <div class="form-row"><div class="field"><label>Location</label><input name="location" value="${esc(d.location)}" placeholder="e.g. Temple Hall / BACE / Online (Zoom)"></div>
         <div class="field"><label>Teacher / Speaker</label>
         <input type="text" name="responsible" value="${esc(dv(d.responsible)?.name || d.responsible || '')}" placeholder="e.g. HG Sundar Gopal Das"></div></div>
+      <div class="field"><label>🍲 Prasadam Menu</label><input name="prasadamMenu" value="${esc(d.prasadamMenu||'')}" placeholder="e.g. Khichdi, Halwa, Sweet Lemonade, Fruit Prasadam…"></div>
       <div class="field"><label>Description / Notes (optional)</label><textarea name="desc" placeholder="Topic details, verses to read, or preparation notes">${esc(d.desc)}</textarea></div>
       <div class="field"><label>🔁 Repeats</label>
         <div class="chips">${['One time','Weekly','Daily','Monthly'].map(r=>`<button class="chip ${d.recurrence===r?'on':''}" data-act="draft" data-n="recurrence" data-v="${r}">${r}</button>`).join('')}</div>
@@ -5676,6 +5708,7 @@ function activityModal(id){
       <button class="btn sm" data-act="toggle-custom-devotee" data-a="${a.id}" style="flex-shrink:0">✕</button>
     </div>`:''}`:''}
     <h3 style="margin:16px 0 8px">Action items</h3>${checklistBlock(a)}
+    <h3 style="margin:16px 0 8px;display:flex;align-items:center;gap:6px"><span>🍲</span> Prasadam Menu</h3>${prasadamBlock(a)}
     <h3 style="margin:16px 0 8px">Budget</h3>
     ${budgetBlock(a.budget||{allocated:0,spent:0})}
     ${manager?`<button class="btn sm" style="margin-top:8px" data-act="edit-budget" data-kind="activity" data-id="${a.id}">${ic('edit')}Update budget</button>`:''}
@@ -5726,6 +5759,7 @@ function openEditActivityForm(activityId){
     FLD('responsible', 'Speaker / Teacher / Lead', 'text', { v: (dv(a.responsible)?.name || a.responsible || ''), ph: 'e.g. HG Sundar Gopal Das', half: 1 }),
     FLD('expected', 'Expected Attendees', 'number', { v: a.expected || 0, half: 1 }),
     FLD('budget', 'Budget Allocated (₹)', 'number', { v: (a.budget && a.budget.allocated) || 0, half: 1 }),
+    FLD('prasadamMenu', '🍲 Prasadam Menu', 'textarea', { v: a.prasadamMenu || '', ph: 'e.g. Puri, Paneer Sabji, Kheer, Sweet Chutney, Fruit Salad...' }),
     FLD('desc', 'Description / Agenda / Notes', 'textarea', { v: a.desc || '', ph: 'Rundown, prasadam arrangements, topic details…' })
   ], 'save-edited-activity', { id: a.id }, 'All changes will update the program schedule, attendance lists, and reports');
 }
@@ -12121,17 +12155,18 @@ function exportBatchMonthlyReportPDF(bid){
     }).join('')}
   </div>
 
-  <div class="section-title">📖 Classes & Attendance Breakdown (${m.classes.length} class${m.classes.length!==1?'es':''})</div>
+  <div class="section-title">📖 Classes & Events Breakdown (${m.perClass.length} session${m.perClass.length!==1?'s':''})</div>
   <div class="table-box">
     <table>
       <thead>
         <tr>
-          <th>Date</th>
-          <th>Class / Topic</th>
-          <th>Preacher / Speaker</th>
-          <th style="text-align:right">Present</th>
-          <th style="text-align:right">Total</th>
-          <th style="text-align:right">Attendance %</th>
+          <th style="width:13%">Date</th>
+          <th style="width:23%">Session / Topic</th>
+          <th style="width:17%">Preacher / Speaker</th>
+          <th style="width:25%">Prasadam Menu</th>
+          <th style="text-align:right;width:7%">Present</th>
+          <th style="text-align:right;width:7%">Total</th>
+          <th style="text-align:right;width:8%">Att %</th>
         </tr>
       </thead>
       <tbody>
@@ -12140,15 +12175,47 @@ function exportBatchMonthlyReportPDF(bid){
             <td><b>${fmtD(pc.c.date)}</b></td>
             <td style="font-weight:600">${esc(pc.c.name)}</td>
             <td>${esc(nameOf(pc.c.responsible || bCoordinator))}</td>
+            <td style="font-size:10px;color:${pc.c.prasadamMenu?'#b45309':'#94a3b8'}">
+              ${pc.c.prasadamMenu ? `🍲 <b>${esc(pc.c.prasadamMenu)}</b>` : '<span style="color:#cbd5e1">—</span>'}
+            </td>
             <td style="text-align:right;font-weight:600">${pc.present}</td>
             <td style="text-align:right;color:#64748b">${pc.total}</td>
             <td style="text-align:right">
               <span class="att-pill ${pc.pctv >= 75 ? 'att-high' : pc.pctv >= 50 ? 'att-mid' : 'att-low'}">${pc.pctv}%</span>
             </td>
-          </tr>`).join('') : '<tr><td colspan="6" style="text-align:center;color:#64748b;padding:12px">No completed classes in this period</td></tr>'}
+          </tr>`).join('') : '<tr><td colspan="7" style="text-align:center;color:#64748b;padding:12px">No completed sessions in this period</td></tr>'}
       </tbody>
     </table>
   </div>
+
+  ${(() => {
+    const prSessions = m.acts.filter(a => a.prasadamMenu && a.prasadamMenu.trim());
+    if(!prSessions.length) return '';
+    return `
+  <div class="section-title">🍲 Prasadam Seva & Feast Menus (${prSessions.length} session${prSessions.length !== 1 ? 's' : ''})</div>
+  <div class="table-box">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:15%">Date</th>
+          <th style="width:28%">Programme / Session</th>
+          <th style="width:14%">Type</th>
+          <th style="width:43%">Prasadam Menu Served</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${prSessions.sort((x,y)=>x.date<y.date?-1:1).map(a => `
+          <tr>
+            <td><b>${fmtD(a.date)}</b></td>
+            <td style="font-weight:600">${esc(a.name)}</td>
+            <td><span class="att-pill" style="background:#fff7ed;color:#c2410c;font-weight:700">${esc(a.type)}</span></td>
+            <td style="color:#b45309;font-weight:600">🍲 ${esc(a.prasadamMenu)}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  </div>`;
+  })()}
 
   <div class="section-title">🧑‍🏫 Batch Leadership & Care Team</div>
   <div class="team-grid">
@@ -16016,7 +16083,7 @@ document.addEventListener('click',e=>{
         location:d.location,desc:d.desc,priority:d.priority,need:isTask?1:d.need,vols:d.need,skills:[],
         responsible:d.responsible||d.volunteers[0]||APP.user.devotee,owner:APP.user.devotee,templateId,recurrence:d.recurrence,
         overridden:false,status:d.volunteers.length?'Assigned':'Scheduled',
-        actionItems:d.items.map(x=>({t:x,done:false})),budget:{allocated:+d.budget||0,spent:0},report:null,proof:null,due:date,expected:0};
+        actionItems:d.items.map(x=>({t:x,done:false})),budget:{allocated:+d.budget||0,spent:0},prasadamMenu:(d.prasadamMenu||'').trim(),report:null,proof:null,due:date,expected:0};
       DB.activities.push(a);
       d.volunteers.forEach(v=>DB.assignments.push({id:uid('as'),activity:a.id,devotee:v,state:'Assigned',actualPerformer:null,completedAt:null}));
       return a};
@@ -16179,6 +16246,7 @@ document.addEventListener('click',e=>{
         if(!a.budget) a.budget = { allocated: 0, spent: 0 };
         a.budget.allocated = Number(v.budget) || 0;
       }
+      if(v.prasadamMenu !== undefined) a.prasadamMenu = v.prasadamMenu.trim();
       a.desc = v.desc || '';
       saveActivitiesToStorage();
       logAudit('Programme updated', a.name);
@@ -16213,6 +16281,33 @@ document.addEventListener('click',e=>{
       }
       logAudit('Programme deleted', a.name);
       toast(`Programme "${a.name}" deleted`, '🗑️');
+      render();
+    }
+    break;
+  }
+
+  case 'save-act-prasadam':stop();{
+    const aId = t.dataset.id;
+    const inp = document.getElementById('act-prasadam-inp-' + aId);
+    const val = inp ? inp.value.trim() : '';
+    const a = act(aId);
+    if(a){
+      a.prasadamMenu = val;
+      saveActivitiesToStorage();
+      logAudit('Prasadam menu updated', a.name + ': ' + (val || '(cleared)'));
+      toast(val ? 'Prasadam menu saved' : 'Prasadam menu cleared', '🍲');
+      render();
+    }
+    break;
+  }
+  case 'clear-act-prasadam':stop();{
+    const aId = t.dataset.id;
+    const a = act(aId);
+    if(a){
+      a.prasadamMenu = '';
+      saveActivitiesToStorage();
+      logAudit('Prasadam menu cleared', a.name);
+      toast('Prasadam menu cleared', '🍲');
       render();
     }
     break;
@@ -17309,11 +17404,12 @@ document.addEventListener('click',e=>{
       ['Classes', m.classes.length], ['Events', m.events.length], ['Average attendance %', m.attendance],
       ['Best class attendance %', m.best], ['Lowest class attendance %', m.low], ['Total attendance marks', m.totalAtt],
       ['Follow-ups total', m.fus.total], ['Follow-ups completed', m.fus.done], ['Follow-ups pending', m.fus.pending], ['Follow-ups overdue', m.fus.overdue],
-      ['Collected budget', m.budget.allocated], ['Expenses (spent)', m.budget.spent], ['Remaining balance', m.budget.allocated - m.budget.spent], ['Utilisation %', m.util]]);
+      ['Collected budget', m.budget.allocated], ['Expenses (spent)', m.budget.spent], ['Remaining balance', m.budget.allocated - m.budget.spent], ['Utilisation %', m.util],
+      ...m.perClass.map(pc => ['Session: ' + pc.c.name + ' (' + fmtD(pc.c.date) + ')', 'Attendance: ' + pc.pctv + '%' + (pc.c.prasadamMenu ? ' | Prasadam: ' + pc.c.prasadamMenu : '')])]);
     toast('Batch report exported','⬇️');break}
   case 'export-analytics':{const acts=DB.activities.filter(a=>inRange(a.date,APP.range.from,APP.range.to));
-    exportReport('Community analytics',['Activity','Type','Scope','Date','Status','Responsible','Assigned','Required'],
-      acts.map(a=>[a.name,a.type,scopeName(a),a.date,a.status,nameOf(a.responsible),filled(a),a.need]));
+    exportReport('Community analytics',['Activity','Type','Scope','Date','Status','Responsible','Assigned','Required','Prasadam Menu'],
+      acts.map(a=>[a.name,a.type,scopeName(a),a.date,a.status,nameOf(a.responsible),filled(a),a.need,a.prasadamMenu||'']));
     toast('Analytics exported','⬇️');break}
   case 'export-drill':{const m=APP.modal;exportReport(m.exportTitle||'Drill-down',
     ['Activity','Type','Scope','Date','Status','Responsible','Volunteers'],m.exportRows);toast('Exported','⬇️');break}
@@ -17336,7 +17432,7 @@ document.addEventListener('click',e=>{
 /* keep assign-modal form values when the modal re-renders */
 function syncAssign(){
   const d=APP.draft.assign;if(!d)return;
-  ['name','date','endDate','start','end','location','desc','priority','budget','dept','batch','responsible','expected'].forEach(n=>{
+  ['name','date','endDate','start','end','location','desc','priority','budget','dept','batch','responsible','expected','prasadamMenu'].forEach(n=>{
     const el=document.querySelector(`.modal [name=${n}]`);if(el)d[n]=el.value});
 }
 /* change events: selects and checkboxes that carry data-act */

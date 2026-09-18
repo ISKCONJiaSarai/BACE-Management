@@ -61,6 +61,11 @@ const ActivitySchema = new mongoose.Schema({
     type: Number,
     default: 1
   },
+  prasadamMenu: {
+    type: String,
+    trim: true,
+    default: ''
+  },
   notes: {
     type: String,
     trim: true
