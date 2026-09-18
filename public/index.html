@@ -9185,6 +9185,29 @@ window.filterDevoteeReportTable = function(q) {
 
 /* ─── Single Day View helpers ─────────────────────────────────────────── */
 
+/** Set date for Single Day View and re-render */
+window.setSingleDayDate = function(deptKey, dateStr) {
+  if (!dateStr) return;
+  APP.singleDayDate = APP.singleDayDate || {};
+  APP.singleDayDate[deptKey] = dateStr;
+  render();
+};
+
+/** Navigate Single Day View date by direction (-1 = prev day, 1 = next day, 0 = today) */
+window.navSingleDayDate = function(deptKey, dir) {
+  APP.singleDayDate = APP.singleDayDate || {};
+  if (dir === 0) {
+    APP.singleDayDate[deptKey] = iso(TODAY);
+    toast('Jumped to Today', '📅');
+  } else {
+    const cur = APP.singleDayDate[deptKey] || iso(TODAY);
+    const parts = cur.split('-').map(Number);
+    const dt = new Date(parts[0], parts[1] - 1, parts[2] + dir);
+    APP.singleDayDate[deptKey] = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+  }
+  render();
+};
+
 /** Text search across service name + devotee name columns */
 window.filterSingleDayTable = function(deptKey, q) {
   const table = document.getElementById('single-day-tbl-' + deptKey);
@@ -9200,6 +9223,8 @@ window.filterSingleDayTable = function(deptKey, q) {
 
 /** Filter Single Day rows by status; highlights the active filter button */
 window.applySingleDayFilter = function(deptKey, filterVal) {
+  APP.singleDayFilter = APP.singleDayFilter || {};
+  APP.singleDayFilter[deptKey] = filterVal;
   const table = document.getElementById('single-day-tbl-' + deptKey);
   if (!table) return;
   const rows = table.querySelectorAll('tbody tr');
@@ -9220,6 +9245,8 @@ window.applySingleDayFilter = function(deptKey, filterVal) {
 
 /** Sort Single Day table rows by chosen key without full re-render */
 window.sortSingleDayTable = function(deptKey, sortKey) {
+  APP.singleDaySort = APP.singleDaySort || {};
+  APP.singleDaySort[deptKey] = sortKey;
   const table = document.getElementById('single-day-tbl-' + deptKey);
   if (!table) return;
   const tbody = table.querySelector('tbody');
@@ -11095,6 +11122,8 @@ function renderDepartmentRosterPanel(deptKey) {
     ` : viewMode === 'single-day' ? (() => {
       /* ===================== SINGLE DAY VIEW ===================== */
       const sdDate = singleDayStr;
+      const activeFilter = (APP.singleDayFilter && APP.singleDayFilter[deptKey]) || 'all';
+      const activeSort = (APP.singleDaySort && APP.singleDaySort[deptKey]) || 'time-asc';
       const sdSlots = services.map(s => ({
         s,
         sl: getRosterSlot(roster, sdDate, s.id)
@@ -11119,16 +11148,16 @@ function renderDepartmentRosterPanel(deptKey) {
               <div class="tiny" style="color:var(--ink-3)">Full service-wise devotee report for the selected date</div>
             </div>
           </div>
-          <!-- Date Picker -->
+          <!-- Date Picker & Day Navigation -->
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
             <label style="font-weight:600;font-size:13px">📅 Select Date:</label>
             <input type="date" id="single-day-date-${deptKey}" value="${sdDate}"
               style="padding:6px 10px;border:1.5px solid ${isDeity ? 'var(--saffron)' : 'var(--teal)'};border-radius:8px;font-size:13px;background:var(--surface);cursor:pointer;font-family:inherit"
-              data-act="single-day-date-change" data-dept="${deptKey}" onchange="document.body.dispatchEvent(Object.assign(new Event('click',{bubbles:true}),{target:this}))"
+              onchange="window.setSingleDayDate('${deptKey}', this.value)"
             />
-            <button class="btn sm" style="padding:5px 10px" data-act="single-day-nav" data-dept="${deptKey}" data-dir="-1" title="Previous Day">◀</button>
-            <button class="btn sm" style="padding:5px 10px" data-act="single-day-nav" data-dept="${deptKey}" data-dir="1" title="Next Day">▶</button>
-            <button class="btn sm${isToday ? ' pri' : ''}" style="padding:5px 10px" data-act="single-day-nav" data-dept="${deptKey}" data-dir="0" title="Go to Today">Today</button>
+            <button type="button" class="btn sm" style="padding:5px 10px" onclick="window.navSingleDayDate('${deptKey}', -1)" title="Previous Day">◀</button>
+            <button type="button" class="btn sm" style="padding:5px 10px" onclick="window.navSingleDayDate('${deptKey}', 1)" title="Next Day">▶</button>
+            <button type="button" class="btn sm${isToday ? ' pri' : ''}" style="padding:5px 10px" onclick="window.navSingleDayDate('${deptKey}', 0)" title="Go to Today">Today</button>
           </div>
         </div>
 
@@ -11148,24 +11177,23 @@ function renderDepartmentRosterPanel(deptKey) {
       <!-- Filter & Sort toolbar -->
       <div style="padding:10px 16px;border-bottom:1px solid var(--line);background:var(--surface);display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         <span style="font-size:12px;font-weight:600;color:var(--ink-2)">🔍 Filter:</span>
-        <button class="btn sm" id="sd-filter-all-${deptKey}" data-act="single-day-filter" data-dept="${deptKey}" data-f="all" style="padding:3px 10px;font-size:12px;background:${(APP.singleDayFilter||{})[deptKey]||'all' === 'all'?'var(--pri)':'var(--surface)'};color:${(APP.singleDayFilter||{})[deptKey]||'all' === 'all'?'#fff':'var(--ink)'}">All</button>
-        <button class="btn sm" id="sd-filter-done-${deptKey}" data-act="single-day-filter" data-dept="${deptKey}" data-f="done" style="padding:3px 10px;font-size:12px">✅ Done</button>
-        <button class="btn sm" id="sd-filter-pending-${deptKey}" data-act="single-day-filter" data-dept="${deptKey}" data-f="pending" style="padding:3px 10px;font-size:12px">⏳ Pending</button>
-        <button class="btn sm" id="sd-filter-missed-${deptKey}" data-act="single-day-filter" data-dept="${deptKey}" data-f="missed" style="padding:3px 10px;font-size:12px">❌ Missed</button>
+        <button type="button" class="btn sm" id="sd-filter-all-${deptKey}" onclick="window.applySingleDayFilter('${deptKey}','all')" style="padding:3px 10px;font-size:12px;${activeFilter==='all'?'background:var(--pri);color:#fff;border-color:var(--pri)':''}">All</button>
+        <button type="button" class="btn sm" id="sd-filter-done-${deptKey}" onclick="window.applySingleDayFilter('${deptKey}','done')" style="padding:3px 10px;font-size:12px;${activeFilter==='done'?'background:var(--pri);color:#fff;border-color:var(--pri)':''}">✅ Done</button>
+        <button type="button" class="btn sm" id="sd-filter-pending-${deptKey}" onclick="window.applySingleDayFilter('${deptKey}','pending')" style="padding:3px 10px;font-size:12px;${activeFilter==='pending'?'background:var(--pri);color:#fff;border-color:var(--pri)':''}">⏳ Pending</button>
+        <button type="button" class="btn sm" id="sd-filter-missed-${deptKey}" onclick="window.applySingleDayFilter('${deptKey}','missed')" style="padding:3px 10px;font-size:12px;${activeFilter==='missed'?'background:var(--pri);color:#fff;border-color:var(--pri)':''}">❌ Missed</button>
         <span style="width:1px;height:18px;background:var(--line);margin:0 4px"></span>
         <span style="font-size:12px;font-weight:600;color:var(--ink-2)">🔤 Sort:</span>
-        <select id="sd-sort-${deptKey}" data-act="single-day-sort" data-dept="${deptKey}"
-          onchange="document.body.dispatchEvent(Object.assign(new Event('click',{bubbles:true}),{target:this}))"
+        <select id="sd-sort-${deptKey}"
+          onchange="window.sortSingleDayTable('${deptKey}', this.value)"
           style="padding:4px 8px;font-size:12px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink)">
-          <option value="time-asc">⏰ By Time (Earliest)</option>
-          <option value="time-desc">⏰ By Time (Latest)</option>
-          <option value="name-asc">🔤 Service Name A-Z</option>
-          <option value="status">📊 By Status</option>
+          <option value="time-asc"${activeSort==='time-asc'?' selected':''}>⏰ By Time (Earliest)</option>
+          <option value="time-desc"${activeSort==='time-desc'?' selected':''}>⏰ By Time (Latest)</option>
+          <option value="name-asc"${activeSort==='name-asc'?' selected':''}>🔤 Service Name A-Z</option>
+          <option value="status"${activeSort==='status'?' selected':''}>📊 By Status</option>
         </select>
         <span style="width:1px;height:18px;background:var(--line);margin:0 4px"></span>
         <input type="text" id="sd-search-${deptKey}" placeholder="Search devotee / service..." oninput="window.filterSingleDayTable('${deptKey}',this.value)"
           style="padding:5px 10px;font-size:12px;border:1px solid var(--line);border-radius:6px;background:var(--surface);min-width:170px">
-        <button class="btn sm pri" data-act="share-roster-photo" data-dept="${deptKey}" style="margin-left:auto;padding:5px 12px;font-size:12px">📸 Share Photo</button>
       </div>
 
       <!-- Service rows -->
@@ -11186,13 +11214,14 @@ function renderDepartmentRosterPanel(deptKey) {
               const isDone = sl.status === 'done' || (sl.devotees && sl.devotees.includes('❌'));
               const isMissed = sl.status === 'missed';
               const statusLabel = isDone ? 'done' : (isMissed ? 'missed' : 'pending');
+              const isHidden = (activeFilter !== 'all' && statusLabel !== activeFilter);
               const statusBadge = isDone
                 ? '<span class="badge b-green">✅ Done</span>'
                 : (isMissed
                   ? '<span class="badge b-red">❌ Missed</span>'
                   : '<span class="badge b-amber">⏳ Pending</span>');
               const rowBg = isDone ? 'rgba(5,150,105,0.04)' : (isMissed ? 'rgba(220,38,38,0.04)' : 'transparent');
-              return `<tr data-status="${statusLabel}" data-service="${esc(s.name.toLowerCase())}" data-devotee="${esc(devText.toLowerCase())}" style="background:${rowBg}">
+              return `<tr data-status="${statusLabel}" data-service="${esc(s.name.toLowerCase())}" data-devotee="${esc(devText.toLowerCase())}" style="background:${rowBg};${isHidden ? 'display:none;' : ''}">
                 <td data-l="Service">
                   <div style="font-weight:700;font-size:13.5px">${esc(s.name)}</div>
                   <div class="tiny" style="color:var(--ink-3)">${s.time}</div>
@@ -18834,34 +18863,19 @@ document.addEventListener('click',e=>{
     const deptK = t.dataset.dept || 'deity';
     const newDate = t.value;
     if (newDate) {
-      APP.singleDayDate = APP.singleDayDate || {};
-      APP.singleDayDate[deptK] = newDate;
-      render();
+      window.setSingleDayDate(deptK, newDate);
     }
     break;
   }
   case 'single-day-nav':stop();{
     const deptK = t.dataset.dept || 'deity';
     const dir = parseInt(t.dataset.dir);
-    APP.singleDayDate = APP.singleDayDate || {};
-    if (dir === 0) {
-      APP.singleDayDate[deptK] = iso(TODAY);
-      toast('Jumped to Today', '📅');
-    } else {
-      const cur = APP.singleDayDate[deptK] || iso(TODAY);
-      const curDate = new Date(cur + 'T00:00:00');
-      curDate.setDate(curDate.getDate() + dir);
-      APP.singleDayDate[deptK] = curDate.toISOString().slice(0,10);
-    }
-    render();
+    window.navSingleDayDate(deptK, dir);
     break;
   }
   case 'single-day-filter':stop();{
     const deptK = t.dataset.dept || 'deity';
     const f = t.dataset.f || 'all';
-    APP.singleDayFilter = APP.singleDayFilter || {};
-    APP.singleDayFilter[deptK] = f;
-    // Apply filter to table without full re-render for speed
     window.applySingleDayFilter(deptK, f);
     break;
   }
