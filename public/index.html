@@ -11294,40 +11294,180 @@ window.filterSummaryMatrixTable = function(q) {
 
 function getAshramThreeDepartmentsSummary(period = 'weekly') {
   initDepartmentRosters();
+  const numDays = period === 'weekly' ? 7 : 30;
+
+  // 1. EXTRACT REAL MORNING SADHANA DATA FROM APP.morningData
+  const mData = APP.morningData;
+  const morningDevMap = {};
+  let totalMorningPresent = 0;
+  let totalMorningDevsCount = 0;
+  let morningSessionsCount = numDays;
+
+  if (mData && mData.byDateRows) {
+    const pMetrics = (period === 'weekly' ? mData.weekly : mData.monthly) ||
+      computePeriodMorningMetrics(mData.byDateRows, mData.availableDates || [mData.date], mData.date, numDays);
+
+    if (pMetrics) {
+      morningSessionsCount = pMetrics.totalSessions || numDays;
+      (pMetrics.devStats || []).forEach(ds => {
+        const kName = (ds.name || '').toLowerCase().trim();
+        const kId = ds.devotee && ds.devotee.id ? ds.devotee.id : '';
+        const item = {
+          pct: ds.attendanceRate !== undefined ? ds.attendanceRate : 0,
+          present: ds.presentCount || 0,
+          total: morningSessionsCount,
+          puncRate: ds.punctualityRate || 0,
+          onTime: ds.onTimeCount || 0,
+          grace: ds.graceCount || 0,
+          late: ds.lateCount || 0,
+          absent: ds.absentCount || 0
+        };
+        if (kName) morningDevMap[kName] = item;
+        if (kId) morningDevMap[kId] = item;
+        const fName = kName.split(' ')[0];
+        if (fName && !morningDevMap['first_' + fName]) morningDevMap['first_' + fName] = item;
+
+        if (item.present > 0) {
+          totalMorningPresent += item.pct;
+          totalMorningDevsCount++;
+        }
+      });
+    }
+  }
+
+  // 2. EXTRACT REAL DEITY DEPARTMENT DATA
   const deityStats = getDepartmentDevoteeStats('deity', period);
-  const cleaningStats = getDepartmentDevoteeStats('cleaning', period);
-
   const deityMap = {};
-  deityStats.forEach(d => { deityMap[d.name] = d; });
+  let totalDeityAssigned = 0, totalDeityDone = 0;
+  deityStats.forEach(d => {
+    const kName = (d.name || '').toLowerCase().trim();
+    deityMap[kName] = d;
+    const fName = kName.split(' ')[0];
+    if (fName && !deityMap['first_' + fName]) deityMap['first_' + fName] = d;
+    totalDeityAssigned += d.assigned;
+    totalDeityDone += d.completed;
+  });
 
+  // 3. EXTRACT REAL CLEANING DEPARTMENT DATA
+  const cleaningStats = getDepartmentDevoteeStats('cleaning', period);
   const cleaningMap = {};
-  cleaningStats.forEach(d => { cleaningMap[d.name] = d; });
+  let totalCleanAssigned = 0, totalCleanDone = 0;
+  cleaningStats.forEach(d => {
+    const kName = (d.name || '').toLowerCase().trim();
+    cleaningMap[kName] = d;
+    const fName = kName.split(' ')[0];
+    if (fName && !cleaningMap['first_' + fName]) cleaningMap['first_' + fName] = d;
+    totalCleanAssigned += d.assigned;
+    totalCleanDone += d.completed;
+  });
+
+  // Department Health Totals
+  const overallDeityHealth = totalDeityAssigned > 0 ? Math.round((totalDeityDone / totalDeityAssigned) * 100) : 100;
+  const overallCleanHealth = totalCleanAssigned > 0 ? Math.round((totalCleanDone / totalCleanAssigned) * 100) : 100;
+  const overallMorningHealth = totalMorningDevsCount > 0 ? Math.round(totalMorningPresent / totalMorningDevsCount) : 0;
 
   const allDevs = DB.devotees || [];
 
   const summaryList = allDevs.map(d => {
-    const dName = d.name;
-    const dDeity = deityMap[dName] || { assigned: 0, completed: 0, missed: 0, substitutions: 0, rate: 100 };
-    const dCleaning = cleaningMap[dName] || { assigned: 0, completed: 0, missed: 0, substitutions: 0, rate: 100 };
+    const dName = d.name || '';
+    const nLower = dName.toLowerCase().trim();
+    const fName = nLower.split(' ')[0];
 
-    // Morning Program stats
-    const morningPct = d.attendancePct || (90 + (d.id ? (parseInt(d.id.replace(/\D/g,'')) || 5) % 10 : 5));
-    const morningTotal = period === 'weekly' ? 7 : 30;
-    const morningPresent = Math.round(morningPct * morningTotal / 100);
+    // Real Morning stats lookup
+    const mInfo = morningDevMap[d.id] || morningDevMap[nLower] || morningDevMap['first_' + fName] || {
+      pct: 0,
+      present: 0,
+      total: morningSessionsCount,
+      puncRate: 0,
+      onTime: 0,
+      grace: 0,
+      late: 0,
+      absent: morningSessionsCount
+    };
 
-    // Deity stats
-    const deityAssigned = dDeity.assigned;
-    const deityCompleted = dDeity.completed;
-    const deityRate = deityAssigned > 0 ? dDeity.rate : (dDeity.completed > 0 ? 100 : 96);
+    // Real Deity stats lookup
+    const dDeity = deityMap[nLower] || deityMap['first_' + fName] || {
+      assigned: 0,
+      completed: 0,
+      missed: 0,
+      substitutions: 0,
+      rate: null
+    };
 
-    // Cleaning stats
-    const cleanAssigned = dCleaning.assigned;
-    const cleanCompleted = dCleaning.completed;
-    const cleanRate = cleanAssigned > 0 ? dCleaning.rate : (dCleaning.completed > 0 ? 100 : 95);
+    // Real Cleaning stats lookup
+    const dCleaning = cleaningMap[nLower] || cleaningMap['first_' + fName] || {
+      assigned: 0,
+      completed: 0,
+      missed: 0,
+      substitutions: 0,
+      rate: null
+    };
 
-    // Combined Ashram Sadhana & Seva Score
-    const overallScore = Math.round((morningPct * 0.4) + (deityRate * 0.35) + (cleanRate * 0.25));
-    const isAllRounder = morningPct >= 85 && (deityCompleted > 0 || deityAssigned > 0) && (cleanCompleted > 0 || cleanAssigned > 0);
+    const hasMorning = mInfo.present > 0;
+    const hasDeity = dDeity.assigned > 0 || dDeity.completed > 0;
+    const hasCleaning = dCleaning.assigned > 0 || dCleaning.completed > 0;
+
+    const deityRate = hasDeity ? (dDeity.rate !== null ? dDeity.rate : Math.round((dDeity.completed / (dDeity.assigned || dDeity.completed || 1)) * 100)) : null;
+    const cleanRate = hasCleaning ? (dCleaning.rate !== null ? dCleaning.rate : Math.round((dCleaning.completed / (dCleaning.assigned || dCleaning.completed || 1)) * 100)) : null;
+
+    // FAIR & ACCURATE COMBINED SEVA SCORE:
+    // Base score is weighted by the departments the devotee is active / assigned in
+    let baseScore = 0;
+    if (hasMorning && hasDeity && hasCleaning) {
+      baseScore = (mInfo.pct * 0.40) + (deityRate * 0.35) + (cleanRate * 0.25);
+    } else if (hasMorning && hasDeity && !hasCleaning) {
+      baseScore = (mInfo.pct * 0.55) + (deityRate * 0.45);
+    } else if (hasMorning && !hasDeity && hasCleaning) {
+      baseScore = (mInfo.pct * 0.60) + (cleanRate * 0.40);
+    } else if (!hasMorning && hasDeity && hasCleaning) {
+      baseScore = (deityRate * 0.55) + (cleanRate * 0.45);
+    } else if (hasMorning) {
+      baseScore = mInfo.pct;
+    } else if (hasDeity) {
+      baseScore = deityRate;
+    } else if (hasCleaning) {
+      baseScore = cleanRate;
+    } else {
+      baseScore = 0;
+    }
+
+    // Missed seva penalties (-5% per missed slot) and Substitute bonuses (+3% per stepping in)
+    const missedPenalty = ((dDeity.missed || 0) + (dCleaning.missed || 0)) * 5;
+    const subBonus = ((dDeity.substitutions || 0) + (dCleaning.substitutions || 0)) * 3;
+    const overallScore = Math.min(100, Math.max(0, Math.round(baseScore - missedPenalty + subBonus)));
+
+    // Strict All-Rounder definition: Must have attended Morning AND completed Deity Seva AND completed Cleaning Seva
+    const isAllRounder = hasMorning && (dDeity.completed > 0) && (dCleaning.completed > 0) && overallScore >= 75;
+
+    // Meaningful Ashram Status Badge
+    let statusText = '⚪ Inactive';
+    let statusClass = 'b-gray';
+
+    if (isAllRounder) {
+      statusText = '🌟 All-Rounder';
+      statusClass = 'b-green';
+    } else if ((dDeity.missed > 0 || dCleaning.missed > 0) && overallScore < 70) {
+      statusText = '⚠️ Needs Attention';
+      statusClass = 'b-amber';
+    } else if (hasDeity && hasCleaning && overallScore >= 70) {
+      statusText = '⚡ Dual Seva';
+      statusClass = 'b-blue';
+    } else if (hasDeity && dDeity.completed > 0) {
+      statusText = '🛕 Pujari Sadhaka';
+      statusClass = 'b-indigo';
+    } else if (hasCleaning && dCleaning.completed > 0) {
+      statusText = '🧹 Cleanliness Sevak';
+      statusClass = 'b-teal';
+    } else if (mInfo.pct >= 75) {
+      statusText = '🌅 Regular Sadhaka';
+      statusClass = 'b-blue';
+    } else if (mInfo.pct >= 40) {
+      statusText = '🌿 Steady Sadhaka';
+      statusClass = 'b-gray';
+    } else if (overallScore > 0) {
+      statusText = '⚠️ Follow-up';
+      statusClass = 'b-amber';
+    }
 
     return {
       id: d.id,
@@ -11335,31 +11475,58 @@ function getAshramThreeDepartmentsSummary(period = 'weekly') {
       phone: d.phone || '',
       bace: d.bace || 'Jia Sarai BACE',
       morning: {
-        pct: morningPct,
-        present: morningPresent,
-        total: morningTotal
+        pct: mInfo.pct,
+        present: mInfo.present,
+        total: mInfo.total,
+        puncRate: mInfo.puncRate
       },
       deity: {
-        assigned: deityAssigned,
-        completed: deityCompleted,
+        assigned: dDeity.assigned,
+        completed: dDeity.completed,
         missed: dDeity.missed,
         subs: dDeity.substitutions,
-        rate: deityRate
+        rate: deityRate,
+        isAssigned: hasDeity
       },
       cleaning: {
-        assigned: cleanAssigned,
-        completed: cleanCompleted,
+        assigned: dCleaning.assigned,
+        completed: dCleaning.completed,
         missed: dCleaning.missed,
         subs: dCleaning.substitutions,
-        rate: cleanRate
+        rate: cleanRate,
+        isAssigned: hasCleaning
       },
       overallScore,
-      isAllRounder
+      isAllRounder,
+      statusText,
+      statusClass
     };
   });
 
-  summaryList.sort((a, b) => b.overallScore - a.overallScore);
-  return summaryList;
+  // Sort: All-Rounders first, then active devotees by score desc, inactive devotees at bottom
+  summaryList.sort((a, b) => {
+    if (a.isAllRounder && !b.isAllRounder) return -1;
+    if (!a.isAllRounder && b.isAllRounder) return 1;
+    if (b.overallScore !== a.overallScore) return b.overallScore - a.overallScore;
+    const aEngaged = (a.morning.present > 0 ? 1 : 0) + (a.deity.completed > 0 ? 1 : 0) + (a.cleaning.completed > 0 ? 1 : 0);
+    const bEngaged = (b.morning.present > 0 ? 1 : 0) + (b.deity.completed > 0 ? 1 : 0) + (b.cleaning.completed > 0 ? 1 : 0);
+    if (bEngaged !== aEngaged) return bEngaged - aEngaged;
+    return a.name.localeCompare(b.name);
+  });
+
+  return {
+    summaryList,
+    stats: {
+      avgMorning: overallMorningHealth,
+      avgDeity: overallDeityHealth,
+      totalDeityDone,
+      totalDeityAssigned,
+      avgCleaning: overallCleanHealth,
+      totalCleanDone,
+      totalCleanAssigned,
+      allRounders: summaryList.filter(d => d.isAllRounder).length
+    }
+  };
 }
 
 /* =========================================================================
@@ -11370,23 +11537,9 @@ function deptAttendanceMatrix(){
   APP.summaryMatrixPeriod = APP.summaryMatrixPeriod || 'weekly';
   const period = APP.summaryMatrixPeriod;
 
-  const summaryList = getAshramThreeDepartmentsSummary(period);
-
-  // Overall metrics across devotees
-  let sumMorning = 0, sumDeity = 0, sumCleaning = 0, allRounders = 0;
-  summaryList.forEach(d => {
-    sumMorning += d.morning.pct;
-    sumDeity += d.deity.rate;
-    sumCleaning += d.cleaning.rate;
-    if (d.isAllRounder) allRounders++;
-  });
-  const totalCount = summaryList.length || 1;
-  const avgMorning = Math.round(sumMorning / totalCount);
-  const avgDeity = Math.round(sumDeity / totalCount);
-  const avgCleaning = Math.round(sumCleaning / totalCount);
-
-  // 7-day timeline dates
-  const days = Array.from({length: 7}, (_, i) => dayOff(-6 + i));
+  const data = getAshramThreeDepartmentsSummary(period);
+  const summaryList = data.summaryList;
+  const kpis = data.stats;
 
   return `<div style="margin-bottom:24px">
     <!-- Action Banner & Period Filter -->
@@ -11408,12 +11561,12 @@ function deptAttendanceMatrix(){
       </div>
     </div>
 
-    <!-- 4 Summary KPI Stat Cards (Active & Clickable) -->
+    <!-- 4 Summary KPI Stat Cards (Accurate & Connected to Real Department Health) -->
     <div class="grid g4" style="margin-bottom:16px">
-      ${stat('Morning Sadhana', `${avgMorning}%`, 'average punctuality rate', {em:'🌅',tint:true,act:'tab',k:'att',v:'Morning programme'})}
-      ${stat('Deity Seva Health', `${avgDeity}%`, 'service completion reliability', {em:'🛕',tint:true,act:'tab',k:'att',v:'Deity Department'})}
-      ${stat('Cleaning Seva Health', `${avgCleaning}%`, 'cleanliness seva reliability', {em:'🧹',tint:true,act:'tab',k:'att',v:'Cleaning'})}
-      ${stat('All-Rounder Servants', `${allRounders} Devotees`, 'active across all 3 depts', {em:'✨',tint:false})}
+      ${stat('Morning Sadhana', `${kpis.avgMorning}%`, 'average attendance rate', {em:'🌅',tint:true,act:'tab',k:'att',v:'Morning programme'})}
+      ${stat('Deity Seva Health', `${kpis.avgDeity}%`, `${kpis.totalDeityDone} / ${kpis.totalDeityAssigned} sevas completed`, {em:'🛕',tint:true,act:'tab',k:'att',v:'Deity Department'})}
+      ${stat('Cleaning Seva Health', `${kpis.avgCleaning}%`, `${kpis.totalCleanDone} / ${kpis.totalCleanAssigned} sevas completed`, {em:'🧹',tint:true,act:'tab',k:'att',v:'Cleaning'})}
+      ${stat('All-Rounder Servants', `${kpis.allRounders} Devotees`, 'active across all 3 depts', {em:'✨',tint:kpis.allRounders>0})}
     </div>
 
     <!-- Main 3-Department Summary Matrix Table -->
@@ -11446,8 +11599,6 @@ function deptAttendanceMatrix(){
           </thead>
           <tbody>
             ${summaryList.map(d => {
-              const tier = d.overallScore >= 95 ? '🌟 All-Rounder' : (d.overallScore >= 85 ? '⚡ Dedicated' : (d.overallScore >= 75 ? '🌿 Steady' : '⚠️ Follow-up'));
-              const tierClass = d.overallScore >= 95 ? 'b-green' : (d.overallScore >= 85 ? 'b-blue' : (d.overallScore >= 75 ? 'b-gray' : 'b-amber'));
               return `<tr data-name="${esc(d.name.toLowerCase())}">
                 <td data-l="Devotee">
                   <div style="display:flex;align-items:center;gap:8px">
@@ -11459,16 +11610,31 @@ function deptAttendanceMatrix(){
                   </div>
                 </td>
                 <td data-l="Morning Program" style="text-align:center">
-                  <div style="font-weight:700;color:var(--ink)">${d.morning.pct}%</div>
-                  <div class="tiny" style="color:var(--ink-3)">${d.morning.present}/${d.morning.total} days on-time</div>
+                  ${d.morning.present > 0 ? `
+                    <div style="font-weight:700;color:var(--ink)">${d.morning.pct}%</div>
+                    <div class="tiny" style="color:var(--ink-3)">${d.morning.present}/${d.morning.total} days attended</div>
+                  ` : `
+                    <div style="font-weight:600;color:var(--ink-3)">0%</div>
+                    <div class="tiny" style="color:var(--ink-3);font-style:italic">0/${d.morning.total} days</div>
+                  `}
                 </td>
                 <td data-l="Deity Department" style="text-align:center">
-                  <div style="font-weight:700;color:${d.deity.completed>0?'var(--green)':'var(--ink)'}">${d.deity.completed}/${d.deity.assigned || d.deity.completed || '0'} sevas</div>
-                  <div class="tiny" style="color:var(--ink-3)">${d.deity.rate}% reliability${d.deity.missed>0?` · <b style="color:var(--err)">${d.deity.missed} missed</b>`:''}</div>
+                  ${d.deity.isAssigned ? `
+                    <div style="font-weight:700;color:${d.deity.completed>0?'var(--green)':'var(--ink)'}">${d.deity.completed}/${d.deity.assigned || d.deity.completed} sevas</div>
+                    <div class="tiny" style="color:var(--ink-3)">${d.deity.rate}% reliability${d.deity.missed>0?` · <b style="color:var(--err)">${d.deity.missed} missed</b>`:''}${d.deity.subs>0?` · <b style="color:var(--pri)">+${d.deity.subs} sub</b>`:''}</div>
+                  ` : `
+                    <div style="font-weight:600;color:var(--ink-3)">0/0 sevas</div>
+                    <div class="tiny" style="color:var(--ink-3);font-style:italic">Not assigned</div>
+                  `}
                 </td>
                 <td data-l="Cleaning Department" style="text-align:center">
-                  <div style="font-weight:700;color:${d.cleaning.completed>0?'var(--teal)':'var(--ink)'}">${d.cleaning.completed}/${d.cleaning.assigned || d.cleaning.completed || '0'} sevas</div>
-                  <div class="tiny" style="color:var(--ink-3)">${d.cleaning.rate}% reliability${d.cleaning.missed>0?` · <b style="color:var(--err)">${d.cleaning.missed} missed</b>`:''}</div>
+                  ${d.cleaning.isAssigned ? `
+                    <div style="font-weight:700;color:${d.cleaning.completed>0?'var(--teal)':'var(--ink)'}">${d.cleaning.completed}/${d.cleaning.assigned || d.cleaning.completed} sevas</div>
+                    <div class="tiny" style="color:var(--ink-3)">${d.cleaning.rate}% reliability${d.cleaning.missed>0?` · <b style="color:var(--err)">${d.cleaning.missed} missed</b>`:''}${d.cleaning.subs>0?` · <b style="color:var(--pri)">+${d.cleaning.subs} sub</b>`:''}</div>
+                  ` : `
+                    <div style="font-weight:600;color:var(--ink-3)">0/0 sevas</div>
+                    <div class="tiny" style="color:var(--ink-3);font-style:italic">Not assigned</div>
+                  `}
                 </td>
                 <td data-l="Combined Score">
                   <div style="display:flex;align-items:center;gap:8px">
@@ -11479,7 +11645,7 @@ function deptAttendanceMatrix(){
                   </div>
                 </td>
                 <td data-l="Status" style="text-align:center">
-                  <span class="badge ${tierClass}">${tier}</span>
+                  <span class="badge ${d.statusClass}">${d.statusText}</span>
                 </td>
               </tr>`;
             }).join('')}
@@ -11520,12 +11686,18 @@ function deptAttendanceMatrix(){
                 </div>
               </td>
               ${days.map(d => {
+                const dStr = iso(d);
+                const dRows = (APP.morningData && APP.morningData.byDateRows && APP.morningData.byDateRows[dStr]) || [];
+                const pres = dRows.filter(r => r.status !== 'Absent').length;
+                const tot = dRows.length;
+                const p = tot > 0 ? Math.round((pres / tot) * 100) : (kpis.avgMorning || 0);
+                const onT = dRows.filter(r => r.status === 'On Time' || r.status === 'Grace').length;
                 return `<td data-l="${fmtD(d)}" style="text-align:center">
-                  <div style="font-weight:700;color:var(--green)">94%</div>
-                  <div class="tiny" style="color:var(--ink-3)">14/15 on-time</div>
+                  <div style="font-weight:700;color:${p>=80?'var(--green)':'var(--saffron)'}">${p}%</div>
+                  <div class="tiny" style="color:var(--ink-3)">${onT}/${tot || pres || 1} on-time</div>
                 </td>`;
               }).join('')}
-              <td data-l="Average" style="text-align:center;font-weight:700;color:var(--green)">94%</td>
+              <td data-l="Average" style="text-align:center;font-weight:700;color:var(--green)">${kpis.avgMorning}%</td>
             </tr>
 
             <!-- Row 2: Deity Department -->
@@ -11550,7 +11722,7 @@ function deptAttendanceMatrix(){
                   <div class="tiny" style="color:var(--ink-3)">${comp}/${tot} sevas</div>
                 </td>`;
               }).join('')}
-              <td data-l="Average" style="text-align:center;font-weight:700;color:var(--green)">98%</td>
+              <td data-l="Average" style="text-align:center;font-weight:700;color:var(--green)">${kpis.avgDeity}%</td>
             </tr>
 
             <!-- Row 3: Cleaning Department -->
@@ -11575,7 +11747,7 @@ function deptAttendanceMatrix(){
                   <div class="tiny" style="color:var(--ink-3)">${comp}/${tot} sevas</div>
                 </td>`;
               }).join('')}
-              <td data-l="Average" style="text-align:center;font-weight:700;color:var(--green)">96%</td>
+              <td data-l="Average" style="text-align:center;font-weight:700;color:var(--green)">${kpis.avgCleaning}%</td>
             </tr>
           </tbody>
         </table>
@@ -18511,18 +18683,20 @@ document.addEventListener('click',e=>{
   case 'export-summary-matrix-csv':
   case 'export-dept-matrix':stop();{
     const period = APP.summaryMatrixPeriod || 'weekly';
-    const list = getAshramThreeDepartmentsSummary(period);
+    const data = getAshramThreeDepartmentsSummary(period);
+    const list = data.summaryList;
     const rows = [
-      ['Devotee Name', 'Morning Program Punctuality (%)', 'Morning Days Present', 'Deity Sevas Completed', 'Deity Reliability (%)', 'Cleaning Sevas Completed', 'Cleaning Reliability (%)', 'Combined Ashram Seva Score (%)'],
+      ['Devotee Name', 'Morning Program Attendance (%)', 'Morning Days Present', 'Deity Sevas Completed', 'Deity Reliability (%)', 'Cleaning Sevas Completed', 'Cleaning Reliability (%)', 'Combined Ashram Seva Score (%)', 'Ashram Status'],
       ...list.map(d => [
         d.name,
         d.morning.pct + '%',
         `="${d.morning.present}/${d.morning.total}"`,
-        `="${d.deity.completed}/${d.deity.assigned || d.deity.completed}"`,
-        d.deity.rate + '%',
-        `="${d.cleaning.completed}/${d.cleaning.assigned || d.cleaning.completed}"`,
-        d.cleaning.rate + '%',
-        d.overallScore + '%'
+        d.deity.isAssigned ? `="${d.deity.completed}/${d.deity.assigned || d.deity.completed}"` : '0/0 (Not assigned)',
+        d.deity.isAssigned ? d.deity.rate + '%' : '—',
+        d.cleaning.isAssigned ? `="${d.cleaning.completed}/${d.cleaning.assigned || d.cleaning.completed}"` : '0/0 (Not assigned)',
+        d.cleaning.isAssigned ? d.cleaning.rate + '%' : '—',
+        d.overallScore + '%',
+        d.statusText
       ])
     ];
     downloadCSV(`ashram_3_departments_summary_matrix_${period}_${iso(TODAY)}.csv`, rows);
