@@ -7765,11 +7765,44 @@ function fmtExactDate(s) {
   return isToday ? `Today · ${formatted}` : formatted;
 }
 
-function filterAndSortMorningPeriodDevs(devList, q = '', attFilter = '', puncFilter = '', sortMode = 'att_desc') {
+function filterAndSortMorningPeriodDevs(devList, q = '', attFilter = '', puncFilter = '', sortMode = 'att_desc', filterSt = '', activeBucket = '') {
   let list = (devList || []).slice();
   if (q) {
     const ql = q.toLowerCase().trim();
     list = list.filter(d => d.name.toLowerCase().includes(ql) || (d.appointment || '').toLowerCase().includes(ql));
+  }
+  // Interactive drill-down from Round Stat Cards or Donut Chart
+  if (filterSt) {
+    if (filterSt === 'Attended' || filterSt === 'Active') {
+      list = list.filter(d => d.presentCount > 0);
+    } else if (filterSt === 'On Time') {
+      list = list.filter(d => d.onTimeCount > 0);
+    } else if (filterSt === 'Grace') {
+      list = list.filter(d => d.graceCount > 0);
+    } else if (filterSt === 'Late') {
+      list = list.filter(d => d.lateCount > 0 || (d.veryLateCount || 0) > 0);
+    } else if (filterSt === 'Very late') {
+      list = list.filter(d => (d.veryLateCount || 0) > 0);
+    } else if (filterSt === 'Absent') {
+      list = list.filter(d => d.absentCount > 0);
+    }
+  }
+  // Interactive drill-down from Arrival Distribution Timeline bars
+  if (activeBucket) {
+    list = list.filter(d => {
+      if (!d.dailyPunches || !d.dailyPunches.length) return false;
+      return d.dailyPunches.some(p => {
+        if (p.status === 'Absent' || !p.time || p.time === '—') return false;
+        const m = parseTimeMinutes(p.time);
+        if (m == null) return false;
+        if (activeBucket === '< 04:30 AM') return m <= 270;
+        if (activeBucket === '04:30–05:30') return m > 270 && m <= 330;
+        if (activeBucket === '05:30–06:30') return m > 330 && m <= 390;
+        if (activeBucket === '06:30–07:00') return m > 390 && m <= 420;
+        if (activeBucket === '> 07:00 AM') return m > 420;
+        return false;
+      });
+    });
   }
   if (attFilter) {
     if (attFilter === 'star') list = list.filter(d => d.attendanceRate >= 80);
@@ -7779,8 +7812,8 @@ function filterAndSortMorningPeriodDevs(devList, q = '', attFilter = '', puncFil
   }
   if (puncFilter) {
     if (puncFilter === 'high') list = list.filter(d => d.punctualityRate >= 80);
-    else if (puncFilter === 'mid') list = list.filter(d => d.punctualityRate >= 50 && d.punctualityRate < 80);
-    else if (puncFilter === 'low') list = list.filter(d => d.punctualityRate < 50);
+    else if (puncFilter === 'mid') list = list.filter(d => d.punctualityRate >= 60 && d.punctualityRate < 80);
+    else if (puncFilter === 'low') list = list.filter(d => d.punctualityRate < 60);
   }
   list.sort((a, b) => {
     if (sortMode === 'att_asc') return (a.attendanceRate - b.attendanceRate) || (a.presentCount - b.presentCount) || a.name.localeCompare(b.name);
@@ -7790,6 +7823,36 @@ function filterAndSortMorningPeriodDevs(devList, q = '', attFilter = '', puncFil
     if (sortMode === 'name_asc') return a.name.localeCompare(b.name);
     // Default: att_desc (Highest attendance first)
     return (b.attendanceRate - a.attendanceRate) || (b.presentCount - a.presentCount) || (b.punctualityRate - a.punctualityRate) || a.name.localeCompare(b.name);
+  });
+  return list;
+}
+
+function filterAndSortMorningProgressDevs(devList, q = '', growthFilter = '', punctFilter = '', sortMode = 'growth_desc') {
+  let list = (devList || []).slice();
+  if (q) {
+    const ql = q.toLowerCase().trim();
+    list = list.filter(d => d.name.toLowerCase().includes(ql) || (d.appointment || '').toLowerCase().includes(ql));
+  }
+  if (growthFilter) {
+    if (growthFilter === 'positive') list = list.filter(d => d.punctualityGrowthDelta > 0);
+    else if (growthFilter === 'negative') list = list.filter(d => d.punctualityGrowthDelta < 0);
+    else if (growthFilter === 'steady') list = list.filter(d => d.punctualityGrowthDelta === 0);
+    else if (growthFilter === 'followup') list = list.filter(d => (d.statusBadge || '').includes('Follow-up'));
+    else if (growthFilter === 'exemplary') list = list.filter(d => (d.statusBadge || '').includes('Exemplary'));
+  }
+  if (punctFilter) {
+    if (punctFilter === 'high') list = list.filter(d => d.punctualityRate >= 80);
+    else if (punctFilter === 'mid') list = list.filter(d => d.punctualityRate >= 60 && d.punctualityRate < 80);
+    else if (punctFilter === 'low') list = list.filter(d => d.punctualityRate < 60);
+  }
+  list.sort((a, b) => {
+    if (sortMode === 'growth_asc') return (a.punctualityGrowthDelta - b.punctualityGrowthDelta) || (a.punctualityRate - b.punctualityRate);
+    if (sortMode === 'punct_desc') return (b.punctualityRate - a.punctualityRate) || (b.punctualityGrowthDelta - a.punctualityGrowthDelta);
+    if (sortMode === 'punct_asc') return (a.punctualityRate - b.punctualityRate) || (a.punctualityGrowthDelta - b.punctualityGrowthDelta);
+    if (sortMode === 'present_desc') return (b.presentCount - a.presentCount) || (b.punctualityRate - a.punctualityRate);
+    if (sortMode === 'name_asc') return a.name.localeCompare(b.name);
+    // Default: growth_desc (Highest growth delta first)
+    return (b.punctualityGrowthDelta - a.punctualityGrowthDelta) || (b.punctualityRate - a.punctualityRate) || a.name.localeCompare(b.name);
   });
   return list;
 }
