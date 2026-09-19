@@ -12796,6 +12796,152 @@ window.setAccountsSearch = function(q) {
   render();
 };
 
+window.renderExpenseCustomModal = function(isEdit) {
+  window.initAccountsState();
+  const exp = APP.accountsState.editingExpense || {};
+  const modalSec = APP.accountsState.modalSection || exp.section || 'preaching';
+  const isModalPreach = modalSec === 'preaching';
+  const modalEntities = isModalPreach ? window.getPreachingEntities() : window.getDepartmentEntities();
+
+  const titleText = isEdit
+    ? '✏️ Edit ' + (isModalPreach ? 'Preaching' : 'Department') + ' Expense'
+    : '➕ Record ' + (isModalPreach ? 'Preaching' : 'Department') + ' Expense';
+
+  const entityLabel = isModalPreach ? '📢 Preaching Batch / Program' : '🏢 Department';
+  const placeholderTitle = isModalPreach ? 'e.g. Outreach Prasadam Feast & Sweets' : 'e.g. Fresh Roses for Mangala Aarti';
+  const defaultCategory = isModalPreach ? 'Outreach Prasadam & Feasts' : 'Flowers & Garlands';
+  const submitText = isEdit ? '💾 Update in MongoDB' : '🚀 Save to MongoDB';
+
+  let entitiesOptionsHtml = '';
+  for (let i = 0; i < modalEntities.length; i++) {
+    const d = modalEntities[i];
+    const isSelected = exp.deptName === d.name ? ' selected' : '';
+    const icon = d.icon || (isModalPreach ? '🎓' : '🏢');
+    const sub = d.level || d.category || '';
+    const subText = sub ? ' (' + sub + ')' : '';
+    entitiesOptionsHtml += '<option value="' + esc(d.name) + '"' + isSelected + '>' + icon + ' ' + esc(d.name) + esc(subText) + '</option>';
+  }
+
+  const preachCatOptions = `
+    <option value="Outreach Prasadam & Feasts">
+    <option value="Course Manuals & Study Guides">
+    <option value="Books & Literature (BBT)">
+    <option value="Hall & Venue Booking">
+    <option value="Sound, Mic & Projector AV">
+    <option value="Banners, Standees & Posters">
+    <option value="Transport & Travel for Preachers">
+    <option value="Gifts, Certificates & Prizes">
+    <option value="Youth Outreach & Seminars">
+    <option value="Stationery & Registration Kits">
+    <option value="Refreshments & Snacks">
+    <option value="Miscellaneous Preaching">
+  `;
+  const deptCatOptions = `
+    <option value="Flowers & Garlands">
+    <option value="Bhoga & Groceries">
+    <option value="Cleaning Supplies">
+    <option value="Maintenance & Electrical">
+    <option value="Sound & AV">
+    <option value="Printing & Literature">
+    <option value="Transport & Travel">
+    <option value="Medical & First Aid">
+    <option value="Pooja Items">
+    <option value="Utensils">
+    <option value="Utilities & Bills">
+    <option value="Miscellaneous">
+  `;
+  const categoriesListHtml = isModalPreach ? preachCatOptions : deptCatOptions;
+
+  const devoteesListHtml = (DB.devotees || []).map(d => '<option value="' + esc(d.name) + '">').join('');
+
+  APP.customModalHtml = `
+  <div class="card" data-stop="1" style="width:100%;max-width:540px;max-height:92vh;overflow-y:auto;box-shadow:0 24px 48px rgba(0,0,0,0.28);border-radius:14px;border:1.5px solid var(--line);background:var(--surface)">
+    <div class="card-h" style="border-bottom:1px solid var(--line);padding:14px 18px;display:flex;align-items:center;justify-content:space-between">
+      <h3 style="margin:0;font-size:16px;display:flex;align-items:center;gap:8px">
+        <span>${esc(titleText)}</span>
+      </h3>
+      <button type="button" class="btn sm" data-act="close-scrim" onclick="window.closeAccountsModal()" style="padding:2px 8px;border-radius:50%;font-size:14px">✕</button>
+    </div>
+    <form id="expense-modal-form" onsubmit="window.submitExpenseForm(event)" style="padding:18px;display:flex;flex-direction:column;gap:14px">
+      <div>
+        <label style="font-weight:600;font-size:12.5px;display:block;margin-bottom:5px">
+          ${esc(entityLabel)} <span style="color:var(--danger)">*</span>
+        </label>
+        <select name="deptName" required style="width:100%;padding:8px 10px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:13px">
+          ${entitiesOptionsHtml}
+        </select>
+      </div>
+      <div>
+        <label style="font-weight:600;font-size:12.5px;display:block;margin-bottom:5px">📝 Expense Title / Description <span style="color:var(--danger)">*</span></label>
+        <input type="text" name="title" required value="${esc(exp.title || '')}" placeholder="${esc(placeholderTitle)}" style="width:100%;padding:8px 10px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:13px">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div>
+          <label style="font-weight:600;font-size:12.5px;display:block;margin-bottom:5px">🏷️ Category</label>
+          <input type="text" name="category" list="expense-categories-list" value="${esc(exp.category || defaultCategory)}" placeholder="Category name" style="width:100%;padding:8px 10px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:13px">
+          <datalist id="expense-categories-list">
+            ${categoriesListHtml}
+          </datalist>
+        </div>
+        <div>
+          <label style="font-weight:600;font-size:12.5px;display:block;margin-bottom:5px">💰 Amount (₹) <span style="color:var(--danger)">*</span></label>
+          <input type="number" name="amount" min="1" step="any" required value="${exp.amount || ''}" placeholder="e.g. 1500" style="width:100%;padding:8px 10px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:13px;font-weight:bold">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div>
+          <label style="font-weight:600;font-size:12.5px;display:block;margin-bottom:5px">📅 Date <span style="color:var(--danger)">*</span></label>
+          <input type="date" name="date" required value="${exp.date || new Date().toISOString().slice(0, 10)}" style="width:100%;padding:8px 10px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:13px">
+        </div>
+        <div>
+          <label style="font-weight:600;font-size:12.5px;display:block;margin-bottom:5px">💳 Payment Mode</label>
+          <select name="paymentMode" style="width:100%;padding:8px 10px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:13px">
+            <option value="UPI"${exp.paymentMode === 'UPI' ? ' selected' : ''}>UPI / GPay / Paytm</option>
+            <option value="Cash"${exp.paymentMode === 'Cash' ? ' selected' : ''}>Cash</option>
+            <option value="Bank Transfer"${exp.paymentMode === 'Bank Transfer' ? ' selected' : ''}>Bank Transfer / NEFT</option>
+            <option value="Card"${exp.paymentMode === 'Card' ? ' selected' : ''}>Debit / Credit Card</option>
+            <option value="Cheque"${exp.paymentMode === 'Cheque' ? ' selected' : ''}>Cheque</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div>
+          <label style="font-weight:600;font-size:12.5px;display:block;margin-bottom:5px">👤 Paid By Devotee</label>
+          <input type="text" name="paidBy" list="expense-devotees-list" value="${esc(exp.paidBy || '')}" placeholder="Devotee name" style="width:100%;padding:8px 10px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:13px">
+          <datalist id="expense-devotees-list">
+            ${devoteesListHtml}
+          </datalist>
+        </div>
+        <div>
+          <label style="font-weight:600;font-size:12.5px;display:block;margin-bottom:5px">🧾 Bill / Invoice Ref</label>
+          <input type="text" name="billRef" value="${esc(exp.billRef || '')}" placeholder="e.g. INV-1049" style="width:100%;padding:8px 10px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:13px">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div>
+          <label style="font-weight:600;font-size:12.5px;display:block;margin-bottom:5px">📊 Status</label>
+          <select name="status" style="width:100%;padding:8px 10px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:13px">
+            <option value="Approved"${exp.status === 'Approved' ? ' selected' : ''}>✅ Approved</option>
+            <option value="Pending"${exp.status === 'Pending' ? ' selected' : ''}>⏳ Pending</option>
+            <option value="Reimbursed"${exp.status === 'Reimbursed' ? ' selected' : ''}>🔄 Reimbursed</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-weight:600;font-size:12.5px;display:block;margin-bottom:5px">📌 Additional Notes</label>
+          <input type="text" name="notes" value="${esc(exp.notes || '')}" placeholder="Optional details / shop name" style="width:100%;padding:8px 10px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:13px">
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-top:8px;border-top:1px solid var(--line);padding-top:14px">
+        <button type="button" class="btn" data-act="close-scrim" onclick="window.closeAccountsModal()">Cancel</button>
+        <button type="submit" class="btn pri" style="min-width:140px">${submitText}</button>
+      </div>
+    </form>
+  </div>`;
+
+  APP.modal = 'custom';
+  render();
+};
+
 window.openAddExpenseModal = function(prefillDeptName, section) {
   window.initAccountsState();
   const sec = section || APP.accountsState.subSection || 'preaching';
@@ -12821,7 +12967,7 @@ window.openAddExpenseModal = function(prefillDeptName, section) {
     status: 'Approved',
     notes: ''
   };
-  render();
+  window.renderExpenseCustomModal(false);
 };
 
 window.openEditExpenseModal = function(expenseId) {
@@ -12834,9 +12980,8 @@ window.openEditExpenseModal = function(expenseId) {
   APP.accountsState.modalSection = window.getExpenseSection(exp);
   APP.accountsState.activeModal = 'edit-expense';
   APP.accountsState.editingExpense = { ...exp };
-  render();
+  window.renderExpenseCustomModal(true);
 };
-
 
 window.onBudgetEntitySelect = function(id) {
   window.initAccountsState();
@@ -12853,6 +12998,51 @@ window.openBudgetModal = function(prefillDeptName, section) {
   APP.accountsState.modalSection = sec;
   APP.accountsState.activeModal = 'manage-budget';
   APP.accountsState.editingBudgetDept = prefillDeptName || '';
+
+  const isModalPreach = sec === 'preaching';
+  const modalEntities = isModalPreach ? window.getPreachingEntities() : window.getDepartmentEntities();
+  const typeLabel = isModalPreach ? 'Preaching Batch / Program' : 'Department';
+  const defaultIcon = isModalPreach ? '🎓' : '🏢';
+
+  const selEntity = prefillDeptName ? modalEntities.find(x => x.name === prefillDeptName || x.id === prefillDeptName) : modalEntities[0];
+  const initialAllocated = (selEntity && selEntity.allocated) || 0;
+
+  let optionsHtml = '';
+  for (let i = 0; i < modalEntities.length; i++) {
+    const d = modalEntities[i];
+    const isSel = (prefillDeptName === d.name || prefillDeptName === d.id) ? ' selected' : '';
+    const ic = d.icon || defaultIcon;
+    const sub = d.level || d.category || '';
+    const subText = sub ? ' (' + sub + ')' : '';
+    optionsHtml += '<option value="' + esc(d.id) + '"' + isSel + '>' + ic + ' ' + esc(d.name) + esc(subText) + '</option>';
+  }
+
+  APP.customModalHtml = `
+  <div class="card" data-stop="1" style="width:100%;max-width:480px;box-shadow:0 24px 48px rgba(0,0,0,0.28);border-radius:14px;border:1.5px solid var(--line);background:var(--surface)">
+    <div class="card-h" style="border-bottom:1px solid var(--line);padding:14px 18px;display:flex;align-items:center;justify-content:space-between">
+      <h3 style="margin:0;font-size:16px">💼 Set ${esc(typeLabel)} Budget</h3>
+      <button type="button" class="btn sm" data-act="close-scrim" onclick="window.closeAccountsModal()" style="padding:2px 8px;border-radius:50%">✕</button>
+    </div>
+    <form id="budget-modal-form" onsubmit="window.submitBudgetUpdate(event)" style="padding:18px;display:flex;flex-direction:column;gap:14px">
+      <div>
+        <label style="font-weight:600;font-size:12.5px;display:block;margin-bottom:5px">Select ${esc(typeLabel)} <span style="color:var(--danger)">*</span></label>
+        <select name="deptId" id="budget-dept-select" required style="width:100%;padding:8px 10px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:13px" onchange="window.onBudgetEntitySelect(this.value)">
+          ${optionsHtml}
+        </select>
+      </div>
+      <div>
+        <label style="font-weight:600;font-size:12.5px;display:block;margin-bottom:5px">New Allocated Budget (₹) <span style="color:var(--danger)">*</span></label>
+        <input type="number" id="budget-alloc-input" name="allocated" min="0" step="500" required value="${initialAllocated}" style="width:100%;padding:8px 10px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:14px;font-weight:bold">
+        <div class="tiny" style="color:var(--ink-3);margin-top:4px">Sets total sanctioned spending budget in MongoDB.</div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-top:8px;border-top:1px solid var(--line);padding-top:14px">
+        <button type="button" class="btn" data-act="close-scrim" onclick="window.closeAccountsModal()">Cancel</button>
+        <button type="submit" class="btn pri" style="min-width:130px">💾 Update Budget</button>
+      </div>
+    </form>
+  </div>`;
+
+  APP.modal = 'custom';
   render();
 };
 
@@ -12861,6 +13051,8 @@ window.closeAccountsModal = function() {
   APP.accountsState.activeModal = null;
   APP.accountsState.editingExpense = null;
   APP.accountsState.editingBudgetDept = null;
+  APP.modal = '';
+  APP.customModalHtml = '';
   render();
 };
 
@@ -13160,175 +13352,6 @@ function deptAccountsPanel() {
   if (statusFilter !== 'all') activeFilterCount++;
   if (query) activeFilterCount++;
 
-  // Modal rendering
-  let modalHtml = '';
-  if (APP.accountsState.activeModal === 'add-expense' || APP.accountsState.activeModal === 'edit-expense') {
-    const isEdit = APP.accountsState.activeModal === 'edit-expense';
-    const exp = APP.accountsState.editingExpense || {};
-    const modalSec = APP.accountsState.modalSection || 'preaching';
-    const isModalPreach = modalSec === 'preaching';
-    const modalEntities = isModalPreach ? window.getPreachingEntities() : window.getDepartmentEntities();
-
-    modalHtml = `
-    <div class="scrim" style="display:flex;align-items:center;justify-content:center;position:fixed;inset:0;background:rgba(15,23,42,0.65);z-index:9999;backdrop-filter:blur(3px)" onclick="if(event.target===this)window.closeAccountsModal()">
-      <div class="card" style="width:100%;max-width:540px;max-height:92vh;overflow-y:auto;box-shadow:0 24px 48px rgba(0,0,0,0.28);border-radius:14px;border:1.5px solid var(--line);background:var(--surface)">
-        <div class="card-h" style="border-bottom:1px solid var(--line);padding:14px 18px;display:flex;align-items:center;justify-content:space-between">
-          <h3 style="margin:0;font-size:16px;display:flex;align-items:center;gap:8px">
-            <span>${isEdit ? '✏️ Edit ' + (isModalPreach ? 'Preaching' : 'Department') + ' Expense' : '➕ Record ' + (isModalPreach ? 'Preaching' : 'Department') + ' Expense'}</span>
-          </h3>
-          <button type="button" class="btn sm" onclick="window.closeAccountsModal()" style="padding:2px 8px;border-radius:50%;font-size:14px">✕</button>
-        </div>
-        <form id="expense-modal-form" onsubmit="window.submitExpenseForm(event)" style="padding:18px;display:flex;flex-direction:column;gap:14px">
-          <div>
-            <label style="font-weight:600;font-size:12.5px;display:block;margin-bottom:5px">
-              ${isModalPreach ? '📢 Preaching Batch / Program' : '🏢 Department'} <span style="color:var(--danger)">*</span>
-            </label>
-            <select name="deptName" required style="width:100%;padding:8px 10px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:13px">
-              ${modalEntities.map(d => `<option value="${esc(d.name)}"${exp.deptName === d.name ? ' selected' : ''}>${d.icon || (isModalPreach ? '🎓' : '🏢')} ${esc(d.name)} (${esc(d.level || d.category || '')})</option>`).join('')}
-            </select>
-          </div>
-          <div>
-            <label style="font-weight:600;font-size:12.5px;display:block;margin-bottom:5px">📝 Expense Title / Description <span style="color:var(--danger)">*</span></label>
-            <input type="text" name="title" required value="${esc(exp.title || '')}" placeholder="${isModalPreach ? 'e.g. Outreach Prasadam Feast & Sweets' : 'e.g. Fresh Roses for Mangala Aarti'}" style="width:100%;padding:8px 10px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:13px">
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-            <div>
-              <label style="font-weight:600;font-size:12.5px;display:block;margin-bottom:5px">🏷️ Category</label>
-              <input type="text" name="category" list="expense-categories-list" value="${esc(exp.category || (isModalPreach ? 'Outreach Prasadam & Feasts' : 'Flowers & Garlands'))}" placeholder="Category name" style="width:100%;padding:8px 10px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:13px">
-              <datalist id="expense-categories-list">
-                ${isModalPreach ? `
-                  <option value="Outreach Prasadam & Feasts">
-                  <option value="Course Manuals & Study Guides">
-                  <option value="Books & Literature (BBT)">
-                  <option value="Hall & Venue Booking">
-                  <option value="Sound, Mic & Projector AV">
-                  <option value="Banners, Standees & Posters">
-                  <option value="Transport & Travel for Preachers">
-                  <option value="Gifts, Certificates & Prizes">
-                  <option value="Youth Outreach & Seminars">
-                  <option value="Stationery & Registration Kits">
-                  <option value="Refreshments & Snacks">
-                  <option value="Miscellaneous Preaching">
-                ` : `
-                  <option value="Flowers & Garlands">
-                  <option value="Bhoga & Groceries">
-                  <option value="Cleaning Supplies">
-                  <option value="Maintenance & Electrical">
-                  <option value="Sound & AV">
-                  <option value="Printing & Literature">
-                  <option value="Transport & Travel">
-                  <option value="Medical & First Aid">
-                  <option value="Pooja Items">
-                  <option value="Utensils">
-                  <option value="Utilities & Bills">
-                  <option value="Miscellaneous">
-                `}
-              </datalist>
-            </div>
-            <div>
-              <label style="font-weight:600;font-size:12.5px;display:block;margin-bottom:5px">💰 Amount (₹) <span style="color:var(--danger)">*</span></label>
-              <input type="number" name="amount" min="1" step="any" required value="${exp.amount || ''}" placeholder="e.g. 1500" style="width:100%;padding:8px 10px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:13px;font-weight:bold">
-            </div>
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-            <div>
-              <label style="font-weight:600;font-size:12.5px;display:block;margin-bottom:5px">📅 Date <span style="color:var(--danger)">*</span></label>
-              <input type="date" name="date" required value="${exp.date || new Date().toISOString().slice(0, 10)}" style="width:100%;padding:8px 10px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:13px">
-            </div>
-            <div>
-              <label style="font-weight:600;font-size:12.5px;display:block;margin-bottom:5px">💳 Payment Mode</label>
-              <select name="paymentMode" style="width:100%;padding:8px 10px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:13px">
-                <option value="UPI"${exp.paymentMode === 'UPI' ? ' selected' : ''}>UPI / GPay / Paytm</option>
-                <option value="Cash"${exp.paymentMode === 'Cash' ? ' selected' : ''}>Cash</option>
-                <option value="Bank Transfer"${exp.paymentMode === 'Bank Transfer' ? ' selected' : ''}>Bank Transfer / NEFT</option>
-                <option value="Card"${exp.paymentMode === 'Card' ? ' selected' : ''}>Debit / Credit Card</option>
-                <option value="Cheque"${exp.paymentMode === 'Cheque' ? ' selected' : ''}>Cheque</option>
-              </select>
-            </div>
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-            <div>
-              <label style="font-weight:600;font-size:12.5px;display:block;margin-bottom:5px">👤 Paid By Devotee</label>
-              <input type="text" name="paidBy" list="expense-devotees-list" value="${esc(exp.paidBy || '')}" placeholder="Devotee name" style="width:100%;padding:8px 10px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:13px">
-              <datalist id="expense-devotees-list">
-                ${(DB.devotees || []).map(d => `<option value="${esc(d.name)}">`).join('')}
-              </datalist>
-            </div>
-            <div>
-              <label style="font-weight:600;font-size:12.5px;display:block;margin-bottom:5px">🧾 Bill / Invoice Ref</label>
-              <input type="text" name="billRef" value="${esc(exp.billRef || '')}" placeholder="e.g. INV-1049" style="width:100%;padding:8px 10px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:13px">
-            </div>
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-            <div>
-              <label style="font-weight:600;font-size:12.5px;display:block;margin-bottom:5px">📊 Status</label>
-              <select name="status" style="width:100%;padding:8px 10px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:13px">
-                <option value="Approved"${exp.status === 'Approved' ? ' selected' : ''}>✅ Approved</option>
-                <option value="Pending"${exp.status === 'Pending' ? ' selected' : ''}>⏳ Pending</option>
-                <option value="Reimbursed"${exp.status === 'Reimbursed' ? ' selected' : ''}>🔄 Reimbursed</option>
-              </select>
-            </div>
-            <div>
-              <label style="font-weight:600;font-size:12.5px;display:block;margin-bottom:5px">📌 Additional Notes</label>
-              <input type="text" name="notes" value="${esc(exp.notes || '')}" placeholder="Optional details / shop name" style="width:100%;padding:8px 10px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:13px">
-            </div>
-          </div>
-          <div style="display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-top:8px;border-top:1px solid var(--line);padding-top:14px">
-            <button type="button" class="btn" onclick="window.closeAccountsModal()">Cancel</button>
-            <button type="submit" class="btn pri" style="min-width:140px">${isEdit ? '💾 Update in MongoDB' : '🚀 Save to MongoDB'}</button>
-          </div>
-        </form>
-      </div>
-    </div>`;
-  } else if (APP.accountsState.activeModal === 'manage-budget') {
-    const prefill = APP.accountsState.editingBudgetDept;
-    const modalSec = APP.accountsState.modalSection || 'preaching';
-    const isModalPreach = modalSec === 'preaching';
-    const modalEntities = isModalPreach ? window.getPreachingEntities() : window.getDepartmentEntities();
-    const typeLabel = isModalPreach ? 'Preaching Batch / Program' : 'Department';
-    const defaultIcon = isModalPreach ? '🎓' : '🏢';
-
-    const selEntity = prefill ? modalEntities.find(x => x.name === prefill || x.id === prefill) : modalEntities[0];
-    const initialAllocated = (selEntity && selEntity.allocated) || 0;
-
-    let optionsHtml = '';
-    for (let i = 0; i < modalEntities.length; i++) {
-      const d = modalEntities[i];
-      const isSel = (prefill === d.name || prefill === d.id) ? ' selected' : '';
-      const ic = d.icon || defaultIcon;
-      const sub = d.level || d.category || '';
-      const subText = sub ? ' (' + sub + ')' : '';
-      optionsHtml += `<option value="${esc(d.id)}"${isSel}>${ic} ${esc(d.name)}${esc(subText)}</option>`;
-    }
-
-    modalHtml = `
-    <div class="scrim" style="display:flex;align-items:center;justify-content:center;position:fixed;inset:0;background:rgba(15,23,42,0.65);z-index:9999;backdrop-filter:blur(3px)" onclick="if(event.target===this)window.closeAccountsModal()">
-      <div class="card" style="width:100%;max-width:480px;box-shadow:0 24px 48px rgba(0,0,0,0.28);border-radius:14px;border:1.5px solid var(--line);background:var(--surface)">
-        <div class="card-h" style="border-bottom:1px solid var(--line);padding:14px 18px;display:flex;align-items:center;justify-content:space-between">
-          <h3 style="margin:0;font-size:16px">💼 Set ${typeLabel} Budget</h3>
-          <button type="button" class="btn sm" onclick="window.closeAccountsModal()" style="padding:2px 8px;border-radius:50%">✕</button>
-        </div>
-        <form id="budget-modal-form" onsubmit="window.submitBudgetUpdate(event)" style="padding:18px;display:flex;flex-direction:column;gap:14px">
-          <div>
-            <label style="font-weight:600;font-size:12.5px;display:block;margin-bottom:5px">Select ${typeLabel} <span style="color:var(--danger)">*</span></label>
-            <select name="deptId" id="budget-dept-select" required style="width:100%;padding:8px 10px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:13px" onchange="window.onBudgetEntitySelect(this.value)">
-              ${optionsHtml}
-            </select>
-          </div>
-          <div>
-            <label style="font-weight:600;font-size:12.5px;display:block;margin-bottom:5px">New Allocated Budget (₹) <span style="color:var(--danger)">*</span></label>
-            <input type="number" id="budget-alloc-input" name="allocated" min="0" step="500" required value="${initialAllocated}" style="width:100%;padding:8px 10px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:14px;font-weight:bold">
-            <div class="tiny" style="color:var(--ink-3);margin-top:4px">Sets total sanctioned spending budget in MongoDB.</div>
-          </div>
-          <div style="display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-top:8px;border-top:1px solid var(--line);padding-top:14px">
-            <button type="button" class="btn" onclick="window.closeAccountsModal()">Cancel</button>
-            <button type="submit" class="btn pri" style="min-width:130px">💾 Update Budget</button>
-          </div>
-        </form>
-      </div>
-    </div>`;
-  }
-
   const entityLabel = isPreaching ? 'Preaching Batch / Program' : 'Department';
   const sectionIcon = isPreaching ? '📢' : '🏢';
   const sectionTitle = isPreaching ? 'Preaching Financial Accounts & Budgets' : 'Department Financial Accounts & Budgets';
@@ -13337,7 +13360,6 @@ function deptAccountsPanel() {
     : 'Temple seva ledgers, ashram utilities, maintenance, kitchen, deity worship & facilities budgets';
 
   return `
-  ${modalHtml}
   <div style="margin-top:16px">
 
     <!-- Sub-Section Navigation Tabs (Preaching vs Departments) -->
@@ -18947,7 +18969,12 @@ document.addEventListener('click',e=>{
     // Close ONLY if clicked an explicit close button (like the top right (x) button or a Cancel button)
     const isExplicitBtn = t.closest('.icon-btn') || t.tagName==='BUTTON' || t.closest('button');
     if(!isExplicitBtn) break; // clicking outside the panel will NOT close
-    APP.modal='';APP.fabOpen=false;render();break}
+    if(window.APP && APP.accountsState){
+      APP.accountsState.activeModal = null;
+      APP.accountsState.editingExpense = null;
+      APP.accountsState.editingBudgetDept = null;
+    }
+    APP.modal='';APP.customModalHtml='';APP.fabOpen=false;render();break}
   case 'toast':toast(t.dataset.msg||'Saved');break;
   case 'install-hint':toast('Use your browser menu → Add to Home Screen','📱');break;
   /* ---- openers ---- */
