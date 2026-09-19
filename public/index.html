@@ -12837,6 +12837,16 @@ window.openEditExpenseModal = function(expenseId) {
   render();
 };
 
+
+window.onBudgetEntitySelect = function(id) {
+  window.initAccountsState();
+  const isPreach = (APP.accountsState && APP.accountsState.modalSection) === 'preaching';
+  const list = isPreach ? window.getPreachingEntities() : window.getDepartmentEntities();
+  const sel = list.find(x => x.id === id || x.name === id);
+  const input = document.getElementById('budget-alloc-input');
+  if (sel && input) input.value = sel.allocated || 0;
+};
+
 window.openBudgetModal = function(prefillDeptName, section) {
   window.initAccountsState();
   const sec = section || APP.accountsState.subSection || 'preaching';
@@ -13275,36 +13285,45 @@ function deptAccountsPanel() {
     const modalSec = APP.accountsState.modalSection || 'preaching';
     const isModalPreach = modalSec === 'preaching';
     const modalEntities = isModalPreach ? window.getPreachingEntities() : window.getDepartmentEntities();
+    const typeLabel = isModalPreach ? 'Preaching Batch / Program' : 'Department';
+    const defaultIcon = isModalPreach ? '🎓' : '🏢';
 
-    modalHtml = `
-    <div class="scrim" style="display:flex;align-items:center;justify-content:center;position:fixed;inset:0;background:rgba(15,23,42,0.65);z-index:9999;backdrop-filter:blur(3px)" onclick="if(event.target===this)window.closeAccountsModal()">
-      <div class="card" style="width:100%;max-width:480px;box-shadow:0 24px 48px rgba(0,0,0,0.28);border-radius:14px;border:1.5px solid var(--line);background:var(--surface)">
-        <div class="card-h" style="border-bottom:1px solid var(--line);padding:14px 18px;display:flex;align-items:center;justify-content:space-between">
-          <h3 style="margin:0;font-size:16px">💼 Set ${isModalPreach ? 'Preaching Batch / Program' : 'Department'} Budget</h3>
-          <button type="button" class="btn sm" onclick="window.closeAccountsModal()" style="padding:2px 8px;border-radius:50%">✕</button>
-        </div>
-        <form id="budget-modal-form" onsubmit="window.submitBudgetUpdate(event)" style="padding:18px;display:flex;flex-direction:column;gap:14px">
-          <div>
-            <label style="font-weight:600;font-size:12.5px;display:block;margin-bottom:5px">Select ${isModalPreach ? 'Preaching Batch / Program' : 'Department'} <span style="color:var(--danger)">*</span></label>
-            <select name="deptId" id="budget-dept-select" required style="width:100%;padding:8px 10px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:13px" onchange="const list=${isModalPreach ? 'window.getPreachingEntities()' : 'window.getDepartmentEntities()'};const sel=list.find(x=>x.id===this.value||x.name===this.value);if(sel)document.getElementById('budget-alloc-input').value=sel.allocated||0;">
-              ${modalEntities.map(d => `<option value="${d.id}"${(prefill === d.name || prefill === d.id) ? ' selected' : ''}>${d.icon || (isModalPreach ? '🎓' : '🏢')} ${esc(d.name)} (${esc(d.level || d.category || '')})</option>`).join('')}
-            </select>
-          </div>
-          <div>
-            <label style="font-weight:600;font-size:12.5px;display:block;margin-bottom:5px">New Allocated Budget (₹) <span style="color:var(--danger)">*</span></label>
-            <input type="number" id="budget-alloc-input" name="allocated" min="0" step="500" required value="${(() => {
-              const sel = prefill ? modalEntities.find(x => x.name === prefill || x.id === prefill) : modalEntities[0];
-              return (sel && sel.allocated) || 0;
-            })()}" style="width:100%;padding:8px 10px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:14px;font-weight:bold">
-            <div class="tiny" style="color:var(--ink-3);margin-top:4px">Sets total sanctioned spending budget in MongoDB.</div>
-          </div>
-          <div style="display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-top:8px;border-top:1px solid var(--line);padding-top:14px">
-            <button type="button" class="btn" onclick="window.closeAccountsModal()">Cancel</button>
-            <button type="submit" class="btn pri" style="min-width:130px">💾 Update Budget</button>
-          </div>
-        </form>
-      </div>
-    </div>`;
+    const selEntity = prefill ? modalEntities.find(x => x.name === prefill || x.id === prefill) : modalEntities[0];
+    const initialAllocated = (selEntity && selEntity.allocated) || 0;
+
+    const optionsHtml = modalEntities.map(d => {
+      const isSel = (prefill === d.name || prefill === d.id) ? ' selected' : '';
+      const ic = d.icon || defaultIcon;
+      const sub = d.level || d.category || '';
+      return '<option value="' + esc(d.id) + '"' + isSel + '>' + ic + ' ' + esc(d.name) + (sub ? ' (' + esc(sub) + ')' : '') + '</option>';
+    }).join('');
+
+    modalHtml = 
+    '<div class="scrim" style="display:flex;align-items:center;justify-content:center;position:fixed;inset:0;background:rgba(15,23,42,0.65);z-index:9999;backdrop-filter:blur(3px)" onclick="if(event.target===this)window.closeAccountsModal()">' +
+      '<div class="card" style="width:100%;max-width:480px;box-shadow:0 24px 48px rgba(0,0,0,0.28);border-radius:14px;border:1.5px solid var(--line);background:var(--surface)">' +
+        '<div class="card-h" style="border-bottom:1px solid var(--line);padding:14px 18px;display:flex;align-items:center;justify-content:space-between">' +
+          '<h3 style="margin:0;font-size:16px">💼 Set ' + esc(typeLabel) + ' Budget</h3>' +
+          '<button type="button" class="btn sm" onclick="window.closeAccountsModal()" style="padding:2px 8px;border-radius:50%">✕</button>' +
+        '</div>' +
+        '<form id="budget-modal-form" onsubmit="window.submitBudgetUpdate(event)" style="padding:18px;display:flex;flex-direction:column;gap:14px">' +
+          '<div>' +
+            '<label style="font-weight:600;font-size:12.5px;display:block;margin-bottom:5px">Select ' + esc(typeLabel) + ' <span style="color:var(--danger)">*</span></label>' +
+            '<select name="deptId" id="budget-dept-select" required style="width:100%;padding:8px 10px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:13px" onchange="window.onBudgetEntitySelect(this.value)">' +
+              optionsHtml +
+            '</select>' +
+          '</div>' +
+          '<div>' +
+            '<label style="font-weight:600;font-size:12.5px;display:block;margin-bottom:5px">New Allocated Budget (₹) <span style="color:var(--danger)">*</span></label>' +
+            '<input type="number" id="budget-alloc-input" name="allocated" min="0" step="500" required value="' + initialAllocated + '" style="width:100%;padding:8px 10px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:14px;font-weight:bold">' +
+            '<div class="tiny" style="color:var(--ink-3);margin-top:4px">Sets total sanctioned spending budget in MongoDB.</div>' +
+          '</div>' +
+          '<div style="display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-top:8px;border-top:1px solid var(--line);padding-top:14px">' +
+            '<button type="button" class="btn" onclick="window.closeAccountsModal()">Cancel</button>' +
+            '<button type="submit" class="btn pri" style="min-width:130px">💾 Update Budget</button>' +
+          '</div>' +
+        '</form>' +
+      '</div>' +
+    '</div>';
   }
 
   const entityLabel = isPreaching ? 'Preaching Batch / Program' : 'Department';
