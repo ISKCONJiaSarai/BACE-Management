@@ -22,8 +22,8 @@
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 :root{
-  --paper:#FDFBF7; --paper-2:#F6EFE6; --surface:#FFFFFF; --surface-2:#FAF5ED;
-  --ink:#171410; --ink-2:#4A4136; --ink-3:#7D7060; --line:#E6DAC6; --line-2:#EFE6D8;
+  --paper:#FAFAF9; --paper-2:#F0EDE8; --surface:#FFFFFF; --surface-2:#F7F5F2;
+  --ink:#1A1614; --ink-2:#4A4136; --ink-3:#7D7060; --line:#E8E0D4; --line-2:#F0E9DF;
   --saffron:#E06012; --saffron-2:#B84705; --saffron-soft:#FFF1E5;
   --green:#059669; --green-soft:#ECFDF5;
   --indigo:#4F46E5; --indigo-soft:#EEF2FF;
@@ -35,16 +35,43 @@
   --brown:#854D0E; --brown-soft:#FEF9C3;
   --accent:var(--saffron); --accent-soft:var(--saffron-soft);
   --r-s:8px; --r-m:12px; --r-l:18px; --r-xl:26px;
-  --sh-1:0 1px 3px rgba(35,25,12,.06),0 2px 10px rgba(35,25,12,.04);
-  --sh-2:0 4px 12px rgba(35,25,12,.08),0 14px 32px rgba(35,25,12,.06);
-  --sh-3:0 24px 60px rgba(35,25,12,.18);
+  --sh-1:0 1px 3px rgba(35,25,12,.05),0 2px 8px rgba(35,25,12,.04);
+  --sh-2:0 4px 14px rgba(35,25,12,.07),0 12px 28px rgba(35,25,12,.05);
+  --sh-3:0 20px 50px rgba(35,25,12,.15);
+  --sh-card:0 1px 3px rgba(0,0,0,.04),0 4px 16px rgba(0,0,0,.03);
+  --sh-card-hover:0 8px 30px rgba(0,0,0,.08),0 2px 6px rgba(0,0,0,.04);
   --sidebar:280px;
+  --header-h:56px;
+  --today-w:260px;
   --f-head:"Fraunces",Georgia,serif;
   --f-ui:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --f-script:"Fraunces",Georgia,serif;
+  --glass:rgba(255,255,255,.72);
+  --glass-border:rgba(255,255,255,.35);
+}
+[data-theme="dark"]{
+  --paper:#131118; --paper-2:#1C1926; --surface:#1E1B28; --surface-2:#252232;
+  --ink:#F0ECE4; --ink-2:#BEB5A8; --ink-3:#8A8078; --line:#2E2A38; --line-2:#262233;
+  --saffron:#F09040; --saffron-2:#E07020; --saffron-soft:rgba(240,144,64,.12);
+  --green:#34D399; --green-soft:rgba(52,211,153,.1);
+  --indigo:#818CF8; --indigo-soft:rgba(129,140,248,.1);
+  --teal:#2DD4BF; --teal-soft:rgba(45,212,191,.1);
+  --mustard:#FBBF24; --mustard-soft:rgba(251,191,36,.1);
+  --sky:#38BDF8; --sky-soft:rgba(56,189,248,.1);
+  --danger:#F87171; --danger-soft:rgba(248,113,113,.1);
+  --amber:#FB923C; --amber-soft:rgba(251,146,60,.1);
+  --brown:#FDE68A; --brown-soft:rgba(253,230,138,.1);
+  --sh-1:0 1px 4px rgba(0,0,0,.3),0 2px 8px rgba(0,0,0,.2);
+  --sh-2:0 4px 16px rgba(0,0,0,.3),0 10px 28px rgba(0,0,0,.2);
+  --sh-3:0 20px 50px rgba(0,0,0,.5);
+  --sh-card:0 1px 4px rgba(0,0,0,.25),0 4px 14px rgba(0,0,0,.15);
+  --sh-card-hover:0 8px 30px rgba(0,0,0,.35),0 2px 6px rgba(0,0,0,.2);
+  --glass:rgba(30,27,40,.82);
+  --glass-border:rgba(255,255,255,.08);
 }
 *{box-sizing:border-box}
-html,body{margin:0;padding:0;overflow-x:hidden;max-width:100%;width:100%;-webkit-text-size-adjust:100%}
-body{background:var(--paper);color:var(--ink);font-family:var(--f-ui);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;overflow-x:hidden;max-width:100%}
+html,body{margin:0;padding:0;overflow-x:hidden;max-width:100%;width:100%;-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-ui);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;overflow-x:hidden;max-width:100%;transition:background .3s,color .3s}
 .shell,.view{max-width:100%;width:100%;overflow-x:hidden}
 .main{max-width:100%;min-width:0;overflow-x:hidden}
 h1,h2,h3,h4{font-family:var(--f-head);font-weight:600;letter-spacing:-.01em;margin:0}
@@ -53,11 +80,166 @@ h2{font-size:19px}
 h3{font-size:16px}
 a{color:inherit;text-decoration:none}
 button{font-family:inherit;font-size:inherit;cursor:pointer;border:0;background:none;color:inherit}
-input,select,textarea{font-family:inherit;font-size:14px;color:var(--ink)}
+input,select,textarea{font-family:inherit;font-size:14px;color:var(--ink);background:var(--surface);border:1px solid var(--line)}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
-::-webkit-scrollbar{width:10px;height:10px}
-::-webkit-scrollbar-thumb{background:#DED4C2;border:3px solid var(--paper);border-radius:10px}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--line);border:2px solid var(--paper);border-radius:10px}
+[data-theme="dark"] ::-webkit-scrollbar-thumb{background:var(--line);border-color:var(--paper)}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* ========== GLOBAL APP HEADER (replaces sidebar) ========== */
+.app-header{
+  position:sticky;top:0;z-index:100;height:var(--header-h);
+  background:var(--glass);backdrop-filter:blur(16px) saturate(1.4);-webkit-backdrop-filter:blur(16px) saturate(1.4);
+  border-bottom:1px solid var(--line);
+  display:flex;align-items:center;padding:0 20px;gap:6px;
+  transition:background .3s,border-color .3s;
+}
+.app-header .brand{display:flex;align-items:center;gap:10px;margin-right:8px;flex:none;cursor:pointer;text-decoration:none}
+.app-header .brand img{height:32px;width:32px;object-fit:contain;filter:drop-shadow(0 1px 4px rgba(0,0,0,.15))}
+.app-header .brand-text{font-family:var(--f-head);font-size:15px;font-weight:700;color:var(--ink);white-space:nowrap;letter-spacing:-.02em}
+.app-header .brand-sub{font-size:10px;color:var(--ink-3);font-weight:500;letter-spacing:.03em}
+.header-nav{display:flex;align-items:center;gap:2px;margin:0 auto 0 12px;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none}
+.header-nav::-webkit-scrollbar{display:none}
+.header-nav a{
+  display:flex;align-items:center;gap:5px;padding:8px 14px;border-radius:10px;font-size:13px;font-weight:500;
+  color:var(--ink-2);white-space:nowrap;transition:all .18s ease;position:relative;
+}
+.header-nav a:hover{background:var(--surface-2);color:var(--ink)}
+.header-nav a.on{color:var(--accent);font-weight:600;background:var(--accent-soft)}
+.header-nav a .em{font-size:14px}
+.header-nav a .nav-badge{position:absolute;top:4px;right:4px;min-width:14px;height:14px;padding:0 3px;border-radius:7px;background:var(--danger);color:#fff;font-size:9px;line-height:14px;text-align:center;font-weight:700}
+.header-controls{display:flex;align-items:center;gap:6px;flex:none}
+.theme-toggle{
+  width:36px;height:36px;border-radius:10px;display:grid;place-items:center;
+  border:1px solid var(--line);background:var(--surface);cursor:pointer;transition:all .2s;flex:none;
+}
+.theme-toggle:hover{background:var(--surface-2);transform:scale(1.05)}
+.theme-toggle svg{width:17px;height:17px;transition:transform .3s}
+
+/* Mobile hamburger in header */
+.header-mobile-menu{display:none;width:36px;height:36px;border-radius:10px;place-items:center;border:1px solid var(--line);background:var(--surface);cursor:pointer;flex:none}
+@media(max-width:1080px){
+  .header-nav{display:none}
+  .header-mobile-menu{display:grid}
+  .app-header{padding:0 12px;gap:6px}
+  .app-header .brand-text{font-size:14px}
+  .app-header .brand-sub{display:none}
+}
+@media(max-width:620px){
+  .header-controls .searchbox{display:none}
+  .header-controls .icon-btn[data-r="#/messages"]{display:none}
+}
+@media(max-width:480px){
+  .app-header{height:50px;padding:0 10px}
+  .app-header .brand-text{font-size:13px}
+  .header-controls .theme-toggle{width:32px;height:32px;border-radius:8px}
+  .header-controls .icon-btn{width:32px;height:32px;border-radius:8px}
+  .header-mobile-menu{width:32px;height:32px;border-radius:8px}
+}
+
+/* Mobile nav dropdown */
+.mobile-nav-dropdown{
+  position:fixed;top:var(--header-h);left:0;right:0;z-index:98;
+  background:var(--glass);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--line);
+  padding:8px 12px 12px;display:flex;flex-direction:column;gap:2px;
+  animation:slideDown .22s cubic-bezier(.16,1,.3,1);
+  max-height:calc(100vh - var(--header-h));overflow-y:auto;
+}
+@keyframes slideDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+.mobile-nav-dropdown a{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;font-size:14px;font-weight:500;color:var(--ink-2)}
+.mobile-nav-dropdown a:hover,.mobile-nav-dropdown a.on{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.mobile-nav-dropdown .mnav-section{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3);padding:12px 14px 4px}
+.mobile-nav-dropdown .mnav-sub a{padding-left:28px;font-size:13px}
+
+/* ========== GLOBAL TODAY PANEL ========== */
+.today-panel{
+  position:fixed;top:var(--header-h);right:0;bottom:0;width:var(--today-w);z-index:40;
+  background:var(--surface);border-left:1px solid var(--line);
+  display:flex;flex-direction:column;
+  transition:transform .3s cubic-bezier(.16,1,.3,1),width .3s cubic-bezier(.16,1,.3,1),opacity .25s;
+  overflow:hidden;
+}
+.today-panel.collapsed{transform:translateX(100%);opacity:0;pointer-events:none}
+.today-panel-header{
+  padding:14px 16px 10px;border-bottom:1px solid var(--line-2);display:flex;align-items:center;gap:8px;flex:none;
+}
+.today-panel-header h3{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--accent);flex:1}
+.today-panel-toggle{
+  width:26px;height:26px;border-radius:8px;display:grid;place-items:center;
+  border:1px solid var(--line);background:var(--surface);cursor:pointer;transition:all .2s;flex:none;font-size:12px;
+}
+.today-panel-toggle:hover{background:var(--surface-2)}
+.today-panel-body{
+  flex:1;overflow-y:auto;overflow-x:hidden;padding:12px 14px 20px;
+  overscroll-behavior:contain;scrollbar-width:thin;
+}
+.today-panel-body::-webkit-scrollbar{width:4px}
+.today-panel-body::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px}
+.tp-section{margin-bottom:16px}
+.tp-section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.tp-item{display:flex;align-items:flex-start;gap:8px;padding:6px 8px;border-radius:8px;transition:background .15s;cursor:pointer;margin-bottom:2px}
+.tp-item:hover{background:var(--surface-2)}
+.tp-item .tp-dot{width:6px;height:6px;border-radius:50%;flex:none;margin-top:6px}
+.tp-item .tp-text{flex:1;min-width:0}
+.tp-item .tp-title{font-size:12.5px;font-weight:600;color:var(--ink);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tp-item .tp-meta{font-size:11px;color:var(--ink-3);display:block}
+.tp-item .tp-time{font-size:10.5px;font-weight:600;color:var(--accent);flex:none;white-space:nowrap}
+.tp-empty{font-size:12px;color:var(--ink-3);padding:8px;text-align:center}
+.tp-count-badge{font-size:10px;background:var(--accent-soft);color:var(--accent);padding:1px 6px;border-radius:10px;font-weight:600}
+
+/* Floating reopen tab when panel collapsed */
+.today-panel-tab{
+  position:fixed;right:0;top:50%;transform:translateY(-50%);z-index:39;
+  width:28px;padding:18px 4px;
+  background:var(--accent);color:#fff;border-radius:8px 0 0 8px;
+  writing-mode:vertical-rl;text-orientation:mixed;
+  font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;
+  cursor:pointer;box-shadow:var(--sh-2);
+  transition:transform .3s,opacity .3s;display:flex;align-items:center;justify-content:center;gap:4px;
+}
+.today-panel-tab.hidden{transform:translateX(100%) translateY(-50%);opacity:0;pointer-events:none}
+.today-panel-tab:hover{width:32px}
+
+/* Layout: main content area adjusts for header + panel */
+.app-layout{
+  display:flex;min-height:calc(100vh - var(--header-h));
+}
+.app-layout .main{
+  flex:1;min-width:0;margin-right:var(--today-w);transition:margin-right .3s cubic-bezier(.16,1,.3,1);
+}
+.app-layout.panel-collapsed .main{margin-right:0}
+@media(max-width:900px){
+  .today-panel{display:none}
+  .today-panel-tab{display:none}
+  .app-layout .main{margin-right:0!important}
+}
+/* Mobile Today drawer */
+.mobile-today-btn{
+  display:none;position:fixed;bottom:calc(76px + env(safe-area-inset-bottom));left:16px;transform:none;
+  z-index:38;padding:7px 14px;border-radius:16px;
+  background:var(--accent);color:#fff;font-size:12px;font-weight:600;
+  box-shadow:0 4px 16px rgba(0,0,0,.15);border:none;cursor:pointer;
+  transition:transform .2s,box-shadow .2s;white-space:nowrap;
+}
+.mobile-today-btn:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(0,0,0,.2)}
+@media(max-width:900px){.mobile-today-btn{display:flex;align-items:center;gap:6px}}
+.mobile-today-drawer{
+  position:fixed;inset:0;z-index:200;display:flex;flex-direction:column;justify-content:flex-end;
+}
+.mobile-today-scrim{position:absolute;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+.mobile-today-sheet{
+  position:relative;z-index:1;background:var(--surface);border-radius:20px 20px 0 0;
+  max-height:80vh;display:flex;flex-direction:column;
+  animation:sheetUp .25s cubic-bezier(.16,1,.3,1);
+}
+@keyframes sheetUp{from{transform:translateY(100%)}to{transform:none}}
+.mobile-today-sheet .sheet-handle{width:36px;height:4px;border-radius:2px;background:var(--line);margin:8px auto}
+.mobile-today-sheet .sheet-header{padding:8px 18px 12px;display:flex;align-items:center;justify-content:space-between}
+.mobile-today-sheet .sheet-header h3{font-size:16px;font-weight:700;color:var(--ink)}
+.mobile-today-sheet .sheet-body{flex:1;overflow-y:auto;padding:0 18px 24px;overscroll-behavior:contain}
 
 /* ---------- login ---------- */
 .login{min-height:100vh;display:grid;grid-template-columns:1.08fr .92fr;background:var(--paper)}
@@ -162,111 +344,53 @@ input,select,textarea{font-family:inherit;font-size:14px;color:var(--ink)}
 }
 
 
-/* ---------- shell & fixed independent sidebar ---------- */
+/* ---------- shell layout (sidebar removed — now uses top header) ---------- */
 .shell{min-height:100vh}
-.sidebar{
-  background:linear-gradient(180deg,#1E2230 0%,#161922 100%);
-  color:#E2E8F0;
-  border-right:1px solid rgba(255,255,255,0.06);
-  display:flex;
-  flex-direction:column;
-  position:fixed;
-  top:0;left:0;bottom:0;
-  width:var(--sidebar,280px);
-  height:100vh;
-  overflow:hidden;
-  z-index:50;
-}
-.shell.sb-closed .sidebar{display:none}
-/* ---------- side panel edge toggle ---------- */
-.sb-edge-toggle{position:fixed;top:50%;z-index:85;display:flex;align-items:center;justify-content:center;cursor:pointer;background:#1E2230;color:#F1F5F9;border:1.5px solid rgba(255,255,255,0.2);box-shadow:0 2px 10px rgba(0,0,0,0.3),0 0 0 1px rgba(255,255,255,0.05);transition:left .22s cubic-bezier(0.2,0,0,1),transform .22s ease,width .2s ease,height .2s ease,background .15s ease,border-radius .2s ease,box-shadow .15s ease;user-select:none;padding:0;outline:none}
-.sb-edge-toggle:hover{background:var(--accent,#E06012);color:#FFF;border-color:rgba(255,255,255,0.45);box-shadow:0 4px 16px rgba(224,96,18,0.45),0 0 0 2px rgba(224,96,18,0.25)}
-.sb-edge-toggle.open{left:var(--sidebar,280px);transform:translate(-50%,-50%);width:26px;height:26px;border-radius:50%}
-.sb-edge-toggle.open:hover{transform:translate(-50%,-50%) scale(1.14)}
-.sb-edge-toggle.closed{left:0;transform:translateY(-50%);width:22px;height:44px;border-radius:0 10px 10px 0;border-left:none;color:#FCD34D}
-.sb-edge-toggle.closed:hover{width:28px;transform:translateY(-50%);color:#FFF}
-.sb-edge-toggle svg{width:13px;height:13px;stroke:currentColor;stroke-width:2.5;transition:transform .28s cubic-bezier(0.34,1.56,0.64,1)}
-.sb-edge-toggle.closed svg{transform:rotate(180deg)}
-@media(max-width:1080px){.sb-edge-toggle{display:none}}
-.sb-head{padding:16px 16px 14px;border-bottom:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.02)}
-.sb-head .t{font-family:var(--f-head);font-size:15.5px;color:#FFF7ED;line-height:1.25;font-weight:600}
-.sb-head .s{font-size:11.5px;color:#FCD34D;margin-top:2px;font-weight:500;letter-spacing:.02em}
-.sb-scroll{flex:1;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:10px 12px 96px}
-.sb-scroll::-webkit-scrollbar-thumb{background:#333A4D;border-color:#1E2230}
-.pillar{margin:6px 0;border-radius:12px;overflow:hidden;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.04)}
-.pillar-h{display:flex;align-items:center;gap:9px;width:100%;padding:11px 12px;text-align:left;font-size:13.5px;font-weight:600;color:#F1F5F9}
-.pillar-h .em{font-size:15px;line-height:1}
-.pillar-h .cv{margin-left:auto;transition:transform .18s ease;opacity:.6}
-.pillar-h.open .cv{transform:rotate(90deg)}
-.pillar-h:hover{background:rgba(255,255,255,.08);color:#FFF}
-.pillar-body{padding:2px 8px 9px;animation:drop .16s ease-out}
-@keyframes drop{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
-.nav-item{display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:9px;color:#CBD5E1;font-size:13px;width:100%;text-align:left;position:relative}
-.nav-item:hover{background:rgba(255,255,255,.09);color:#FFF}
-.nav-item.on{background:linear-gradient(90deg, rgba(224,96,18,0.22) 0%, rgba(224,96,18,0.08) 100%);color:#FFF;font-weight:600}
-.nav-item.on:before{content:"";position:absolute;left:-8px;top:6px;bottom:6px;width:3.5px;border-radius:0 3px 3px 0;background:var(--pill,#E06012);box-shadow:0 0 8px var(--pill,#E06012)}
-.nav-item .em{width:17px;text-align:center;flex:none;font-size:13px}
-.nav-item svg{width:15px;height:15px;flex:none;opacity:.85}
-.nav-item .cnt{margin-left:auto;background:rgba(255,255,255,.16);border-radius:20px;padding:0 6px;font-size:10.5px;line-height:17px}
-.nav-item .cnt.hot{background:var(--danger);color:#fff}
-.nav-sub{font-size:10.5px;color:#94A3B8;padding:9px 10px 4px;letter-spacing:.04em;text-transform:uppercase;font-weight:600}
-.nav-indent{padding-left:20px}
-.sb-foot{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,#161922 40%);padding:18px 12px 12px}
-.sb-user{display:flex;align-items:center;gap:10px;padding:9px;border-radius:11px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);width:100%;text-align:left}
-.sb-user:hover{background:rgba(255,255,255,.12)}
-.sb-user .nm{font-size:13px;color:#FFF;font-weight:600}
-.sb-user .rl{font-size:11px;color:#FCD34D}
+/* Legacy sidebar hidden — replaced by app-header */
+.sidebar{display:none!important}
+.sb-edge-toggle{display:none!important}
+.sb-head,.sb-scroll,.sb-foot,.sb-user,.pillar,.pillar-h,.pillar-body,.nav-item,.nav-sub,.nav-indent{/* kept for compat */}
+.nav-item{display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:9px;color:var(--ink-2);font-size:13px;width:100%;text-align:left;position:relative}
 
 .main{
   display:flex;
   flex-direction:column;
   min-width:0;
-  margin-left:var(--sidebar,280px);
+  margin-left:0;
   transition:margin-left .2s ease;
 }
 .shell.sb-closed .main{margin-left:0}
-.topbar{position:sticky;top:0;z-index:30;background:rgba(251,249,244,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);padding:10px 24px;display:flex;align-items:center;gap:10px}
+/* Legacy topbar hidden — replaced by app-header */
+.topbar{display:none!important}
 .crumbs{font-size:12.5px;color:var(--ink-3);display:flex;gap:6px;align-items:center;min-width:0;white-space:nowrap;overflow:hidden}
 .crumbs b{font-weight:600;color:var(--ink-2)}
-.searchbox{margin-left:auto;position:relative;width:min(320px,32vw)}
-.searchbox input{width:100%;padding:8px 12px 8px 34px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
-.searchbox svg{position:absolute;left:11px;top:9px;width:15px;height:15px;color:var(--ink-3)}
-.icon-btn{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;border:1px solid var(--line);background:var(--surface);position:relative;flex:none;padding:0;cursor:pointer}
-.icon-btn:hover{background:var(--surface-2)}
+.searchbox{position:relative;width:min(260px,28vw)}
+.searchbox input{width:100%;padding:7px 12px 7px 32px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);font-size:13px;transition:all .2s}
+.searchbox input:focus{background:var(--surface);border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.searchbox svg{position:absolute;left:10px;top:8px;width:14px;height:14px;color:var(--ink-3)}
+.icon-btn{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;border:1px solid var(--line);background:var(--surface);position:relative;flex:none;padding:0;cursor:pointer;transition:all .15s}
+.icon-btn:hover{background:var(--surface-2);transform:translateY(-1px)}
 .icon-btn svg{width:17px;height:17px}
 .dot{position:absolute;top:4px;right:4px;min-width:15px;height:15px;padding:0 3px;border-radius:9px;background:var(--danger);color:#fff;font-size:9.5px;line-height:15px;text-align:center;border:1.5px solid var(--surface)}
-.view{padding:22px 24px 110px;max-width:1460px;width:100%;box-sizing:border-box}
+.view{padding:22px 28px 60px;max-width:1400px;width:100%;box-sizing:border-box;animation:viewFade .25s ease-out}
+@keyframes viewFade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 /* ---------- mobile drawer, scrim & shell ---------- */
 .mobile-close-btn{display:none!important}
 .mobile-scrim{
   position:fixed;
   inset:0;
-  background:rgba(15,18,25,0.65);
-  backdrop-filter:blur(4px);
-  -webkit-backdrop-filter:blur(4px);
+  background:rgba(15,18,25,0.55);
+  backdrop-filter:blur(6px);
+  -webkit-backdrop-filter:blur(6px);
   z-index:92;
   animation:fadeIn .18s ease-out;
 }
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes drop{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
 
 @media(max-width:1080px){
   .main{margin-left:0!important;max-width:100%!important;box-sizing:border-box!important}
   .shell{min-height:100vh;max-width:100%!important;overflow-x:hidden!important}
-  .sidebar{
-    display:flex!important;
-    position:fixed;
-    top:0;left:0;bottom:0;
-    width:min(320px,86vw);
-    z-index:95;
-    transform:translateX(-100%);
-    transition:transform .26s cubic-bezier(0.16,1,0.3,1);
-    box-shadow:none;
-  }
-  .shell.mobile-drawer-open .sidebar{
-    transform:translateX(0);
-    box-shadow:0 0 50px rgba(0,0,0,0.6);
-  }
-  .mobile-close-btn{display:inline-flex!important}
   .view{padding:16px 14px calc(96px + env(safe-area-inset-bottom));box-sizing:border-box!important;max-width:100%!important}
 }
 
@@ -319,9 +443,9 @@ input,select,textarea{font-family:inherit;font-size:14px;color:var(--ink)}
 @media(max-width:1180px){.g5,.g4{grid-template-columns:repeat(2,minmax(0,1fr))}.g-2-1,.g-1-2,.g3{grid-template-columns:1fr}}
 @media(max-width:720px){.g2,.g3,.g4,.g5,.g6{grid-template-columns:repeat(2,minmax(0,1fr))}.grid{gap:11px}}
 @media(max-width:480px){.g2{grid-template-columns:1fr}}
-.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-l);box-shadow:var(--sh-1);max-width:100%;box-sizing:border-box;overflow:hidden}
-a.card,button.card{display:block;transition:box-shadow .16s,transform .16s,border-color .16s;text-align:left;width:100%}
-a.card:hover,button.card:hover{box-shadow:var(--sh-2);transform:translateY(-2px);border-color:#DCCFB6}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-l);box-shadow:var(--sh-card);max-width:100%;box-sizing:border-box;overflow:hidden;transition:box-shadow .2s,transform .2s,border-color .2s}
+a.card,button.card{display:block;text-align:left;width:100%}
+a.card:hover,button.card:hover{box-shadow:var(--sh-card-hover);transform:translateY(-3px);border-color:var(--line)}
 .card.pad{padding:18px 20px}
 .card-h{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line-2);flex-wrap:wrap}
 .card-h h3{font-size:15px}
@@ -330,15 +454,15 @@ a.card:hover,button.card:hover{box-shadow:var(--sh-2);transform:translateY(-2px)
 .card-b.flush{padding:0}
 .muted{color:var(--ink-2)}
 .tiny{font-size:12.5px;color:var(--ink-3)}
-.stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-l);padding:14px 16px;box-shadow:var(--sh-1);position:relative;overflow:hidden}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-l);padding:14px 16px;box-shadow:var(--sh-card);position:relative;overflow:hidden;transition:all .2s}
 .stat .lbl{font-size:12.5px;color:var(--ink-2);display:flex;align-items:center;gap:6px}
 .stat .val{font-family:var(--f-head);font-size:30px;font-weight:500;line-height:1.1;margin-top:6px;letter-spacing:-.02em}
 .stat .foot{font-size:11.5px;color:var(--ink-3);margin-top:5px;display:flex;align-items:center;gap:6px}
 .stat .up{color:var(--green);font-weight:600}
 .stat .down{color:var(--danger);font-weight:600}
 .stat.tint{background:var(--accent-soft);border-color:transparent}
-.stat.click{cursor:pointer;transition:transform .12s,box-shadow .12s}
-.stat.click:hover{box-shadow:var(--sh-2);transform:translateY(-2px)}
+.stat.click{cursor:pointer}
+.stat.click:hover{box-shadow:var(--sh-card-hover);transform:translateY(-3px)}
 @media(max-width:480px){.stat .val{font-size:24px}}
 
 /* ---------- badges / chips ---------- */
@@ -352,6 +476,15 @@ a.card:hover,button.card:hover{box-shadow:var(--sh-2);transform:translateY(-2px)
 .b-sky{background:#E0F2FE;color:#0369A1}
 .b-brown{background:#FEF9C3;color:#854D0E}
 .b-grey{background:#F1F5F9;color:#475569}
+[data-theme="dark"] .b-green{background:rgba(52,211,153,.15);color:#6EE7B7}
+[data-theme="dark"] .b-saffron{background:rgba(240,144,64,.15);color:#FDBA74}
+[data-theme="dark"] .b-red{background:rgba(248,113,113,.12);color:#FCA5A5}
+[data-theme="dark"] .b-amber{background:rgba(251,191,36,.12);color:#FDE68A}
+[data-theme="dark"] .b-indigo{background:rgba(129,140,248,.12);color:#A5B4FC}
+[data-theme="dark"] .b-teal{background:rgba(45,212,191,.12);color:#5EEAD4}
+[data-theme="dark"] .b-sky{background:rgba(56,189,248,.12);color:#7DD3FC}
+[data-theme="dark"] .b-brown{background:rgba(253,230,138,.12);color:#FDE68A}
+[data-theme="dark"] .b-grey{background:rgba(255,255,255,.08);color:#94A3B8}
 .chip{padding:6px 12px;border:1px solid var(--line);border-radius:20px;font-size:12.5px;background:var(--surface);display:inline-flex;align-items:center;gap:6px}
 .chip.on{background:var(--ink);color:#FBF3E6;border-color:var(--ink)}
 .chips{display:flex;gap:7px;flex-wrap:wrap}
@@ -653,7 +786,8 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
 .countdown{font-family:var(--f-head);font-size:22px;margin-top:12px}
 
 /* fab + bottom nav */
-.fab{position:fixed;right:22px;bottom:22px;z-index:40;width:54px;height:54px;border-radius:50%;background:var(--ink);color:#FBF3E6;display:grid;place-items:center;box-shadow:var(--sh-2)}
+.fab{position:fixed;right:22px;bottom:22px;z-index:40;width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,var(--saffron),var(--saffron-2));color:#fff;display:grid;place-items:center;box-shadow:0 4px 16px rgba(224,96,18,.35);transition:transform .2s,box-shadow .2s}
+.fab:hover{transform:scale(1.08);box-shadow:0 6px 24px rgba(224,96,18,.4)}
 .fab svg{width:22px;height:22px}
 .fab-menu{position:fixed;right:22px;bottom:86px;z-index:40;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-l);box-shadow:var(--sh-3);padding:7px;width:240px;animation:pop .16s ease-out}
 .fab-menu button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:9px 10px;border-radius:9px;font-size:13.5px}
@@ -665,13 +799,13 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
     position:fixed;
     bottom:0;left:0;right:0;
     z-index:80;
-    background:rgba(253,251,247,0.96);
-    backdrop-filter:blur(16px);
-    -webkit-backdrop-filter:blur(16px);
+    background:var(--glass);
+    backdrop-filter:blur(16px) saturate(1.4);
+    -webkit-backdrop-filter:blur(16px) saturate(1.4);
     border-top:1px solid var(--line);
     padding:6px 6px calc(8px + env(safe-area-inset-bottom));
     height:calc(60px + env(safe-area-inset-bottom));
-    box-shadow:0 -4px 20px rgba(35,25,12,0.06);
+    box-shadow:0 -4px 20px rgba(0,0,0,.06);
     align-items:center;
     justify-content:space-around;
   }
@@ -1533,6 +1667,48 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
 }
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:26px;z-index:80;background:var(--ink);color:#FBF3E6;padding:11px 18px;border-radius:12px;box-shadow:var(--sh-3);font-size:13.5px;display:flex;gap:9px;align-items:center;animation:pop .2s ease-out;max-width:90vw}
 .demo-flag{font-size:11px;color:var(--ink-3);border:1px dashed var(--line);border-radius:20px;padding:3px 9px}
+
+/* ========== PILLAR CARDS (gradient dashboard cards) ========== */
+.pillar-card{border:none!important;position:relative;overflow:hidden}
+.pillar-card-bg{position:absolute;top:-20px;right:-20px;font-size:80px;opacity:.1;pointer-events:none;line-height:1}
+.pillar-card-icon{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-size:20px;color:#fff}
+.pillar-mgmt{background:linear-gradient(135deg,var(--saffron-soft) 0%,#FFEDD5 100%)}
+.pillar-preach{background:linear-gradient(135deg,var(--indigo-soft) 0%,#E0E7FF 100%)}
+.pillar-care{background:linear-gradient(135deg,var(--green-soft) 0%,#D1FAE5 100%)}
+[data-theme="dark"] .pillar-mgmt{background:linear-gradient(135deg,rgba(234,88,12,.12) 0%,rgba(234,88,12,.06) 100%)}
+[data-theme="dark"] .pillar-preach{background:linear-gradient(135deg,rgba(99,102,241,.12) 0%,rgba(99,102,241,.06) 100%)}
+[data-theme="dark"] .pillar-care{background:linear-gradient(135deg,rgba(16,185,129,.12) 0%,rgba(16,185,129,.06) 100%)}
+
+/* ========== DARK MODE OVERRIDES ========== */
+[data-theme="dark"] .scrim{background:rgba(0,0,0,.6)}
+[data-theme="dark"] .mobile-scrim{background:rgba(0,0,0,.6)}
+[data-theme="dark"] .login-art{background:radial-gradient(ellipse at 85% 15%,rgba(240,144,64,0.2) 0%,transparent 60%),linear-gradient(145deg,#0a0918 0%,#14102a 42%,#2a1008 80%,#3c1608 100%)}
+[data-theme="dark"] .login-panel{background:var(--paper)}
+[data-theme="dark"] .login-card{background:var(--surface);border-color:var(--line)}
+[data-theme="dark"] .login-oauth-box{background:var(--paper-2);border-color:var(--line)}
+[data-theme="dark"] .hero{background:linear-gradient(125deg,#1a1740 0%,#2d2880 38%,#601030 72%,#9a3008 100%);box-shadow:0 10px 30px -6px rgba(0,0,0,.4)}
+[data-theme="dark"] .tip{background:var(--surface);color:var(--ink);border:1px solid var(--line)}
+[data-theme="dark"] .tip b{color:var(--ink)}
+[data-theme="dark"] .toast{background:var(--surface);color:var(--ink);border:1px solid var(--line)}
+[data-theme="dark"] .cal .day.today{background:rgba(240,144,64,.1)}
+[data-theme="dark"] .cal .day.today:hover{background:rgba(240,144,64,.18)}
+[data-theme="dark"] .botnav{background:var(--glass);border-top-color:var(--line)}
+[data-theme="dark"] .fab{background:linear-gradient(135deg,var(--saffron),var(--saffron-2))}
+[data-theme="dark"] .btn.pri{background:linear-gradient(135deg,var(--saffron) 0%,var(--saffron-2) 100%);border-color:var(--saffron-2)}
+[data-theme="dark"] input,[data-theme="dark"] select,[data-theme="dark"] textarea{background:var(--surface);border-color:var(--line);color:var(--ink)}
+[data-theme="dark"] .field input,[data-theme="dark"] .field select,[data-theme="dark"] .field textarea{background:var(--surface-2);border-color:var(--line)}
+
+/* ========== GLOBAL TRANSITIONS & MICRO-INTERACTIONS ========== */
+.card,.stat,.btn,.icon-btn,.badge,.chip,.tabs button,.tbl td,.modal,.drawer{transition:background .2s,border-color .2s,color .2s,box-shadow .2s,transform .2s}
+.btn:active{transform:scale(.97)}
+.btn.pri:active{transform:scale(.97)}
+a.card:active,button.card:active{transform:scale(.99)}
+.stat.click:active{transform:scale(.98)}
+/* Smooth page accent transition */
+:root{transition:--accent .3s,--accent-soft .3s}
+/* Focus ring improvements */
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 </style>
 </head>
 <body>
@@ -3051,8 +3227,13 @@ function saveNavOpen(){
 const APP={user:null,route:'#/',search:'',fabOpen:false,modal:'',tab:{},filters:{},page:{},perPage:{},
   sbClosed:localStorage.getItem('bace_sb_closed')==='1',
   mobileDrawerOpen:false,mobileSearchOpen:false,
+  mobileNavOpen:false,todayPanelOpen:localStorage.getItem('bace_today_panel')!=='0',
+  mobileTodayOpen:false,
+  theme:localStorage.getItem('bace_theme')||(window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'),
   nav:{open:getSavedNavOpen()},sbScroll:0,chat:{thread:null},
   range:{from:iso(dayOff(-30)),to:iso(dayOff(30))},crumbLeaf:null,draft:{}};
+// Apply theme immediately
+document.documentElement.setAttribute('data-theme',APP.theme);
 
 const ICONS={
  home:'M3 10.5 12 3l9 7.5M5 9.5V21h14V9.5',people:'M16 20v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 10a4 4 0 1 0 0-8 4 4 0 0 0 0 8M22 20v-2a4 4 0 0 0-3-3.9M16 2.1a4 4 0 0 1 0 7.8',
@@ -3337,40 +3518,167 @@ function navItem(i,pill){
     <span class="em">${i.em||''}</span><span>${esc(i.t)}</span>${n?`<span class="cnt hot">${n}</span>`:''}</a>`;
 }
 function sidebar(){
-  return `<aside class="sidebar">
-   <div class="sb-head" style="display:flex;align-items:center;justify-content:space-between;gap:10px">
-     <div class="brandmark" style="display:flex;align-items:center;gap:12px;min-width:0">
-       <img src="/logo.png?v=2" alt="ISKCON BACE Jia Sarai" style="height:40px;width:40px;object-fit:contain;flex:none;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.4))">
-       <div style="min-width:0;overflow:hidden"><div class="t" style="white-space:nowrap;text-overflow:ellipsis;overflow:hidden">ISKCON BACE</div><div class="s" style="white-space:nowrap;text-overflow:ellipsis;overflow:hidden">Jia Sarai · Community OS</div></div>
-     </div>
-     <button class="icon-btn sm mobile-close-btn" data-act="close-mobile-drawer" title="Close drawer" aria-label="Close drawer" style="width:32px;height:32px;border-radius:9px;border:1px solid rgba(255,255,255,0.22);background:rgba(255,255,255,0.09);color:#FFF;align-items:center;justify-content:center;flex:none">
-       ${ic('x')}
-     </button>
-   </div>
-   <div class="sb-scroll" id="sbscroll">
-     ${NAV_TOP.map(i=>navItem(i)).join('')}
-     ${PILLARS.map(p=>{
-        if(p.m&&!can(p.m)&&!p.items.some(i=>i.m&&can(i.m)))return'';
-        const open=!!APP.nav.open[p.key];
-        return `<div class="pillar" data-pillar="${p.key}">
-         <button class="pillar-h ${open?'open':''}" data-act="pillar" data-k="${p.key}" aria-expanded="${open}">
-           <span class="em">${p.em}</span><span>${p.t}</span><span class="cv">${ic('chev')}</span></button>
-         <div class="pillar-body" style="${open?'':'display:none'}">${p.items.map(i=>navItem(i,p.pill)).join('')}</div></div>`}).join('')}
-     <div style="height:8px"></div>
-     ${NAV_BOTTOM.map(i=>navItem(i,'var(--mustard)')).join('')}
-   </div>
-   <div class="sb-foot" style="display:flex;align-items:center;gap:6px">
-     <button class="sb-user" data-act="account" title="Devotee Account" style="flex:1;min-width:0;display:flex;align-items:center;gap:10px;text-align:left;overflow:hidden">
-       ${av(devoteeDisplayName(APP.user.devotee),'m')}
-       <div style="display:flex;flex-direction:column;min-width:0;flex:1;overflow:hidden">
-         <span class="nm" style="font-size:13px;font-weight:600;color:#FFF;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.25">${esc(devoteeDisplayName(APP.user.devotee))}</span>
-         <span class="rl" style="font-size:11px;color:#FCD34D;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;display:flex;align-items:center;gap:4px">${esc(devoteePositionTitle(APP.user.devotee, APP.user.role))}</span>
-       </div>
-     </button>
-     <button class="icon-btn" data-act="logout" title="Sign out" style="color:#F87171;border:1px solid rgba(248,113,113,0.3);border-radius:10px;padding:8px;background:rgba(239,68,68,0.1);display:flex;align-items:center;justify-content:center;flex:none">
-       ${ic('logout')}
-     </button>
-   </div></aside>`;
+  return '';
+}
+/* ========== NEW APP HEADER (replaces sidebar) ========== */
+function appHeader(){
+  const unread=DB.notifications.filter(n=>!n.read).length;
+  const headerNavItems=[
+    {t:'Dashboard',em:'🏠',r:'#/',m:'dashboard'},
+    {t:'Management',em:'🛕',r:'#/mgmt',m:'management'},
+    {t:'Preaching',em:'📖',r:'#/preaching',m:'preaching'},
+    {t:'Devotee Care',em:'❤️',r:'#/care',m:'care'},
+    {t:'Calendar',em:'📅',r:'#/calendar',m:'calendar'},
+    {t:'Reports',em:'📊',r:'#/reports',m:'reports'},
+  ];
+  const route=APP.route.replace(/^#\/?/,'').split('/')[0];
+  const mgmtRoutes=['mgmt','depts','dept','assign','attendance','dept-reports','inventory','sops','actions'];
+  const preachRoutes=['preaching','batches','batch','contacts','followups','classes','batch-attendance','preaching-reports'];
+  const careRoutes=['care','friends','groups','group','swabhav','sadhana','facilitators','spiritual-classes','camps','temple-visits','meetings','care-followups','care-reports'];
+  function isActive(r){
+    const seg=r.replace(/^#\//,'');
+    if(seg===''&&(route===''||route==='today'||route==='devotees'||route==='devotee'))return route==='';
+    if(seg==='mgmt')return mgmtRoutes.includes(route);
+    if(seg==='preaching')return preachRoutes.includes(route);
+    if(seg==='care')return careRoutes.includes(route);
+    if(seg==='calendar')return route==='calendar';
+    if(seg==='reports')return route==='reports';
+    return false;
+  }
+  const sunSvg=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`;
+  const moonSvg=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`;
+  return `<header class="app-header">
+    <a class="brand" href="#/" title="BACE Dashboard">
+      <img src="/logo.png?v=2" alt="ISKCON BACE">
+      <div><div class="brand-text">ISKCON BACE</div><div class="brand-sub">Jia Sarai</div></div>
+    </a>
+    <nav class="header-nav">
+      ${headerNavItems.filter(i=>!i.m||can(i.m)).map(i=>`<a href="${i.r}" class="${isActive(i.r)?'on':''}" title="${i.t}"><span class="em">${i.em}</span><span>${i.t}</span></a>`).join('')}
+    </nav>
+    <div class="header-controls">
+      <div class="searchbox" style="margin:0">${ic('search')}<input type="search" placeholder="Search…" value="${esc(APP.search)}" data-act="global-search" aria-label="Global search"></div>
+      <button class="theme-toggle" data-act="toggle-theme" title="Toggle theme">${APP.theme==='dark'?sunSvg:moonSvg}</button>
+      <button class="icon-btn" data-act="go" data-r="#/messages" title="Messages">${ic('chat')}${unreadMsgs()?`<i class="dot">${unreadMsgs()}</i>`:''}</button>
+      <button class="icon-btn" data-act="notifications" title="Notifications">${ic('bell')}${unread?`<i class="dot">${unread}</i>`:''}</button>
+      <button class="icon-btn" data-act="account" title="Account" style="border:none;background:none">${av(nameOf(APP.user.devotee),'s')}</button>
+    </div>
+    <button class="header-mobile-menu" data-act="toggle-mobile-nav" title="Menu" aria-label="Menu">${ic('menu')}</button>
+  </header>${APP.mobileNavOpen?mobileNavDropdown():''}`;
+}
+function mobileNavDropdown(){
+  const route=APP.route.replace(/^#\/?/,'').split('/')[0];
+  const mgmtRoutes=['mgmt','depts','dept','assign','attendance','dept-reports','inventory','sops','actions'];
+  const preachRoutes=['preaching','batches','batch','contacts','followups','classes','batch-attendance','preaching-reports'];
+  const careRoutes=['care','friends','groups','group','swabhav','sadhana','facilitators','spiritual-classes','camps','temple-visits','meetings','care-followups','care-reports'];
+  const mainItems=[
+    {t:'Dashboard',em:'🏠',r:'#/',on:route===''},
+    {t:'Today',em:'⚡',r:'#/today',on:route==='today'},
+    {t:'Devotees',em:'👥',r:'#/devotees',on:route==='devotees'||route==='devotee',m:'directory'},
+  ];
+  const sections=[
+    {title:'Management',items:[
+      {t:'Management Dashboard',em:'📊',r:'#/mgmt',m:'management'},
+      {t:'Departments',em:'🏢',r:'#/depts',m:'management'},
+      {t:'Assign Seva',em:'📋',r:'#/assign',m:'assign'},
+      {t:'BACE Pillars',em:'🏢',r:'#/attendance',m:'management'},
+      {t:'SOPs',em:'📘',r:'#/sops'},
+      {t:'Action Items',em:'🎯',r:'#/actions'},
+    ]},
+    {title:'Preaching',items:[
+      {t:'Preaching Dashboard',em:'📊',r:'#/preaching',m:'preaching'},
+      {t:'Batch Management',em:'🗂',r:'#/batches',m:'preaching'},
+      {t:'Contacts & Pipeline',em:'🌱',r:'#/contacts',m:'preaching'},
+      {t:'Follow-ups',em:'⏰',r:'#/followups',m:'preaching'},
+      {t:'Classes & Events',em:'✨',r:'#/classes',m:'preaching'},
+      {t:'Attendance',em:'✅',r:'#/batch-attendance',m:'preaching'},
+      {t:'Reports',em:'📈',r:'#/preaching-reports',m:'reports'},
+    ]},
+    {title:'Devotee Care',items:[
+      {t:'Care Dashboard',em:'📊',r:'#/care',m:'care'},
+      {t:'Friends',em:'🫂',r:'#/friends',m:'care'},
+      {t:'Groups',em:'👥',r:'#/groups',m:'care'},
+      {t:'Sadhana',em:'📿',r:'#/sadhana',m:'care'},
+      {t:'Facilitators',em:'🤝',r:'#/facilitators',m:'care'},
+      {t:'Camps',em:'⛺',r:'#/camps',m:'care'},
+    ]},
+  ];
+  const bottomItems=[
+    {t:'Calendar',em:'📅',r:'#/calendar',on:route==='calendar'},
+    {t:'Reports',em:'📊',r:'#/reports',on:route==='reports',m:'reports'},
+    {t:'Messages',em:'💬',r:'#/messages',on:route==='messages'},
+    {t:'Notifications',em:'🔔',r:'#/notifications'},
+    {t:'Administration',em:'⚙️',r:'#/admin',m:'admin'},
+  ];
+  return `<div class="mobile-nav-dropdown">
+    ${mainItems.filter(i=>!i.m||can(i.m)).map(i=>`<a href="${i.r}" class="${i.on?'on':''}" data-act="mobile-nav-go" data-r="${i.r}"><span>${i.em}</span>${i.t}</a>`).join('')}
+    ${sections.map(s=>`<div class="mnav-section">${s.title}</div><div class="mnav-sub">${s.items.filter(i=>!i.m||can(i.m)).map(i=>`<a href="${i.r}" data-act="mobile-nav-go" data-r="${i.r}"><span>${i.em}</span>${i.t}</a>`).join('')}</div>`).join('')}
+    <div class="mnav-section">More</div>
+    ${bottomItems.filter(i=>!i.m||can(i.m)).map(i=>`<a href="${i.r}" class="${i.on?'on':''}" data-act="mobile-nav-go" data-r="${i.r}"><span>${i.em}</span>${i.t}</a>`).join('')}
+    <div style="border-top:1px solid var(--line);margin:8px 0;padding-top:8px;display:flex;align-items:center;gap:8px">
+      <button class="icon-btn" data-act="account" style="border:none">${av(nameOf(APP.user.devotee),'s')}</button>
+      <div style="flex:1;min-width:0"><div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(devoteeDisplayName(APP.user.devotee))}</div><div style="font-size:11px;color:var(--ink-3)">${esc(devoteePositionTitle(APP.user.devotee, APP.user.role))}</div></div>
+      <button class="btn sm danger" data-act="logout">${ic('logout')} Sign out</button>
+    </div>
+  </div><div class="mobile-scrim" data-act="close-mobile-nav" style="z-index:97"></div>`;
+}
+
+/* ========== GLOBAL TODAY PANEL ========== */
+function globalTodayPanel(){
+  const t=iso(TODAY);
+  const svc=DB.activities.filter(a=>a.date===t&&(a.type==='Seva'||a.type==='Service'));
+  const cls=DB.activities.filter(a=>a.date===t&&a.type==='Class');
+  const evs=DB.activities.filter(a=>a.date===t&&a.type==='Event');
+  const fus=DB.followups.filter(f=>f.status==='Pending'&&f.due<=t);
+  const ann=DB.threads.find(x=>x.type==='community');
+  const festivals=DB.activities.filter(a=>a.date===t&&a.cat==='Festivals');
+  const meetings=DB.activities.filter(a=>a.date===t&&a.cat==='Meetings');
+  const collapsed=!APP.todayPanelOpen;
+  function tpItems(items,color,type){
+    if(!items.length)return `<div class="tp-empty">None today</div>`;
+    return items.slice(0,6).map(a=>`<a class="tp-item" href="#/activity/${a.id}"><span class="tp-dot" style="background:${color}"></span><div class="tp-text"><span class="tp-title">${esc(a.name)}</span><span class="tp-meta">${esc(a.location||scopeName(a)||'')}</span></div>${a.start?`<span class="tp-time">${a.start}</span>`:''}</a>`).join('');
+  }
+  const panelContent=`
+    <div class="tp-section"><div class="tp-section-title">⚡ Events <span class="tp-count-badge">${evs.length}</span></div>${tpItems(evs,'var(--mustard)','event')}</div>
+    <div class="tp-section"><div class="tp-section-title">📖 Classes <span class="tp-count-badge">${cls.length}</span></div>${tpItems(cls,'var(--indigo)','class')}</div>
+    <div class="tp-section"><div class="tp-section-title">🛕 Seva <span class="tp-count-badge">${svc.length}</span></div>${tpItems(svc,'var(--saffron)','seva')}</div>
+    ${festivals.length?`<div class="tp-section"><div class="tp-section-title">🪔 Festival</div>${festivals.map(f=>`<div class="tp-item"><span class="tp-dot" style="background:var(--amber)"></span><div class="tp-text"><span class="tp-title">${esc(f.name)}</span></div></div>`).join('')}</div>`:''}
+    ${meetings.length?`<div class="tp-section"><div class="tp-section-title">🤝 Meetings <span class="tp-count-badge">${meetings.length}</span></div>${tpItems(meetings,'var(--teal)','meeting')}</div>`:''}
+    <div class="tp-section"><div class="tp-section-title">⏰ Follow-ups Due <span class="tp-count-badge">${fus.length}</span></div>${fus.length?fus.slice(0,5).map(f=>`<a class="tp-item" href="#/followups"><span class="tp-dot" style="background:var(--danger)"></span><div class="tp-text"><span class="tp-title">${esc(subjectName(f))}</span><span class="tp-meta">${esc(f.purpose||'')} · ${relD(f.due)}</span></div></a>`).join(''):`<div class="tp-empty">All clear</div>`}</div>
+    ${ann&&ann.messages.length?`<div class="tp-section"><div class="tp-section-title">📣 Announcements</div>${ann.messages.slice(-3).reverse().map(m=>`<div class="tp-item"><span class="tp-dot" style="background:var(--sky)"></span><div class="tp-text"><span class="tp-title">${esc(nameOf(m.from))}</span><span class="tp-meta">${esc(m.text).slice(0,60)}${m.text.length>60?'…':''}</span></div></div>`).join('')}</div>`:''}
+  `;
+  return `<aside class="today-panel ${collapsed?'collapsed':''}" id="todayPanel">
+    <div class="today-panel-header">
+      <h3>Today · ${fmtD(t)}</h3>
+      <button class="today-panel-toggle" data-act="toggle-today-panel" title="Collapse panel">‹</button>
+    </div>
+    <div class="today-panel-body">${panelContent}</div>
+  </aside>
+  <div class="today-panel-tab ${collapsed?'':'hidden'}" data-act="toggle-today-panel" title="Open Today panel">Today</div>`;
+}
+function mobileTodayDrawer(){
+  if(!APP.mobileTodayOpen)return '';
+  const t=iso(TODAY);
+  const svc=DB.activities.filter(a=>a.date===t&&(a.type==='Seva'||a.type==='Service'));
+  const cls=DB.activities.filter(a=>a.date===t&&a.type==='Class');
+  const evs=DB.activities.filter(a=>a.date===t&&a.type==='Event');
+  const fus=DB.followups.filter(f=>f.status==='Pending'&&f.due<=t);
+  function tpMobileItems(items,color){
+    if(!items.length)return `<div style="font-size:12px;color:var(--ink-3);padding:6px 0">None today</div>`;
+    return items.slice(0,5).map(a=>`<a class="tp-item" href="#/activity/${a.id}" data-act="close-mobile-today"><span class="tp-dot" style="background:${color}"></span><div class="tp-text"><span class="tp-title">${esc(a.name)}</span><span class="tp-meta">${a.start||''} · ${esc(a.location||'')}</span></div></a>`).join('');
+  }
+  return `<div class="mobile-today-drawer">
+    <div class="mobile-today-scrim" data-act="close-mobile-today"></div>
+    <div class="mobile-today-sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header"><h3>Today's Updates</h3><button class="icon-btn" data-act="close-mobile-today" style="border:none">${ic('x')}</button></div>
+      <div class="sheet-body">
+        <div class="tp-section"><div class="tp-section-title">⚡ Events <span class="tp-count-badge">${evs.length}</span></div>${tpMobileItems(evs,'var(--mustard)')}</div>
+        <div class="tp-section"><div class="tp-section-title">📖 Classes <span class="tp-count-badge">${cls.length}</span></div>${tpMobileItems(cls,'var(--indigo)')}</div>
+        <div class="tp-section"><div class="tp-section-title">🛕 Seva <span class="tp-count-badge">${svc.length}</span></div>${tpMobileItems(svc,'var(--saffron)')}</div>
+        <div class="tp-section"><div class="tp-section-title">⏰ Follow-ups Due <span class="tp-count-badge">${fus.length}</span></div>${fus.length?fus.slice(0,5).map(f=>`<div class="tp-item"><span class="tp-dot" style="background:var(--danger)"></span><div class="tp-text"><span class="tp-title">${esc(subjectName(f))}</span><span class="tp-meta">${esc(f.purpose||'')}</span></div></div>`).join(''):`<div style="font-size:12px;color:var(--ink-3);padding:6px 0">All clear</div>`}</div>
+      </div>
+    </div>
+  </div>`;
 }
 const CRUMBS={'':'Dashboard',today:'Today',devotees:'Devotees',devotee:'Devotee',org:'Organisation',mgmt:'BACE Management',
  depts:'Departments',dept:'Department',assign:'Assign Seva',attendance:'BACE Pillars','dept-reports':'Department reports',
@@ -3381,33 +3689,7 @@ const CRUMBS={'':'Dashboard',today:'Today',devotees:'Devotees',devotee:'Devotee'
  meetings:'Personal meetings','care-followups':'Care follow-ups','care-reports':'Care reports',reports:'Reports & analytics',
  calendar:'Community calendar',messages:'Messages',notifications:'Notifications',admin:'Administration',more:'Menu'};
 function topbar(){
-  const cleanRoute = APP.route.replace(/^#\/?/, '');
-  const parts = cleanRoute.split('/').filter(Boolean);
-  const unread=DB.notifications.filter(n=>!n.read).length;
-  const pageTitle=CRUMBS[parts[0]]||parts[0]||'Dashboard';
-  return `<header class="topbar">
-    <button class="icon-btn" data-act="toggle-sidebar" title="${APP.sbClosed ? 'Open menu' : 'Close menu'}" style="margin-right:2px;flex:none;display:inline-flex;align-items:center;justify-content:center" aria-label="Toggle navigation">
-      ${ic('menu')}
-    </button>
-    <div class="topbar-title-mobile" style="display:none;align-items:center;gap:8px;min-width:0;flex:1">
-      <span style="font-family:var(--f-head);font-size:15.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink)">${esc(pageTitle)}</span>
-    </div>
-    <nav class="crumbs"><a href="#/">Community</a>${parts[0]?` / <b>${esc(CRUMBS[parts[0]]||parts[0])}</b>`:''}${APP.crumbLeaf?` / <b>${esc(APP.crumbLeaf)}</b>`:''}</nav>
-    <div class="searchbox">${ic('search')}<input type="search" placeholder="Search devotees, seva, batches, SOPs…" value="${esc(APP.search)}" data-act="global-search" aria-label="Global search"></div>
-    <button class="icon-btn mobile-search-btn" data-act="toggle-mobile-search" title="Search" aria-label="Search" style="display:none">${ic('search')}</button>
-    <button class="icon-btn" data-act="go" data-r="#/messages" title="Messages">${ic('chat')}${unreadMsgs()?`<i class="dot">${unreadMsgs()}</i>`:''}</button>
-    <button class="icon-btn" data-act="notifications" title="Notifications">${ic('bell')}${unread?`<i class="dot">${unread}</i>`:''}</button>
-    <button class="icon-btn" data-act="account" title="Devotee Account">${av(nameOf(APP.user.devotee),'s')}</button>
-    <button class="btn sm logout-btn-topbar" data-act="logout" title="Sign out" style="color:var(--danger);border:1px solid var(--danger-soft);background:var(--surface);display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:10px;font-weight:600;font-size:12.5px;margin-left:4px">
-      ${ic('logout')}<span>Sign out</span>
-    </button>
-  </header>
-  ${APP.mobileSearchOpen ? `
-  <div class="mobile-search-bar" style="background:var(--surface);padding:8px 14px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px;animation:drop .15s ease-out">
-    <span style="color:var(--ink-3);display:flex;align-items:center">${ic('search')}</span>
-    <input id="mobile-search-input" type="search" placeholder="Search devotees, seva, batches…" value="${esc(APP.search)}" data-act="global-search" style="flex:1;border:none;background:transparent;outline:none;font-size:15px;color:var(--ink)">
-    <button class="icon-btn sm" data-act="toggle-mobile-search" title="Close search" style="width:28px;height:28px;border-radius:7px;border:none;background:transparent">${ic('x')}</button>
-  </div>`:''}`;
+  return '';
 }
 function botnav(){
   const items=[
@@ -3415,12 +3697,12 @@ function botnav(){
     ['Devotees', '👥', can('directory') ? '#/devotees' : '#/devotee/'+APP.user.devotee],
     ['Seva', '📋', '#/assign'],
     ['Chat', '💬', '#/messages', unreadMsgs()],
-    ['Menu', '☰', 'toggle-mobile-drawer']
+    ['Menu', '☰', 'toggle-mobile-nav']
   ];
   return `<nav class="botnav">${items.map(([t, em, target, badge])=>{
-    const isAct = target === 'toggle-mobile-drawer';
-    const on = isAct ? APP.mobileDrawerOpen : (!APP.mobileDrawerOpen && (APP.route===target || (target!=='#/' && APP.route.startsWith(target))));
-    const attr = isAct ? `data-act="toggle-mobile-drawer"` : `data-act="go" data-r="${target}"`;
+    const isAct = target === 'toggle-mobile-nav';
+    const on = isAct ? APP.mobileNavOpen : (!APP.mobileNavOpen && (APP.route===target || (target!=='#/' && APP.route.startsWith(target))));
+    const attr = isAct ? `data-act="toggle-mobile-nav"` : `data-act="go" data-r="${target}"`;
     return `<button class="${on?'on':''}" ${attr} title="${t}" aria-label="${t}">
       <span class="em">${em}</span>
       <span>${t}</span>${badge ? `<i class="bdot">${badge > 9 ? '9+' : badge}</i>` : ''}
@@ -4133,19 +4415,91 @@ function insightsCard(){
 function pillarCards(){
   const s=STATS();
   return `<div class="grid g3">
-   <a class="card" href="#/mgmt"><div class="card-b">
-     <div style="font-size:22px">🛕</div><h3 style="margin-top:6px">BACE Management</h3>
-     <p class="tiny" style="margin:4px 0 12px">${s.depts} departments · ${s.scheduled} scheduled activities</p>
+   <a class="card pillar-card pillar-mgmt" href="#/mgmt">
+     <div class="pillar-card-bg">🛕</div>
+     <div class="card-b" style="position:relative;z-index:1">
+     <div class="pillar-card-icon" style="background:linear-gradient(135deg,#EA580C,#C2410C);box-shadow:0 4px 12px rgba(234,88,12,.25)">🛕</div>
+     <h3 style="margin-top:10px">BACE Management</h3>
+     <p class="tiny" style="margin:4px 0 12px">${s.depts} departments · ${s.scheduled} scheduled</p>
      ${prog(s.svcAtt,'var(--saffron)')}<div class="tiny" style="margin-top:6px">${s.svcAtt}% seva attendance</div></div></a>
-   <a class="card" href="#/preaching"><div class="card-b">
-     <div style="font-size:22px">📖</div><h3 style="margin-top:6px">BACE Preaching</h3>
+   <a class="card pillar-card pillar-preach" href="#/preaching">
+     <div class="pillar-card-bg">📖</div>
+     <div class="card-b" style="position:relative;z-index:1">
+     <div class="pillar-card-icon" style="background:linear-gradient(135deg,#6366F1,#4338CA);box-shadow:0 4px 12px rgba(99,102,241,.25)">📖</div>
+     <h3 style="margin-top:10px">BACE Preaching</h3>
      <p class="tiny" style="margin:4px 0 12px">${s.contacts} contacts · ${activeBatches().length} batches</p>
      ${prog(pct(s.regulars,s.contacts),'var(--indigo)')}<div class="tiny" style="margin-top:6px">${s.lvl.join(' / ')} at levels 1 / 2 / 3</div></div></a>
-   <a class="card" href="#/care"><div class="card-b">
-     <div style="font-size:22px">❤️</div><h3 style="margin-top:6px">Devotee Care</h3>
+   <a class="card pillar-card pillar-care" href="#/care">
+     <div class="pillar-card-bg">❤️</div>
+     <div class="card-b" style="position:relative;z-index:1">
+     <div class="pillar-card-icon" style="background:linear-gradient(135deg,#10B981,#059669);box-shadow:0 4px 12px rgba(16,185,129,.25)">❤️</div>
+     <h3 style="margin-top:10px">Devotee Care</h3>
      <p class="tiny" style="margin:4px 0 12px">${s.covered} covered · ${s.groups} groups</p>
      ${prog(pct(s.covered,s.total),'var(--green)')}<div class="tiny" style="margin-top:6px">${pct(s.covered,s.total)}% have a named facilitator</div></div></a>
   </div>`;
+}
+/* ========== COMPACT DASHBOARD CALENDAR WIDGET ========== */
+function dashboardCalendarWidget(){
+  const calView = APP.filters.dashCalView || 'month';
+  const today = new Date(TODAY);
+  const offset = APP.filters.dashCalOff || 0;
+  let content = '';
+  if(calView==='day'){
+    const d = new Date(today);d.setDate(d.getDate()+offset);
+    const dt = iso(d);
+    const dayActs = DB.activities.filter(a=>a.date===dt).sort((a,b)=>(a.start||'').localeCompare(b.start||''));
+    content = `<div style="font-weight:600;margin-bottom:10px">${fmtLong(dt)}</div>
+      ${dayActs.length?dayActs.map(a=>`<div style="display:flex;gap:8px;padding:6px 0;border-bottom:1px solid var(--line-2);font-size:12.5px;align-items:center">
+        <span style="color:var(--accent);font-weight:600;min-width:50px">${a.start||'—'}</span>
+        <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(a.name)}</span>
+        <span class="badge" style="font-size:10px">${a.type}</span></div>`).join('')
+        :`<div class="tp-empty">No activities</div>`}`;
+  } else if(calView==='week'){
+    const d = new Date(today);
+    const dayOfWeek = d.getDay();
+    const monday = new Date(d);monday.setDate(d.getDate() - ((dayOfWeek+6)%7) + (offset*7));
+    const days = Array.from({length:7},(_,i)=>{const dd=new Date(monday);dd.setDate(monday.getDate()+i);return dd});
+    content = `<div style="display:flex;flex-direction:column;gap:2px">
+      ${days.map(dd=>{
+        const dt=iso(dd);const isToday=dt===iso(TODAY);
+        const dayActs=DB.activities.filter(a=>a.date===dt);
+        return `<div style="display:flex;gap:8px;padding:6px 4px;border-radius:8px;${isToday?'background:var(--accent-soft)':''};font-size:12px;align-items:center;cursor:pointer" data-act="dash-cal-day" data-d="${dt}">
+          <span style="min-width:32px;font-weight:600;${isToday?'color:var(--accent)':''}">${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][dd.getDay()]}</span>
+          <span style="min-width:22px;color:var(--ink-2)">${dd.getDate()}</span>
+          <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink-3)">${dayActs.slice(0,2).map(a=>a.name).join(' · ')||'—'}</span>
+          ${dayActs.length>0?`<span class="tp-count-badge">${dayActs.length}</span>`:''}</div>`}).join('')}</div>`;
+  } else {
+    const cur=new Date(today.getFullYear(),today.getMonth()+offset,1);
+    const yr=cur.getFullYear(),mo=cur.getMonth();
+    const firstDay=(new Date(yr,mo,1).getDay()+6)%7;
+    const daysInMonth=new Date(yr,mo+1,0).getDate();
+    const weeks=Math.ceil((firstDay+daysInMonth)/7);
+    const monthLabel=MONTHS[mo]+' '+yr;
+    content = `<div style="text-align:center;font-weight:600;margin-bottom:8px;font-size:13px">${monthLabel}</div>
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:1px;font-size:11px;text-align:center">
+      ${['M','T','W','T','F','S','S'].map(d=>`<div style="color:var(--ink-3);font-weight:600;padding:4px 0">${d}</div>`).join('')}
+      ${Array.from({length:weeks*7},(_,i)=>{
+        const dayNum=i-firstDay+1;
+        if(dayNum<1||dayNum>daysInMonth)return `<div style="padding:4px 0"></div>`;
+        const dt=`${yr}-${String(mo+1).padStart(2,'0')}-${String(dayNum).padStart(2,'0')}`;
+        const isToday=dt===iso(TODAY);
+        const hasEvents=DB.activities.some(a=>a.date===dt);
+        return `<div style="padding:4px 0;border-radius:6px;cursor:pointer;position:relative;${isToday?'background:var(--accent);color:#fff;font-weight:700':''}${!isToday&&hasEvents?';font-weight:600':''}" data-act="dash-cal-day" data-d="${dt}">
+          ${dayNum}${!isToday&&hasEvents?`<span style="position:absolute;bottom:1px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:var(--accent)"></span>`:''}</div>`}).join('')}</div>`;
+  }
+  return section('📅 Calendar',`<div class="card-b">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div style="display:flex;gap:4px">
+        <button class="btn sm ${calView==='day'?'pri':''}" data-act="dash-cal-view" data-v="day">Day</button>
+        <button class="btn sm ${calView==='week'?'pri':''}" data-act="dash-cal-view" data-v="week">Week</button>
+        <button class="btn sm ${calView==='month'?'pri':''}" data-act="dash-cal-view" data-v="month">Month</button>
+      </div>
+      <div style="display:flex;gap:4px;align-items:center">
+        <button class="btn sm" data-act="dash-cal-nav" data-d="-1">‹</button>
+        <button class="btn sm" data-act="dash-cal-nav" data-d="0" style="font-size:11px">Today</button>
+        <button class="btn sm" data-act="dash-cal-nav" data-d="1">›</button>
+      </div>
+    </div>${content}</div>`,`<a class="btn sm" href="#/calendar">Full calendar</a>`);
 }
 const growthPoints=()=>{
   const m=monthsBack(6);
@@ -4237,9 +4591,19 @@ function viewDashboard(){
   return `<span class="badge b-green">+${count} this month</span>`;
 })())}
      ${needsAttention()}</div>${pillarCards()}<div style="height:15px"></div>
-     <div class="grid g2">${insightsCard()}
-      ${section('Organisation',`<div class="card-b"><p class="tiny" style="margin-top:0">Area Leader → Overall Coordinator → three managers → department heads, preaching coordinators and facilitators.</p>
-        <a class="btn" href="#/org">${ic('layers')}View hierarchy</a></div>`)}</div>`;
+     <div class="grid g2">${insightsCard()}${dashboardCalendarWidget()}</div>
+     <div style="height:15px"></div>
+     <div class="grid g2">${section('Organisation',`<div class="card-b"><p class="tiny" style="margin-top:0">Area Leader → Overall Coordinator → three managers → department heads, preaching coordinators and facilitators.</p>
+        <a class="btn" href="#/org">${ic('layers')}View hierarchy</a></div>`)}
+      ${section('Quick links',`<div style="display:flex;flex-wrap:wrap;gap:8px;padding:16px 18px">
+        <a class="btn" href="#/today">⚡ Today</a>
+        <a class="btn" href="#/devotees">👥 Devotees</a>
+        <a class="btn" href="#/depts">🏢 Departments</a>
+        <a class="btn" href="#/batches">🗂 Batches</a>
+        <a class="btn" href="#/assign">📋 Assign</a>
+        <a class="btn" href="#/calendar">📅 Calendar</a>
+        <a class="btn" href="#/reports">📊 Reports</a>
+      </div>`)}</div>`;
 
   if(r==='coordinator')return hd+common+`<div class="grid g-1-2" style="margin-bottom:15px">${needsAttention()}
     ${section('Today across the community',`<div class="grid g4" style="padding:16px 18px">
@@ -18504,7 +18868,6 @@ function render(){
 
   if (!isMasterOrLeader) {
     if (!curDevotee) {
-      // Devotee record was deleted from main database
       APP.user.approvalStatus = 'pending_profile';
       APP.user.profileCompleted = false;
       APP.user.devotee = null;
@@ -18531,33 +18894,39 @@ function render(){
     return;
   }
 
+  // Apply theme
+  document.documentElement.setAttribute('data-theme',APP.theme);
+
   applyAccent(APP.route);
   const body=routeView();
-  const shellClass=`shell ${APP.sbClosed?'sb-closed':''} ${APP.mobileDrawerOpen?'mobile-drawer-open':''}`;
-  const sbToggleBtn=`<button class="sb-edge-toggle ${APP.sbClosed?'closed':'open'}" data-act="toggle-sidebar" title="${APP.sbClosed?'Open side panel':'Close side panel'}" aria-label="${APP.sbClosed?'Open side panel':'Close side panel'}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>`;
-  const mobileScrim = APP.mobileDrawerOpen ? `<div class="mobile-scrim" data-act="close-mobile-drawer" aria-label="Close menu"></div>` : '';
-  app.innerHTML=`<div class="${shellClass}">${sidebar()}<div class="main">${topbar()}<div class="view">${body}</div></div></div>
-    ${mobileScrim}${sbToggleBtn}${botnav()}${fab()}${modalHTML()}`;
+  const panelCollapsed=!APP.todayPanelOpen;
+  const layoutClass=`app-layout ${panelCollapsed?'panel-collapsed':''}`;
+  const cleanRoute=APP.route.replace(/^#\/?/,'');
+  const routeParts=cleanRoute.split('/').filter(Boolean);
+  const crumbLabel=CRUMBS[routeParts[0]]||routeParts[0]||'Dashboard';
+  const breadcrumb=`<nav class="crumbs" style="padding:0 0 10px;margin:0"><a href="#/" style="color:var(--accent)">Home</a>${routeParts[0]?` <span style="opacity:.4">/</span> <b>${esc(crumbLabel)}</b>`:''}${APP.crumbLeaf?` <span style="opacity:.4">/</span> <b>${esc(APP.crumbLeaf)}</b>`:''}</nav>`;
+  app.innerHTML=`${appHeader()}
+    <div class="${layoutClass}">
+      <div class="main"><div class="view">${routeParts[0]?breadcrumb:''}${body}</div></div>
+      ${globalTodayPanel()}
+    </div>
+    ${botnav()}${fab()}${modalHTML()}${mobileTodayDrawer()}
+    <button class="mobile-today-btn" data-act="open-mobile-today">⚡ Today's Updates</button>`;
   const newDrawerBody = document.querySelector('.drawer .modal-b');
   if (newDrawerBody && prevDrawerScroll > 0) {
     newDrawerBody.scrollTop = prevDrawerScroll;
   }
-  const sb=document.getElementById('sbscroll');
-  if(sb){
-    let lockScroll = true;
-    if(APP.sbScroll > 0) sb.scrollTop = APP.sbScroll;
-    setTimeout(()=>{ lockScroll = false; }, 60);
-    sb.addEventListener('scroll',()=>{
-      if(!lockScroll) APP.sbScroll = sb.scrollTop;
-    },{passive:true});
-  }
   const cb=document.getElementById('chatbody');if(cb)cb.scrollTop=cb.scrollHeight;
+  // Auto-collapse today panel on narrow screens
+  if(window.innerWidth<=900&&APP.todayPanelOpen){APP.todayPanelOpen=false}
 }
 function go(r){
   APP.route=r;
   APP.modal='';
   APP.mobileDrawerOpen=false;
   APP.mobileSearchOpen=false;
+  APP.mobileNavOpen=false;
+  APP.mobileTodayOpen=false;
   if(location.hash!==r)location.hash=r;
   else render();
   window.scrollTo(0,0);
@@ -19073,6 +19442,23 @@ document.addEventListener('click',e=>{
       localStorage.setItem('bace_sb_closed',APP.sbClosed?'1':'0');
     }
     render();break}
+  case 'toggle-theme':{stop();
+    APP.theme=APP.theme==='dark'?'light':'dark';
+    localStorage.setItem('bace_theme',APP.theme);
+    document.documentElement.setAttribute('data-theme',APP.theme);
+    render();break}
+  case 'toggle-today-panel':{stop();
+    APP.todayPanelOpen=!APP.todayPanelOpen;
+    localStorage.setItem('bace_today_panel',APP.todayPanelOpen?'1':'0');
+    render();break}
+  case 'toggle-mobile-nav':{stop();APP.mobileNavOpen=!APP.mobileNavOpen;render();break}
+  case 'close-mobile-nav':{stop();APP.mobileNavOpen=false;render();break}
+  case 'mobile-nav-go':{stop();APP.mobileNavOpen=false;go(t.dataset.r||t.getAttribute('href'));break}
+  case 'open-mobile-today':{stop();APP.mobileTodayOpen=true;render();break}
+  case 'close-mobile-today':{stop();APP.mobileTodayOpen=false;render();break}
+  case 'dash-cal-view':{stop();APP.filters.dashCalView=t.dataset.v;APP.filters.dashCalOff=0;render();break}
+  case 'dash-cal-nav':{stop();const d=parseInt(t.dataset.d,10);if(d===0)APP.filters.dashCalOff=0;else APP.filters.dashCalOff=(APP.filters.dashCalOff||0)+d;render();break}
+  case 'dash-cal-day':{stop();const dt=t.dataset.d;if(dt){APP.filters.calSelectedDate=dt;go('#/calendar');}break}
   case 'open-dept':stop();go('#/dept/'+id);break;
   case 'open-batch':stop();go('#/batch/'+id);break;
   case 'open-group':stop();go('#/group/'+id);break;
