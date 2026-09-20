@@ -2324,6 +2324,22 @@ a.card:active,button.card:active{transform:scale(.99)}
 /* Focus ring improvements */
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
 button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* Ambient Chanting Audio Equalizer */
+.audio-equalizer{display:inline-flex;align-items:flex-end;gap:3px;height:22px;padding:2px 5px;background:rgba(245,158,11,0.12);border-radius:6px;border:1px solid rgba(245,158,11,0.25)}
+.audio-eq-bar{width:3.5px;height:5px;background:#f59e0b;border-radius:2px;transition:height .2s ease}
+.audio-equalizer.playing .audio-eq-bar{animation:eqBounce 1.1s ease-in-out infinite alternate}
+.audio-equalizer.playing .audio-eq-bar:nth-child(1){animation-duration:.9s;animation-delay:.1s}
+.audio-equalizer.playing .audio-eq-bar:nth-child(2){animation-duration:1.2s;animation-delay:.3s}
+.audio-equalizer.playing .audio-eq-bar:nth-child(3){animation-duration:.8s;animation-delay:.0s}
+.audio-equalizer.playing .audio-eq-bar:nth-child(4){animation-duration:1.3s;animation-delay:.4s}
+.audio-equalizer.playing .audio-eq-bar:nth-child(5){animation-duration:1.0s;animation-delay:.2s}
+@keyframes eqBounce{
+  0%{height:4px}
+  50%{height:18px}
+  100%{height:8px}
+}
+
 </style>
 </head>
 <body>
@@ -5421,6 +5437,281 @@ function insightsCard(){
   return section('✨ What the data is saying',`<div class="list">${items.map(([em,t,r])=>`<a class="insight" href="${r}"><span class="ic">${em}</span><span>${esc(t)}</span></a>`).join('')}</div>`,
     `<span class="tiny">Generated from stored records only</span>`);
 }
+/* ---------------- Srila Prabhupada Nectar & Audio Ambience ---------------- */
+const PRABHUPADA_NECTAR_QUOTES = [
+  {
+    quote: "Chant Hare Krishna, do your duty sincerely, and take Krishna prasadam. Then your life will be sublime, free from all anxiety.",
+    citation: "Letter to Brahmananda, Los Angeles, 1968",
+    topic: "Peace of Mind & Duty"
+  },
+  {
+    quote: "Books are the basis, preaching is the essence, utility is the principle, and purity is the force.",
+    citation: "Foundational Motto given to ISKCON Disciples, 1970",
+    topic: "Ashram Culture"
+  },
+  {
+    quote: "Whatever you do, whatever you eat, whatever you offer or give away—do that as an offering unto Me. Transform all education and work into pure devotion.",
+    citation: "Bhagavad-gita As It Is 9.27, Purport",
+    topic: "Karma-Yoga & Surrender"
+  },
+  {
+    quote: "You can show your love for me by how much you cooperate together to maintain and spread this transcendental movement.",
+    citation: "Conversations in Sri Vrindavan Dham, 1977",
+    topic: "Devotee Cooperation"
+  },
+  {
+    quote: "One who rises early in the morning during brahma-muhurta and attentively chants the holy names becomes freed from all contamination of material life.",
+    citation: "Srimad Bhagavatam 3.20.25, Purport",
+    topic: "Morning Sadhana"
+  },
+  {
+    quote: "Cleanliness is next to godliness. The temple, the rooms, the clothes, the body, and the mind must all be kept pure and spotless for the service of the Lord.",
+    citation: "Letter to Satsvarupa, 1971",
+    topic: "Swachhata & Purity"
+  },
+  {
+    quote: "The holy name of Krishna is transcendentally blissful. It bestows all spiritual benedictions, for it is Krishna Himself, the reservoir of all pleasure.",
+    citation: "Padma Purana, cited in Nectar of Devotion",
+    topic: "The Holy Name"
+  },
+  {
+    quote: "Devotional service is so pure and perfect that once begun, it never diminishes. Even a small step on this path protects one from the greatest fear.",
+    citation: "Bhagavad-gita As It Is 2.40, Purport",
+    topic: "Eternal Spiritual Asset"
+  },
+  {
+    quote: "Simply by hearing the transcendental vibration of Hare Krishna, one's heart is cleansed of all the dust accumulated for many, many births.",
+    citation: "Sri Siksastakam 1, Chaitanya Charitamrita",
+    topic: "Ceto-Darpana-Marjanam"
+  },
+  {
+    quote: "Give this youth generation real spiritual culture. When educated students take to Krishna consciousness, the entire world will be transformed.",
+    citation: "Room Conversation, New York, 1976",
+    topic: "Youth Empowerment"
+  }
+];
+
+let BACE_AMB = {
+  ctx: null,
+  activeNodes: [],
+  playing: false,
+  track: 'tanpura',
+  audioEl: null
+};
+
+function playBaceAmbience(trackName) {
+  if (trackName) BACE_AMB.track = trackName;
+  stopBaceAmbience();
+
+  try {
+    if (!BACE_AMB.ctx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (AC) BACE_AMB.ctx = new AC();
+    }
+    if (BACE_AMB.ctx && BACE_AMB.ctx.state === 'suspended') {
+      BACE_AMB.ctx.resume();
+    }
+  } catch(e) {
+    console.warn('AudioContext init error:', e);
+  }
+
+  if (BACE_AMB.track === 'tanpura') {
+    startTanpuraSynth();
+  } else {
+    const urls = {
+      japa: 'https://cdn.jsdelivr.net/gh/surya-narayana/bace-assets@main/audio/prabhupada_japa.mp3',
+      brahma: 'https://cdn.jsdelivr.net/gh/surya-narayana/bace-assets@main/audio/govindam.mp3'
+    };
+    const url = urls[BACE_AMB.track];
+    if (url) {
+      if (!BACE_AMB.audioEl) {
+        BACE_AMB.audioEl = new Audio();
+        BACE_AMB.audioEl.loop = true;
+      }
+      BACE_AMB.audioEl.src = url;
+      BACE_AMB.audioEl.volume = 0.55;
+      BACE_AMB.audioEl.play().catch(err => {
+        console.warn('Audio stream fallback to Tanpura drone:', err.message);
+        startTanpuraSynth();
+      });
+    } else {
+      startTanpuraSynth();
+    }
+  }
+  BACE_AMB.playing = true;
+  updateAmbienceUI();
+}
+
+function startTanpuraSynth() {
+  if (!BACE_AMB.ctx) return;
+  const now = BACE_AMB.ctx.currentTime;
+  const masterGain = BACE_AMB.ctx.createGain();
+  masterGain.gain.setValueAtTime(0.01, now);
+  masterGain.gain.exponentialRampToValueAtTime(0.18, now + 1.2);
+
+  const filter = BACE_AMB.ctx.createBiquadFilter();
+  filter.type = 'lowpass';
+  filter.frequency.setValueAtTime(800, now);
+
+  masterGain.connect(filter);
+  filter.connect(BACE_AMB.ctx.destination);
+
+  const freqs = [138.59, 207.65, 277.18, 554.37];
+  BACE_AMB.activeNodes = [masterGain, filter];
+
+  freqs.forEach((f, idx) => {
+    const osc = BACE_AMB.ctx.createOscillator();
+    const oscGain = BACE_AMB.ctx.createGain();
+    osc.type = idx % 2 === 0 ? 'sawtooth' : 'triangle';
+    osc.frequency.setValueAtTime(f, now);
+
+    const lfo = BACE_AMB.ctx.createOscillator();
+    lfo.frequency.setValueAtTime(0.25 + (idx * 0.08), now);
+    const lfoGain = BACE_AMB.ctx.createGain();
+    lfoGain.gain.setValueAtTime(0.04, now);
+    lfo.connect(lfoGain.gain);
+
+    oscGain.gain.setValueAtTime(0.25 / freqs.length, now);
+    osc.connect(oscGain);
+    oscGain.connect(masterGain);
+
+    osc.start(now);
+    lfo.start(now);
+    BACE_AMB.activeNodes.push(osc, lfo);
+  });
+}
+
+function stopBaceAmbience() {
+  if (BACE_AMB.audioEl) {
+    try { BACE_AMB.audioEl.pause(); } catch(e) {}
+  }
+  if (BACE_AMB.ctx && BACE_AMB.activeNodes.length) {
+    try {
+      BACE_AMB.activeNodes.forEach(n => {
+        if (n.stop) n.stop();
+        if (n.disconnect) n.disconnect();
+      });
+    } catch(e) {}
+    BACE_AMB.activeNodes = [];
+  }
+  BACE_AMB.playing = false;
+  updateAmbienceUI();
+}
+
+function toggleBaceAmbience() {
+  if (BACE_AMB.playing) {
+    stopBaceAmbience();
+    toast('Ambience paused', '⏸️');
+  } else {
+    playBaceAmbience();
+    const names = {
+      tanpura: '🪷 Meditative Tanpura Drone',
+      japa: '📿 Prabhupada Japa Chanting',
+      brahma: '🪔 Brahma Samhita (Govindam)'
+    };
+    toast('Playing ' + (names[BACE_AMB.track] || 'Ambience'), '🎶');
+  }
+}
+
+function updateAmbienceUI() {
+  const eq = document.getElementById('ambEqualizer');
+  const btn = document.getElementById('ambPlayBtn');
+  const desc = document.getElementById('ambTrackDesc');
+  if (eq) {
+    if (BACE_AMB.playing) eq.classList.add('playing');
+    else eq.classList.remove('playing');
+  }
+  if (btn) {
+    btn.innerHTML = BACE_AMB.playing ? '⏸ Pause' : '▶ Play';
+    if (BACE_AMB.playing) btn.classList.add('pri');
+    else btn.classList.remove('pri');
+  }
+  if (desc) {
+    const names = {
+      tanpura: '432Hz Meditative Tanpura Drone',
+      japa: 'Srila Prabhupada Japa Chanting',
+      brahma: 'Brahma Samhita Temple Aarti'
+    };
+    desc.textContent = names[BACE_AMB.track] || 'Temple Chanting Ambience';
+  }
+}
+
+function prabhupadaNectarCard(){
+  if (typeof APP.nectarIdx !== 'number') {
+    const todayNum = Math.abs(iso(TODAY).split('').reduce((acc,c)=>acc+c.charCodeAt(0),0));
+    APP.nectarIdx = todayNum % PRABHUPADA_NECTAR_QUOTES.length;
+  }
+  const q = PRABHUPADA_NECTAR_QUOTES[APP.nectarIdx] || PRABHUPADA_NECTAR_QUOTES[0];
+  const isPlaying = BACE_AMB.playing;
+  const curTrack = BACE_AMB.track || 'tanpura';
+
+  return `
+    <div class="card pad" style="position:relative;overflow:hidden;border:1px solid rgba(245,158,11,0.35);background:linear-gradient(135deg,rgba(254,243,199,0.25) 0%,var(--surface) 60%,rgba(254,243,199,0.18) 100%);box-shadow:0 8px 24px -4px rgba(245,158,11,0.12)">
+      <div style="position:absolute;right:-15px;bottom:-20px;font-size:120px;opacity:0.04;pointer-events:none;user-select:none">🪷</div>
+
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid rgba(245,158,11,0.2)">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:18px">🪷</span>
+          <span style="font-family:'Outfit',sans-serif;font-weight:700;font-size:15px;color:var(--ink);letter-spacing:-0.01em">Daily Srila Prabhupada Nectar</span>
+          <span class="badge" style="background:rgba(245,158,11,0.15);color:#b45309;font-weight:700;font-size:10px;border:1px solid rgba(245,158,11,0.3)">VANI AMRITA</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:5px">
+          <button class="btn sm" data-act="prev-nectar-quote" title="Previous quote" style="padding:3px 8px;font-size:13px;border-color:rgba(245,158,11,0.3)">‹</button>
+          <span class="tiny" style="font-weight:700;color:var(--ink-3);min-width:38px;text-align:center">${APP.nectarIdx + 1} / ${PRABHUPADA_NECTAR_QUOTES.length}</span>
+          <button class="btn sm" data-act="next-nectar-quote" title="Next quote" style="padding:3px 8px;font-size:13px;border-color:rgba(245,158,11,0.3)">›</button>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:14px;align-items:flex-start;margin-bottom:14px">
+        <div style="width:68px;height:68px;border-radius:50%;overflow:hidden;border:2.5px solid #f59e0b;box-shadow:0 0 14px rgba(245,158,11,0.35);flex-shrink:0;background:#0f172a;display:flex;align-items:center;justify-content:center" title="His Divine Grace A.C. Bhaktivedanta Swami Srila Prabhupada">
+          <img src="${BACE_PRABHUPADA_SRC}" alt="Srila Prabhupada" style="width:100%;height:100%;object-fit:cover;object-position:center 10%">
+        </div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+            <span class="badge b-grey" style="font-size:10px;padding:1px 6px">Topic: ${esc(q.topic)}</span>
+            <span class="tiny" style="color:var(--ink-3)">Founder-Acharya ISKCON</span>
+          </div>
+          <div style="font-family:'Caveat',cursive;font-size:20.5px;line-height:1.42;font-weight:600;color:var(--ink);margin:4px 0 6px 0">
+            “${esc(q.quote)}”
+          </div>
+          <div style="font-size:11.5px;font-weight:600;color:var(--accent);display:flex;align-items:center;gap:4px">
+            <span>📜</span>
+            <span>${esc(q.citation)}</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.22);border-radius:10px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="audio-equalizer ${isPlaying ? 'playing' : ''}" id="ambEqualizer" title="${isPlaying ? 'Ambience active' : 'Ambience paused'}">
+            <span class="audio-eq-bar"></span>
+            <span class="audio-eq-bar"></span>
+            <span class="audio-eq-bar"></span>
+            <span class="audio-eq-bar"></span>
+            <span class="audio-eq-bar"></span>
+          </div>
+          <div>
+            <div style="font-size:12px;font-weight:700;color:var(--ink)">Chanting &amp; Ashram Ambience</div>
+            <div class="tiny" style="color:var(--ink-3)" id="ambTrackDesc">
+              ${curTrack === 'tanpura' ? '432Hz Meditative Tanpura Drone' : curTrack === 'japa' ? 'Srila Prabhupada Japa Chanting' : 'Brahma Samhita Temple Aarti'}
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:6px">
+          <button class="btn sm ${curTrack === 'tanpura' ? 'on' : ''}" data-act="select-ambience" data-track="tanpura" title="Meditative Tanpura Drone">🪷 Tanpura</button>
+          <button class="btn sm ${curTrack === 'japa' ? 'on' : ''}" data-act="select-ambience" data-track="japa" title="Prabhupada Japa Chanting">📿 Japa</button>
+          <button class="btn sm ${curTrack === 'brahma' ? 'on' : ''}" data-act="select-ambience" data-track="brahma" title="Brahma Samhita Prayers">🪔 Govindam</button>
+
+          <button class="btn sm ${isPlaying ? 'pri' : ''}" data-act="toggle-ambience" id="ambPlayBtn" style="font-weight:700;min-width:72px">
+            ${isPlaying ? '⏸ Pause' : '▶ Play'}
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 function pillarCardMgmt(){
   const s=STATS();
   return `<div class="card pillar-card pillar-mgmt">
@@ -5805,18 +6096,7 @@ function viewDashboard(){
     : `<button class="btn pri" data-act="go" data-r="#/reports">📊 Reports</button>`;
   const hd=hero()+head(eyebrowText,title,ROLES[r].scope,headerActions);
   if(r==='area_leader')return hd+`${pillarCards(true)}<div style="height:15px"></div>
-     <div class="grid g2">${insightsCard()}${section('Organisation',`<div class="card-b"><p class="tiny" style="margin-top:0">Area Leader → Overall Coordinator → three managers → department heads, preaching coordinators and facilitators.</p>
-        <a class="btn" href="#/org">${ic('layers')}View hierarchy</a></div>`)}</div>
-     <div style="height:15px"></div>
-     ${section('Quick links',`<div style="display:flex;flex-wrap:wrap;gap:8px;padding:16px 18px">
-        <a class="btn" href="#/today">⚡ Today</a>
-        <a class="btn" href="#/devotees">👥 Devotees</a>
-        <a class="btn" href="#/depts">🏢 Departments</a>
-        <a class="btn" href="#/batches">🗂 Batches</a>
-        <a class="btn" href="#/assign">📋 Assign</a>
-        <a class="btn" href="#/calendar">📅 Calendar</a>
-        <a class="btn" href="#/reports">📊 Reports</a>
-      </div>`)}`;
+     <div class="grid g2">${insightsCard()}${prabhupadaNectarCard()}</div>`;
 
   if(r==='coordinator')return hd+`<div class="grid g-1-2" style="margin-bottom:15px">${needsAttention()}
     ${section('Today across the community',`<div class="grid g4" style="padding:16px 18px">
@@ -23864,6 +24144,41 @@ document.addEventListener('click',e=>{
       APP.modal = { kind: 'outing', outing: o };
       render();
     }
+    break;
+  }
+
+  
+  /* --- Prabhupada Nectar & Ambience Audio Player --- */
+  case 'next-nectar-quote': {
+    stop();
+    if (typeof APP.nectarIdx !== 'number') APP.nectarIdx = 0;
+    APP.nectarIdx = (APP.nectarIdx + 1) % PRABHUPADA_NECTAR_QUOTES.length;
+    render();
+    break;
+  }
+  case 'prev-nectar-quote': {
+    stop();
+    if (typeof APP.nectarIdx !== 'number') APP.nectarIdx = 0;
+    APP.nectarIdx = (APP.nectarIdx - 1 + PRABHUPADA_NECTAR_QUOTES.length) % PRABHUPADA_NECTAR_QUOTES.length;
+    render();
+    break;
+  }
+  case 'toggle-ambience': {
+    stop();
+    toggleBaceAmbience();
+    break;
+  }
+  case 'select-ambience': {
+    stop();
+    const trk = t.dataset.track || 'tanpura';
+    playBaceAmbience(trk);
+    const names = {
+      tanpura: '🪷 Meditative Tanpura Drone',
+      japa: '📿 Prabhupada Japa Chanting',
+      brahma: '🪔 Brahma Samhita (Govindam)'
+    };
+    toast('Switched to ' + (names[trk] || trk), '🎶');
+    render();
     break;
   }
 
