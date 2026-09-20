@@ -2538,7 +2538,7 @@ const initials=n=>String(n||'?').split(' ').filter(Boolean).slice(0,2).map(w=>w[
 
 /* ---------------- store ---------------- */
 const DB={devotees:[],departments:[],deptMembers:[],activities:[],templates:[],assignments:[],attendance:[],
-  contacts:[],batches:[],followups:[],careGroups:[],careRecords:[],meetings:[],camps:[],templeVisits:[],sadhana:[],
+  contacts:[],batches:[],followups:[],careGroups:[],careRecords:[],meetings:[],camps:[],outings:[],templeVisits:[],sadhana:[],
   sops:[],reports:[],notifications:[],audit:[],users:[],threads:[],inventory:[],invRequests:[],menus:[],rebates:[],
   feedback:[],qrSessions:[],proofs:[],notifPrefs:{}};
 
@@ -3181,7 +3181,100 @@ const logAudit=(action,record)=>DB.audit.unshift({id:uid('au'),user:(APP.user?na
     next: iso(dayOff(14)),
     confidential: true
   });
-  DB.camps.push({ id: 'cp1', devotee: 'd_sample', name: 'Vrindavan Yatra', date: iso(dayOff(-60)) });
+  DB.camps.push(
+    { id: 'cp1', devotee: 'd_sample', name: 'Vrindavan Yatra', date: iso(dayOff(-60)) },
+    { id: 'cp2', devotee: 'd1', name: 'Vrindavan Kartik Maha-Retreat', date: iso(dayOff(-330)) },
+    { id: 'cp3', devotee: 'd2', name: 'Vrindavan Kartik Maha-Retreat', date: iso(dayOff(-330)) },
+    { id: 'cp4', devotee: 'd3', name: 'Mayapur Gaur Purnima Camp', date: iso(dayOff(-180)) },
+    { id: 'cp5', devotee: 'd4', name: 'Mayapur Gaur Purnima Camp', date: iso(dayOff(-180)) },
+    { id: 'cp6', devotee: 'd5', name: 'Jagannath Puri Ratha Yatra Camp', date: iso(dayOff(-80)) },
+    { id: 'cp7', devotee: 'd6', name: 'Jagannath Puri Ratha Yatra Camp', date: iso(dayOff(-80)) },
+    { id: 'cp8', devotee: 'd7', name: 'Vrindavan Kartik Maha-Retreat', date: iso(dayOff(-330)) }
+  );
+
+  const sampleDevIds = (DB.devotees || []).map(d => d.id);
+  const getSlice = (start, count) => sampleDevIds.length ? sampleDevIds.slice(start, start + count) : ['d1','d2','d3'];
+
+  DB.outings = [
+    {
+      id: 'out1',
+      name: 'Yamuna Ghat Harinam & Evening Boat Sankirtan',
+      category: 'Harinam & Sanga',
+      date: iso(dayOff(-40)),
+      location: 'Nigambodh Ghat, Yamuna River, Old Delhi',
+      coordinator: audaryaId || 'd1',
+      batch: 'all',
+      status: 'Completed',
+      highlights: ['Sunset Boat Kirtan', 'Harinam Japa Walk', 'Mahaprasadam Distribution'],
+      description: 'Devotees boarded traditional wooden boats at sunset on the Yamuna river for an ecstatic two-hour acoustic Harinam sankirtan, followed by distributing dry sweets prasadam to visitors at the ghat.',
+      attendees: getSlice(0, 34)
+    },
+    {
+      id: 'out2',
+      name: 'Deer Park Morning Japa Walk & Sloka Recitation Picnic',
+      category: 'Nature Walk & Picnic',
+      date: iso(dayOff(15)),
+      location: 'Deer Park & Lake, Hauz Khas (Near IIT Delhi)',
+      coordinator: 'd2',
+      batch: 'b7',
+      status: 'Upcoming',
+      highlights: ['16-Round Japa Session', 'Gita Chapter 12 Memorisation Quiz', 'Outdoor Fruit & Poha Feast'],
+      description: 'Annual autumn morning japa retreat in the lush wooded trails of Deer Park adjacent to Jia Sarai. Focus on focused attentive chanting in nature, memory verse contest, and breakfast prasadam on the lawn.',
+      attendees: getSlice(0, 28)
+    },
+    {
+      id: 'out3',
+      name: 'ISKCON Glory of India Cultural Centre & Vedic Museum Day Trip',
+      category: 'Temple Darshan',
+      date: iso(dayOff(-75)),
+      location: 'ISKCON Sant Nagar, East of Kailash',
+      coordinator: 'd3',
+      batch: 'b8',
+      status: 'Completed',
+      highlights: ['Gita Animatronics Show', 'Srila Prabhupada Museum', 'Govinda’s Prasadam Buffet'],
+      description: 'Full-day orientation and pilgrimage for youth and first-year BACE candidates. Guided tour of the world-famous animatronics Bhagavad Gita exhibition, darshan of Sri Sri Radha Parthasarathi, and lunch at Govinda’s.',
+      attendees: getSlice(0, 42)
+    },
+    {
+      id: 'out4',
+      name: 'Hauz Khas Rose Garden Devotee Bonding & Team Sanga',
+      category: 'Community Picnic',
+      date: iso(dayOff(-110)),
+      location: 'Rose Garden & Monument Lake, Hauz Khas',
+      coordinator: 'd4',
+      batch: 'all',
+      status: 'Completed',
+      highlights: ['Spiritual Icebreakers', 'Care Circles Check-in', 'Evening Acoustic Kirtan'],
+      description: 'A relaxed Sunday afternoon outing centered around devotee friendships, team bonding games, sharing student-life challenges and realizations, followed by outdoor kirtan as dusk settled.',
+      attendees: getSlice(0, 26)
+    },
+    {
+      id: 'out5',
+      name: 'Kurukshetra Gita Jayanti Holy Dham Day Pilgrimage',
+      category: 'Historic Dham Day Trip',
+      date: iso(dayOff(45)),
+      location: 'Jyotisar & Brahma Sarovar, Kurukshetra, Haryana',
+      coordinator: audaryaId || 'd1',
+      batch: 'all',
+      status: 'Upcoming',
+      highlights: ['700-Verse Gita Recitation', 'Brahma Sarovar Holy Dip', 'AC Bus Harinam Kirtan'],
+      description: 'Annual sacred day trip to the battlefield of Kurukshetra where Sri Krishna spoke the Bhagavad Gita to Arjuna. Reciting all 18 chapters together under the Akshaya Vata banyan tree at Jyotisar.',
+      attendees: getSlice(0, 45)
+    },
+    {
+      id: 'out6',
+      name: 'Sunder Nursery Heritage Garden Japa Walk & Picnic',
+      category: 'Nature Walk & Picnic',
+      date: iso(dayOff(-140)),
+      location: 'Sunder Nursery Gardens, Nizamuddin',
+      coordinator: 'd5',
+      batch: 'all',
+      status: 'Completed',
+      highlights: ['Lakeside Chanting', 'Canopy Kirtan', 'Summer Thandai & Packed Feast'],
+      description: 'Morning meditation walk through the 16th-century heritage park with over 300 tree species. Quiet japa by the lotus pond followed by reading Krishna Book pastimes under the garden pavilion.',
+      attendees: getSlice(0, 31)
+    }
+  ];
   DB.templeVisits.push({ id: 'tv1', devotee: 'd_sample', date: iso(dayOff(-20)), temple: 'ISKCON Punjabi Bagh', notes: 'Attended Sunday feast and evening darshan.' });
   DB.sadhana.push({ id: 'sd1', devotee: 'd_sample', week: 'This week', rounds: 4, avgWake: '5:30 am', reading: 'Daily', program: 75 });
 
@@ -4098,8 +4191,7 @@ const PILLARS=[
    {sub:'Spiritual care'},
    {t:'Sadhana',em:'📿',r:'#/sadhana',m:'care',indent:1},
    {t:'Facilitators',em:'🤝',r:'#/facilitators',m:'care',indent:1},
-   {t:'Spiritual classes',em:'📿',r:'#/spiritual-classes',m:'care',indent:1},
-   {t:'Camps',em:'⛺',r:'#/camps',m:'care',indent:1},
+   {t:'Camps & Outings',em:'⛺',r:'#/camps',m:'care',indent:1},
    {t:'Meetings & Follow-ups',em:'🔒',r:'#/meetings',m:'care',indent:1}]}
 ];
 const NAV_BOTTOM=[
@@ -4172,8 +4264,7 @@ function appHeader(){
       {t:'Friends & Groups',em:'👥',r:'#/groups',m:'care'},
       {t:'Sadhana',em:'📿',r:'#/sadhana',m:'care'},
       {t:'Facilitators',em:'🤝',r:'#/facilitators',m:'care'},
-      {t:'Spiritual Classes',em:'📖',r:'#/spiritual-classes',m:'care'},
-      {t:'Camps',em:'⛺',r:'#/camps',m:'care'},
+      {t:'Camps & Outings',em:'⛺',r:'#/camps',m:'care'},
       {t:'Meetings & Follow-ups',em:'🔒',r:'#/meetings',m:'care'}
     ]},
     {t:'Calendar',r:'#/calendar',m:'calendar'},
@@ -4183,7 +4274,7 @@ function appHeader(){
   const cleanRoute=APP.route.replace(/^#\/?/,'');
   const mgmtRoutes=['mgmt','depts','dept','assign','attendance','dept-reports','inventory','sops','actions'];
   const preachRoutes=['preaching','batches','batch','contacts','followups','classes','batch-attendance'];
-  const careRoutes=['care','friends','groups','group','swabhav','sadhana','facilitators','spiritual-classes','camps','meetings','care-followups','care-reports'];
+  const careRoutes=['care','friends','groups','group','swabhav','sadhana','facilitators','camps','meetings','care-followups','care-reports'];
   function isActive(r){
     const seg=r.replace(/^#\//,'');
     if(seg==='')return route===''||route==='today';
@@ -4252,7 +4343,7 @@ function mobileNavDropdown(){
   const route=APP.route.replace(/^#\/?/,'').split('/')[0];
   const mgmtRoutes=['mgmt','depts','dept','assign','attendance','dept-reports','inventory','sops','actions'];
   const preachRoutes=['preaching','batches','batch','contacts','followups','classes','batch-attendance'];
-  const careRoutes=['care','friends','groups','group','swabhav','sadhana','facilitators','spiritual-classes','camps','meetings','care-followups','care-reports'];
+  const careRoutes=['care','friends','groups','group','swabhav','sadhana','facilitators','camps','meetings','care-followups','care-reports'];
   const mainItems=[
     {t:'Dashboard',em:'🏠',r:'#/',on:route===''},
     {t:'Today',em:'⚡',r:'#/today',on:route==='today'},
@@ -4280,7 +4371,7 @@ function mobileNavDropdown(){
       {t:'Friends & Groups',em:'👥',r:'#/groups',m:'care'},
       {t:'Sadhana',em:'📿',r:'#/sadhana',m:'care'},
       {t:'Facilitators',em:'🤝',r:'#/facilitators',m:'care'},
-      {t:'Camps',em:'⛺',r:'#/camps',m:'care'},
+      {t:'Camps & Outings',em:'⛺',r:'#/camps',m:'care'},
       {t:'Meetings & Follow-ups',em:'🔒',r:'#/meetings',m:'care'},
     ]},
   ];
@@ -4454,7 +4545,7 @@ const CRUMBS={'':'Dashboard',today:'Today',devotees:'Devotees',devotee:'Devotee'
  inventory:'Inventory & BBT',sops:'SOPs & standards',actions:'Action items',preaching:'BACE Preaching',batches:'Batch management',
  batch:'Batch',contacts:'Contacts & pipeline',followups:'Follow-ups',classes:'Classes & events','batch-attendance':'Batch attendance',
  'preaching-reports':'Preaching reports',care:'Devotee Care',friends:'Friends & Groups',groups:'Friends & Groups',group:'Group',swabhav:'Swabhav engagement',
- sadhana:'Sadhana',facilitators:'Facilitators','spiritual-classes':'Spiritual classes',camps:'Camps',
+ sadhana:'Sadhana',facilitators:'Facilitators',camps:'Camps & Outings',
  meetings:'Meetings & Follow-ups','care-followups':'Meetings & Follow-ups','care-reports':'Care reports',reports:'Reports & analytics',
  calendar:'Community calendar',messages:'Messages',notifications:'Notifications',admin:'Administration',more:'Menu'};
 
@@ -5468,7 +5559,7 @@ function pillarCardCare(){
         <a class="pillar-item" href="#/camps">
           <span class="pillar-item-icon">🏕️</span>
           <div class="pillar-item-info">
-            <div class="pillar-item-title">Camps &amp; yatras</div>
+            <div class="pillar-item-title">Camps &amp; Outings</div>
             <div class="pillar-item-sub">Spiritual retreats &amp; visits</div>
           </div>
           <span class="pillar-item-arrow">›</span>
@@ -17927,7 +18018,7 @@ function viewCare(){
             <span class="d">${DB.sadhana.length} sadhana reports · ${DB.devotees.filter(d=>d.swabhav.engaged).length} engaged by nature</span></span>${ic('arrow')}</a></div>`)}
         ${section('❤️ Spiritual care', `<div class="list">
           <a class="li click" href="#/facilitators"><span class="badge b-teal">🤝</span><span class="grow"><span class="t">Facilitators</span><span class="d">${s.facilitators} active facilitators</span></span>${ic('arrow')}</a>
-          <a class="li click" href="#/camps"><span class="badge b-teal">⛺</span><span class="grow"><span class="t">Camps &amp; yatras</span><span class="d">${DB.camps.length} participations recorded</span></span>${ic('arrow')}</a>
+          <a class="li click" href="#/camps"><span class="badge b-teal">⛺</span><span class="grow"><span class="t">Camps &amp; Outings</span><span class="d">${DB.camps.length} participations recorded</span></span>${ic('arrow')}</a>
           <a class="li click" href="#/meetings"><span class="badge b-teal">🔒</span><span class="grow"><span class="t">Meetings &amp; Follow-ups</span><span class="d">${can('care_notes') ? DB.meetings.length + ' meetings · ' : ''}${s.careWeek} follow-ups scheduled</span></span>${ic('arrow')}</a></div>`)}
       </div>
       <div class="grid g-2-1">
@@ -18172,30 +18263,243 @@ function viewFacilitators(){
         ||'<div class="li tiny">No devotees assigned.</div>'}</div></div>`)}).join('')}</div>`;
 }
 function viewSpiritualClasses(){
-  const rows=DB.activities.filter(a=>a.type==='Class'||a.cat==='Classes');
-  return head('❤️ Devotee Care','Spiritual classes','Classes attended as part of somebody\'s spiritual care, not only batch teaching')+
-   dataTable({id:'spcls',exportName:'spiritual-classes',cols:[
-     {h:'Class',c:a=>`<b>${esc(a.name)}</b><div class="tiny">${esc(a.location)}</div>`},
-     {h:'Batch',c:a=>esc(scopeName(a))},{h:'Date',c:a=>fmtD(a.date)},
-     {h:'Teacher',c:a=>esc(nameOf(a.responsible))},
-     {h:'Attendance',c:a=>{const r=DB.attendance.filter(x=>x.ref===a.id);return r.length?`${r.filter(x=>x.status==='Present').length} of ${r.length}`:'—'}},
-     {h:'Status',c:a=>sbadge(a.status)}],rows,onRow:'open-activity'});
+  go('#/camps');
+  return '';
 }
+function outingModal(o){
+  if(!o) return '';
+  const coord = dv(o.coordinator);
+  const attendees = (o.attendees || []).map(id => dv(id)).filter(Boolean);
+  return `<div class="scrim" data-act="close-scrim"><div class="modal wide" data-stop="1" style="max-width:700px">
+    <div class="modal-h">
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+          <span class="badge b-teal">${esc(o.category)}</span>
+          <span class="badge ${o.status === 'Upcoming' ? 'b-green' : 'b-grey'}">${esc(o.status)}</span>
+        </div>
+        <h2 style="font-size:20px;font-family:'Outfit',sans-serif;margin:0">${esc(o.name)}</h2>
+        <div class="tiny" style="margin-top:4px">📍 ${esc(o.location)} · 📅 ${fmtLong(o.date)}</div>
+      </div>
+      <button class="icon-btn" style="margin-left:auto" data-act="close-scrim">${ic('x')}</button>
+    </div>
+    <div class="modal-b">
+      <div style="font-size:13px;line-height:1.6;margin-bottom:14px;color:var(--ink-2)">
+        ${esc(o.description)}
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px">
+        ${(o.highlights || []).map(h => `<span class="badge b-grey" style="font-size:11px">✨ ${esc(h)}</span>`).join('')}
+      </div>
+      <div class="grid g2" style="margin-bottom:16px">
+        <div class="card pad sm">
+          <div class="tiny" style="font-weight:700;text-transform:uppercase;color:var(--ink-4)">Lead Coordinator</div>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:8px">
+            ${av(coord?.name || nameOf(o.coordinator), 's')}
+            <div>
+              <b>${esc(coord?.name || nameOf(o.coordinator))}</b>
+              <div class="tiny">${esc(batch(coord?.batch)?.name || 'BACE Core Team')}</div>
+            </div>
+          </div>
+        </div>
+        <div class="card pad sm">
+          <div class="tiny" style="font-weight:700;text-transform:uppercase;color:var(--ink-4)">Target Group / Scope</div>
+          <div style="margin-top:8px">
+            <b>${o.batch === 'all' ? 'All BACE Devotees & Candidates' : esc(batch(o.batch)?.name || o.batch)}</b>
+            <div class="tiny">${attendees.length} devotees recorded</div>
+          </div>
+        </div>
+      </div>
+      <div class="sec-title" style="margin-bottom:8px;font-size:13px">
+        <span>Devotees Attending (${attendees.length})</span>
+      </div>
+      <div class="list" style="max-height:220px;overflow:auto;border:1px solid var(--line);border-radius:10px">
+        ${attendees.length ? attendees.map(d => `<a class="li click" href="#/devotee/${d.id}" data-act="close-scrim">
+          ${av(d.name, 's')}
+          <span class="grow">
+            <span class="t">${esc(d.name)}</span>
+            <span class="d">${esc(batch(d.batch)?.name || 'Devotee')} · Facilitator: ${esc(nameOf(d.facilitator))}</span>
+          </span>
+          <span class="badge b-grey">${esc(d.status || 'Active')}</span>
+        </a>`).join('') : '<div class="li tiny">No devotees enrolled yet.</div>'}
+      </div>
+    </div>
+    <div class="modal-f">
+      <button class="btn" data-act="close-scrim">Close</button>
+    </div>
+  </div></div>`;
+}
+
 function viewCamps(){
-  const rows=DB.camps.map(c=>({...c,d:dv(c.devotee)})).filter(c=>c.d);
-  const names=[...new Set(rows.map(r=>r.name))];
-  return head('⛺ Devotee Care','Camps & yatras','Who went, when, and who has never been on one',
-    `<button class="btn pri" data-act="add-camp">${ic('plus')}Record participation</button>`)+
-  `<div class="grid g4" style="margin-bottom:15px">
-    ${stat('Participations',rows.length,'recorded',{em:'⛺',r:'#/camps'})}
-    ${stat('Distinct camps',names.length,'programmes',{em:'🏕',r:'#/camps'})}
-    ${stat('Devotees who went',new Set(rows.map(r=>r.devotee)).size,'at least once',{em:'👥',r:'#/camps'})}
-    ${stat('Never attended',DB.devotees.length-new Set(rows.map(r=>r.devotee)).size,'consider inviting',{em:'💡',tint:1,r:'#/devotees'})}</div>
-   ${dataTable({id:'camps',exportName:'camps',cols:[
-     {h:'Devotee',c:r=>`<div class="who">${av(r.d.name,'m')}<b>${esc(r.d.name)}</b></div>`},
-     {h:'Camp / yatra',c:r=>esc(r.name)},{h:'Date',c:r=>fmtD(r.date)},
-     {h:'Batch',c:r=>esc(batch(r.d.batch)?.name||'—')},{h:'Facilitator',c:r=>esc(nameOf(r.d.facilitator))}],
-    rows,onRow:'open-devotee-row'})}`;
+  const view = APP.tab.camps || 'Camps & Yatras';
+  const campRows = DB.camps.map(c => ({...c, d: dv(c.devotee)})).filter(c => c.d);
+  const campNames = [...new Set(campRows.map(r => r.name))];
+  const outings = DB.outings || [];
+
+  const majorRetreats = [
+    {
+      name: 'Vrindavan Kartik Maha-Retreat',
+      type: '3-Day Annual Dham Retreat',
+      badge: 'Kartik Vrata',
+      dates: '18 – 20 Oct 2026',
+      loc: 'Sri Vrindavan Dham (Krishna Balaram Mandir & Govardhan)',
+      lead: 'HG Audarya Gour Das',
+      desc: 'Annual flagship Kartik retreat: Radha Damodar parikrama, Govardhan circumambulation, Deep Daan on Yamuna, and evening ecstatic kirtan.',
+      participants: 38,
+      status: 'Open'
+    },
+    {
+      name: 'Mayapur Gaur Purnima International Camp',
+      type: '4-Day Spiritual Intensive',
+      badge: 'Navadvip Mandal',
+      dates: '21 – 25 Mar 2026',
+      loc: 'Sridham Mayapur (World Headquarters)',
+      lead: 'Madhava Das',
+      desc: 'Annual assembly at the spiritual capital: Navadvip parikrama on foot, darshan of Pancha Tattva, and participating in the international Kirtan Mela.',
+      participants: 32,
+      status: 'Annual'
+    },
+    {
+      name: 'Jagannath Puri Dham Ratha Yatra Camp',
+      type: '3-Day Coastal Pilgrimage',
+      badge: 'Ratha Yatra',
+      dates: '02 – 05 Jul 2026',
+      loc: 'Sri Jagannath Puri Dham, Odisha',
+      lead: 'Sundar Gopal Das',
+      desc: 'Participating in the divine chariot festival: Gundicha Marjana, singing before Lord Jagannath, Tota Gopinath darshan, and ocean bathing.',
+      participants: 29,
+      status: 'Completed'
+    }
+  ];
+
+  let body = '';
+  if (view === 'Camps & Yatras') {
+    body = `
+      <div class="grid g4" style="margin-bottom:16px">
+        ${stat('Participations', campRows.length, 'recorded records', {em:'⛺', r:'#/camps'})}
+        ${stat('Distinct retreats', campNames.length, 'annual programmes', {em:'🏕', r:'#/camps'})}
+        ${stat('Devotees who went', new Set(campRows.map(r => r.devotee)).size, 'at least once', {em:'👥', r:'#/camps'})}
+        ${stat('Never attended', DB.devotees.length - new Set(campRows.map(r => r.devotee)).size, 'consider inviting to next camp', {em:'💡', tint:1, r:'#/devotees'})}
+      </div>
+
+      <div class="sec-title" style="margin:20px 0 10px 0;display:flex;align-items:center;justify-content:space-between">
+        <span>Flagship Annual Camps &amp; Retreats</span>
+        <span class="tiny">Held by senior mentors &amp; BACE leadership</span>
+      </div>
+      <div class="grid g3" style="margin-bottom:20px">
+        ${majorRetreats.map(m => `
+          <div class="card pad" style="display:flex;flex-direction:column;border-top:3px solid var(--teal);transition:transform 0.15s ease,box-shadow 0.15s ease">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+              <span class="badge b-teal" style="font-size:10.5px">${esc(m.badge)}</span>
+              <span class="badge ${m.status === 'Open' ? 'b-green' : m.status === 'Completed' ? 'b-grey' : 'b-teal'}">${esc(m.status)}</span>
+            </div>
+            <h3 style="font-size:16px;font-family:'Outfit',sans-serif;margin:0 0 6px 0">${esc(m.name)}</h3>
+            <div class="tiny" style="color:var(--ink-3);margin-bottom:8px">📍 ${esc(m.loc)}<br>📅 ${esc(m.dates)}</div>
+            <div style="font-size:12px;line-height:1.5;color:var(--ink-2);flex:1;margin-bottom:12px">${esc(m.desc)}</div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding-top:8px;border-top:1px solid var(--line);font-size:11.5px">
+              <span>Lead: <b>${esc(m.lead)}</b></span>
+              <span class="badge b-grey">${m.participants} Devotees</span>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+
+      <div class="sec-title" style="margin-bottom:10px;display:flex;align-items:center;justify-content:space-between">
+        <span>Devotee Camp Participations Log</span>
+        <button class="btn sm pri" data-act="add-camp">${ic('plus')}Record participation</button>
+      </div>
+      ${dataTable({
+        id: 'camps',
+        exportName: 'camps',
+        cols: [
+          {h:'Devotee', c:r => `<div class="who">${av(r.d.name,'m')}<b>${esc(r.d.name)}</b></div>`},
+          {h:'Camp / yatra', c:r => esc(r.name)},
+          {h:'Date', c:r => fmtD(r.date)},
+          {h:'Batch', c:r => esc(batch(r.d.batch)?.name || '—')},
+          {h:'Facilitator', c:r => esc(nameOf(r.d.facilitator))}
+        ],
+        rows: campRows,
+        onRow: 'open-devotee-row'
+      })}
+    `;
+  } else {
+    const totalAttendances = outings.reduce((sum, o) => sum + (o.attendees?.length || 0), 0);
+    const uniqueDevotees = new Set(outings.flatMap(o => o.attendees || [])).size;
+    const upcomingCount = outings.filter(o => o.status === 'Upcoming').length;
+
+    body = `
+      <div class="grid g4" style="margin-bottom:16px">
+        ${stat('Total Outings', outings.length, 'outdoor community sangas', {em:'🌳', r:'#/camps'})}
+        ${stat('Devotee Attendances', totalAttendances, 'across all outings', {em:'🤝', r:'#/camps'})}
+        ${stat('Unique Devotees', uniqueDevotees, `engaged out of ${DB.devotees.length}`, {em:'👥', r:'#/camps'})}
+        ${stat('Upcoming Outings', upcomingCount, 'scheduled programmes', {em:'✨', tint: upcomingCount > 0, r:'#/camps'})}
+      </div>
+
+      <div class="sec-title" style="margin:20px 0 12px 0;display:flex;align-items:center;justify-content:space-between">
+        <span>Community Outings, Day Trips &amp; Picnics (${outings.length})</span>
+        <button class="btn sm pri" data-act="add-outing">${ic('plus')}Plan new outing</button>
+      </div>
+
+      <div class="grid g3" style="margin-bottom:20px">
+        ${outings.map(o => {
+          const coord = dv(o.coordinator);
+          const atts = (o.attendees || []).map(id => dv(id)).filter(Boolean);
+          return `
+            <div class="card pad" style="display:flex;flex-direction:column;border-top:3px solid var(--green);transition:transform 0.15s ease,box-shadow 0.15s ease">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+                <span class="badge b-green" style="font-size:10.5px">${esc(o.category)}</span>
+                <span class="badge ${o.status === 'Upcoming' ? 'b-teal' : 'b-grey'}">${esc(o.status)}</span>
+              </div>
+              <h3 style="font-size:16px;font-family:'Outfit',sans-serif;margin:0 0 6px 0">${esc(o.name)}</h3>
+              <div class="tiny" style="color:var(--ink-3);margin-bottom:8px">
+                📍 ${esc(o.location)}<br>
+                📅 ${fmtLong(o.date)} · Target: <b>${o.batch === 'all' ? 'All BACE' : esc(batch(o.batch)?.name || o.batch)}</b>
+              </div>
+              <div style="font-size:12px;line-height:1.5;color:var(--ink-2);flex:1;margin-bottom:10px">
+                ${esc(o.description)}
+              </div>
+              <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:12px">
+                ${(o.highlights || []).map(h => `<span class="badge b-grey" style="font-size:10px">✨ ${esc(h)}</span>`).join('')}
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding-top:10px;border-top:1px solid var(--line);font-size:11.5px">
+                <div style="display:flex;align-items:center;gap:6px">
+                  ${av(coord?.name || nameOf(o.coordinator), 's')}
+                  <span class="tiny">Lead: <b>${esc(coord?.name || nameOf(o.coordinator))}</b></span>
+                </div>
+                <button class="btn sm" data-act="open-outing" data-id="${o.id}">${ic('eye')}View (${atts.length})</button>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+
+      <div class="sec-title" style="margin-bottom:10px">
+        <span>Outings Summary Table</span>
+      </div>
+      ${dataTable({
+        id: 'outings-tbl',
+        exportName: 'outings',
+        cols: [
+          {h:'Outing Title', c:o => `<b>${esc(o.name)}</b><div class="tiny">${esc(o.location)}</div>`},
+          {h:'Category', c:o => `<span class="badge b-green">${esc(o.category)}</span>`},
+          {h:'Date', c:o => fmtD(o.date)},
+          {h:'Coordinator', c:o => esc(nameOf(o.coordinator))},
+          {h:'Target', c:o => o.batch === 'all' ? 'All BACE' : esc(batch(o.batch)?.name || o.batch)},
+          {h:'Attendees', c:o => `${o.attendees?.length || 0} devotees`},
+          {h:'Status', c:o => `<span class="badge ${o.status === 'Upcoming' ? 'b-teal' : 'b-grey'}">${esc(o.status)}</span>`},
+          {h:'Details', c:o => `<button class="btn sm" data-act="open-outing" data-id="${o.id}">View</button>`}
+        ],
+        rows: outings,
+        onRow: 'open-outing'
+      })}
+    `;
+  }
+
+  const actions = view === 'Camps & Yatras'
+    ? `<button class="btn pri" data-act="add-camp">${ic('plus')}Record camp participation</button>`
+    : `<button class="btn pri" data-act="add-outing">${ic('plus')}Plan new outing</button>`;
+
+  return head('⛺ Devotee Care', 'Camps & Outings', 'Spiritual retreats, yatras, temple outings, parikramas, and outdoor community sangas', actions) +
+    `<div class="tabs">${['Camps & Yatras', 'Outings & Picnics'].map(t => `<button class="${t === view ? 'on' : ''}" data-act="tab" data-k="camps" data-v="${t}">${t}</button>`).join('')}</div>` +
+    body;
 }
 function viewMeetingsAndFollowups(){
   const view = APP.tab.meetings || 'Personal meetings';
@@ -20090,6 +20394,7 @@ function modalHTML(){
   if(m.kind==='form')return formModal();
   if(m.kind==='picker')return pickerModal();
   if(m.kind==='list')return listModal();
+  if(m.kind==='outing')return outingModal(m.outing);
   return'';
 }
 
@@ -20358,7 +20663,7 @@ function routeView(){
       case 'swabhav':return guard('care',viewSwabhav);
       case 'sadhana':return guard('care',viewSadhana);
       case 'facilitators':return guard('care',viewFacilitators);
-      case 'spiritual-classes':return guard('care',viewSpiritualClasses);
+      case 'spiritual-classes':go('#/camps');return '';
       case 'camps':return guard('care',viewCamps);
       case 'temple-visits':return guard('care',viewTempleVisits);
       case 'meetings':return viewMeetings();
@@ -23263,6 +23568,51 @@ document.addEventListener('click',e=>{
     DB.meetings.push({id:uid('mt'),devotee:v.devotee,date:v.date,senior:v.senior,type:v.type,area:v.area,
       points:v.points,actions:v.actions,next:v.next,confidential:true});
     logAudit('Care note updated','Personal meeting recorded (restricted)');toast('Meeting recorded — restricted record','🔒');APP.modal='';render();break}
+  case 'add-outing':
+    openForm('Plan new outing & picnic', [
+      FLD('name','Outing title','text',{ph:'e.g. Deer Park Morning Japa & Picnic',half:1}),
+      FLD('category','Category','select',{opts:['Nature Walk & Picnic','Harinam & Sanga','Temple Darshan','Historic Dham Day Trip','Community Picnic'],half:1}),
+      FLD('date','Date','date',{v:iso(TODAY),half:1}),
+      FLD('location','Location / Venue','text',{ph:'e.g. Deer Park, Hauz Khas',half:1}),
+      FLD('coordinator','Lead Coordinator','select',{opts:DB.devotees.map(d=>[d.id,d.name]),half:1}),
+      FLD('batch','Target Batch','select',{opts:[['all','All BACE Devotees'],...DB.batches.map(b=>[b.id,b.name])],half:1}),
+      FLD('highlights','Highlights (comma-separated)','text',{ph:'Early Japa, Sloka Quiz, Fruit Feast',half:1}),
+      FLD('status','Status','select',{opts:['Upcoming','Completed','Planning'],half:1}),
+      FLD('description','Agenda & Description','textarea',{ph:'Describe the purpose, schedule, travel plan, and prasadam arrangements...'})
+    ], 'save-outing', {});
+    break;
+  case 'save-outing': {
+    const v = collect();
+    const newOuting = {
+      id: uid('out'),
+      name: v.name,
+      category: v.category || 'Nature Walk & Picnic',
+      date: v.date || iso(TODAY),
+      location: v.location || 'New Delhi',
+      coordinator: v.coordinator || 'd1',
+      batch: v.batch || 'all',
+      highlights: (v.highlights || '').split(',').map(s => s.trim()).filter(Boolean),
+      status: v.status || 'Upcoming',
+      description: v.description || '',
+      attendees: [v.coordinator || 'd1']
+    };
+    (DB.outings = DB.outings || []).push(newOuting);
+    logAudit('Outing planned', v.name);
+    toast('Outing planned successfully', '🌳');
+    APP.modal = '';
+    render();
+    break;
+  }
+  case 'open-outing': {
+    stop();
+    const oid = t.dataset.id || id;
+    const o = (DB.outings || []).find(x => x.id === oid);
+    if (o) {
+      APP.modal = { kind: 'outing', outing: o };
+      render();
+    }
+    break;
+  }
   case 'add-camp':openForm('Record camp participation',[FLD('devotee','Devotee','select',{opts:DB.devotees.map(d=>[d.id,d.name])}),
     FLD('name','Camp or yatra','text',{ph:'Vrindavan Yatra',half:1}),FLD('date','Date','date',{v:iso(TODAY),half:1})],'save-camp',{});break;
   case 'save-camp':{const v=collect();DB.camps.push({id:uid('cp'),devotee:v.devotee,name:v.name,date:v.date});
@@ -23411,7 +23761,7 @@ document.addEventListener('click',e=>{
         ...DB.activities.map(a=>[a.name,a.type,scopeName(a),a.date,a.status,filled(a),a.need])]],
       contacts:['contacts',()=>[['Name','Stage','Source','Organisation'],...DB.contacts.map(c=>[c.name,c.stage,c.source,c.org])]],
       cls:['classes-events',()=>[['Name','Type','Batch','Date','Status'],...DB.activities.filter(a=>a.type==='Class'||a.type==='Event').map(a=>[a.name,a.type,scopeName(a),a.date,a.status])]],
-      spcls:['spiritual-classes',()=>[['Class','Scope','Date','Teacher','Status'],...DB.activities.filter(a=>a.type==='Class').map(a=>[a.name,scopeName(a),a.date,nameOf(a.responsible),a.status])]],
+      spcls:[()=>[['Class','Scope','Date','Teacher','Status'],...DB.activities.filter(a=>a.type==='Class').map(a=>[a.name,scopeName(a),a.date,nameOf(a.responsible),a.status])]],
       rep:['department-reports',()=>[['Department','Period','Status','Attendance %','Volunteers'],...DB.reports.filter(r=>r.kind==='Department weekly').map(r=>[dept(r.dept)?.name||'',r.period,r.status,r.attendance,r.volunteers])]],
       sw:['swabhav',()=>[['Devotee','Nature','Suggested engagement','Current seva','Engaged'],...DB.devotees.map(d=>[d.name,d.swabhav.nature,d.swabhav.suggested,dept(d.dept)?.name||'',d.swabhav.engaged?'Yes':'No'])]],
       sadhana:['sadhana',()=>[['Devotee','Rounds','Rising','Reading','Morning programme %'],...DB.sadhana.map(r=>[nameOf(r.devotee),r.rounds,r.avgWake,r.reading,r.program])]],
