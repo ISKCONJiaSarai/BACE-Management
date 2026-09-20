@@ -730,8 +730,52 @@ input,select,textarea{font-family:inherit;font-size:14px;color:var(--ink);backgr
 .shell.sb-closed .main{margin-left:0}
 /* Legacy topbar hidden — replaced by app-header */
 .topbar{display:none!important}
-.crumbs{font-size:12.5px;color:var(--ink-3);display:flex;gap:6px;align-items:center;min-width:0;white-space:nowrap;overflow:hidden}
-.crumbs b{font-weight:600;color:var(--ink-2)}
+.crumbs{
+  font-size:12.5px;color:var(--ink-3);display:flex;gap:6px;align-items:center;
+  min-width:0;flex-wrap:wrap;padding:0 0 14px;margin:0;
+}
+.crumbs .crumb-btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:5px 12px;border-radius:9px;
+  background:var(--surface);border:1px solid var(--line);
+  color:var(--ink-2);font-size:12.5px;font-weight:600;
+  cursor:pointer;text-decoration:none;
+  box-shadow:0 1px 3px rgba(15,23,42,0.04);
+  transition:all .18s cubic-bezier(0.16,1,0.3,1);
+  user-select:none;
+  line-height:1.3;
+}
+.crumbs .crumb-btn:hover{
+  background:var(--surface-2);color:var(--ink);
+  border-color:var(--accent);
+  transform:translateY(-1px);
+  box-shadow:0 3px 8px rgba(15,23,42,0.08);
+}
+.crumbs .crumb-btn:active{
+  transform:scale(0.96);
+}
+.crumbs .crumb-btn.crumb-home{
+  color:var(--accent);background:var(--accent-soft);
+  border-color:rgba(255,102,0,0.22);
+  font-weight:700;
+}
+.crumbs .crumb-btn.crumb-home:hover{
+  background:rgba(255,102,0,0.16);border-color:var(--accent);
+  color:var(--accent);
+}
+.crumbs .crumb-btn.crumb-leaf{
+  background:var(--surface);
+  color:var(--ink);
+  border-color:var(--line);
+  font-weight:700;
+}
+.crumbs .crumb-btn.crumb-leaf:hover{
+  border-color:var(--accent);
+  background:var(--surface-2);
+}
+.crumbs .crumb-sep{
+  color:var(--ink-3);opacity:0.4;font-size:13px;user-select:none;display:inline-flex;align-items:center;
+}
 .searchbox{position:relative;width:min(260px,28vw)}
 .searchbox input{
   width:100%;padding:7px 12px 7px 32px;border:1px solid var(--line);border-radius:10px;
@@ -4311,6 +4355,59 @@ const CRUMBS={'':'Dashboard',today:'Today',devotees:'Devotees',devotee:'Devotee'
  sadhana:'Sadhana',facilitators:'Facilitators','spiritual-classes':'Spiritual classes',camps:'Camps','temple-visits':'Temple visits',
  meetings:'Personal meetings','care-followups':'Care follow-ups','care-reports':'Care reports',reports:'Reports & analytics',
  calendar:'Community calendar',messages:'Messages',notifications:'Notifications',admin:'Administration',more:'Menu'};
+
+const CRUMB_PARENTS = {
+  dept: '#/depts',
+  devotee: '#/devotees',
+  batch: '#/batches',
+  group: '#/groups',
+  contact: '#/contacts',
+  friend: '#/friends',
+  camp: '#/camps',
+  activity: '#/classes'
+};
+
+function renderBreadcrumbs(){
+  const cleanRoute = APP.route.replace(/^#\/?/, '');
+  const routeParts = cleanRoute.split('/').filter(Boolean);
+  if (!routeParts.length || routeParts[0] === '') return '';
+
+  const part0 = routeParts[0];
+  const crumbLabel = CRUMBS[part0] || (part0.charAt(0).toUpperCase() + part0.slice(1));
+  const parentTarget = CRUMB_PARENTS[part0] || ('#/' + part0);
+  const currentTarget = '#' + APP.route.replace(/^#*/, '');
+  const leafText = APP.crumbLeaf || (routeParts.length > 1 ? (CRUMBS[routeParts[1]] || (routeParts[1].charAt(0).toUpperCase() + routeParts[1].slice(1))) : null);
+
+  let out = `<nav class="crumbs" aria-label="Breadcrumb navigation">`;
+  
+  // 1. Home button
+  out += `<a href="#/" class="crumb-btn crumb-home" data-act="go" data-r="#/" title="Go to Dashboard">
+    <span style="font-size:13px;line-height:1;margin-right:2px">🏠</span>
+    <span>Home</span>
+  </a>`;
+
+  const sep = `<span class="crumb-sep" aria-hidden="true">/</span>`;
+
+  if (leafText) {
+    // 2. Middle category button (e.g. Department -> opens #/depts)
+    out += `${sep}<a href="${parentTarget}" class="crumb-btn" data-act="go" data-r="${parentTarget}" title="Open ${esc(crumbLabel)}">
+      <span>${esc(crumbLabel)}</span>
+    </a>`;
+    // 3. Current active leaf button (e.g. Sreshtha IITD Preaching)
+    out += `${sep}<a href="${currentTarget}" class="crumb-btn crumb-leaf" data-act="go" data-r="${currentTarget}" title="${esc(leafText)}">
+      <b>${esc(leafText)}</b>
+    </a>`;
+  } else {
+    // 2. Current active section button (e.g. Departments -> #/depts)
+    out += `${sep}<a href="${parentTarget}" class="crumb-btn crumb-leaf" data-act="go" data-r="${parentTarget}" title="${esc(crumbLabel)}">
+      <b>${esc(crumbLabel)}</b>
+    </a>`;
+  }
+
+  out += `</nav>`;
+  return out;
+}
+
 function topbar(){
   return '';
 }
@@ -19546,13 +19643,10 @@ function render(){
   const panelCollapsed=!APP.todayPanelOpen;
   const isPinned=!!APP.todayPinned;
   const layoutClass=`app-layout ${panelCollapsed || !isPinned ? 'panel-collapsed' : 'panel-pinned'}`;
-  const cleanRoute=APP.route.replace(/^#\/?/,'');
-  const routeParts=cleanRoute.split('/').filter(Boolean);
-  const crumbLabel=CRUMBS[routeParts[0]]||routeParts[0]||'Dashboard';
-  const breadcrumb=`<nav class="crumbs" style="padding:0 0 10px;margin:0"><a href="#/" style="color:var(--accent)">Home</a>${routeParts[0]?` <span style="opacity:.4">/</span> <b>${esc(crumbLabel)}</b>`:''}${APP.crumbLeaf?` <span style="opacity:.4">/</span> <b>${esc(APP.crumbLeaf)}</b>`:''}</nav>`;
+  const breadcrumb=renderBreadcrumbs();
   app.innerHTML=`${appHeader()}
     <div class="${layoutClass}">
-      <div class="main"><div class="view">${routeParts[0]?breadcrumb:''}${body}</div></div>
+      <div class="main"><div class="view">${breadcrumb}${body}</div></div>
       ${globalTodayPanel()}
     </div>
     ${botnav()}${fab()}${modalHTML()}${mobileTodayDrawer()}
