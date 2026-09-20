@@ -15940,16 +15940,15 @@ function viewAccountsPage(){
 
 function viewAttendance(){
   let tab = APP.tab.att || 'Morning programme';
-  const tabs = ['Morning programme', 'Deity Department', 'Cleaning', 'Department Matrix', 'Accounts'];
+  const tabs = ['Morning programme', 'Deity Department', 'Cleaning', 'Department Matrix'];
   if (!tabs.includes(tab)) tab = 'Morning programme';
 
-  return head('🛕 BACE Pillars', 'Foundation to Healthy Growth', 'Morning program punctuality, Deity & Cleaning rosters, Department Matrix, and Financial Accounts & Budgets')+
+  return head('🛕 BACE Pillars', 'Foundation to Healthy Growth', 'Morning program punctuality, Deity & Cleaning rosters, and Department Matrix')+
    `<div class="tabs">${tabs.map(t => `<button class="${t===tab?'on':''}" data-act="tab" data-k="att" data-v="${t}">${t}</button>`).join('')}</div>`+
    (tab === 'Morning programme' ? morningProgramPanel()
    : tab === 'Deity Department' ? deityDepartmentPanel()
    : tab === 'Cleaning' ? cleaningDepartmentPanel()
-   : tab === 'Department Matrix' ? deptAttendanceMatrix()
-   : deptAccountsPanel());
+   : deptAttendanceMatrix());
 }
 
 function batchAttendancePanel(){
