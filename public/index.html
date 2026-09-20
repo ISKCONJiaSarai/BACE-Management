@@ -119,16 +119,88 @@ input,select,textarea{font-family:inherit;font-size:14px;color:var(--ink);backgr
 .app-header .brand img{height:32px;width:32px;object-fit:contain;filter:drop-shadow(0 1px 4px rgba(0,0,0,.15))}
 .app-header .brand-text{font-family:var(--f-head);font-size:15px;font-weight:700;color:var(--ink);white-space:nowrap;letter-spacing:-.02em}
 .app-header .brand-sub{font-size:10px;color:var(--ink-3);font-weight:500;letter-spacing:.03em}
-.header-nav{display:flex;align-items:center;gap:2px;margin:0 auto 0 12px;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none}
-.header-nav::-webkit-scrollbar{display:none}
-.header-nav a{
-  display:flex;align-items:center;gap:5px;padding:8px 14px;border-radius:10px;font-size:13px;font-weight:500;
-  color:var(--ink-2);white-space:nowrap;transition:all .18s ease;position:relative;
+.header-nav{
+  display:flex;align-items:center;gap:3px;margin:0 auto 0 12px;
+  overflow:visible;
 }
-.header-nav a:hover{background:var(--surface-2);color:var(--ink)}
-.header-nav a.on{color:var(--accent);font-weight:600;background:var(--accent-soft)}
-.header-nav a .em{font-size:14px}
-.header-nav a .nav-badge{position:absolute;top:4px;right:4px;min-width:14px;height:14px;padding:0 3px;border-radius:7px;background:var(--danger);color:#fff;font-size:9px;line-height:14px;text-align:center;font-weight:700}
+.header-nav-group{
+  position:relative;
+  display:inline-flex;
+  align-items:center;
+}
+.header-nav-group::after{
+  content:"";position:absolute;top:100%;left:0;right:0;height:8px;
+}
+.header-nav > a,
+.header-nav-link{
+  display:flex;align-items:center;gap:4px;padding:7px 13px;border-radius:10px;font-size:13px;font-weight:600;
+  color:var(--ink-2);white-space:nowrap;transition:all .18s cubic-bezier(0.16,1,0.3,1);text-decoration:none;
+  position:relative;cursor:pointer;
+}
+.header-nav > a:hover,
+.header-nav-link:hover{background:var(--surface-2);color:var(--ink)}
+.header-nav > a.on,
+.header-nav-link.on{color:var(--accent);font-weight:700;background:var(--accent-soft)}
+.header-nav-link .nav-arrow{
+  width:10px;height:10px;opacity:0.55;transition:transform .2s ease, opacity .2s ease;margin-left:2px;
+}
+.header-nav-group:hover .header-nav-link .nav-arrow,
+.header-nav-group:focus-within .header-nav-link .nav-arrow{
+  transform:rotate(180deg);opacity:1;color:var(--accent);
+}
+.header-dropdown-menu{
+  position:absolute;
+  top:calc(100% + 4px);
+  left:0;
+  min-width:205px;
+  max-height:calc(100vh - 84px);
+  overflow-y:auto;
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:12px;
+  box-shadow:0 12px 32px -4px rgba(15,23,42,0.18), 0 4px 12px -2px rgba(0,0,0,0.06);
+  padding:5px;
+  z-index:1000;
+  display:none;
+  opacity:0;
+  transform:translateY(6px);
+  pointer-events:none;
+  transition:opacity .18s cubic-bezier(0.16,1,0.3,1), transform .18s cubic-bezier(0.16,1,0.3,1);
+  backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+}
+.header-nav-group:hover .header-dropdown-menu,
+.header-nav-group:focus-within .header-dropdown-menu{
+  display:block;
+  opacity:1;
+  transform:translateY(0);
+  pointer-events:auto;
+}
+.header-dropdown-item{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:7px 11px;border-radius:8px;font-size:12.5px;
+  color:var(--ink-2);font-weight:500;text-decoration:none;transition:all .14s ease;
+  white-space:nowrap;
+}
+.header-dropdown-item:hover{
+  background:var(--surface-2);color:var(--accent);padding-left:14px;
+}
+.header-dropdown-item.on{
+  background:var(--accent-soft);color:var(--accent);font-weight:600;
+}
+[data-theme="dark"] .header-dropdown-menu{
+  background:rgba(22,27,38,0.97);
+  border-color:rgba(255,255,255,0.12);
+  box-shadow:0 16px 36px rgba(0,0,0,0.55);
+}
+[data-theme="dark"] .header-dropdown-item:hover{
+  background:rgba(255,255,255,0.08);
+  color:#FFF;
+}
+[data-theme="dark"] .header-dropdown-item.on{
+  background:rgba(255,102,0,0.2);
+  color:var(--accent);
+}
 .header-controls{display:flex;align-items:center;gap:6px;flex:none}
 .theme-toggle{
   width:36px;height:36px;border-radius:10px;display:grid;place-items:center;
@@ -3657,14 +3729,43 @@ function sidebar(){
 function appHeader(){
   const unread=DB.notifications.filter(n=>!n.read).length;
   const headerNavItems=[
-    {t:'Dashboard',em:'🏠',r:'#/',m:'dashboard'},
-    {t:'Management',em:'🛕',r:'#/mgmt',m:'management'},
-    {t:'Preaching',em:'📖',r:'#/preaching',m:'preaching'},
-    {t:'Devotee Care',em:'❤️',r:'#/care',m:'care'},
-    {t:'Calendar',em:'📅',r:'#/calendar',m:'calendar'},
-    {t:'Reports',em:'📊',r:'#/reports',m:'reports'},
+    {t:'Dashboard',r:'#/',m:'dashboard'},
+    {t:'Management',r:'#/mgmt',m:'management',children:[
+      {t:'Management Dashboard',r:'#/mgmt',m:'management'},
+      {t:'Departments',r:'#/depts',m:'management'},
+      {t:'Assign Seva',r:'#/assign',m:'assign'},
+      {t:'BACE Pillars',r:'#/attendance',m:'management'},
+      {t:'SOPs & Standards',r:'#/sops',m:'sops'},
+      {t:'Action Items',r:'#/actions',m:'actions'}
+    ]},
+    {t:'Preaching',r:'#/preaching',m:'preaching',children:[
+      {t:'Preaching Dashboard',r:'#/preaching',m:'preaching'},
+      {t:'Batch Management',r:'#/batches',m:'preaching'},
+      {t:'Contacts & Pipeline',r:'#/contacts',m:'preaching'},
+      {t:'Follow-ups',r:'#/followups',m:'preaching'},
+      {t:'Classes & Events',r:'#/classes',m:'preaching'},
+      {t:'Batch Attendance',r:'#/batch-attendance',m:'preaching'},
+      {t:'Reports & Analytics',r:'#/preaching-reports',m:'reports'}
+    ]},
+    {t:'Devotee Care',r:'#/care',m:'care',children:[
+      {t:'Care Dashboard',r:'#/care',m:'care'},
+      {t:'Friends',r:'#/friends',m:'care'},
+      {t:'Groups',r:'#/groups',m:'care'},
+      {t:'Swabhav Engagement',r:'#/swabhav',m:'care'},
+      {t:'Sadhana',r:'#/sadhana',m:'care'},
+      {t:'Facilitators',r:'#/facilitators',m:'care'},
+      {t:'Spiritual Classes',r:'#/spiritual-classes',m:'care'},
+      {t:'Camps',r:'#/camps',m:'care'},
+      {t:'Temple Visits',r:'#/temple-visits',m:'care'},
+      {t:'Personal Meetings',r:'#/meetings',m:'care_notes'},
+      {t:'Care Follow-ups',r:'#/care-followups',m:'care'},
+      {t:'Care Reports',r:'#/care-reports',m:'care'}
+    ]},
+    {t:'Calendar',r:'#/calendar',m:'calendar'},
+    {t:'Reports',r:'#/reports',m:'reports'},
   ];
   const route=APP.route.replace(/^#\/?/,'').split('/')[0];
+  const cleanRoute=APP.route.replace(/^#\/?/,'');
   const mgmtRoutes=['mgmt','depts','dept','assign','attendance','dept-reports','inventory','sops','actions'];
   const preachRoutes=['preaching','batches','batch','contacts','followups','classes','batch-attendance','preaching-reports'];
   const careRoutes=['care','friends','groups','group','swabhav','sadhana','facilitators','spiritual-classes','camps','temple-visits','meetings','care-followups','care-reports'];
@@ -3678,15 +3779,38 @@ function appHeader(){
     if(seg==='reports')return route==='reports';
     return false;
   }
+  function isChildActive(r){
+    const seg=r.replace(/^#\/?/,'');
+    return cleanRoute===seg || (seg!=='' && cleanRoute.startsWith(seg+'/'));
+  }
   const sunSvg=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`;
   const moonSvg=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`;
+  const navArrowSvg=`<svg class="nav-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>`;
+
+  function renderNavItem(i){
+    if(i.m && !can(i.m)) return '';
+    const active = isActive(i.r);
+    const validChildren = (i.children || []).filter(c => !c.m || can(c.m));
+    if(!validChildren.length){
+      return `<a href="${i.r}" class="header-nav-link ${active?'on':''}" title="${i.t}"><span>${esc(i.t)}</span></a>`;
+    }
+    return `<div class="header-nav-group">
+      <a href="${i.r}" class="header-nav-link ${active?'on':''}" title="${i.t}">
+        <span>${esc(i.t)}</span>${navArrowSvg}
+      </a>
+      <div class="header-dropdown-menu">
+        ${validChildren.map(c => `<a href="${c.r}" class="header-dropdown-item ${isChildActive(c.r)?'on':''}" title="${c.t}">${esc(c.t)}</a>`).join('')}
+      </div>
+    </div>`;
+  }
+
   return `<header class="app-header">
     <a class="brand" href="#/" title="BACE Dashboard">
       <img src="/logo.png?v=2" alt="ISKCON BACE">
       <div><div class="brand-text">ISKCON BACE</div><div class="brand-sub">Jia Sarai</div></div>
     </a>
     <nav class="header-nav">
-      ${headerNavItems.filter(i=>!i.m||can(i.m)).map(i=>`<a href="${i.r}" class="${isActive(i.r)?'on':''}" title="${i.t}"><span class="em">${i.em}</span><span>${i.t}</span></a>`).join('')}
+      ${headerNavItems.map(i => renderNavItem(i)).join('')}
     </nav>
     <div class="header-controls">
       <div class="searchbox" style="margin:0">${ic('search')}<input type="search" placeholder="Search…" value="${esc(APP.search)}" data-act="global-search" aria-label="Global search"></div>
