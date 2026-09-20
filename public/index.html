@@ -177,13 +177,16 @@ input,select,textarea{font-family:inherit;font-size:14px;color:var(--ink);backgr
   pointer-events:auto;
 }
 .header-dropdown-item{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:7px 11px;border-radius:8px;font-size:12.5px;
+  display:flex;align-items:center;gap:9px;
+  padding:7.5px 12px;border-radius:8px;font-size:12.5px;
   color:var(--ink-2);font-weight:500;text-decoration:none;transition:all .14s ease;
   white-space:nowrap;
 }
+.header-dropdown-item .d-icon{
+  font-size:14px;line-height:1;display:inline-flex;align-items:center;justify-content:center;width:18px;flex:none;
+}
 .header-dropdown-item:hover{
-  background:var(--surface-2);color:var(--accent);padding-left:14px;
+  background:var(--surface-2);color:var(--accent);padding-left:15px;
 }
 .header-dropdown-item.on{
   background:var(--accent-soft);color:var(--accent);font-weight:600;
@@ -3731,35 +3734,35 @@ function appHeader(){
   const headerNavItems=[
     {t:'Dashboard',r:'#/',m:'dashboard'},
     {t:'Management',r:'#/mgmt',m:'management',children:[
-      {t:'Management Dashboard',r:'#/mgmt',m:'management'},
-      {t:'Departments',r:'#/depts',m:'management'},
-      {t:'Assign Seva',r:'#/assign',m:'assign'},
-      {t:'BACE Pillars',r:'#/attendance',m:'management'},
-      {t:'SOPs & Standards',r:'#/sops',m:'sops'},
-      {t:'Action Items',r:'#/actions',m:'actions'}
+      {t:'Management Dashboard',em:'📊',r:'#/mgmt',m:'management'},
+      {t:'Departments',em:'🏢',r:'#/depts',m:'management'},
+      {t:'Assign Seva',em:'📋',r:'#/assign',m:'assign'},
+      {t:'BACE Pillars',em:'🛕',r:'#/attendance',m:'management'},
+      {t:'SOPs & Standards',em:'📘',r:'#/sops',m:'sops'},
+      {t:'Action Items',em:'🎯',r:'#/actions',m:'actions'}
     ]},
     {t:'Preaching',r:'#/preaching',m:'preaching',children:[
-      {t:'Preaching Dashboard',r:'#/preaching',m:'preaching'},
-      {t:'Batch Management',r:'#/batches',m:'preaching'},
-      {t:'Contacts & Pipeline',r:'#/contacts',m:'preaching'},
-      {t:'Follow-ups',r:'#/followups',m:'preaching'},
-      {t:'Classes & Events',r:'#/classes',m:'preaching'},
-      {t:'Batch Attendance',r:'#/batch-attendance',m:'preaching'},
-      {t:'Reports & Analytics',r:'#/preaching-reports',m:'reports'}
+      {t:'Preaching Dashboard',em:'📊',r:'#/preaching',m:'preaching'},
+      {t:'Batch Management',em:'🗂',r:'#/batches',m:'preaching'},
+      {t:'Contacts & Pipeline',em:'🌱',r:'#/contacts',m:'preaching'},
+      {t:'Follow-ups',em:'⏰',r:'#/followups',m:'preaching'},
+      {t:'Classes & Events',em:'✨',r:'#/classes',m:'preaching'},
+      {t:'Batch Attendance',em:'✅',r:'#/batch-attendance',m:'preaching'},
+      {t:'Reports & Analytics',em:'📈',r:'#/preaching-reports',m:'reports'}
     ]},
     {t:'Devotee Care',r:'#/care',m:'care',children:[
-      {t:'Care Dashboard',r:'#/care',m:'care'},
-      {t:'Friends',r:'#/friends',m:'care'},
-      {t:'Groups',r:'#/groups',m:'care'},
-      {t:'Swabhav Engagement',r:'#/swabhav',m:'care'},
-      {t:'Sadhana',r:'#/sadhana',m:'care'},
-      {t:'Facilitators',r:'#/facilitators',m:'care'},
-      {t:'Spiritual Classes',r:'#/spiritual-classes',m:'care'},
-      {t:'Camps',r:'#/camps',m:'care'},
-      {t:'Temple Visits',r:'#/temple-visits',m:'care'},
-      {t:'Personal Meetings',r:'#/meetings',m:'care_notes'},
-      {t:'Care Follow-ups',r:'#/care-followups',m:'care'},
-      {t:'Care Reports',r:'#/care-reports',m:'care'}
+      {t:'Care Dashboard',em:'📊',r:'#/care',m:'care'},
+      {t:'Friends',em:'🫂',r:'#/friends',m:'care'},
+      {t:'Groups',em:'👥',r:'#/groups',m:'care'},
+      {t:'Swabhav Engagement',em:'🌿',r:'#/swabhav',m:'care'},
+      {t:'Sadhana',em:'📿',r:'#/sadhana',m:'care'},
+      {t:'Facilitators',em:'🤝',r:'#/facilitators',m:'care'},
+      {t:'Spiritual Classes',em:'📖',r:'#/spiritual-classes',m:'care'},
+      {t:'Camps',em:'⛺',r:'#/camps',m:'care'},
+      {t:'Temple Visits',em:'🛕',r:'#/temple-visits',m:'care'},
+      {t:'Personal Meetings',em:'🔒',r:'#/meetings',m:'care_notes'},
+      {t:'Care Follow-ups',em:'⏰',r:'#/care-followups',m:'care'},
+      {t:'Care Reports',em:'📄',r:'#/care-reports',m:'care'}
     ]},
     {t:'Calendar',r:'#/calendar',m:'calendar'},
     {t:'Reports',r:'#/reports',m:'reports'},
@@ -3792,14 +3795,16 @@ function appHeader(){
     const active = isActive(i.r);
     const validChildren = (i.children || []).filter(c => !c.m || can(c.m));
     if(!validChildren.length){
-      return `<a href="${i.r}" class="header-nav-link ${active?'on':''}" title="${i.t}"><span>${esc(i.t)}</span></a>`;
+      return `<a href="${i.r}" class="header-nav-link ${active?'on':''}"><span>${esc(i.t)}</span></a>`;
     }
     return `<div class="header-nav-group">
-      <a href="${i.r}" class="header-nav-link ${active?'on':''}" title="${i.t}">
+      <a href="${i.r}" class="header-nav-link ${active?'on':''}">
         <span>${esc(i.t)}</span>${navArrowSvg}
       </a>
       <div class="header-dropdown-menu">
-        ${validChildren.map(c => `<a href="${c.r}" class="header-dropdown-item ${isChildActive(c.r)?'on':''}" title="${c.t}">${esc(c.t)}</a>`).join('')}
+        ${validChildren.map(c => `<a href="${c.r}" class="header-dropdown-item ${isChildActive(c.r)?'on':''}">
+          ${c.em ? `<span class="d-icon">${c.em}</span>` : ''}<span>${esc(c.t)}</span>
+        </a>`).join('')}
       </div>
     </div>`;
   }
