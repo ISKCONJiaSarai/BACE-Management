@@ -4983,7 +4983,8 @@ async function handleGoogleAuthResponse(response){
       return;
     }
 
-    toast(`Hare Krishna, ${data.user.name.split(' ')[0]}! 🙏`);
+    const toastName = (APP.user && APP.user.name) ? APP.user.name : (data.user && data.user.name ? data.user.name : 'Devotee');
+    toast(`Hare Krishna, ${toastName}! 🙏`);
     go('#/');
   }catch(err){
     console.error('Google Auth Error:',err);
@@ -5451,7 +5452,9 @@ const HERO_QUOTES=[
 ];
 function hero(){
   const s=STATS(),me=dv(APP.user.devotee);
-  const displayName = me ? me.name.split(' ')[0] : (APP.user && APP.user.name ? APP.user.name.split(' ')[0] : 'Devotee');
+  const displayName = (typeof devoteeDisplayName === 'function')
+    ? devoteeDisplayName(APP.user.devotee || APP.user.id)
+    : (me && me.name ? me.name : (APP.user && APP.user.name ? APP.user.name : 'Devotee'));
   const quoteIdx = Math.abs(iso(TODAY).split('').reduce((acc,c)=>acc+c.charCodeAt(0),0)) % HERO_QUOTES.length;
   const dayQuote = HERO_QUOTES[quoteIdx];
   const actBatches = activeBatches().length;
