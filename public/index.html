@@ -12800,7 +12800,7 @@ function renderDepartmentRosterPanel(deptKey) {
               ${devoteeStats.map(d => {
                 const tier = d.rate === 100 && d.completed >= 3 ? '🌟 Perfect' : (d.rate >= 85 ? '✅ Reliable' : (d.missed > 0 ? '⚠️ Needs Follow-up' : '⚡ Active'));
                 const tierClass = d.rate === 100 ? 'b-green' : (d.rate >= 85 ? 'b-blue' : (d.missed > 0 ? 'b-amber' : 'b-gray'));
-                return `<tr data-name="${esc(d.name.toLowerCase())}" data-score="${d.overallScore}" data-morning-pct="${d.morning.pct}" data-deity-sevas="${d.deity.completed}" data-cleaning-sevas="${d.cleaning.completed}" data-status="${esc(d.statusText)}" data-has-morning="${d.morning.present > 0}" data-has-deity="${d.deity.isAssigned}" data-has-cleaning="${d.cleaning.isAssigned}" data-all3="${d.isAllRounder}">
+                return `<tr data-name="${esc(d.name.toLowerCase())}" data-completed="${d.completed}" data-assigned="${d.assigned}" data-rate="${d.rate}">
                   <td data-l="Devotee">
                     <div style="display:flex;align-items:center;gap:8px">
                       ${av(d.name)}
@@ -13050,16 +13050,16 @@ function exportThreeDepartmentsMatrixPDF(period = 'weekly') {
             <div style="font-size:9.5px;color:#64748b">${esc(d.phone || d.bace)}</div>
           </td>
           <td style="text-align:center">
-            ${d.morning.present > 0 ? `
-              <div style="font-weight:700;color:#0f172a">${d.morning.pct}%</div>
+            ${d.morning && d.morning.present > 0 ? `
+              <div style="font-weight:700;color:#0f172a">${d.morning.pct || 0}%</div>
               <div style="font-size:9.5px;color:#64748b">${d.morning.present}/${d.morning.total} days attended</div>
             ` : `
               <div style="font-weight:600;color:#94a3b8">0%</div>
-              <div style="font-size:9.5px;color:#94a3b8;font-style:italic">0/${d.morning.total} days</div>
+              <div style="font-size:9.5px;color:#94a3b8;font-style:italic">0/${d.morning ? d.morning.total : 0} days</div>
             `}
           </td>
           <td style="text-align:center">
-            ${d.deity.isAssigned ? `
+            ${d.deity && d.deity.isAssigned ? `
               <div style="font-weight:700;color:${d.deity.completed>0?'#15803d':'#0f172a'}">${d.deity.completed}/${d.deity.assigned || d.deity.completed} sevas</div>
               <div style="font-size:9.5px;color:#64748b">${d.deity.rate}% reliability${d.deity.missed>0?` · <b style="color:#b91c1c">${d.deity.missed} missed</b>`:''}${d.deity.subs>0?` · <b style="color:#2563eb">+${d.deity.subs} sub</b>`:''}</div>
             ` : `
@@ -13068,7 +13068,7 @@ function exportThreeDepartmentsMatrixPDF(period = 'weekly') {
             `}
           </td>
           <td style="text-align:center">
-            ${d.cleaning.isAssigned ? `
+            ${d.cleaning && d.cleaning.isAssigned ? `
               <div style="font-weight:700;color:${d.cleaning.completed>0?'#0f766e':'#0f172a'}">${d.cleaning.completed}/${d.cleaning.assigned || d.cleaning.completed} sevas</div>
               <div style="font-size:9.5px;color:#64748b">${d.cleaning.rate}% reliability${d.cleaning.missed>0?` · <b style="color:#b91c1c">${d.cleaning.missed} missed</b>`:''}${d.cleaning.subs>0?` · <b style="color:#2563eb">+${d.cleaning.subs} sub</b>`:''}</div>
             ` : `
@@ -13609,16 +13609,16 @@ function deptAttendanceMatrix(){
                   </div>
                 </td>
                 <td data-l="Morning Program" style="text-align:center">
-                  ${d.morning.present > 0 ? `
-                    <div style="font-weight:700;color:var(--ink)">${d.morning.pct}%</div>
+                  ${d.morning && d.morning.present > 0 ? `
+                    <div style="font-weight:700;color:var(--ink)">${d.morning.pct || 0}%</div>
                     <div class="tiny" style="color:var(--ink-3)">${d.morning.present}/${d.morning.total} days attended</div>
                   ` : `
                     <div style="font-weight:600;color:var(--ink-3)">0%</div>
-                    <div class="tiny" style="color:var(--ink-3);font-style:italic">0/${d.morning.total} days</div>
+                    <div class="tiny" style="color:var(--ink-3);font-style:italic">0/${d.morning ? d.morning.total : 0} days</div>
                   `}
                 </td>
                 <td data-l="Deity Department" style="text-align:center">
-                  ${d.deity.isAssigned ? `
+                  ${d.deity && d.deity.isAssigned ? `
                     <div style="font-weight:700;color:${d.deity.completed>0?'var(--green)':'var(--ink)'}">${d.deity.completed}/${d.deity.assigned || d.deity.completed} sevas</div>
                     <div class="tiny" style="color:var(--ink-3)">${d.deity.rate}% reliability${d.deity.missed>0?` · <b style="color:var(--err)">${d.deity.missed} missed</b>`:''}${d.deity.subs>0?` · <b style="color:var(--pri)">+${d.deity.subs} sub</b>`:''}</div>
                   ` : `
@@ -13627,7 +13627,7 @@ function deptAttendanceMatrix(){
                   `}
                 </td>
                 <td data-l="Cleaning Department" style="text-align:center">
-                  ${d.cleaning.isAssigned ? `
+                  ${d.cleaning && d.cleaning.isAssigned ? `
                     <div style="font-weight:700;color:${d.cleaning.completed>0?'var(--teal)':'var(--ink)'}">${d.cleaning.completed}/${d.cleaning.assigned || d.cleaning.completed} sevas</div>
                     <div class="tiny" style="color:var(--ink-3)">${d.cleaning.rate}% reliability${d.cleaning.missed>0?` · <b style="color:var(--err)">${d.cleaning.missed} missed</b>`:''}${d.cleaning.subs>0?` · <b style="color:var(--pri)">+${d.cleaning.subs} sub</b>`:''}</div>
                   ` : `
