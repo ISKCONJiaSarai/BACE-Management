@@ -5417,16 +5417,7 @@ function viewDashboard(){
     preaching_coord:'My batch',facilitator:'My devotees',devotee:'My BACE',admin:'System overview'}[r];
   const hd=hero()+head(ROLES[r].emoji+' '+ROLES[r].name,title,ROLES[r].scope,
     `<span class="demo-flag">Sample data</span><button class="btn" data-act="go" data-r="#/today">⚡ Today</button><button class="btn pri" data-act="go" data-r="#/reports">📊 Reports</button>`);
-  if(r==='area_leader')return hd+`<div class="grid g-2-1" style="margin-bottom:15px">
-     ${section('Community growth',`<div class="card-b">${lineChart(growthPoints())}</div>`,(()=>{
-  const curMonthNew = DB.devotees.filter(d => {
-    const dt = parseDate(d.joined);
-    return dt && dt.getMonth() === TODAY.getMonth() && dt.getFullYear() === TODAY.getFullYear();
-  }).length;
-  const count = curMonthNew || DB.devotees.filter(d => d.status === 'New').length;
-  return `<span class="badge b-green">+${count} this month</span>`;
-})())}
-     ${needsAttention()}</div>${pillarCards()}<div style="height:15px"></div>
+  if(r==='area_leader')return hd+`${pillarCards()}<div style="height:15px"></div>
      <div class="grid g2">${insightsCard()}${dashboardCalendarWidget()}</div>
      <div style="height:15px"></div>
      <div class="grid g2">${section('Organisation',`<div class="card-b"><p class="tiny" style="margin-top:0">Area Leader → Overall Coordinator → three managers → department heads, preaching coordinators and facilitators.</p>
