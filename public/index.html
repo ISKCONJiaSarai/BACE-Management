@@ -4238,8 +4238,7 @@ const PILLARS=[
    {t:'Departments',em:'🏢',r:'#/depts',m:'management'},
    {t:'Assign Seva',em:'📋',r:'#/assign',m:'assign'},
    {t:'BACE Pillars',em:'🏢',r:'#/attendance',m:'management'},
-   {t:'SOPs & standards',em:'📘',r:'#/sops',m:'sops'},
-   {t:'Action items',em:'🎯',r:'#/actions',m:'actions',badge:'actionsOverdue'}]},
+   {t:'SOPs & standards',em:'📘',r:'#/sops',m:'sops'}]},
  {key:'preach',t:'BACE Preaching',em:'📖',pill:'var(--indigo)',m:'preaching',items:[
    {t:'Preaching dashboard',em:'📊',r:'#/preaching',m:'preaching'},
    {sub:'Level 1 (Foundation)'},
@@ -4331,8 +4330,7 @@ function appHeader(){
       {t:'Departments',em:'🏢',r:'#/depts',m:'management'},
       {t:'Assign Seva',em:'📋',r:'#/assign',m:'assign'},
       {t:'BACE Pillars',em:'🛕',r:'#/attendance',m:'management'},
-      {t:'SOPs & Standards',em:'📘',r:'#/sops',m:'sops'},
-      {t:'Action Items',em:'🎯',r:'#/actions',m:'actions'}
+      {t:'SOPs & Standards',em:'📘',r:'#/sops',m:'sops'}
     ]},
     {t:'Preaching',r:'#/preaching',m:'preaching',children:[
       {t:'Preaching Dashboard',em:'📊',r:'#/preaching',m:'preaching'},
@@ -4355,7 +4353,7 @@ function appHeader(){
   ];
   const route=APP.route.replace(/^#\/?/,'').split('/')[0];
   const cleanRoute=APP.route.replace(/^#\/?/,'');
-  const mgmtRoutes=['mgmt','depts','dept','assign','attendance','dept-reports','inventory','sops','actions'];
+  const mgmtRoutes=['mgmt','depts','dept','assign','attendance','dept-reports','inventory','sops'];
   const preachRoutes=['preaching','batches','batch','contacts','followups','classes','batch-attendance'];
   const careRoutes=['care','friends','groups','group','swabhav','sadhana','facilitators','camps','meetings','care-followups','care-reports'];
   function isActive(r){
@@ -4425,7 +4423,7 @@ function appHeader(){
 }
 function mobileNavDropdown(){
   const route=APP.route.replace(/^#\/?/,'').split('/')[0];
-  const mgmtRoutes=['mgmt','depts','dept','assign','attendance','dept-reports','inventory','sops','actions'];
+  const mgmtRoutes=['mgmt','depts','dept','assign','attendance','dept-reports','inventory','sops'];
   const preachRoutes=['preaching','batches','batch','contacts','followups','classes','batch-attendance'];
   const careRoutes=['care','friends','groups','group','swabhav','sadhana','facilitators','camps','meetings','care-followups','care-reports'];
   const mainItems=[
@@ -4440,7 +4438,6 @@ function mobileNavDropdown(){
       {t:'Assign Seva',em:'📋',r:'#/assign',m:'assign'},
       {t:'BACE Pillars',em:'🏢',r:'#/attendance',m:'management'},
       {t:'SOPs',em:'📘',r:'#/sops'},
-      {t:'Action Items',em:'🎯',r:'#/actions'},
     ]},
     {title:'Preaching',items:[
       {t:'Preaching Dashboard',em:'📊',r:'#/preaching',m:'preaching'},
@@ -5883,11 +5880,11 @@ function pillarCardMgmt(){
           </div>
           <span class="pillar-item-arrow">›</span>
         </a>
-        <a class="pillar-item" href="#/actions">
+        <a class="pillar-item" href="#/assign">
           <span class="pillar-item-icon">🎯</span>
           <div class="pillar-item-info">
             <div class="pillar-item-title">Action items</div>
-            <div class="pillar-item-sub">${s.actionsOpen} open tasks &amp; community to-dos</div>
+            <div class="pillar-item-sub">${s.actionsOpen} open tasks inside Assign Seva</div>
           </div>
           <span class="pillar-item-arrow">›</span>
         </a>
@@ -6221,7 +6218,7 @@ function viewDashboard(){
     ${section('Today across the community',`<div class="grid g4" style="padding:16px 18px">
       ${stat('Seva today',DB.activities.filter(x=>x.date===iso(TODAY)&&x.type==='Seva').length,'scheduled',{em:'🪔',act:'go',r:'#/today'})}
       ${stat('Follow-ups due',s.fuToday+s.careToday,'preaching + care',{em:'⏰',act:'go',r:'#/followups'})}
-      ${stat('Action items due',DB.tasks.filter(t=>t.due===iso(TODAY)&&t.status!=='Completed').length,'open',{em:'🎯',act:'go',r:'#/actions'})}
+      ${stat('Action items due',DB.tasks.filter(t=>t.due===iso(TODAY)&&t.status!=='Completed').length,'open',{em:'🎯',act:'go',r:'#/assign'})}
       ${stat('Events',DB.activities.filter(e=>e.date===iso(TODAY)&&e.type==='Event').length,'on the calendar',{em:'✨',act:'go',r:'#/calendar'})}</div>`,
       `<a class="btn sm" href="#/today">Today centre</a>`)}</div>
     ${pillarCards()}<div style="height:15px"></div>
@@ -6302,7 +6299,7 @@ function viewDashboard(){
       ${stat('My attendance',attFor(me.id)+'%','across all categories',{em:'✅',r:'#/attendance'})}
       ${stat('My upcoming seva',up.length,'assignments ahead',{em:'🪔',r:'#/today'})}
       ${stat('My rounds',me.sadhana.rounds,'daily commitment',{em:'📿',r:'#/sadhana'})}
-      ${stat('My action items',DB.tasks.filter(t=>t.responsible===me.id&&t.status!=='Completed').length,'open',{em:'🎯',act:'go',r:'#/actions'})}</div>
+      ${stat('My action items',DB.tasks.filter(t=>t.responsible===me.id&&t.status!=='Completed').length,'open',{em:'🎯',act:'go',r:'#/assign'})}</div>
       <div class="grid g-2-1">
        ${section('🙏 My upcoming seva',up.length?`<div class="list">${up.slice(0,7).map(({a,x})=>`
          <div class="li"><span class="badge b-saffron">${esc(scopeName(x).split(' ')[0])}</span>
@@ -7274,7 +7271,7 @@ function deptDashboardBody(dp){
     ${stat('Completion',m.completion+'%','completed vs missed',{em:'📈',act:'drill-dept',arg:dp.id})}
     ${stat('Attendance',m.attendance+'%',`${m.attRecords} records`,{em:'✅',r:'#/attendance'})}
     ${stat('Today',today.length,'activities scheduled',{em:'📅',r:'#/today'})}
-    ${stat('Pending actions',actions.length,actions.filter(a=>a.due<iso(TODAY)).length+' overdue',{em:'🎯',tint:actions.length>3,r:'#/actions'})}
+    ${stat('Pending actions',actions.length,actions.filter(a=>a.due<iso(TODAY)).length+' overdue',{em:'🎯',tint:actions.length>3,r:'#/assign'})}
     ${stat('Budget used',m.util+'%',money(dp.budget.spent)+' of '+money(dp.budget.allocated),{em:'🧾',r:'#/reports'})}</div>
    ${teamSection({incharge:dp.incharge,coordinator:dp.head,volunteers:(dp.volunteers||[]),canEdit:ownsDept(dp.id),editAct:'edit-dept',editId:dp.id})}
    <div class="grid g-2-1" style="margin-bottom:15px">
@@ -7434,6 +7431,75 @@ function viewDept(id){
 /* =========================================================================
    📋 ASSIGN / SCHEDULE  (unified: seva, service, class, event, task)
    ========================================================================= */
+function assignActionItemsSection(){
+  const f=APP.filters.act||(APP.filters.act={bucket:'Open',q:''});
+  let rows=DB.tasks||[];
+  if(['dept_head'].includes(APP.user.role))rows=rows.filter(t=>t.dept===APP.user.dept);
+  if(['devotee','facilitator'].includes(APP.user.role))rows=rows.filter(t=>t.responsible===APP.user.devotee);
+  const buckets={
+    Open:t=>t.status!=='Completed',
+    Overdue:t=>t.status!=='Completed'&&t.due<iso(TODAY),
+    Today:t=>t.due===iso(TODAY),
+    Mine:t=>t.responsible===APP.user.devotee,
+    Completed:t=>t.status==='Completed',
+    All:()=>true
+  };
+  rows=rows.filter(buckets[f.bucket]||(()=>true));
+  if(f.q)rows=rows.filter(t=>t.name.toLowerCase().includes(f.q.toLowerCase()));
+  const sub=(DB.activities||[]).filter(a=>a.actionItems&&a.actionItems.length&&a.date>=iso(dayOff(-7)));
+
+  return `
+    <div style="height:22px"></div>
+    <div class="card pad" style="border:1px solid var(--line);box-shadow:var(--shadow-sm)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--line);flex-wrap:wrap;gap:10px">
+        <div>
+          <h3 style="margin:0;display:flex;align-items:center;gap:8px;font-size:17px;font-weight:700">
+            <span>🎯</span> Action Items &amp; Deliverables
+            <span class="badge b-mustard" style="font-size:11px">${(DB.tasks||[]).filter(t=>t.status!=='Completed').length} open</span>
+          </h3>
+          <p class="sub" style="margin:3px 0 0 0;font-size:12px;color:var(--ink-2)">Operational tasks, checklists under activities, and meeting deliverables</p>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <button class="btn sm pri" data-act="open-assign" data-type="Task">${ic('plus')}New action item</button>
+        </div>
+      </div>
+
+      <div class="grid g4" style="margin-bottom:14px">
+        ${stat('Open',DB.tasks.filter(t=>t.status!=='Completed').length,'pending completion',{em:'📋',act:'f',k:'act',n:'bucket',v:'Open'})}
+        ${stat('Overdue',STATS().actionsOverdue,'past deadline',{em:'⚠️',tint:STATS().actionsOverdue>0,act:'f',k:'act',n:'bucket',v:'Overdue'})}
+        ${stat('Mine',DB.tasks.filter(t=>t.responsible===APP.user.devotee&&t.status!=='Completed').length,'assigned to me',{em:'🙋',act:'f',k:'act',n:'bucket',v:'Mine'})}
+        ${stat('Completed',DB.tasks.filter(t=>t.status==='Completed').length,'closed out',{em:'✅',act:'f',k:'act',n:'bucket',v:'Completed'})}
+      </div>
+
+      <div class="toolbar" style="padding:0 0 10px 0;margin-bottom:8px">
+        <div class="chips">
+          ${Object.keys(buckets).map(b=>`<button class="chip ${f.bucket===b?'on':''}" data-act="f" data-k="act" data-n="bucket" data-v="${b}">${b}</button>`).join('')}
+        </div>
+        <input type="search" placeholder="Search action items…" value="${esc(f.q)}" data-act="f" data-k="act" data-n="q" style="margin-left:auto;max-width:240px">
+      </div>
+
+      ${rows.length ? `<div class="list">${rows.sort((a,b)=>a.due<b.due?-1:1).map(t=>`<div class="li">
+        <input type="checkbox" ${t.status==='Completed'?'checked':''} data-act="toggle-task" data-id="${t.id}" style="width:17px;height:17px;accent-color:var(--green);cursor:pointer">
+        <span class="grow"><span class="t" style="${t.status==='Completed'?'text-decoration:line-through;color:var(--ink-3)':''}">${esc(t.name)}</span>
+        <span class="d">${esc(nameOf(t.responsible))} · ${esc(dept(t.dept)?.name||'Community')} · due ${relD(t.due)}</span></span>
+        ${sbadge(t.priority)}${t.due<iso(TODAY)&&t.status!=='Completed'?badge('Overdue','red'):sbadge(t.status)}
+        <button class="btn sm" data-act="open-activity" data-id="${t.id}">Open</button>
+      </div>`).join('')}</div>`
+      : emptyState('Nothing here','No action items in this bucket.','<button class="btn pri sm" data-act="open-assign" data-type="Task">Create action item</button>','calm')}
+
+      ${sub.length ? `
+        <div style="margin-top:16px;padding-top:14px;border-top:1px dashed var(--line)">
+          <div style="font-weight:700;font-size:13px;margin-bottom:8px;color:var(--ink)">Checklists inside scheduled activities</div>
+          <div class="list">${sub.slice(0,6).map(a=>`<div class="li click" data-act="open-activity" data-id="${a.id}">
+            <span class="badge b-mustard">${typeEmoji(a.type)}</span>
+            <span class="grow"><span class="t">${esc(a.name)}</span>
+            <span class="d">${a.actionItems.filter(i=>i.done).length} of ${a.actionItems.length} steps done · ${fmtD(a.date)}</span></span>
+            <div style="min-width:90px">${prog(pct(a.actionItems.filter(i=>i.done).length,a.actionItems.length),'var(--green)')}</div>
+          </div>`).join('')}</div>
+        </div>` : ''}
+    </div>`;
+}
+
 function viewAssign(){
   const f=APP.filters.assign||(APP.filters.assign={q:'',type:'',scope:'',status:'',from:iso(dayOff(-7)),to:iso(dayOff(21))});
   let rows=DB.activities.filter(a=>inRange(a.date,f.from,f.to)
@@ -7444,13 +7510,13 @@ function viewAssign(){
   if(APP.user.role==='preaching_coord')rows=rows.filter(a=>a.batch===APP.user.batch);
   const unf=rows.filter(a=>a.type!=='Task'&&['Scheduled','Assigned'].includes(a.status)&&!isFilled(a));
   return head('📋 Allocate devotees to department services','Assign Seva',
-    'Assign devotees, coordinate department duties, track roster requirements and generate recurring templates',
-    `<button class="btn" data-act="go" data-r="#/actions">🎯 Action items</button><button class="btn pri" data-act="open-assign" data-type="Seva">${ic('plus')}Assign seva</button>`)+
+    'Assign devotees, coordinate department duties, track roster requirements and manage action items',
+    `<button class="btn" data-act="open-assign" data-type="Task">${ic('plus')}New action item</button><button class="btn pri" data-act="open-assign" data-type="Seva">${ic('plus')}Assign seva</button>`)+
   `<div class="grid g4" style="margin-bottom:15px">
     ${stat('In this range',rows.length,`${fmtD(f.from)} → ${fmtD(f.to)}`,{em:'📋',r:'#/assign'})}
     ${stat('Short of volunteers',unf.length,'need allocation now',{em:'⚠️',tint:unf.length>0,r:'#/assign'})}
     ${stat('Recurring templates',DB.templates.length,'generating automatically',{em:'🔁',r:'#/sops'})}
-    ${stat('Declined',DB.assignments.filter(a=>a.state==='Declined').length,'need reassignment',{em:'↩️',r:'#/actions'})}</div>
+    ${stat('Declined',DB.assignments.filter(a=>a.state==='Declined').length,'need reassignment',{em:'↩️',r:'#/assign'})}</div>
    ${unf.length?section('⚠️ Waiting for volunteers',`<div class="tbl-wrap">${actTable(unf)}</div>`,`<span class="tiny">Open any activity to pick volunteers</span>`)+'<div style="height:15px"></div>':''}
    ${dataTable({id:'assign',exportName:'activities',cols:[
      {h:'Activity',c:a=>`<b>${typeEmoji(a.type)} ${esc(a.name)}</b><div class="tiny">${esc(a.type)}${a.recurrence!=='One time'?' · '+a.recurrence:''}</div>`},
@@ -7467,7 +7533,8 @@ function viewAssign(){
         ${DB.batches.map(b=>`<option value="${b.id}" ${f.scope===b.id?'selected':''}>${esc(b.name)}</option>`).join('')}</select>
       <select data-act="f" data-k="assign" data-n="status"><option value="">All statuses</option>${ACT_STATUS.map(s=>`<option ${f.status===s?'selected':''}>${s}</option>`).join('')}</select>
       <input type="date" value="${f.from}" data-act="f" data-k="assign" data-n="from"><input type="date" value="${f.to}" data-act="f" data-k="assign" data-n="to">`,
-    empty:emptyState('Nothing scheduled in this range','Widen the dates or create the first activity.','<button class="btn pri" data-act="open-assign" data-type="Seva">📋 Assign seva</button>')})}`;
+    empty:emptyState('Nothing scheduled in this range','Widen the dates or create the first activity.','<button class="btn pri" data-act="open-assign" data-type="Seva">📋 Assign seva</button>')})}
+   ${assignActionItemsSection()}`;
 }
 /* ---- the create/edit modal with live volunteer picker ---- */
 function assignDraft(){
@@ -19400,37 +19467,11 @@ function sopModal(id){
    🎯 ACTION ITEMS
    ========================================================================= */
 function viewActions(){
-  const f=APP.filters.act||(APP.filters.act={bucket:'Open',q:''});
-  let rows=DB.tasks;
-  if(['dept_head'].includes(APP.user.role))rows=rows.filter(t=>t.dept===APP.user.dept);
-  if(['devotee','facilitator'].includes(APP.user.role))rows=rows.filter(t=>t.responsible===APP.user.devotee);
-  const buckets={Open:t=>t.status!=='Completed',Overdue:t=>t.status!=='Completed'&&t.due<iso(TODAY),
-    Today:t=>t.due===iso(TODAY),Mine:t=>t.responsible===APP.user.devotee,Completed:t=>t.status==='Completed',All:()=>true};
-  rows=rows.filter(buckets[f.bucket]||(()=>true));
-  if(f.q)rows=rows.filter(t=>t.name.toLowerCase().includes(f.q.toLowerCase()));
-  const sub=DB.activities.filter(a=>a.actionItems&&a.actionItems.length&&a.date>=iso(dayOff(-7)));
-  return head('🎯 Action items','Action items','Sub-tasks that sit underneath an activity — plus standalone tasks raised in meetings',
-    `<button class="btn pri" data-act="open-assign" data-type="Task">${ic('plus')}New action item</button>`)+
-  `<div class="grid g4" style="margin-bottom:15px">
-    ${stat('Open',DB.tasks.filter(t=>t.status!=='Completed').length,'not yet completed',{em:'📋',act:'f',k:'act',n:'bucket',v:'Open'})}
-    ${stat('Overdue',STATS().actionsOverdue,'past their date',{em:'⚠️',tint:STATS().actionsOverdue>0,act:'f',k:'act',n:'bucket',v:'Overdue'})}
-    ${stat('Mine',DB.tasks.filter(t=>t.responsible===APP.user.devotee&&t.status!=='Completed').length,'assigned to me',{em:'🙋',act:'f',k:'act',n:'bucket',v:'Mine'})}
-    ${stat('Completed',DB.tasks.filter(t=>t.status==='Completed').length,'closed out',{em:'✅',act:'f',k:'act',n:'bucket',v:'Completed'})}</div>
-   <div class="card" style="margin-bottom:15px"><div class="toolbar">
-     <div class="chips">${Object.keys(buckets).map(b=>`<button class="chip ${f.bucket===b?'on':''}" data-act="f" data-k="act" data-n="bucket" data-v="${b}">${b}</button>`).join('')}</div>
-     <input type="search" placeholder="Search action items" value="${esc(f.q)}" data-act="f" data-k="act" data-n="q" style="margin-left:auto"></div>
-    ${rows.length?`<div class="list">${rows.sort((a,b)=>a.due<b.due?-1:1).map(t=>`<div class="li">
-      <input type="checkbox" ${t.status==='Completed'?'checked':''} data-act="toggle-task" data-id="${t.id}" style="width:17px;height:17px;accent-color:var(--green)">
-      <span class="grow"><span class="t" style="${t.status==='Completed'?'text-decoration:line-through;color:var(--ink-3)':''}">${esc(t.name)}</span>
-      <span class="d">${esc(nameOf(t.responsible))} · ${esc(dept(t.dept)?.name||'Community')} · due ${relD(t.due)}</span></span>
-      ${sbadge(t.priority)}${t.due<iso(TODAY)&&t.status!=='Completed'?badge('Overdue','red'):sbadge(t.status)}
-      <button class="btn sm" data-act="open-activity" data-id="${t.id}">Open</button></div>`).join('')}</div>`
-     :emptyState('Nothing here','No action items in this bucket.','<button class="btn pri" data-act="open-assign" data-type="Task">Create one</button>','calm')}</div>
-   ${section('Checklists inside activities',sub.length?`<div class="list">${sub.slice(0,6).map(a=>`<div class="li click" data-act="open-activity" data-id="${a.id}">
-     <span class="badge b-mustard">${typeEmoji(a.type)}</span><span class="grow"><span class="t">${esc(a.name)}</span>
-     <span class="d">${a.actionItems.filter(i=>i.done).length} of ${a.actionItems.length} steps done · ${fmtD(a.date)}</span></span>
-     <div style="min-width:90px">${prog(pct(a.actionItems.filter(i=>i.done).length,a.actionItems.length),'var(--green)')}</div></div>`).join('')}</div>`
-     :emptyState('No checklists','Activities with action items appear here.',''))}`;
+  if (APP.route !== '#/assign') {
+    APP.route = '#/assign';
+    location.hash = '#/assign';
+  }
+  return viewAssign();
 }
 
 /* =========================================================================
@@ -21120,7 +21161,7 @@ function routeView(){
       case 'dept-reports':return guard('reports',viewDeptReports);
       case 'inventory':return guard('inventory',viewInventory);
       case 'sops':return viewSops();
-      case 'actions':return viewActions();
+      case 'actions':return viewAssign();
       case 'preaching':return guard('preaching',viewPreaching);
       case 'batches':return guard('preaching',viewBatches);
       case 'batch':return guard('preaching',()=>viewBatch(arg));
