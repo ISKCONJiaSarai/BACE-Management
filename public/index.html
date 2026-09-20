@@ -17617,74 +17617,73 @@ function viewCare(){
       `<span class="tiny">Visible to care roles only</span>`):section('Needs attention',denied('Care flags are restricted to the care team.'))}</div>`;
 }
 function viewFriendsAndGroups(){
-  const gs=DB.careGroups.filter(g=>APP.filters.showArchived?true:g.status!=='Archived');
-  const f=APP.filters.friends||(APP.filters.friends={q:''});
-  const rows=DB.devotees.filter(d=>!f.q||d.name.toLowerCase().includes(f.q.toLowerCase()));
-  const unpaired=DB.devotees.filter(d=>!d.friends.length);
+  const view = APP.tab.groups || 'Care groups';
+  const gs = DB.careGroups.filter(g => APP.filters.showArchived ? true : g.status !== 'Archived');
+  const f = APP.filters.friends || (APP.filters.friends = {q: ''});
+  const rows = DB.devotees.filter(d => !f.q || d.name.toLowerCase().includes(f.q.toLowerCase()));
+  const unpaired = DB.devotees.filter(d => !d.friends.length);
 
-  return head('👥 Devotee Care','Friends & Groups','Small weekly care groups and devotee friendship pairings — ensuring every devotee is known and cared for',
-    `<div style="display:flex;gap:8px;flex-wrap:wrap">
-      <button class="btn" data-act="add-group">${ic('plus')}Create group</button>
-      <button class="btn pri" data-act="add-friend">${ic('plus')}Pair friends</button>
-    </div>`)+
-  `<div class="grid g4" style="margin-bottom:18px">
-    ${stat('Active groups',gs.filter(g=>g.status==='Active').length,'weekly circles',{em:'👥',r:'#/groups'})}
-    ${stat('Group attendance',Math.round(gs.reduce((n,g)=>n+g.attendance,0)/(gs.length||1))+'%','average attendance',{em:'📊',r:'#/groups'})}
-    ${stat('Friends paired',DB.devotees.length-unpaired.length,'have a friend',{em:'🤝',r:'#/groups'})}
-    ${stat('Not yet paired',unpaired.length,'need assignment',{em:'⚠️',tint:unpaired.length>0,r:'#/groups'})}
-  </div>
-
-  <div style="display:flex;gap:10px;margin-bottom:20px">
-    <a class="btn sm" href="#sec-care-groups" style="text-decoration:none">👥 Care Groups (${gs.length})</a>
-    <a class="btn sm" href="#sec-friends-mentorship" style="text-decoration:none">🫂 Friends &amp; Mentorship (${DB.devotees.length-unpaired.length}/${DB.devotees.length})</a>
-  </div>
-
-  <div id="sec-care-groups" style="margin-bottom:30px">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid var(--accent)">
-      <div>
-        <h2 style="font-size:18px;margin:0;font-family:var(--font-display);display:flex;align-items:center;gap:8px"><span>👥</span> Sub-Section 1: Care Groups</h2>
-        <div class="tiny" style="color:var(--ink-3)">Small weekly circles where devotees are personally known, encouraged, and guided</div>
+  let body = '';
+  if(view === 'Care groups'){
+    body = `
+      <div class="grid g4" style="margin-bottom:18px">
+        ${stat('Active groups', gs.filter(g => g.status === 'Active').length, 'weekly circles', {em:'👥', r:'#/groups'})}
+        ${stat('Total members', gs.reduce((n, g) => n + g.members.length, 0), 'devotees enrolled', {em:'🤝', r:'#/groups'})}
+        ${stat('Average attendance', Math.round(gs.reduce((n, g) => n + g.attendance, 0) / (gs.length || 1)) + '%', 'across meetings', {em:'📊', r:'#/groups'})}
+        ${stat('Care coverage', Math.round((DB.devotees.filter(d => d.careGroup).length / (DB.devotees.length || 1)) * 100) + '%', 'of community', {em:'✅', r:'#/groups'})}
       </div>
-      <button class="btn sm pri" data-act="add-group">${ic('plus')}Create group</button>
-    </div>
-    ${gs.length?`<div class="grid g3">${gs.map(g=>`<div class="card">
-      <a href="#/group/${g.id}" style="display:block"><div class="card-b">
-        <div style="display:flex;gap:11px;align-items:center"><span class="av m" style="background:var(--green);border-radius:12px">🫂</span>
-        <div><h3>${esc(g.name)}</h3><div class="tiny">${g.members.length} members · ${esc(g.freq)} on ${esc(g.day)}</div></div>
-        ${g.status!=='Active'?sbadge(g.status):''}</div>
-        <div style="margin-top:13px"><div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:5px">
-          <span class="muted">Attendance</span><b>${g.attendance}%</b></div>${prog(g.attendance,'var(--green)')}</div>
-        <div class="people" style="margin-top:12px">${g.members.slice(0,6).map(mid=>av(nameOf(mid))).join('')}
-          ${g.members.length>6?`<span class="av s" style="background:var(--ink-3)">+${g.members.length-6}</span>`:''}</div>
-        <div class="tiny" style="margin-top:10px">Leader ${esc(nameOf(g.leader))} · next meeting ${fmtD(g.next)}</div></div></a>
-      ${can('care')?`<div class="card-b" style="border-top:1px solid var(--line-2);display:flex;gap:7px;padding-top:11px">
-        <button class="btn sm" data-act="edit-group" data-id="${g.id}">${ic('edit')}Edit</button>
-        <button class="btn sm" data-act="group-add-member" data-id="${g.id}">${ic('plus')}Member</button>
-        ${g.status==='Active'?`<button class="btn sm danger" data-act="archive-group" data-id="${g.id}">Archive</button>`:''}</div>`:''}
-      </div>`).join('')}</div>`
-    :emptyState('No care groups created yet','Create the first care group and add devotees to it.','<button class="btn pri" data-act="add-group">Create group</button>','people')}
-  </div>
-
-  <div id="sec-friends-mentorship" style="margin-bottom:20px">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid var(--accent)">
-      <div>
-        <h2 style="font-size:18px;margin:0;font-family:var(--font-display);display:flex;align-items:center;gap:8px"><span>🫂</span> Sub-Section 2: Friends &amp; Mentorship</h2>
-        <div class="tiny" style="color:var(--ink-3)">Devotee friendship pairing — ensuring every devotee has someone who notices and reaches out</div>
+      ${gs.length ? `<div class="grid g3">${gs.map(g => `<div class="card">
+        <a href="#/group/${g.id}" style="display:block"><div class="card-b">
+          <div style="display:flex;gap:11px;align-items:center"><span class="av m" style="background:var(--green);border-radius:12px">🫂</span>
+          <div><h3>${esc(g.name)}</h3><div class="tiny">${g.members.length} members · ${esc(g.freq)} on ${esc(g.day)}</div></div>
+          ${g.status !== 'Active' ? sbadge(g.status) : ''}</div>
+          <div style="margin-top:13px"><div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:5px">
+            <span class="muted">Attendance</span><b>${g.attendance}%</b></div>${prog(g.attendance, 'var(--green)')}</div>
+          <div class="people" style="margin-top:12px">${g.members.slice(0,6).map(mid => av(nameOf(mid))).join('')}
+            ${g.members.length > 6 ? `<span class="av s" style="background:var(--ink-3)">+${g.members.length - 6}</span>` : ''}</div>
+          <div class="tiny" style="margin-top:10px">Leader ${esc(nameOf(g.leader))} · next meeting ${fmtD(g.next)}</div></div></a>
+        ${can('care') ? `<div class="card-b" style="border-top:1px solid var(--line-2);display:flex;gap:7px;padding-top:11px">
+          <button class="btn sm" data-act="edit-group" data-id="${g.id}">${ic('edit')}Edit</button>
+          <button class="btn sm" data-act="group-add-member" data-id="${g.id}">${ic('plus')}Member</button>
+          ${g.status === 'Active' ? `<button class="btn sm danger" data-act="archive-group" data-id="${g.id}">Archive</button>` : ''}</div>` : ''}
+        </div>`).join('')}</div>`
+      : emptyState('No care groups created yet', 'Create the first care group and add devotees to it.', '<button class="btn pri" data-act="add-group">Create group</button>', 'people')}
+    `;
+  } else {
+    body = `
+      <div class="grid g4" style="margin-bottom:18px">
+        ${stat('Paired', DB.devotees.length - unpaired.length, 'have a friend', {em:'🤝', r:'#/groups'})}
+        ${stat('Not yet paired', unpaired.length, 'nobody assigned', {em:'⚠️', tint: unpaired.length > 0, r:'#/groups'})}
+        ${stat('Average friends', (DB.devotees.reduce((n, d) => n + d.friends.length, 0) / DB.devotees.length).toFixed(1), 'per devotee', {em:'📊', r:'#/groups'})}
+        ${stat('Pairing coverage', pct(DB.devotees.length - unpaired.length, DB.devotees.length) + '%', 'of the community', {em:'✅', r:'#/groups'})}
       </div>
-      <button class="btn sm pri" data-act="add-friend">${ic('plus')}Pair friends</button>
-    </div>
-    ${unpaired.length?section('⚠️ Waiting to be paired',`<div class="list">${unpaired.slice(0,6).map(d=>`<div class="li">${av(d.name)}
-      <span class="grow"><span class="t">${esc(d.name)}</span><span class="d">${esc(d.org)} · joined ${fmtD(d.joined)}</span></span>
-      <button class="btn sm pri" data-act="add-friend" data-id="${d.id}">Pair a friend</button></div>`).join('')}</div>`)+'<div style="height:15px"></div>':''}
-    <div class="card"><div class="toolbar"><input type="search" placeholder="Search devotee by name..." value="${esc(f.q)}" data-act="f" data-k="friends" data-n="q"></div>
-    <div class="list">${rows.slice(0,24).map(d=>`<div class="li">${av(d.name,'m')}
-      <span class="grow"><span class="t">${esc(d.name)}</span><span class="d">${esc(group(d.careGroup)?.name||'No group')} · facilitator ${esc(nameOf(d.facilitator))}</span></span>
-      <div class="chips">${d.friends.map(x=>`<button class="chip" data-act="open-devotee" data-id="${x}">${av(nameOf(x))}${esc(nameOf(x))}</button>`).join('')||'<span class="tiny">No friends yet</span>'}</div>
-      <button class="btn sm" data-act="add-friend" data-id="${d.id}">${ic('plus')}</button></div>`).join('')}</div></div>
-  </div>`;
+      ${unpaired.length ? section('⚠️ Waiting to be paired', `<div class="list">${unpaired.slice(0, 6).map(d => `<div class="li">${av(d.name)}
+        <span class="grow"><span class="t">${esc(d.name)}</span><span class="d">${esc(d.org)} · joined ${fmtD(d.joined)}</span></span>
+        <button class="btn sm pri" data-act="add-friend" data-id="${d.id}">Pair a friend</button></div>`).join('')}</div>`) + '<div style="height:15px"></div>' : ''}
+      <div class="card"><div class="toolbar"><input type="search" placeholder="Search devotee by name..." value="${esc(f.q)}" data-act="f" data-k="friends" data-n="q"></div>
+      <div class="list">${rows.slice(0, 24).map(d => `<div class="li">${av(d.name, 'm')}
+        <span class="grow"><span class="t">${esc(d.name)}</span><span class="d">${esc(group(d.careGroup)?.name || 'No group')} · facilitator ${esc(nameOf(d.facilitator))}</span></span>
+        <div class="chips">${d.friends.map(x => `<button class="chip" data-act="open-devotee" data-id="${x}">${av(nameOf(x))}${esc(nameOf(x))}</button>`).join('') || '<span class="tiny">No friends yet</span>'}</div>
+        <button class="btn sm" data-act="add-friend" data-id="${d.id}">${ic('plus')}</button></div>`).join('')}</div></div>
+    `;
+  }
+
+  const topAction = view === 'Care groups'
+    ? (can('care') ? `<button class="btn pri" data-act="add-group">${ic('plus')}Create group</button>` : '')
+    : `<button class="btn pri" data-act="add-friend">${ic('plus')}Pair friends</button>`;
+
+  return head('👥 Devotee Care', 'Friends & Groups', 'Small weekly care groups and devotee friendship pairings — ensuring every devotee is known and cared for', topAction) +
+    `<div class="tabs">${['Care groups', 'Friends & mentorship'].map(t => `<button class="${t === view ? 'on' : ''}" data-act="tab" data-k="groups" data-v="${t}">${t}</button>`).join('')}</div>` +
+    body;
 }
-function viewFriends(){return viewFriendsAndGroups();}
-function viewGroups(){return viewFriendsAndGroups();}
+function viewFriends(){
+  APP.tab.groups = 'Friends & mentorship';
+  return viewFriendsAndGroups();
+}
+function viewGroups(){
+  if(!APP.tab.groups) APP.tab.groups = 'Care groups';
+  return viewFriendsAndGroups();
+}
 function viewGroup(id){
   const g=group(id);if(!g)return emptyState('Group not found','','<a class="btn" href="#/groups">Back to groups</a>');
   APP.crumbLeaf=g.name;
@@ -17804,59 +17803,59 @@ function viewCamps(){
     rows,onRow:'open-devotee-row'})}`;
 }
 function viewMeetingsAndFollowups(){
-  const s=STATS();
-  let rows=DB.meetings.map(m=>({...m,d:dv(m.devotee)})).filter(m=>m.d);
-  if(APP.user.role==='facilitator')rows=rows.filter(m=>m.senior===APP.user.devotee||m.d.facilitator===APP.user.devotee);
+  const view = APP.tab.meetings || 'Personal meetings';
+  const s = STATS();
+  let rows = DB.meetings.map(m => ({...m, d: dv(m.devotee)})).filter(m => m.d);
+  if (APP.user.role === 'facilitator') rows = rows.filter(m => m.senior === APP.user.devotee || m.d.facilitator === APP.user.devotee);
 
-  return head('🤝 Devotee Care','Meetings & Follow-ups','Personal one-to-one confidential care conversations and timely check-in follow-ups',
-    `<div style="display:flex;gap:8px;flex-wrap:wrap">
-      <button class="btn pri" data-act="add-followup" data-kind="Care">${ic('plus')}New follow-up</button>
-      ${can('care_notes')?`<button class="btn" data-act="add-meeting">${ic('plus')}Record meeting</button>`:''}
-    </div>`)+
-  `<div class="grid g4" style="margin-bottom:18px">
-    ${stat('Overdue follow-ups',s.careOverdue,'past due date',{em:'⚠️',tint:s.careOverdue>0,act:'f-bucket',arg:'Overdue'})}
-    ${stat('Due today',s.careToday,'check in today',{em:'📞',act:'f-bucket',arg:'Today'})}
-    ${stat('This week',s.careWeek,'scheduled',{em:'📅',act:'f-bucket',arg:'Upcoming'})}
-    ${stat('Personal meetings',can('care_notes')?rows.length:'🔒 Restricted','one-to-one records',{em:'🔒',r:'#/meetings'})}
-  </div>
-
-  <div style="display:flex;gap:10px;margin-bottom:20px">
-    <a class="btn sm" href="#sec-personal-meetings" style="text-decoration:none">🔒 Personal Meetings (${can('care_notes')?rows.length:'Restricted'})</a>
-    <a class="btn sm" href="#sec-care-followups" style="text-decoration:none">⏰ Care Follow-ups (${s.careOverdue+s.careToday} active)</a>
-  </div>
-
-  <div id="sec-personal-meetings" style="margin-bottom:30px">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid var(--accent)">
-      <div>
-        <h2 style="font-size:18px;margin:0;font-family:var(--font-display);display:flex;align-items:center;gap:8px"><span>🔒</span> Sub-Section 1: Personal Meetings</h2>
-        <div class="tiny" style="color:var(--ink-3)">Confidential records of one-to-one spiritual conversations and guidance</div>
+  let body = '';
+  if (view === 'Personal meetings') {
+    body = `
+      <div class="grid g4" style="margin-bottom:18px">
+        ${stat('Total meetings', can('care_notes') ? rows.length : '🔒 Restricted', 'recorded records', {em:'🔒', r:'#/meetings'})}
+        ${stat('This month', can('care_notes') ? rows.filter(m => (m.date || '').slice(0, 7) === iso(TODAY).slice(0, 7)).length : '—', 'conversations held', {em:'📅', r:'#/meetings'})}
+        ${stat('Devotees met', can('care_notes') ? new Set(rows.map(m => m.d.id)).size : '—', 'distinct devotees', {em:'👥', r:'#/meetings'})}
+        ${stat('Follow-ups linked', s.careWeek, 'scheduled this week', {em:'⏰', r:'#/meetings'})}
       </div>
-      ${can('care_notes')?`<button class="btn sm pri" data-act="add-meeting">${ic('plus')}Record meeting</button>`:''}
-    </div>
-    ${!can('care_notes')?
-      denied('Personal meeting notes are confidential. Only the Devotee Care Manager, the Overall Coordinator, the Area Leader and the assigned facilitator can open them.')
-      :`<div class="note" style="margin-bottom:15px">These notes are restricted. They do not appear in department dashboards, batch reports or group chats.</div>
-        ${rows.length?`<div class="grid g2">${rows.slice(0,12).map(m=>section(m.d.name,`<div class="card-b">
-          <div class="chips" style="margin-bottom:10px">${badge(m.type,'teal')}${badge(fmtD(m.date),'grey')}${badge('With '+nameOf(m.senior),'green')}</div>
-          <dl class="kv"><dt>Area discussed</dt><dd>${esc(m.area)}</dd><dt>Key points</dt><dd>${esc(m.points)}</dd>
-            <dt>Action agreed</dt><dd>${esc(m.actions)}</dd><dt>Next meeting</dt><dd>${fmtD(m.next)}</dd></dl>
-          <a class="btn sm" style="margin-top:11px" href="#/devotee/${m.d.id}">Open profile</a></div>`)).join('')}</div>`
-        :emptyState('No personal meetings recorded yet','Confidential meeting notes between facilitators and devotees will appear here.','<button class="btn pri" data-act="add-meeting">Record meeting</button>','notes')}`}
-  </div>
-
-  <div id="sec-care-followups" style="margin-bottom:20px">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid var(--accent)">
-      <div>
-        <h2 style="font-size:18px;margin:0;font-family:var(--font-display);display:flex;align-items:center;gap:8px"><span>⏰</span> Sub-Section 2: Care Follow-ups</h2>
-        <div class="tiny" style="color:var(--ink-3)">Check-ins that were promised, systematically tracked until they happen</div>
+      ${!can('care_notes')
+        ? denied('Personal meeting notes are confidential. Only the Devotee Care Manager, the Overall Coordinator, the Area Leader and the assigned facilitator can open them.')
+        : `<div class="note" style="margin-bottom:15px">These notes are restricted. They do not appear in department dashboards, batch reports or group chats.</div>
+           ${rows.length ? `<div class="grid g2">${rows.slice(0, 12).map(m => section(m.d.name, `<div class="card-b">
+             <div class="chips" style="margin-bottom:10px">${badge(m.type, 'teal')}${badge(fmtD(m.date), 'grey')}${badge('With ' + nameOf(m.senior), 'green')}</div>
+             <dl class="kv"><dt>Area discussed</dt><dd>${esc(m.area)}</dd><dt>Key points</dt><dd>${esc(m.points)}</dd>
+               <dt>Action agreed</dt><dd>${esc(m.actions)}</dd><dt>Next meeting</dt><dd>${fmtD(m.next)}</dd></dl>
+             <a class="btn sm" style="margin-top:11px" href="#/devotee/${m.d.id}">Open profile</a></div>`)).join('')}</div>`
+           : emptyState('No personal meetings recorded yet', 'Confidential meeting notes between facilitators and devotees will appear here.', '<button class="btn pri" data-act="add-meeting">Record meeting</button>', 'notes')}`
+      }
+    `;
+  } else {
+    body = `
+      <div class="grid g4" style="margin-bottom:18px">
+        ${stat('Overdue', s.careOverdue, 'past due date', {em:'⚠️', tint: s.careOverdue > 0, act:'f-bucket', arg:'Overdue'})}
+        ${stat('Due today', s.careToday, 'check in today', {em:'📞', act:'f-bucket', arg:'Today'})}
+        ${stat('This week', s.careWeek, 'scheduled', {em:'📅', act:'f-bucket', arg:'Upcoming'})}
+        ${stat('Completed', DB.followups.filter(f => f.kind === 'Care' && f.status === 'Completed').length, 'closed out', {em:'✅', act:'f-bucket', arg:'Completed'})}
       </div>
-      <button class="btn sm pri" data-act="add-followup" data-kind="Care">${ic('plus')}New follow-up</button>
-    </div>
-    ${fuList('Care')}
-  </div>`;
+      ${fuList('Care')}
+    `;
+  }
+
+  const topAction = view === 'Personal meetings'
+    ? (can('care_notes') ? `<button class="btn pri" data-act="add-meeting">${ic('plus')}Record meeting</button>` : '')
+    : `<button class="btn pri" data-act="add-followup" data-kind="Care">${ic('plus')}New follow-up</button>`;
+
+  return head('🤝 Devotee Care', 'Meetings & Follow-ups', 'Personal one-to-one confidential care conversations and timely check-in follow-ups', topAction) +
+    `<div class="tabs">${['Personal meetings', 'Care follow-ups'].map(t => `<button class="${t === view ? 'on' : ''}" data-act="tab" data-k="meetings" data-v="${t}">${t}</button>`).join('')}</div>` +
+    body;
 }
-function viewMeetings(){return viewMeetingsAndFollowups();}
-function viewCareFollowups(){return viewMeetingsAndFollowups();}
+function viewMeetings(){
+  if(!APP.tab.meetings) APP.tab.meetings = 'Personal meetings';
+  return viewMeetingsAndFollowups();
+}
+function viewCareFollowups(){
+  APP.tab.meetings = 'Care follow-ups';
+  return viewMeetingsAndFollowups();
+}
 function viewCareReports(){
   const g=DB.careGroups.filter(x=>x.status==='Active');
   const s=STATS();
