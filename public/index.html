@@ -853,10 +853,10 @@ input,select,textarea{font-family:inherit;font-size:14px;color:var(--ink);backgr
 @keyframes subtleFloat{0%{transform:translateY(0) rotate(0deg)}100%{transform:translateY(-8px) rotate(2deg)}}
 @media(max-width:880px){.hero .art{width:130px;height:130px;right:10px;top:12px;opacity:.14}}
 .hero .hstats{
-  display:grid;grid-template-columns:repeat(6, minmax(0, 1fr));gap:9px;margin-top:20px;position:relative;z-index:2;
+  display:grid;grid-template-columns:repeat(5, minmax(0, 1fr));gap:10px;margin-top:20px;position:relative;z-index:2;
   max-width:calc(100% - 195px);
 }
-@media(max-width:1380px){
+@media(max-width:1300px){
   .hero .hstats{grid-template-columns:repeat(3, minmax(0, 1fr));max-width:calc(100% - 195px)}
 }
 @media(max-width:880px){
@@ -5193,6 +5193,11 @@ function hero(){
    <p>${esc(ROLES[APP.user.role].name)} · ${fmtLong(iso(TODAY))}</p>
    <div class="quote"><span class="quote-script">${dayQuote}</span></div>
    <div class="hstats">
+    <div class="hstat" data-act="go" data-r="#/attendance" title="Weekly summary: Morning ${avgMorning}%, Deity ${avgDeity}%, Cleaning ${avgCleaning}%">
+      <div class="hstat-lbl"><span>🏛️</span> Overall BACE health</div>
+      <b>${overallBaceHealth}%</b>
+      <div class="hstat-foot">🌅 ${avgMorning}% · 🛕 ${avgDeity}% · 🧹 ${avgCleaning}%</div>
+    </div>
     <div class="hstat" data-act="go" data-r="#/devotees">
       <div class="hstat-lbl"><span>👥</span> Total devotees</div>
       <b>${s.total}</b>
@@ -5208,20 +5213,10 @@ function hero(){
       <b>${s.volunteers}</b>
       <div class="hstat-foot">across ${s.depts} departments</div>
     </div>
-    <div class="hstat" data-act="go" data-r="#/attendance">
-      <div class="hstat-lbl"><span>✅</span> Seva attendance</div>
-      <b>${s.svcAtt}%</b>
-      <div class="hstat-foot">last 30 days</div>
-    </div>
     <div class="hstat" data-act="go" data-r="#/contacts">
       <div class="hstat-lbl"><span>📖</span> Preaching contacts</div>
       <b>${s.contacts}</b>
       <div class="hstat-foot">${s.newContacts} new this month</div>
-    </div>
-    <div class="hstat" data-act="go" data-r="#/attendance" title="Weekly summary: Morning ${avgMorning}%, Deity ${avgDeity}%, Cleaning ${avgCleaning}%">
-      <div class="hstat-lbl"><span>🏛️</span> Overall BACE health</div>
-      <b>${overallBaceHealth}%</b>
-      <div class="hstat-foot">🌅 ${avgMorning}% · 🛕 ${avgDeity}% · 🧹 ${avgCleaning}%</div>
     </div>
    </div></div>`;
 }
