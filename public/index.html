@@ -2248,16 +2248,49 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:26px;z-index:1300;background:var(--ink);color:#FBF3E6;padding:11px 18px;border-radius:12px;box-shadow:var(--sh-3);font-size:13.5px;display:flex;gap:9px;align-items:center;animation:pop .2s ease-out;max-width:90vw}
 .demo-flag{font-size:11px;color:var(--ink-3);border:1px dashed var(--line);border-radius:20px;padding:3px 9px}
 
-/* ========== PILLAR CARDS (gradient dashboard cards) ========== */
-.pillar-card{border:none!important;position:relative;overflow:hidden}
-.pillar-card-bg{position:absolute;top:-20px;right:-20px;font-size:80px;opacity:.1;pointer-events:none;line-height:1}
-.pillar-card-icon{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-size:20px;color:#fff}
+/* ========== PILLAR CARDS (detailed dashboard blocks) ========== */
+.pillar-card{border:none!important;position:relative;overflow:hidden;border-radius:18px;box-shadow:var(--sh-s);transition:all .22s ease}
+.pillar-card .card-b{padding:16px 16px 14px!important;position:relative;z-index:1}
+.pillar-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.pillar-card-title{font-size:16px;font-weight:700;color:var(--ink);margin:0 0 2px;line-height:1.25}
+.pillar-card-sub{font-size:11.5px;color:var(--ink-3);margin:0 0 10px;line-height:1.35}
+.pillar-card-bg{position:absolute;top:-20px;right:-20px;font-size:80px;opacity:.08;pointer-events:none;line-height:1}
+.pillar-card-icon{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;font-size:18px;color:#fff}
+.pillar-badge{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;white-space:nowrap;letter-spacing:0.2px}
+.pillar-items-list{display:flex;flex-direction:column;gap:6px}
+.pillar-item{display:flex;align-items:center;gap:9px;padding:7.5px 10px;background:rgba(255,255,255,0.72);border:1px solid rgba(0,0,0,0.04);border-radius:10px;text-decoration:none;transition:all .18s ease;color:var(--ink)}
+.pillar-item:hover{background:rgba(255,255,255,0.95);transform:translateX(3px);box-shadow:0 3px 10px rgba(0,0,0,0.05)}
+[data-theme="dark"] .pillar-item{background:rgba(255,255,255,0.05);border-color:rgba(255,255,255,0.06)}
+[data-theme="dark"] .pillar-item:hover{background:rgba(255,255,255,0.1)}
+.pillar-item-icon{font-size:14px;width:20px;text-align:center;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center}
+.pillar-item-info{flex:1;min-width:0}
+.pillar-item-title{font-size:12.5px;font-weight:600;color:var(--ink);line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pillar-item-sub{font-size:10.5px;color:var(--ink-3);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.pillar-item-arrow{font-size:14px;font-weight:700;color:var(--ink-3);margin-left:auto;flex-shrink:0;opacity:.5;transition:all .18s ease}
+.pillar-item:hover .pillar-item-arrow{transform:translateX(2px);opacity:1}
+
 .pillar-mgmt{background:linear-gradient(135deg,var(--saffron-soft) 0%,#FFEDD5 100%)}
 .pillar-preach{background:linear-gradient(135deg,var(--indigo-soft) 0%,#E0E7FF 100%)}
 .pillar-care{background:linear-gradient(135deg,var(--green-soft) 0%,#D1FAE5 100%)}
-[data-theme="dark"] .pillar-mgmt{background:linear-gradient(135deg,rgba(234,88,12,.12) 0%,rgba(234,88,12,.06) 100%)}
-[data-theme="dark"] .pillar-preach{background:linear-gradient(135deg,rgba(99,102,241,.12) 0%,rgba(99,102,241,.06) 100%)}
-[data-theme="dark"] .pillar-care{background:linear-gradient(135deg,rgba(16,185,129,.12) 0%,rgba(16,185,129,.06) 100%)}
+[data-theme="dark"] .pillar-mgmt{background:linear-gradient(135deg,rgba(234,88,12,.14) 0%,rgba(234,88,12,.06) 100%)}
+[data-theme="dark"] .pillar-preach{background:linear-gradient(135deg,rgba(99,102,241,.14) 0%,rgba(99,102,241,.06) 100%)}
+[data-theme="dark"] .pillar-care{background:linear-gradient(135deg,rgba(16,185,129,.14) 0%,rgba(16,185,129,.06) 100%)}
+
+/* 4-column layout: 3 detailed blocks + compact calendar widget to their right */
+.pillar-calendar-row{display:grid;grid-template-columns:repeat(3, minmax(0, 1.08fr)) minmax(240px, 0.82fr);gap:13px;align-items:stretch}
+.pillar-calendar-row > .dash-cal-col{min-width:0}
+.pillar-calendar-row > .dash-cal-col .card{height:100%;display:flex;flex-direction:column;margin-bottom:0!important;border-radius:18px}
+.pillar-calendar-row > .dash-cal-col .card-b{flex:1;padding:12px 14px!important;display:flex;flex-direction:column}
+.pillar-calendar-row > .dash-cal-col .card-h{padding:12px 14px!important}
+.pillar-calendar-row > .dash-cal-col .btn.sm{padding:2px 6px;font-size:11px}
+@media (max-width: 1280px){
+  .pillar-calendar-row{grid-template-columns:repeat(3, minmax(0, 1fr))}
+  .pillar-calendar-row > .dash-cal-col{grid-column:1 / -1}
+}
+@media (max-width: 820px){
+  .pillar-calendar-row{grid-template-columns:1fr}
+  .pillar-calendar-row > .dash-cal-col{grid-column:auto}
+}
 
 /* ========== DARK MODE OVERRIDES ========== */
 [data-theme="dark"] .scrim{background:rgba(0,0,0,.6)}
@@ -5265,30 +5298,214 @@ function insightsCard(){
   return section('✨ What the data is saying',`<div class="list">${items.map(([em,t,r])=>`<a class="insight" href="${r}"><span class="ic">${em}</span><span>${esc(t)}</span></a>`).join('')}</div>`,
     `<span class="tiny">Generated from stored records only</span>`);
 }
-function pillarCards(){
+function pillarCardMgmt(){
   const s=STATS();
+  return `<div class="card pillar-card pillar-mgmt">
+    <div class="pillar-card-bg">🛕</div>
+    <div class="card-b">
+      <div class="pillar-card-header">
+        <div class="pillar-card-icon" style="background:linear-gradient(135deg,#EA580C,#C2410C);box-shadow:0 4px 12px rgba(234,88,12,.25)">🛕</div>
+        <span class="pillar-badge" style="background:rgba(234,88,12,0.12);color:#C2410C">${s.depts} Depts</span>
+      </div>
+      <div class="pillar-card-title">BACE Management</div>
+      <div class="pillar-card-sub">Operations, Seva rosters &amp; temple administration</div>
+      <div class="pillar-items-list">
+        <a class="pillar-item" href="#/mgmt">
+          <span class="pillar-item-icon">⚠️</span>
+          <div class="pillar-item-info">
+            <div class="pillar-item-title">Management dashboard</div>
+            <div class="pillar-item-sub">Operations &amp; daily oversight</div>
+          </div>
+          <span class="pillar-item-arrow">›</span>
+        </a>
+        <a class="pillar-item" href="#/depts">
+          <span class="pillar-item-icon">🏛️</span>
+          <div class="pillar-item-info">
+            <div class="pillar-item-title">Departments</div>
+            <div class="pillar-item-sub">${s.depts} active departments</div>
+          </div>
+          <span class="pillar-item-arrow">›</span>
+        </a>
+        <a class="pillar-item" href="#/assign">
+          <span class="pillar-item-icon">📋</span>
+          <div class="pillar-item-info">
+            <div class="pillar-item-title">Assign seva</div>
+            <div class="pillar-item-sub">${s.scheduled} scheduled activities</div>
+          </div>
+          <span class="pillar-item-arrow">›</span>
+        </a>
+        <a class="pillar-item" href="#/attendance">
+          <span class="pillar-item-icon">🌐</span>
+          <div class="pillar-item-info">
+            <div class="pillar-item-title">BACE pillars</div>
+            <div class="pillar-item-sub">Structure &amp; leadership hierarchy</div>
+          </div>
+          <span class="pillar-item-arrow">›</span>
+        </a>
+        <a class="pillar-item" href="#/sops">
+          <span class="pillar-item-icon">📘</span>
+          <div class="pillar-item-info">
+            <div class="pillar-item-title">SOPs &amp; standards</div>
+            <div class="pillar-item-sub">Procedures &amp; quality guidelines</div>
+          </div>
+          <span class="pillar-item-arrow">›</span>
+        </a>
+        <a class="pillar-item" href="#/actions">
+          <span class="pillar-item-icon">🎯</span>
+          <div class="pillar-item-info">
+            <div class="pillar-item-title">Action items</div>
+            <div class="pillar-item-sub">${s.actionsOpen} open tasks &amp; community to-dos</div>
+          </div>
+          <span class="pillar-item-arrow">›</span>
+        </a>
+      </div>
+    </div>
+  </div>`;
+}
+
+function pillarCardPreach(){
+  const s=STATS(), batchesCount=activeBatches().length;
+  return `<div class="card pillar-card pillar-preach">
+    <div class="pillar-card-bg">📖</div>
+    <div class="card-b">
+      <div class="pillar-card-header">
+        <div class="pillar-card-icon" style="background:linear-gradient(135deg,#6366F1,#4338CA);box-shadow:0 4px 12px rgba(99,102,241,.25)">📖</div>
+        <span class="pillar-badge" style="background:rgba(99,102,241,0.12);color:#4338CA">${batchesCount} Batches</span>
+      </div>
+      <div class="pillar-card-title">BACE Preaching</div>
+      <div class="pillar-card-sub">Youth outreach, courses &amp; new seekers</div>
+      <div class="pillar-items-list">
+        <a class="pillar-item" href="#/preaching">
+          <span class="pillar-item-icon">📖</span>
+          <div class="pillar-item-info">
+            <div class="pillar-item-title">Preaching dashboard</div>
+            <div class="pillar-item-sub">Outreach pipeline &amp; funnel</div>
+          </div>
+          <span class="pillar-item-arrow">›</span>
+        </a>
+        <a class="pillar-item" href="#/batches">
+          <span class="pillar-item-icon">🎓</span>
+          <div class="pillar-item-info">
+            <div class="pillar-item-title">Batches</div>
+            <div class="pillar-item-sub">${batchesCount} active preaching batches</div>
+          </div>
+          <span class="pillar-item-arrow">›</span>
+        </a>
+        <a class="pillar-item" href="#/contacts">
+          <span class="pillar-item-icon">👥</span>
+          <div class="pillar-item-info">
+            <div class="pillar-item-title">Contacts pipeline</div>
+            <div class="pillar-item-sub">${s.contacts} contacts registered</div>
+          </div>
+          <span class="pillar-item-arrow">›</span>
+        </a>
+        <a class="pillar-item" href="#/followups">
+          <span class="pillar-item-icon">📞</span>
+          <div class="pillar-item-info">
+            <div class="pillar-item-title">Calling &amp; follow-ups</div>
+            <div class="pillar-item-sub">${s.fuToday} calls due today</div>
+          </div>
+          <span class="pillar-item-arrow">›</span>
+        </a>
+        <a class="pillar-item" href="#/classes">
+          <span class="pillar-item-icon">✨</span>
+          <div class="pillar-item-info">
+            <div class="pillar-item-title">Classes &amp; courses</div>
+            <div class="pillar-item-sub">Schedules, venues &amp; topics</div>
+          </div>
+          <span class="pillar-item-arrow">›</span>
+        </a>
+        <a class="pillar-item" href="#/reports">
+          <span class="pillar-item-icon">📊</span>
+          <div class="pillar-item-info">
+            <div class="pillar-item-title">Preaching reports</div>
+            <div class="pillar-item-sub">Batch attendance &amp; analytics</div>
+          </div>
+          <span class="pillar-item-arrow">›</span>
+        </a>
+      </div>
+    </div>
+  </div>`;
+}
+
+function pillarCardCare(){
+  const s=STATS();
+  return `<div class="card pillar-card pillar-care">
+    <div class="pillar-card-bg">❤️</div>
+    <div class="card-b">
+      <div class="pillar-card-header">
+        <div class="pillar-card-icon" style="background:linear-gradient(135deg,#10B981,#059669);box-shadow:0 4px 12px rgba(16,185,129,.25)">❤️</div>
+        <span class="pillar-badge" style="background:rgba(16,185,129,0.12);color:#059669">${s.groups} Groups</span>
+      </div>
+      <div class="pillar-card-title">Devotee Care</div>
+      <div class="pillar-card-sub">Mentorship, sadhana &amp; community bonding</div>
+      <div class="pillar-items-list">
+        <a class="pillar-item" href="#/care">
+          <span class="pillar-item-icon">❤️</span>
+          <div class="pillar-item-info">
+            <div class="pillar-item-title">Care dashboard</div>
+            <div class="pillar-item-sub">Emotional &amp; spiritual welfare</div>
+          </div>
+          <span class="pillar-item-arrow">›</span>
+        </a>
+        <a class="pillar-item" href="#/care">
+          <span class="pillar-item-info">👥</span>
+          <div class="pillar-item-info">
+            <div class="pillar-item-title">Care groups</div>
+            <div class="pillar-item-sub">${s.groups} weekly care groups</div>
+          </div>
+          <span class="pillar-item-arrow">›</span>
+        </a>
+        <a class="pillar-item" href="#/care">
+          <span class="pillar-item-info">💛</span>
+          <div class="pillar-item-info">
+            <div class="pillar-item-title">Friends &amp; mentorship</div>
+            <div class="pillar-item-sub">Devotee pairing &amp; connection</div>
+          </div>
+          <span class="pillar-item-arrow">›</span>
+        </a>
+        <a class="pillar-item" href="#/sadhana">
+          <span class="pillar-item-icon">📿</span>
+          <div class="pillar-item-info">
+            <div class="pillar-item-title">Sadhana tracking</div>
+            <div class="pillar-item-sub">Japa rounds &amp; reading logs</div>
+          </div>
+          <span class="pillar-item-arrow">›</span>
+        </a>
+        <a class="pillar-item" href="#/devotees">
+          <span class="pillar-item-icon">🧑‍🏫</span>
+          <div class="pillar-item-info">
+            <div class="pillar-item-title">Facilitators</div>
+            <div class="pillar-item-sub">${s.facilitators} active mentors</div>
+          </div>
+          <span class="pillar-item-arrow">›</span>
+        </a>
+        <a class="pillar-item" href="#/camps">
+          <span class="pillar-item-icon">🏕️</span>
+          <div class="pillar-item-info">
+            <div class="pillar-item-title">Camps &amp; yatras</div>
+            <div class="pillar-item-sub">Spiritual retreats &amp; visits</div>
+          </div>
+          <span class="pillar-item-arrow">›</span>
+        </a>
+      </div>
+    </div>
+  </div>`;
+}
+
+function pillarCards(withCalendar=false){
+  if(withCalendar){
+    return `<div class="pillar-calendar-row">
+      ${pillarCardMgmt()}
+      ${pillarCardPreach()}
+      ${pillarCardCare()}
+      <div class="dash-cal-col">${dashboardCalendarWidget()}</div>
+    </div>`;
+  }
   return `<div class="grid g3">
-   <a class="card pillar-card pillar-mgmt" href="#/mgmt">
-     <div class="pillar-card-bg">🛕</div>
-     <div class="card-b" style="position:relative;z-index:1">
-     <div class="pillar-card-icon" style="background:linear-gradient(135deg,#EA580C,#C2410C);box-shadow:0 4px 12px rgba(234,88,12,.25)">🛕</div>
-     <h3 style="margin-top:10px">BACE Management</h3>
-     <p class="tiny" style="margin:4px 0 12px">${s.depts} departments · ${s.scheduled} scheduled</p>
-     ${prog(s.svcAtt,'var(--saffron)')}<div class="tiny" style="margin-top:6px">${s.svcAtt}% seva attendance</div></div></a>
-   <a class="card pillar-card pillar-preach" href="#/preaching">
-     <div class="pillar-card-bg">📖</div>
-     <div class="card-b" style="position:relative;z-index:1">
-     <div class="pillar-card-icon" style="background:linear-gradient(135deg,#6366F1,#4338CA);box-shadow:0 4px 12px rgba(99,102,241,.25)">📖</div>
-     <h3 style="margin-top:10px">BACE Preaching</h3>
-     <p class="tiny" style="margin:4px 0 12px">${s.contacts} contacts · ${activeBatches().length} batches</p>
-     ${prog(pct(s.regulars,s.contacts),'var(--indigo)')}<div class="tiny" style="margin-top:6px">${s.lvl.join(' / ')} at levels 1 / 2 / 3</div></div></a>
-   <a class="card pillar-card pillar-care" href="#/care">
-     <div class="pillar-card-bg">❤️</div>
-     <div class="card-b" style="position:relative;z-index:1">
-     <div class="pillar-card-icon" style="background:linear-gradient(135deg,#10B981,#059669);box-shadow:0 4px 12px rgba(16,185,129,.25)">❤️</div>
-     <h3 style="margin-top:10px">Devotee Care</h3>
-     <p class="tiny" style="margin:4px 0 12px">${s.covered} covered · ${s.groups} groups</p>
-     ${prog(pct(s.covered,s.total),'var(--green)')}<div class="tiny" style="margin-top:6px">${pct(s.covered,s.total)}% have a named facilitator</div></div></a>
+    ${pillarCardMgmt()}
+    ${pillarCardPreach()}
+    ${pillarCardCare()}
   </div>`;
 }
 /* ========== COMPACT DASHBOARD CALENDAR WIDGET ========== */
@@ -5428,12 +5645,11 @@ function viewDashboard(){
   const roleName=r==='area_leader'?'ISKCON BACE':ROLES[r].name;
   const hd=hero()+head(ROLES[r].emoji+' '+roleName,title,ROLES[r].scope,
     `<span class="demo-flag">Sample data</span><button class="btn" data-act="go" data-r="#/today">⚡ Today</button><button class="btn pri" data-act="go" data-r="#/reports">📊 Reports</button>`);
-  if(r==='area_leader')return hd+`${pillarCards()}<div style="height:15px"></div>
-     <div class="grid g2">${insightsCard()}${dashboardCalendarWidget()}</div>
+  if(r==='area_leader')return hd+`${pillarCards(true)}<div style="height:15px"></div>
+     <div class="grid g2">${insightsCard()}${section('Organisation',`<div class="card-b"><p class="tiny" style="margin-top:0">Area Leader → Overall Coordinator → three managers → department heads, preaching coordinators and facilitators.</p>
+        <a class="btn" href="#/org">${ic('layers')}View hierarchy</a></div>`)}</div>
      <div style="height:15px"></div>
-     <div class="grid g2">${section('Organisation',`<div class="card-b"><p class="tiny" style="margin-top:0">Area Leader → Overall Coordinator → three managers → department heads, preaching coordinators and facilitators.</p>
-        <a class="btn" href="#/org">${ic('layers')}View hierarchy</a></div>`)}
-      ${section('Quick links',`<div style="display:flex;flex-wrap:wrap;gap:8px;padding:16px 18px">
+     ${section('Quick links',`<div style="display:flex;flex-wrap:wrap;gap:8px;padding:16px 18px">
         <a class="btn" href="#/today">⚡ Today</a>
         <a class="btn" href="#/devotees">👥 Devotees</a>
         <a class="btn" href="#/depts">🏢 Departments</a>
@@ -5441,7 +5657,7 @@ function viewDashboard(){
         <a class="btn" href="#/assign">📋 Assign</a>
         <a class="btn" href="#/calendar">📅 Calendar</a>
         <a class="btn" href="#/reports">📊 Reports</a>
-      </div>`)}</div>`;
+      </div>`)}`;
 
   if(r==='coordinator')return hd+`<div class="grid g-1-2" style="margin-bottom:15px">${needsAttention()}
     ${section('Today across the community',`<div class="grid g4" style="padding:16px 18px">
