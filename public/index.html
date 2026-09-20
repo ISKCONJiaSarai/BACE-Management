@@ -5178,6 +5178,7 @@ function hero(){
   const inBatchesDevs = s.lvl.reduce((a,b)=>a+b,0);
 
   // Overall BACE health: Summarized percentage of morning program, deity department and cleaning for the week
+  initDepartmentRosters();
   let baceHealthData = null;
   try {
     if (typeof getAshramThreeDepartmentsSummary === 'function') {
@@ -5187,17 +5188,17 @@ function hero(){
     console.warn('baceHealthData calculation error:', e);
   }
   const baceKpis = baceHealthData ? baceHealthData.stats : null;
-  const avgMorning = baceKpis && typeof baceKpis.avgMorning === 'number' && baceKpis.avgMorning > 0 
+  const avgMorning = baceKpis && typeof baceKpis.avgMorning === 'number' 
     ? baceKpis.avgMorning 
     : ((DB.sadhana && DB.sadhana.length) 
-        ? Math.round(DB.sadhana.reduce((sum, r) => sum + (r.program || r.morningProgram || 82), 0) / DB.sadhana.length) 
-        : 84);
-  const avgDeity = baceKpis && typeof baceKpis.avgDeity === 'number' && baceKpis.avgDeity > 0 
+        ? Math.round(DB.sadhana.reduce((sum, r) => sum + (r.program || r.morningProgram || 0), 0) / DB.sadhana.length) 
+        : 0);
+  const avgDeity = baceKpis && typeof baceKpis.avgDeity === 'number' 
     ? baceKpis.avgDeity 
-    : 92;
-  const avgCleaning = baceKpis && typeof baceKpis.avgCleaning === 'number' && baceKpis.avgCleaning > 0 
+    : ((typeof deptMetrics === 'function' && deptMetrics('dp3').total > 0) ? deptMetrics('dp3').completion : 0);
+  const avgCleaning = baceKpis && typeof baceKpis.avgCleaning === 'number' 
     ? baceKpis.avgCleaning 
-    : 88;
+    : ((typeof deptMetrics === 'function' && deptMetrics('dp8').total > 0) ? deptMetrics('dp8').completion : 0);
   const overallBaceHealth = Math.round((avgMorning + avgDeity + avgCleaning) / 3);
 
   return `<div class="hero">${HERO_ART}
@@ -8819,15 +8820,20 @@ function getStoredRoster(key, defaultServices, defaultToday, defaultTomorrow) {
             s.sort = defS.sort;
           }
         });
-        if (parsed.slots) {
-          Object.values(parsed.slots).forEach(daySlots => {
-            defaultServices.forEach(defS => {
-              if (daySlots[defS.id]) {
-                daySlots[defS.id].time = defS.time;
-              }
-            });
-          });
+        if (!parsed.slots) parsed.slots = {};
+        if (!parsed.slots[iso(TODAY)] || !Object.keys(parsed.slots[iso(TODAY)]).length) {
+          parsed.slots[iso(TODAY)] = defaultToday;
         }
+        if (!parsed.slots[iso(dayOff(1))] || !Object.keys(parsed.slots[iso(dayOff(1))]).length) {
+          parsed.slots[iso(dayOff(1))] = defaultTomorrow;
+        }
+        Object.values(parsed.slots).forEach(daySlots => {
+          defaultServices.forEach(defS => {
+            if (daySlots[defS.id]) {
+              daySlots[defS.id].time = defS.time;
+            }
+          });
+        });
         return parsed;
       }
     }
@@ -13285,13 +13291,19 @@ function getAshramThreeDepartmentsSummary(period = 'weekly') {
   });
 
   // Department Health Totals (0/0 is strictly 0%, NOT 100%)
-  const overallDeityHealth = totalDeityAssigned > 0 ? Math.round((totalDeityDone / totalDeityAssigned) * 100) : 0;
-  const overallCleanHealth = totalCleanAssigned > 0 ? Math.round((totalCleanDone / totalCleanAssigned) * 100) : 0;
+  const overallDeityHealth = totalDeityAssigned > 0 
+    ? Math.round((totalDeityDone / totalDeityAssigned) * 100) 
+    : ((typeof deptMetrics === 'function' && deptMetrics('dp3').total > 0) ? deptMetrics('dp3').completion : 0);
+  const overallCleanHealth = totalCleanAssigned > 0 
+    ? Math.round((totalCleanDone / totalCleanAssigned) * 100) 
+    : ((typeof deptMetrics === 'function' && deptMetrics('dp8').total > 0) ? deptMetrics('dp8').completion : 0);
   let overallMorningHealth = 0;
   if (pMetrics && pMetrics.avgAttendancePct !== undefined) {
     overallMorningHealth = pMetrics.avgAttendancePct;
   } else if (totalMorningDevsCount > 0) {
     overallMorningHealth = Math.round(totalMorningPresent / totalMorningDevsCount);
+  } else if (DB.sadhana && DB.sadhana.length) {
+    overallMorningHealth = Math.round(DB.sadhana.reduce((sum, r) => sum + (r.program || r.morningProgram || 0), 0) / DB.sadhana.length);
   }
 
   // 4. COLLECT ONLY DEVOTEES WHOSE NAMES ARE PRESENT IN INDIVIDUAL DEPARTMENTS LISTS
