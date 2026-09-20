@@ -4154,6 +4154,7 @@ function appHeader(){
   const unread=DB.notifications.filter(n=>!n.read).length;
   const headerNavItems=[
     {t:'Dashboard',r:'#/',m:'dashboard'},
+    {t:'Devotees',r:'#/devotees',m:'directory'},
     {t:'Management',r:'#/mgmt',m:'management',children:[
       {t:'Management Dashboard',em:'📊',r:'#/mgmt',m:'management'},
       {t:'Departments',em:'🏢',r:'#/depts',m:'management'},
@@ -4194,7 +4195,8 @@ function appHeader(){
   const careRoutes=['care','friends','groups','group','swabhav','sadhana','facilitators','spiritual-classes','camps','temple-visits','meetings','care-followups','care-reports'];
   function isActive(r){
     const seg=r.replace(/^#\//,'');
-    if(seg===''&&(route===''||route==='today'||route==='devotees'||route==='devotee'))return route==='';
+    if(seg==='')return route===''||route==='today';
+    if(seg==='devotees')return route==='devotees'||route==='devotee';
     if(seg==='mgmt')return mgmtRoutes.includes(route);
     if(seg==='preaching')return preachRoutes.includes(route);
     if(seg==='care')return careRoutes.includes(route);
@@ -5545,17 +5547,48 @@ function dashboardCalendarWidget(){
     const daysInMonth=new Date(yr,mo+1,0).getDate();
     const weeks=Math.ceil((firstDay+daysInMonth)/7);
     const monthLabel=MONTHS[mo]+' '+yr;
-    content = `<div style="text-align:center;font-weight:600;margin-bottom:8px;font-size:13px">${monthLabel}</div>
-      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:1px;font-size:11px;text-align:center">
-      ${['M','T','W','T','F','S','S'].map(d=>`<div style="color:var(--ink-3);font-weight:600;padding:4px 0">${d}</div>`).join('')}
+    const selDt=APP.filters.dashCalSelectedDate||iso(TODAY);
+    const selActs=DB.activities.filter(a=>a.date===selDt).sort((a,b)=>(a.start||'').localeCompare(b.start||''));
+    const selDateObj=parseDate(selDt);
+    const dayName=selDateObj?['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][selDateObj.getDay()]:'';
+    content = `<div style="text-align:center;font-weight:600;margin-bottom:8px;font-size:13px;color:var(--ink)">${monthLabel}</div>
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;font-size:11.5px;text-align:center">
+      ${['M','T','W','T','F','S','S'].map(d=>`<div style="color:var(--ink-3);font-weight:700;font-size:10.5px;padding:2px 0">${d}</div>`).join('')}
       ${Array.from({length:weeks*7},(_,i)=>{
         const dayNum=i-firstDay+1;
         if(dayNum<1||dayNum>daysInMonth)return `<div style="padding:4px 0"></div>`;
         const dt=`${yr}-${String(mo+1).padStart(2,'0')}-${String(dayNum).padStart(2,'0')}`;
         const isToday=dt===iso(TODAY);
-        const hasEvents=DB.activities.some(a=>a.date===dt);
-        return `<div style="padding:4px 0;border-radius:6px;cursor:pointer;position:relative;${isToday?'background:var(--accent);color:#fff;font-weight:700':''}${!isToday&&hasEvents?';font-weight:600':''}" data-act="dash-cal-day" data-d="${dt}">
-          ${dayNum}${!isToday&&hasEvents?`<span style="position:absolute;bottom:1px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:var(--accent)"></span>`:''}</div>`}).join('')}</div>`;
+        const isSelected=dt===selDt;
+        const dayActs=DB.activities.filter(a=>a.date===dt);
+        const hasEvents=dayActs.length>0;
+        const actsTip=hasEvents?`${dayActs.length} scheduled:\n`+dayActs.map(a=>`${a.start||'—'} ${a.name} (${a.type})`).join('\n'):'No activities';
+        return `<div style="padding:4px 0;border-radius:7px;cursor:pointer;position:relative;transition:all .15s ease;${isSelected?'background:var(--accent);color:#fff;font-weight:700;box-shadow:0 2px 7px rgba(234,88,12,0.35)':isToday?'background:var(--accent-soft);color:var(--accent);font-weight:700;border:1px solid rgba(234,88,12,0.3)':hasEvents?'font-weight:600;color:var(--ink)':'color:var(--ink-2)'}" data-act="dash-cal-day" data-d="${dt}" title="${esc(actsTip)}">
+          ${dayNum}
+          ${hasEvents?`<span style="position:absolute;bottom:1.5px;left:50%;transform:translateX(-50%);display:flex;gap:1.5px">
+            ${dayActs.slice(0,3).map(a=>`<span style="width:3.5px;height:3.5px;border-radius:50%;background:${isSelected?'#fff':a.type==='Class'?'#6366F1':a.type==='Seva'?'var(--accent)':'#10B981'}"></span>`).join('')}
+          </span>`:''}
+        </div>`;
+      }).join('')}</div>
+      <div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--line-2);text-align:left">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+          <span style="font-size:11px;font-weight:700;color:var(--ink);display:flex;align-items:center;gap:4px">
+            <span>📅 ${dayName?dayName+', ':''}${fmtLong(selDt)}</span>
+            ${selDt===iso(TODAY)?`<span class="badge sm" style="background:var(--accent-soft);color:var(--accent);font-size:9.5px;padding:1px 5px">Today</span>`:''}
+          </span>
+          <span class="badge sm" style="font-size:9.5px;padding:1px 5px;color:var(--ink-3)">${selActs.length} ${selActs.length===1?'event':'events'}</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px">
+          ${selActs.length ? selActs.slice(0,2).map(a=>`
+            <a href="#/activity/${a.id}" style="display:flex;align-items:center;gap:6px;padding:5px 8px;background:var(--paper-2);border-radius:7px;border:1px solid var(--line-2);text-decoration:none;color:var(--ink);transition:all .15s ease">
+              <span style="font-size:10.5px;font-weight:700;color:var(--accent);min-width:36px">${a.start||'—'}</span>
+              <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;font-weight:500">${esc(a.name)}</span>
+              <span class="badge ${a.type==='Class'?'b-indigo':a.type==='Seva'?'b-saffron':'b-mustard'}" style="font-size:9px;padding:1px 5px;flex-shrink:0">${esc(a.type)}</span>
+            </a>
+          `).join('') + (selActs.length>2?`<div style="font-size:10px;color:var(--ink-3);text-align:right;padding-right:4px">+${selActs.length-2} more</div>`:'')
+          : `<div style="font-size:10.5px;color:var(--ink-3);padding:6px 8px;background:var(--paper-2);border-radius:7px;text-align:center">No scheduled activities on this date</div>`}
+        </div>
+      </div>`;
   }
   return section('📅 Calendar',`<div class="card-b">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
@@ -20669,7 +20702,20 @@ document.addEventListener('click',e=>{
   }
   case 'dash-cal-view':{stop();APP.filters.dashCalView=t.dataset.v;APP.filters.dashCalOff=0;render();break}
   case 'dash-cal-nav':{stop();const d=parseInt(t.dataset.d,10);if(d===0)APP.filters.dashCalOff=0;else APP.filters.dashCalOff=(APP.filters.dashCalOff||0)+d;render();break}
-  case 'dash-cal-day':{stop();const dt=t.dataset.d;if(dt){APP.filters.calSelectedDate=dt;go('#/calendar');}break}
+  case 'dash-cal-day':{
+    stop();
+    const dt=t.dataset.d;
+    if(dt){
+      if(APP.filters.dashCalSelectedDate===dt){
+        APP.filters.calSelectedDate=dt;
+        go('#/calendar');
+      } else {
+        APP.filters.dashCalSelectedDate=dt;
+        render();
+      }
+    }
+    break;
+  }
   case 'open-dept':stop();go('#/dept/'+id);break;
   case 'open-batch':stop();go('#/batch/'+id);break;
   case 'open-group':stop();go('#/group/'+id);break;
