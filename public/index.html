@@ -2249,24 +2249,24 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
 .demo-flag{font-size:11px;color:var(--ink-3);border:1px dashed var(--line);border-radius:20px;padding:3px 9px}
 
 /* ========== PILLAR CARDS (detailed dashboard blocks) ========== */
-.pillar-card{border:none!important;position:relative;overflow:hidden;border-radius:18px;box-shadow:var(--sh-s);transition:all .22s ease}
-.pillar-card .card-b{padding:16px 16px 14px!important;position:relative;z-index:1}
+.pillar-card{border:none!important;position:relative;overflow:hidden;border-radius:18px;box-shadow:var(--sh-s);transition:all .22s ease;text-align:left}
+.pillar-card .card-b{padding:15px 14px 13px!important;position:relative;z-index:1;text-align:left}
 .pillar-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
-.pillar-card-title{font-size:16px;font-weight:700;color:var(--ink);margin:0 0 2px;line-height:1.25}
-.pillar-card-sub{font-size:11.5px;color:var(--ink-3);margin:0 0 10px;line-height:1.35}
+.pillar-card-title{font-size:15.5px;font-weight:700;color:var(--ink);margin:0 0 2px;line-height:1.25;text-align:left}
+.pillar-card-sub{font-size:11px;color:var(--ink-3);margin:0 0 10px;line-height:1.35;text-align:left}
 .pillar-card-bg{position:absolute;top:-20px;right:-20px;font-size:80px;opacity:.08;pointer-events:none;line-height:1}
-.pillar-card-icon{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;font-size:18px;color:#fff}
+.pillar-card-icon{width:36px;height:36px;border-radius:12px;display:grid;place-items:center;font-size:17px;color:#fff}
 .pillar-badge{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;white-space:nowrap;letter-spacing:0.2px}
 .pillar-items-list{display:flex;flex-direction:column;gap:6px}
-.pillar-item{display:flex;align-items:center;gap:9px;padding:7.5px 10px;background:rgba(255,255,255,0.72);border:1px solid rgba(0,0,0,0.04);border-radius:10px;text-decoration:none;transition:all .18s ease;color:var(--ink)}
+.pillar-item{display:flex;align-items:center;justify-content:flex-start;gap:8px;padding:7px 9px;background:rgba(255,255,255,0.72);border:1px solid rgba(0,0,0,0.04);border-radius:10px;text-decoration:none;transition:all .18s ease;color:var(--ink);text-align:left}
 .pillar-item:hover{background:rgba(255,255,255,0.95);transform:translateX(3px);box-shadow:0 3px 10px rgba(0,0,0,0.05)}
 [data-theme="dark"] .pillar-item{background:rgba(255,255,255,0.05);border-color:rgba(255,255,255,0.06)}
 [data-theme="dark"] .pillar-item:hover{background:rgba(255,255,255,0.1)}
-.pillar-item-icon{font-size:14px;width:20px;text-align:center;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center}
-.pillar-item-info{flex:1;min-width:0}
-.pillar-item-title{font-size:12.5px;font-weight:600;color:var(--ink);line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pillar-item-sub{font-size:10.5px;color:var(--ink-3);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
-.pillar-item-arrow{font-size:14px;font-weight:700;color:var(--ink-3);margin-left:auto;flex-shrink:0;opacity:.5;transition:all .18s ease}
+.pillar-item-icon{font-size:14px;width:18px;text-align:left;flex-shrink:0;display:inline-flex;align-items:center;justify-content:flex-start}
+.pillar-item-info{flex:1;min-width:0;text-align:left}
+.pillar-item-title{font-size:12px;font-weight:600;color:var(--ink);line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left}
+.pillar-item-sub{font-size:10px;color:var(--ink-3);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;text-align:left}
+.pillar-item-arrow{font-size:13px;font-weight:700;color:var(--ink-3);margin-left:auto;flex-shrink:0;opacity:.45;transition:all .18s ease}
 .pillar-item:hover .pillar-item-arrow{transform:translateX(2px);opacity:1}
 
 .pillar-mgmt{background:linear-gradient(135deg,var(--saffron-soft) 0%,#FFEDD5 100%)}
@@ -2276,13 +2276,13 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
 [data-theme="dark"] .pillar-preach{background:linear-gradient(135deg,rgba(99,102,241,.14) 0%,rgba(99,102,241,.06) 100%)}
 [data-theme="dark"] .pillar-care{background:linear-gradient(135deg,rgba(16,185,129,.14) 0%,rgba(16,185,129,.06) 100%)}
 
-/* 4-column layout: 3 detailed blocks + compact calendar widget to their right */
-.pillar-calendar-row{display:grid;grid-template-columns:repeat(3, minmax(0, 1.08fr)) minmax(240px, 0.82fr);gap:13px;align-items:stretch}
+/* 4-column layout: 3 compact pillar blocks + wider calendar widget to their right */
+.pillar-calendar-row{display:grid;grid-template-columns:repeat(3, minmax(0, 0.88fr)) minmax(295px, 1.36fr);gap:12px;align-items:stretch}
 .pillar-calendar-row > .dash-cal-col{min-width:0}
 .pillar-calendar-row > .dash-cal-col .card{height:100%;display:flex;flex-direction:column;margin-bottom:0!important;border-radius:18px}
-.pillar-calendar-row > .dash-cal-col .card-b{flex:1;padding:12px 14px!important;display:flex;flex-direction:column}
-.pillar-calendar-row > .dash-cal-col .card-h{padding:12px 14px!important}
-.pillar-calendar-row > .dash-cal-col .btn.sm{padding:2px 6px;font-size:11px}
+.pillar-calendar-row > .dash-cal-col .card-b{flex:1;padding:14px 16px!important;display:flex;flex-direction:column}
+.pillar-calendar-row > .dash-cal-col .card-h{padding:12px 16px!important}
+.pillar-calendar-row > .dash-cal-col .btn.sm{padding:3px 8px;font-size:11.5px}
 @media (max-width: 1280px){
   .pillar-calendar-row{grid-template-columns:repeat(3, minmax(0, 1fr))}
   .pillar-calendar-row > .dash-cal-col{grid-column:1 / -1}
@@ -5449,7 +5449,7 @@ function pillarCardCare(){
           <span class="pillar-item-arrow">›</span>
         </a>
         <a class="pillar-item" href="#/care">
-          <span class="pillar-item-info">👥</span>
+          <span class="pillar-item-icon">👥</span>
           <div class="pillar-item-info">
             <div class="pillar-item-title">Care groups</div>
             <div class="pillar-item-sub">${s.groups} weekly care groups</div>
@@ -5457,7 +5457,7 @@ function pillarCardCare(){
           <span class="pillar-item-arrow">›</span>
         </a>
         <a class="pillar-item" href="#/care">
-          <span class="pillar-item-info">💛</span>
+          <span class="pillar-item-icon">💛</span>
           <div class="pillar-item-info">
             <div class="pillar-item-title">Friends &amp; mentorship</div>
             <div class="pillar-item-sub">Devotee pairing &amp; connection</div>
