@@ -5799,8 +5799,11 @@ function viewDashboard(){
     preaching_manager:'Preaching overview',care_manager:'Devotee care overview',dept_head:'My department',
     preaching_coord:'My batch',facilitator:'My devotees',devotee:'My BACE',admin:'System overview'}[r];
   const roleName=r==='area_leader'?'ISKCON BACE':ROLES[r].name;
-  const hd=hero()+head(ROLES[r].emoji+' '+roleName,title,ROLES[r].scope,
-    `<span class="demo-flag">Sample data</span><button class="btn" data-act="go" data-r="#/today">⚡ Today</button><button class="btn pri" data-act="go" data-r="#/reports">📊 Reports</button>`);
+  const eyebrowText=r==='area_leader'?'ISKCON BACE':(ROLES[r].emoji+' '+roleName);
+  const headerActions=r==='area_leader'
+    ? `<button class="btn" data-act="go" data-r="#/org">${ic('layers')}View hierarchy</button><button class="btn pri" data-act="go" data-r="#/reports">📊 Reports</button>`
+    : `<button class="btn pri" data-act="go" data-r="#/reports">📊 Reports</button>`;
+  const hd=hero()+head(eyebrowText,title,ROLES[r].scope,headerActions);
   if(r==='area_leader')return hd+`${pillarCards(true)}<div style="height:15px"></div>
      <div class="grid g2">${insightsCard()}${section('Organisation',`<div class="card-b"><p class="tiny" style="margin-top:0">Area Leader → Overall Coordinator → three managers → department heads, preaching coordinators and facilitators.</p>
         <a class="btn" href="#/org">${ic('layers')}View hierarchy</a></div>`)}</div>
