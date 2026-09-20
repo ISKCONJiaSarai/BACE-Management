@@ -2342,6 +2342,9 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-off
 [data-act="select-ambience"]{transition:all .18s ease;font-weight:600;border:1px solid rgba(245,158,11,0.35)!important;cursor:pointer}
 [data-act="select-ambience"].on{background:#f59e0b!important;color:#fff!important;border-color:#d97706!important;font-weight:700!important;box-shadow:0 2px 8px rgba(245,158,11,0.4)!important}
 [data-act="select-ambience"]:hover:not(.on){background:rgba(245,158,11,0.15)!important;border-color:#f59e0b!important}
+.header-amb-btn{width:36px!important;height:36px!important;min-width:36px!important;max-width:36px!important;flex:0 0 36px!important;padding:0!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;border-radius:9px!important;border:1px solid var(--line)!important;background:var(--surface)!important;color:var(--ink)!important;cursor:pointer!important;transition:all .18s cubic-bezier(0.16,1,0.3,1)!important}
+.header-amb-btn:hover{background:var(--surface-2)!important;transform:translateY(-1px);border-color:#f59e0b!important}
+.header-amb-btn.playing{background:#f59e0b!important;color:#fff!important;border-color:#d97706!important;box-shadow:0 2px 10px rgba(245,158,11,0.4)!important}
 
 .nectar-card-wrapper{transition:box-shadow .25s ease, transform .25s ease}
 .nectar-quote-box{animation:nectarFadeSlide .4s cubic-bezier(0.16, 1, 0.3, 1)}
@@ -5610,9 +5613,14 @@ function toggleBaceAmbience() {
   }
 }
 
+function headerAmbienceBtn(){
+  const isP = BACE_AMB && BACE_AMB.playing;
+  const playSvg = '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" style="margin-left:2px"><path d="M8 5v14l11-7z"/></svg>';
+  const pauseSvg = '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/></svg>';
+  return `<button class="btn header-amb-btn ${isP ? 'pri playing' : ''}" id="headerAmbPlayBtn" data-act="toggle-ambience" title="${isP ? 'Pause Ambience (Kirtan)' : 'Play Ambience (Kirtan)'}" aria-label="Toggle Ambience Music">${isP ? pauseSvg : playSvg}</button>`;
+}
 function updateAmbienceUI() {
   const eq = document.getElementById('ambEqualizer');
-  const btn = document.getElementById('ambPlayBtn');
   const desc = document.getElementById('ambTrackDesc');
   const cur = BACE_AMB.tracks[BACE_AMB.track] || BACE_AMB.tracks.kirtan;
 
@@ -5620,11 +5628,27 @@ function updateAmbienceUI() {
     if (BACE_AMB.playing) eq.classList.add('playing');
     else eq.classList.remove('playing');
   }
-  if (btn) {
-    btn.innerHTML = BACE_AMB.playing ? '⏸ Pause' : '▶ Play';
-    if (BACE_AMB.playing) btn.classList.add('pri');
-    else btn.classList.remove('pri');
-  }
+
+  // Synchronize all play/pause buttons connected to ambience
+  document.querySelectorAll('[data-act="toggle-ambience"]').forEach(btn => {
+    if (btn.id === 'ambPlayBtn') {
+      btn.innerHTML = BACE_AMB.playing ? '⏸ Pause' : '▶ Play';
+      if (BACE_AMB.playing) btn.classList.add('pri');
+      else btn.classList.remove('pri');
+    } else {
+      // Header or icon-only buttons with just the logo
+      btn.innerHTML = BACE_AMB.playing 
+        ? '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/></svg>' 
+        : '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" style="margin-left:2px"><path d="M8 5v14l11-7z"/></svg>';
+      btn.title = BACE_AMB.playing ? 'Pause Ambience (Kirtan)' : 'Play Ambience (Kirtan)';
+      if (BACE_AMB.playing) {
+        btn.classList.add('pri', 'playing');
+      } else {
+        btn.classList.remove('pri', 'playing');
+      }
+    }
+  });
+
   if (desc) {
     desc.textContent = cur.title;
   }
@@ -6189,8 +6213,8 @@ function viewDashboard(){
   const roleName=r==='area_leader'?'ISKCON BACE':ROLES[r].name;
   const eyebrowText=r==='area_leader'?'ISKCON BACE':(ROLES[r].emoji+' '+roleName);
   const headerActions=r==='area_leader'
-    ? `<button class="btn" data-act="go" data-r="#/org">${ic('layers')}View hierarchy</button><button class="btn pri" data-act="go" data-r="#/reports">📊 Reports</button>`
-    : `<button class="btn pri" data-act="go" data-r="#/reports">📊 Reports</button>`;
+    ? `<button class="btn" data-act="go" data-r="#/org">${ic('layers')}View hierarchy</button><button class="btn pri" data-act="go" data-r="#/reports">📊 Reports</button>${headerAmbienceBtn()}`
+    : `<button class="btn pri" data-act="go" data-r="#/reports">📊 Reports</button>${headerAmbienceBtn()}`;
   const hd=hero()+head(eyebrowText,title,ROLES[r].scope,headerActions);
   if(r==='area_leader')return hd+`${pillarCards(true)}<div style="height:15px"></div>
      <div class="grid g2">${insightsCard()}${prabhupadaNectarCard()}</div>`;
