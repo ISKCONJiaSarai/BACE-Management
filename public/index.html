@@ -43,7 +43,7 @@
   --sh-glow:0 0 24px -2px rgba(255,102,0,0.35);
   --sidebar:280px;
   --header-h:56px;
-  --today-w:285px;
+  --today-w:325px;
   --f-head:"Outfit",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
   --f-ui:"Plus Jakarta Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
   --f-script:"Caveat","Brush Script MT",cursive;
@@ -314,20 +314,23 @@ input,select,textarea{font-family:inherit;font-size:14px;color:var(--ink);backgr
 }
 .today-panel-header{
   padding:14px 16px 12px;
-  border-bottom:1px solid rgba(226,232,240,0.6);
-  display:flex;align-items:center;justify-content:space-between;gap:8px;flex:none;
-  background:rgba(255,255,255,0.45);
-  backdrop-filter:blur(12px);
+  border-bottom:1px solid #e2e8f0;
+  display:flex;flex-direction:column;gap:9px;flex:none;
+  background:rgba(255,255,255,0.92);
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
 }
 [data-theme="dark"] .today-panel-header{
-  border-bottom:1px solid rgba(255,255,255,0.07);
-  background:rgba(15,23,42,0.5);
+  border-bottom:1px solid rgba(255,255,255,0.08);
+  background:rgba(15,23,42,0.92);
+}
+.tp-header-top{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
 }
 .tp-header-title-wrap{
-  display:flex;align-items:center;gap:8px;flex:1;min-width:0;
+  display:flex;align-items:center;gap:8px;min-width:0;
 }
 .tp-live-dot{
-  width:8px;height:8px;border-radius:50%;background:#10B981;flex:none;
+  width:9px;height:9px;border-radius:50%;background:#10B981;flex:none;
   box-shadow:0 0 0 0 rgba(16,185,129,0.7);
   animation:tpLivePulse 2.2s infinite;
 }
@@ -336,36 +339,52 @@ input,select,textarea{font-family:inherit;font-size:14px;color:var(--ink);backgr
   70%{box-shadow:0 0 0 8px rgba(16,185,129,0)}
   100%{box-shadow:0 0 0 0 rgba(16,185,129,0)}
 }
-.tp-header-title-wrap h3{
-  font-family:var(--f-head);font-size:13px;font-weight:800;text-transform:uppercase;
-  letter-spacing:.06em;color:var(--accent);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:0;
+.tp-header-title{
+  font-family:var(--f-head);font-size:14px;font-weight:800;
+  letter-spacing:.02em;color:#0f172a;
+}
+[data-theme="dark"] .tp-header-title{
+  color:#f8fafc;
 }
 .tp-header-actions{
   display:flex;align-items:center;gap:6px;flex:none;
 }
+.tp-header-date-bar{
+  display:flex;align-items:center;gap:7px;
+  padding:6px 10px;border-radius:8px;
+  background:#fff7ed;border:1px solid #fed7aa;
+  font-family:var(--f-ui);font-size:12px;font-weight:600;
+  color:#9a3412;
+}
+[data-theme="dark"] .tp-header-date-bar{
+  background:rgba(234,88,12,0.15);border-color:rgba(234,88,12,0.35);
+  color:#fdba74;
+}
+.tp-date-icon{font-size:13px;flex:none}
+.tp-date-text{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tp-date-text b{font-weight:700;color:#c2410c}
+[data-theme="dark"] .tp-date-text b{color:#fb923c}
 /* Designer Stay Put / Pin Button */
 .tp-pin-btn{
   display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:999px;
-  font-family:var(--f-head);font-size:11px;font-weight:700;letter-spacing:.02em;
+  font-family:var(--f-ui);font-size:11.5px;font-weight:700;letter-spacing:.02em;
   cursor:pointer;transition:all .25s cubic-bezier(.16,1,.3,1);
-  background:rgba(255,255,255,0.6);border:1px solid var(--line);color:var(--ink-2);
-  box-shadow:0 1px 4px rgba(0,0,0,0.03);
+  background:#f1f5f9;border:1px solid #cbd5e1;color:#334155;
+  box-shadow:0 1px 3px rgba(0,0,0,0.04);
 }
 [data-theme="dark"] .tp-pin-btn{
-  background:rgba(30,41,59,0.6);border-color:rgba(255,255,255,0.1);color:var(--ink-2);
+  background:#1e293b;border-color:rgba(255,255,255,0.15);color:#cbd5e1;
 }
 .tp-pin-btn:hover{
   transform:translateY(-1px);border-color:var(--accent);color:var(--accent);
   box-shadow:0 3px 12px rgba(234,88,12,0.18);
 }
 .tp-pin-btn.is-pinned{
-  background:linear-gradient(135deg,rgba(234,88,12,0.18),rgba(249,115,22,0.28));
-  border-color:rgba(234,88,12,0.45);color:var(--accent);
-  box-shadow:0 0 14px rgba(234,88,12,0.25);
+  background:#ffedd5;border-color:#fdba74;color:#c2410c;
+  box-shadow:0 0 12px rgba(234,88,12,0.22);
 }
 [data-theme="dark"] .tp-pin-btn.is-pinned{
-  background:linear-gradient(135deg,rgba(234,88,12,0.25),rgba(249,115,22,0.35));
-  border-color:rgba(234,88,12,0.6);color:#FB923C;
+  background:rgba(234,88,12,0.25);border-color:rgba(234,88,12,0.5);color:#fb923c;
 }
 .tp-pin-icon{
   font-size:12px;transition:transform .3s;display:inline-block;
@@ -375,11 +394,11 @@ input,select,textarea{font-family:inherit;font-size:14px;color:var(--ink);backgr
 }
 .today-panel-toggle{
   width:26px;height:26px;border-radius:50%;display:grid;place-items:center;
-  border:1px solid var(--line);background:rgba(255,255,255,0.6);cursor:pointer;
-  transition:all .2s;flex:none;color:var(--ink-2);
+  border:1px solid #cbd5e1;background:#f8fafc;cursor:pointer;
+  transition:all .2s;flex:none;color:#475569;
 }
 [data-theme="dark"] .today-panel-toggle{
-  background:rgba(30,41,59,0.6);border-color:rgba(255,255,255,0.1);
+  background:#1e293b;border-color:rgba(255,255,255,0.15);color:#cbd5e1;
 }
 .today-panel-toggle:hover{
   background:var(--accent);color:#fff;border-color:var(--accent);
@@ -388,7 +407,7 @@ input,select,textarea{font-family:inherit;font-size:14px;color:var(--ink);backgr
 
 /* Panel Body - Independent Scrolling */
 .today-panel-body{
-  flex:1;height:calc(100vh - var(--header-h) - 54px);
+  flex:1;height:calc(100vh - var(--header-h) - 95px);
   overflow-y:auto;overflow-x:hidden;padding:14px 14px 45px;
   overscroll-behavior:contain;scrollbar-width:thin;
   scrollbar-color:rgba(234,88,12,0.3) transparent;
@@ -401,7 +420,7 @@ input,select,textarea{font-family:inherit;font-size:14px;color:var(--ink);backgr
 }
 .today-panel-body::-webkit-scrollbar-thumb:hover{background:rgba(234,88,12,0.55)}
 
-/* Staggered Sections & Glass Items */
+/* Staggered Sections & High-Contrast Cards */
 .tp-section{margin-bottom:18px}
 .today-panel:not(.collapsed) .tp-section{
   animation:tpSectionIn .4s cubic-bezier(.16,1,.3,1) both;
@@ -419,38 +438,42 @@ input,select,textarea{font-family:inherit;font-size:14px;color:var(--ink);backgr
 }
 
 .tp-section-title{
-  font-family:var(--f-head);font-size:11.5px;font-weight:800;text-transform:uppercase;
-  letter-spacing:.06em;color:var(--ink-2);margin-bottom:8px;display:flex;align-items:center;gap:7px;
+  font-family:var(--f-head);font-size:12px;font-weight:800;text-transform:uppercase;
+  letter-spacing:.06em;color:#1e293b;margin-bottom:8px;display:flex;align-items:center;gap:7px;
+}
+[data-theme="dark"] .tp-section-title{
+  color:#cbd5e1;
 }
 .tp-count-badge{
-  font-size:10.5px;font-weight:700;
-  background:linear-gradient(135deg,rgba(234,88,12,0.12),rgba(249,115,22,0.2));
-  color:var(--accent);border:1px solid rgba(234,88,12,0.22);
-  padding:1px 7px;border-radius:999px;
+  font-family:var(--f-ui);font-size:11px;font-weight:800;
+  background:#ffedd5;color:#c2410c;border:1px solid #fdba74;
+  padding:1px 7px;border-radius:999px;min-width:18px;text-align:center;
+}
+[data-theme="dark"] .tp-count-badge{
+  background:rgba(234,88,12,0.22);color:#fb923c;border-color:rgba(234,88,12,0.4);
 }
 .tp-item{
-  display:flex;align-items:flex-start;gap:9px;padding:9px 11px;border-radius:12px;
-  background:rgba(255,255,255,0.55);border:1px solid rgba(255,255,255,0.7);
-  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
-  box-shadow:0 2px 6px rgba(15,23,42,0.03);
-  transition:all .25s cubic-bezier(0.16,1,0.3,1);
-  cursor:pointer;margin-bottom:6px;text-decoration:none;position:relative;
+  display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;
+  background:#ffffff;border:1px solid #e2e8f0;
+  box-shadow:0 1px 3px rgba(15,23,42,0.06),0 1px 2px rgba(15,23,42,0.04);
+  transition:all .2s cubic-bezier(0.16,1,0.3,1);
+  cursor:pointer;margin-bottom:7px;text-decoration:none;position:relative;
 }
 [data-theme="dark"] .tp-item{
-  background:rgba(30,41,59,0.55);border:1px solid rgba(255,255,255,0.06);
-  box-shadow:0 2px 8px rgba(0,0,0,0.2);
+  background:#1e293b;border:1px solid rgba(255,255,255,0.09);
+  box-shadow:0 2px 8px rgba(0,0,0,0.3);
 }
 .tp-item:hover{
-  transform:translateX(-4px) translateY(-1px);
-  background:rgba(255,255,255,0.9);border-color:rgba(234,88,12,0.35);
-  box-shadow:0 8px 22px -4px rgba(234,88,12,0.16);
+  transform:translateY(-2px);
+  border-color:var(--accent);
+  box-shadow:0 8px 24px -4px rgba(234,88,12,0.2);
 }
 [data-theme="dark"] .tp-item:hover{
-  background:rgba(30,41,59,0.9);border-color:rgba(234,88,12,0.4);
-  box-shadow:0 8px 24px -4px rgba(0,0,0,0.5);
+  background:#273549;border-color:rgba(234,88,12,0.5);
+  box-shadow:0 8px 26px -4px rgba(0,0,0,0.6);
 }
 .tp-item .tp-dot{
-  width:7px;height:7px;border-radius:50%;flex:none;margin-top:5px;
+  width:8px;height:8px;border-radius:50%;flex:none;
   box-shadow:0 0 8px currentColor;
   animation:tpPulse 2.5s infinite;
 }
@@ -460,38 +483,62 @@ input,select,textarea{font-family:inherit;font-size:14px;color:var(--ink);backgr
 }
 .tp-item .tp-text{flex:1;min-width:0}
 .tp-item .tp-title{
-  font-size:12.5px;font-weight:600;color:var(--ink);display:block;
+  font-family:var(--f-ui);font-size:13px;font-weight:700;color:#0f172a;display:block;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.35;
 }
-.tp-item .tp-meta{font-size:11px;color:var(--ink-3);display:block;margin-top:2px}
+[data-theme="dark"] .tp-item .tp-title{
+  color:#f8fafc;
+}
+.tp-item .tp-meta{
+  font-family:var(--f-ui);font-size:11.5px;font-weight:500;color:#475569;display:block;margin-top:2px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+[data-theme="dark"] .tp-item .tp-meta{
+  color:#94a3b8;
+}
 .tp-item .tp-time{
-  font-family:var(--f-head);font-size:11px;font-weight:700;color:var(--accent);
-  background:rgba(234,88,12,0.1);border:1px solid rgba(234,88,12,0.18);
-  padding:2px 7px;border-radius:6px;flex:none;white-space:nowrap;
+  font-family:var(--f-ui);font-size:11.5px;font-weight:800;color:#9a3412;
+  background:#ffedd5;border:1px solid #fdba74;
+  padding:3px 8px;border-radius:6px;flex:none;white-space:nowrap;letter-spacing:0.02em;
+}
+[data-theme="dark"] .tp-item .tp-time{
+  background:rgba(234,88,12,0.22);color:#fdba74;border-color:rgba(234,88,12,0.4);
 }
 .tp-item .tp-arrow{
-  font-size:13px;color:var(--ink-3);opacity:0;transform:translateX(-4px);
-  transition:all .2s;flex:none;align-self:center;
+  font-size:14px;color:#94a3b8;opacity:0.6;transform:translateX(-2px);
+  transition:all .2s;flex:none;align-self:center;font-weight:700;
 }
 .tp-item:hover .tp-arrow{opacity:1;transform:translateX(0);color:var(--accent)}
 .tp-empty{
-  font-size:12px;color:var(--ink-3);padding:9px 12px;text-align:center;
-  background:rgba(0,0,0,0.02);border-radius:10px;border:1px dashed var(--line);
+  font-family:var(--f-ui);font-size:12.5px;font-weight:600;color:#475569;padding:10px 14px;text-align:center;
+  background:#ffffff;border-radius:10px;border:1px dashed #cbd5e1;
+  box-shadow:0 1px 2px rgba(15,23,42,0.03);
 }
-[data-theme="dark"] .tp-empty{background:rgba(255,255,255,0.02)}
+[data-theme="dark"] .tp-empty{
+  background:rgba(30,41,59,0.5);color:#94a3b8;border-color:rgba(255,255,255,0.1);
+}
 
 .tp-footer-quote{
-  margin-top:14px;padding:12px;border-radius:12px;
-  background:linear-gradient(135deg,rgba(234,88,12,0.06),rgba(249,115,22,0.1));
-  border:1px solid rgba(234,88,12,0.15);text-align:center;
+  margin-top:14px;padding:14px;border-radius:12px;
+  background:#fff7ed;border:1px solid #fed7aa;
+  text-align:center;box-shadow:0 1px 3px rgba(234,88,12,0.06);
+}
+[data-theme="dark"] .tp-footer-quote{
+  background:rgba(234,88,12,0.08);border-color:rgba(234,88,12,0.25);
 }
 .tp-quote-text{
-  display:block;font-family:var(--f-script);font-size:18px;color:var(--accent);
-  line-height:1.3;font-weight:600;
+  display:block;font-family:var(--f-script);font-size:20px;color:#c2410c;
+  line-height:1.35;font-weight:700;
+}
+[data-theme="dark"] .tp-quote-text{
+  color:#fb923c;
 }
 .tp-quote-sub{
-  display:block;font-size:10px;font-weight:700;text-transform:uppercase;
-  letter-spacing:.08em;color:var(--ink-3);margin-top:4px;
+  display:block;font-family:var(--f-head);font-size:10.5px;font-weight:800;text-transform:uppercase;
+  letter-spacing:.09em;color:#64748b;margin-top:4px;
+}
+[data-theme="dark"] .tp-quote-sub{
+  color:#94a3b8;
 }
 
 /* Floating Re-Open Tab */
@@ -4112,6 +4159,9 @@ function mobileNavDropdown(){
 /* ========== GLOBAL TODAY PANEL ========== */
 function globalTodayPanel(){
   const t=iso(TODAY);
+  const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const dayName = dayNames[TODAY.getDay()];
+  const dateFormatted = fmtLong(t);
   const svc=DB.activities.filter(a=>a.date===t&&(a.type==='Seva'||a.type==='Service'));
   const cls=DB.activities.filter(a=>a.date===t&&a.type==='Class');
   const evs=DB.activities.filter(a=>a.date===t&&a.type==='Event');
@@ -4123,24 +4173,53 @@ function globalTodayPanel(){
   const isPinned=!!APP.todayPinned;
   function tpItems(items,color,type){
     if(!items.length)return `<div class="tp-empty">✨ None scheduled today</div>`;
-    return items.slice(0,6).map(a=>`<a class="tp-item" href="#/activity/${a.id}">
-      <span class="tp-dot" style="background:${color};color:${color}"></span>
-      <div class="tp-text">
-        <span class="tp-title">${esc(a.name)}</span>
-        <span class="tp-meta">${esc(a.location||scopeName(a)||'BACE')}</span>
+    return items.slice(0,6).map(a=>`
+      <div class="tp-item" data-act="open-today-item" data-type="${type}" data-id="${a.id}" role="button" tabindex="0" title="Click to open ${type}: ${esc(a.name)}">
+        <span class="tp-dot" style="background:${color};color:${color}"></span>
+        <div class="tp-text">
+          <span class="tp-title">${esc(a.name)}</span>
+          <span class="tp-meta">${esc(a.location||scopeName(a)||'BACE')}</span>
+        </div>
+        ${a.start?`<span class="tp-time">${a.start}</span>`:''}
+        <span class="tp-arrow">›</span>
       </div>
-      ${a.start?`<span class="tp-time">${a.start}</span>`:''}
-      <span class="tp-arrow">›</span>
-    </a>`).join('');
+    `).join('');
   }
   const panelContent=`
     <div class="tp-section"><div class="tp-section-title">⚡ Events <span class="tp-count-badge">${evs.length}</span></div>${tpItems(evs,'var(--mustard)','event')}</div>
     <div class="tp-section"><div class="tp-section-title">📖 Classes <span class="tp-count-badge">${cls.length}</span></div>${tpItems(cls,'var(--indigo)','class')}</div>
     <div class="tp-section"><div class="tp-section-title">🛕 Seva <span class="tp-count-badge">${svc.length}</span></div>${tpItems(svc,'var(--saffron)','seva')}</div>
-    ${festivals.length?`<div class="tp-section"><div class="tp-section-title">🪔 Festival <span class="tp-count-badge">${festivals.length}</span></div>${festivals.map(f=>`<div class="tp-item"><span class="tp-dot" style="background:var(--amber);color:var(--amber)"></span><div class="tp-text"><span class="tp-title">${esc(f.name)}</span></div></div>`).join('')}</div>`:''}
+    ${festivals.length?`<div class="tp-section"><div class="tp-section-title">🪔 Festival <span class="tp-count-badge">${festivals.length}</span></div>${festivals.map(f=>`
+      <div class="tp-item" data-act="open-today-item" data-type="festival" data-id="${f.id}" role="button" tabindex="0" title="Click to view festival: ${esc(f.name)}">
+        <span class="tp-dot" style="background:var(--amber);color:var(--amber)"></span>
+        <div class="tp-text"><span class="tp-title">${esc(f.name)}</span><span class="tp-meta">Special Celebration</span></div>
+        <span class="tp-arrow">›</span>
+      </div>`).join('')}</div>`:''}
     ${meetings.length?`<div class="tp-section"><div class="tp-section-title">🤝 Meetings <span class="tp-count-badge">${meetings.length}</span></div>${tpItems(meetings,'var(--teal)','meeting')}</div>`:''}
-    <div class="tp-section"><div class="tp-section-title">⏰ Follow-ups Due <span class="tp-count-badge">${fus.length}</span></div>${fus.length?fus.slice(0,5).map(f=>`<a class="tp-item" href="#/followups"><span class="tp-dot" style="background:var(--danger);color:var(--danger)"></span><div class="tp-text"><span class="tp-title">${esc(subjectName(f))}</span><span class="tp-meta">${esc(f.purpose||'')} · ${relD(f.due)}</span></div><span class="tp-arrow">›</span></a>`).join(''):`<div class="tp-empty">✨ All clear</div>`}</div>
-    ${ann&&ann.messages.length?`<div class="tp-section"><div class="tp-section-title">📣 Announcements</div>${ann.messages.slice(-3).reverse().map(m=>`<div class="tp-item"><span class="tp-dot" style="background:var(--sky);color:var(--sky)"></span><div class="tp-text"><span class="tp-title">${esc(nameOf(m.from))}</span><span class="tp-meta">${esc(m.text).slice(0,60)}${m.text.length>60?'…':''}</span></div></div>`).join('')}</div>`:''}
+    <div class="tp-section">
+      <div class="tp-section-title">⏰ Follow-ups Due <span class="tp-count-badge">${fus.length}</span></div>
+      ${fus.length?fus.slice(0,6).map(f=>`
+        <div class="tp-item" data-act="open-today-item" data-type="followup" data-id="${f.id}" role="button" tabindex="0" title="Click to open follow-up: ${esc(subjectName(f))}">
+          <span class="tp-dot" style="background:var(--danger);color:var(--danger)"></span>
+          <div class="tp-text">
+            <span class="tp-title">${esc(subjectName(f))}</span>
+            <span class="tp-meta">${esc(f.purpose||'Follow-up')} · ${relD(f.due)}</span>
+          </div>
+          <span class="tp-arrow">›</span>
+        </div>`).join(''):`<div class="tp-empty">✨ All clear</div>`}
+    </div>
+    ${ann&&ann.messages.length?`<div class="tp-section">
+      <div class="tp-section-title">📣 Announcements</div>
+      ${ann.messages.slice(-3).reverse().map(m=>`
+        <div class="tp-item" data-act="open-today-item" data-type="announcement" role="button" tabindex="0" title="Click to view Community Announcements">
+          <span class="tp-dot" style="background:var(--sky);color:var(--sky)"></span>
+          <div class="tp-text">
+            <span class="tp-title">${esc(nameOf(m.from))}</span>
+            <span class="tp-meta">${esc(m.text).slice(0,60)}${m.text.length>60?'…':''}</span>
+          </div>
+          <span class="tp-arrow">›</span>
+        </div>`).join('')}
+    </div>`:''}
     <div class="tp-footer-quote">
       <span class="tp-quote-text">“Always remember Krishna, never forget Him”</span>
       <span class="tp-quote-sub">Srila Prabhupada</span>
@@ -4148,18 +4227,24 @@ function globalTodayPanel(){
   `;
   return `<aside class="today-panel ${collapsed?'collapsed':''} ${isPinned?'is-pinned':''}" id="todayPanel" role="complementary" aria-label="Today's Updates">
     <div class="today-panel-header">
-      <div class="tp-header-title-wrap">
-        <span class="tp-live-dot" title="Live updates active"></span>
-        <h3>Today · ${fmtD(t)}</h3>
+      <div class="tp-header-top">
+        <div class="tp-header-title-wrap">
+          <span class="tp-live-dot" title="Live updates active"></span>
+          <span class="tp-header-title">Today's Updates</span>
+        </div>
+        <div class="tp-header-actions">
+          <button class="tp-pin-btn ${isPinned?'is-pinned':''}" data-act="toggle-today-pin" title="${isPinned?'Panel is pinned (stays put). Click to allow auto-close.':'Click to pin panel so it stays put.'}">
+            <span class="tp-pin-icon">${isPinned?'📌':'📍'}</span>
+            <span class="tp-pin-label">${isPinned?'Stay Put':'Auto-close'}</span>
+          </button>
+          <button class="today-panel-toggle" data-act="toggle-today-panel" title="Close Today's Updates">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
       </div>
-      <div class="tp-header-actions">
-        <button class="tp-pin-btn ${isPinned?'is-pinned':''}" data-act="toggle-today-pin" title="${isPinned?'Panel is pinned (stays put). Click to allow auto-close.':'Click to pin panel so it stays put.'}">
-          <span class="tp-pin-icon">${isPinned?'📌':'📍'}</span>
-          <span class="tp-pin-label">${isPinned?'Stay Put':'Auto-close'}</span>
-        </button>
-        <button class="today-panel-toggle" data-act="toggle-today-panel" title="Collapse panel">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
-        </button>
+      <div class="tp-header-date-bar">
+        <span class="tp-date-icon">📅</span>
+        <span class="tp-date-text"><b>${dayName}</b>, ${dateFormatted}</span>
       </div>
     </div>
     <div class="today-panel-body" id="todayPanelBody">${panelContent}</div>
@@ -4172,24 +4257,46 @@ function globalTodayPanel(){
 function mobileTodayDrawer(){
   if(!APP.mobileTodayOpen)return '';
   const t=iso(TODAY);
+  const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const dayName = dayNames[TODAY.getDay()];
+  const dateFormatted = fmtLong(t);
   const svc=DB.activities.filter(a=>a.date===t&&(a.type==='Seva'||a.type==='Service'));
   const cls=DB.activities.filter(a=>a.date===t&&a.type==='Class');
   const evs=DB.activities.filter(a=>a.date===t&&a.type==='Event');
   const fus=DB.followups.filter(f=>f.status==='Pending'&&f.due<=t);
-  function tpMobileItems(items,color){
-    if(!items.length)return `<div style="font-size:12px;color:var(--ink-3);padding:6px 0">None today</div>`;
-    return items.slice(0,5).map(a=>`<a class="tp-item" href="#/activity/${a.id}" data-act="close-mobile-today"><span class="tp-dot" style="background:${color}"></span><div class="tp-text"><span class="tp-title">${esc(a.name)}</span><span class="tp-meta">${a.start||''} · ${esc(a.location||'')}</span></div></a>`).join('');
+  function tpMobileItems(items,color,type){
+    if(!items.length)return `<div class="tp-empty" style="padding:8px">None today</div>`;
+    return items.slice(0,5).map(a=>`
+      <div class="tp-item" data-act="open-today-item" data-type="${type}" data-id="${a.id}">
+        <span class="tp-dot" style="background:${color};color:${color}"></span>
+        <div class="tp-text">
+          <span class="tp-title">${esc(a.name)}</span>
+          <span class="tp-meta">${a.start||''} · ${esc(a.location||'BACE')}</span>
+        </div>
+        ${a.start?`<span class="tp-time">${a.start}</span>`:''}
+      </div>
+    `).join('');
   }
   return `<div class="mobile-today-drawer">
     <div class="mobile-today-scrim" data-act="close-mobile-today"></div>
     <div class="mobile-today-sheet">
       <div class="sheet-handle"></div>
-      <div class="sheet-header"><h3>Today's Updates</h3><button class="icon-btn" data-act="close-mobile-today" style="border:none">${ic('x')}</button></div>
+      <div class="sheet-header">
+        <div>
+          <h3 style="margin:0">Today's Updates</h3>
+          <div style="font-size:12px;color:var(--saffron-dark);font-weight:600;margin-top:2px">📅 ${dayName}, ${dateFormatted}</div>
+        </div>
+        <button class="icon-btn" data-act="close-mobile-today" style="border:none">${ic('x')}</button>
+      </div>
       <div class="sheet-body">
-        <div class="tp-section"><div class="tp-section-title">⚡ Events <span class="tp-count-badge">${evs.length}</span></div>${tpMobileItems(evs,'var(--mustard)')}</div>
-        <div class="tp-section"><div class="tp-section-title">📖 Classes <span class="tp-count-badge">${cls.length}</span></div>${tpMobileItems(cls,'var(--indigo)')}</div>
-        <div class="tp-section"><div class="tp-section-title">🛕 Seva <span class="tp-count-badge">${svc.length}</span></div>${tpMobileItems(svc,'var(--saffron)')}</div>
-        <div class="tp-section"><div class="tp-section-title">⏰ Follow-ups Due <span class="tp-count-badge">${fus.length}</span></div>${fus.length?fus.slice(0,5).map(f=>`<div class="tp-item"><span class="tp-dot" style="background:var(--danger)"></span><div class="tp-text"><span class="tp-title">${esc(subjectName(f))}</span><span class="tp-meta">${esc(f.purpose||'')}</span></div></div>`).join(''):`<div style="font-size:12px;color:var(--ink-3);padding:6px 0">All clear</div>`}</div>
+        <div class="tp-section"><div class="tp-section-title">⚡ Events <span class="tp-count-badge">${evs.length}</span></div>${tpMobileItems(evs,'var(--mustard)','event')}</div>
+        <div class="tp-section"><div class="tp-section-title">📖 Classes <span class="tp-count-badge">${cls.length}</span></div>${tpMobileItems(cls,'var(--indigo)','class')}</div>
+        <div class="tp-section"><div class="tp-section-title">🛕 Seva <span class="tp-count-badge">${svc.length}</span></div>${tpMobileItems(svc,'var(--saffron)','seva')}</div>
+        <div class="tp-section"><div class="tp-section-title">⏰ Follow-ups Due <span class="tp-count-badge">${fus.length}</span></div>${fus.length?fus.slice(0,5).map(f=>`
+          <div class="tp-item" data-act="open-today-item" data-type="followup" data-id="${f.id}">
+            <span class="tp-dot" style="background:var(--danger)"></span>
+            <div class="tp-text"><span class="tp-title">${esc(subjectName(f))}</span><span class="tp-meta">${esc(f.purpose||'')}</span></div>
+          </div>`).join(''):`<div class="tp-empty" style="padding:8px">All clear</div>`}</div>
       </div>
     </div>
   </div>`;
@@ -19370,7 +19477,17 @@ function routeView(){
       case 'notifications':return viewNotifications();
       case 'admin':return guard('admin',viewAdmin);
       case 'more':return viewMore();
-      case 'activity':{const a=act(arg);if(a){APP.sideDevFilterBatch = a.batch || '';APP.modal={kind:'activity',id:arg};}return viewAssign()}
+      case 'activity':{
+        const a=act(arg);
+        if(a){
+          APP.sideDevFilterBatch = a.batch || '';
+          APP.modal={kind:'activity',id:arg};
+          if(a.type==='Class'||a.type==='Event')return can('preaching')?viewClasses():viewCalendar();
+          if(a.type==='Seva'||a.type==='Service')return can('assign')?viewAssign():viewToday();
+          if(a.cat==='Meetings')return viewMeetings();
+        }
+        return can('assign')?viewAssign():viewDashboard();
+      }
       default:return emptyState('Page not found','That route does not exist in this application.','<a class="btn pri" href="#/">Back to dashboard</a>');
     }
   } catch(err) {
@@ -19446,14 +19563,15 @@ function render(){
   // Auto-collapse today panel on narrow screens
   if(window.innerWidth<=900&&APP.todayPanelOpen){APP.todayPanelOpen=false}
 }
-function go(r){
+function go(r, keepModal = false){
   APP.route=r;
-  APP.modal='';
+  if(!keepModal) APP.modal='';
   APP.mobileDrawerOpen=false;
   APP.mobileSearchOpen=false;
   APP.mobileNavOpen=false;
   APP.mobileTodayOpen=false;
   if(!APP.todayPinned){APP.todayPanelOpen=false;}
+  if(keepModal){APP.keepModalOnNextRoute=true;}
   if(location.hash!==r)location.hash=r;
   else render();
   window.scrollTo(0,0);
@@ -20011,6 +20129,58 @@ document.addEventListener('click',e=>{
   case 'mobile-nav-go':{stop();APP.mobileNavOpen=false;go(t.dataset.r||t.getAttribute('href'));break}
   case 'open-mobile-today':{stop();APP.mobileTodayOpen=true;render();break}
   case 'close-mobile-today':{stop();APP.mobileTodayOpen=false;render();break}
+  case 'open-today-item':{
+    stop();
+    const itemType = t.dataset.type;
+    const itemId = t.dataset.id;
+    if(!APP.todayPinned){
+      APP.todayPanelOpen = false;
+      APP.mobileTodayOpen = false;
+      localStorage.setItem('bace_today_panel', '0');
+    }
+    if(itemType === 'class'){
+      const a = act(itemId);
+      APP.filters.cls = APP.filters.cls || {batch:'',type:'',when:'Upcoming'};
+      APP.filters.cls.type = 'Class';
+      APP.sideDevFilterBatch = a ? (a.batch || '') : '';
+      APP.modal = {kind: 'activity', id: itemId};
+      const target = can('preaching') ? '#/classes' : '#/calendar';
+      go(target, true);
+    } else if(itemType === 'event' || itemType === 'festival'){
+      const a = act(itemId);
+      APP.filters.cls = APP.filters.cls || {batch:'',type:'',when:'Upcoming'};
+      APP.filters.cls.type = 'Event';
+      APP.sideDevFilterBatch = a ? (a.batch || '') : '';
+      APP.modal = {kind: 'activity', id: itemId};
+      const target = can('preaching') ? '#/classes' : '#/calendar';
+      go(target, true);
+    } else if(itemType === 'seva'){
+      const a = act(itemId);
+      APP.sideDevFilterBatch = a ? (a.batch || '') : '';
+      APP.modal = {kind: 'activity', id: itemId};
+      const target = can('assign') ? '#/assign' : '#/today';
+      go(target, true);
+    } else if(itemType === 'meeting'){
+      APP.modal = {kind: 'activity', id: itemId};
+      go('#/meetings', true);
+    } else if(itemType === 'followup'){
+      const fu = DB.followups.find(x => x.id === itemId);
+      APP.filters.fu = APP.filters.fu || {bucket:'All',q:''};
+      APP.filters.fu.bucket = 'All';
+      if(fu) APP.filters.fu.q = subjectName(fu);
+      if(fu && fu.contact){
+        APP.modal = {kind: 'contact', id: fu.contact};
+        const target = (fu && fu.kind === 'Care') ? '#/care-followups' : '#/followups';
+        go(target, true);
+      } else {
+        const target = (fu && fu.kind === 'Care') ? '#/care-followups' : '#/followups';
+        go(target, false);
+      }
+    } else if(itemType === 'announcement'){
+      go('#/messages', false);
+    }
+    break;
+  }
   case 'dash-cal-view':{stop();APP.filters.dashCalView=t.dataset.v;APP.filters.dashCalOff=0;render();break}
   case 'dash-cal-nav':{stop();const d=parseInt(t.dataset.d,10);if(d===0)APP.filters.dashCalOff=0;else APP.filters.dashCalOff=(APP.filters.dashCalOff||0)+d;render();break}
   case 'dash-cal-day':{stop();const dt=t.dataset.d;if(dt){APP.filters.calSelectedDate=dt;go('#/calendar');}break}
@@ -22496,7 +22666,14 @@ document.addEventListener('drop',e=>{
   c.timeline.unshift({date:iso(TODAY),title:'Moved to '+st,desc:'Stage changed by '+nameOf(APP.user.devotee)+'.',tone:'indigo'});
   logAudit('Contact stage changed',`${c.name} → ${st}`);toast(c.name+' moved to '+st);render();
 });
-window.addEventListener('hashchange',()=>{APP.route=location.hash||'#/';APP.modal='';APP.mobileDrawerOpen=false;if(!APP.todayPinned){APP.todayPanelOpen=false;}render()});
+window.addEventListener('hashchange',()=>{
+  APP.route=location.hash||'#/';
+  if(!APP.keepModalOnNextRoute){APP.modal='';}
+  APP.keepModalOnNextRoute=false;
+  APP.mobileDrawerOpen=false;
+  if(!APP.todayPinned){APP.todayPanelOpen=false;}
+  render();
+});
 // Contain scrolling within the Today panel so mouse wheel doesn't scroll the background page
 window.addEventListener('wheel',e=>{
   const tp=e.target.closest('#todayPanelBody');
