@@ -4329,6 +4329,7 @@ function appHeader(){
       {t:'Management Dashboard',em:'📊',r:'#/mgmt',m:'management'},
       {t:'BACE Pillars',em:'🛕',r:'#/attendance',m:'management'},
       {t:'Departments',em:'🏢',r:'#/depts',m:'management'},
+      {t:'Accounts',em:'💰',r:'#/accounts',m:'management'},
       {t:'Assign Seva',em:'📋',r:'#/assign',m:'assign'},
       {t:'SOPs & Standards',em:'📘',r:'#/sops',m:'sops'}
     ]},
@@ -4423,7 +4424,7 @@ function appHeader(){
 }
 function mobileNavDropdown(){
   const route=APP.route.replace(/^#\/?/,'').split('/')[0];
-  const mgmtRoutes=['mgmt','depts','dept','assign','attendance','dept-reports','inventory','sops'];
+  const mgmtRoutes=['mgmt','depts','dept','assign','attendance','accounts','dept-reports','inventory','sops'];
   const preachRoutes=['preaching','batches','batch','contacts','followups','classes','batch-attendance'];
   const careRoutes=['care','friends','groups','group','swabhav','sadhana','facilitators','camps','meetings','care-followups','care-reports'];
   const mainItems=[
@@ -4436,6 +4437,7 @@ function mobileNavDropdown(){
       {t:'Management Dashboard',em:'📊',r:'#/mgmt',m:'management'},
       {t:'BACE Pillars',em:'🛕',r:'#/attendance',m:'management'},
       {t:'Departments',em:'🏢',r:'#/depts',m:'management'},
+      {t:'Accounts',em:'💰',r:'#/accounts',m:'management'},
       {t:'Assign Seva',em:'📋',r:'#/assign',m:'assign'},
       {t:'SOPs',em:'📘',r:'#/sops'},
     ]},
@@ -4622,7 +4624,7 @@ function mobileTodayDrawer(){
   </div>`;
 }
 const CRUMBS={'':'Dashboard',today:'Today',devotees:'Devotees',devotee:'Devotee',org:'Organisation',mgmt:'BACE Management',
- depts:'Departments',dept:'Department',assign:'Assign Seva',attendance:'BACE Pillars','dept-reports':'Department reports',
+ depts:'Departments',dept:'Department',accounts:'Accounts & Budgets',assign:'Assign Seva',attendance:'BACE Pillars','dept-reports':'Department reports',
  inventory:'Inventory & BBT',sops:'SOPs & standards',actions:'Action items',preaching:'BACE Preaching',batches:'Batch management',
  batch:'Batch',contacts:'Contacts & pipeline',followups:'Follow-ups',classes:'Classes & events','batch-attendance':'Batch attendance',
  'preaching-reports':'Preaching reports',care:'Devotee Care',friends:'Friends & Groups',groups:'Friends & Groups',group:'Group',swabhav:'Swabhav engagement',
@@ -5861,6 +5863,14 @@ function pillarCardMgmt(){
           <div class="pillar-item-info">
             <div class="pillar-item-title">Departments</div>
             <div class="pillar-item-sub">${s.depts} active departments</div>
+          </div>
+          <span class="pillar-item-arrow">›</span>
+        </a>
+        <a class="pillar-item" href="#/accounts">
+          <span class="pillar-item-icon">💰</span>
+          <div class="pillar-item-info">
+            <div class="pillar-item-title">Accounts</div>
+            <div class="pillar-item-sub">Budgets, ledgers &amp; vouchers</div>
           </div>
           <span class="pillar-item-arrow">›</span>
         </a>
@@ -14831,7 +14841,7 @@ window.loadDepartmentAccounts = async function(forceReload) {
     APP.accountsState.hasLoadedFromMongo = false;
   } finally {
     APP.accountsState.isLoading = false;
-    if (APP.tab && APP.tab.att === 'Accounts') {
+    if ((APP.tab && APP.tab.att === 'Accounts') || (APP.route && APP.route.includes('accounts'))) {
       render();
     }
   }
@@ -15923,6 +15933,10 @@ function deptAccountsPanel() {
   </div>`;
 }
 
+function viewAccountsPage(){
+  return head('💰 Accounts & Budgets', 'Financial Administration', 'Operational temple departments and preaching batches financial ledgers, expense receipts and budget allocations')+
+   deptAccountsPanel();
+}
 
 function viewAttendance(){
   let tab = APP.tab.att || 'Morning programme';
@@ -21153,6 +21167,7 @@ function routeView(){
       case 'dept':return guard('management',()=>viewDept(arg));
       case 'assign':return guard('assign',viewAssign);
       case 'attendance':return guard('management',viewAttendance);
+      case 'accounts':return guard('management',viewAccountsPage);
       case 'dept-reports':return guard('reports',viewDeptReports);
       case 'inventory':return guard('inventory',viewInventory);
       case 'sops':return viewSops();
