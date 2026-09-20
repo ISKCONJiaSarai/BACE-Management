@@ -2339,6 +2339,9 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-off
   50%{height:18px}
   100%{height:8px}
 }
+[data-act="select-ambience"]{transition:all .18s ease;font-weight:600;border:1px solid rgba(245,158,11,0.35)!important;cursor:pointer}
+[data-act="select-ambience"].on{background:#f59e0b!important;color:#fff!important;border-color:#d97706!important;font-weight:700!important;box-shadow:0 2px 8px rgba(245,158,11,0.4)!important}
+[data-act="select-ambience"]:hover:not(.on){background:rgba(245,158,11,0.15)!important;border-color:#f59e0b!important}
 
 .nectar-card-wrapper{transition:box-shadow .25s ease, transform .25s ease}
 .nectar-quote-box{animation:nectarFadeSlide .4s cubic-bezier(0.16, 1, 0.3, 1)}
@@ -5553,7 +5556,7 @@ let BACE_AMB = {
   }
 };
 
-function playBaceAmbience(trackName) {
+function playBaceAmbience(trackName, silentFail = false) {
   if (trackName && BACE_AMB.tracks[trackName]) {
     BACE_AMB.track = trackName;
   }
@@ -5563,6 +5566,7 @@ function playBaceAmbience(trackName) {
     BACE_AMB.audioEl = new Audio();
     BACE_AMB.audioEl.loop = true;
     BACE_AMB.audioEl.volume = 0.65;
+    BACE_AMB.audioEl.preload = 'auto';
     BACE_AMB.audioEl.addEventListener('error', (e) => {
       console.warn('Audio playback error:', e);
       BACE_AMB.playing = false;
@@ -5579,10 +5583,11 @@ function playBaceAmbience(trackName) {
     BACE_AMB.playing = true;
     updateAmbienceUI();
   }).catch(err => {
-    console.warn('Audio play error (user gesture required):', err.message);
     BACE_AMB.playing = false;
     updateAmbienceUI();
-    toast('Click Play to allow audio playback in browser', '🔔');
+    if (!silentFail) {
+      toast('Click Play to allow audio playback in browser', '🔔');
+    }
   });
 }
 
@@ -5631,6 +5636,28 @@ function updateAmbienceUI() {
       else b.classList.remove('on');
     }
   });
+}
+
+// Auto-start or prime Kirtan on website open
+let BACE_AMB_INITIATED = false;
+function initBaceKirtanOnOpen() {
+  if (BACE_AMB_INITIATED) return;
+  BACE_AMB_INITIATED = true;
+  BACE_AMB.track = 'kirtan';
+  updateAmbienceUI();
+
+  // Try direct auto-play silently on open
+  playBaceAmbience('kirtan', true);
+
+  // If browser requires user interaction first, auto-start on first click/interaction anywhere on site
+  const onFirstInteraction = () => {
+    if (!BACE_AMB.playing && BACE_AMB.track === 'kirtan') {
+      playBaceAmbience('kirtan', true);
+    }
+  };
+  window.addEventListener('click', onFirstInteraction, { once: true, capture: true });
+  window.addEventListener('keydown', onFirstInteraction, { once: true, capture: true });
+  window.addEventListener('touchstart', onFirstInteraction, { once: true, capture: true });
 }
 
 /* ---------------- 20-Second Auto-Swiping Nectar Quote Engine ---------------- */
@@ -5708,6 +5735,7 @@ function prabhupadaNectarCard(){
 
   // Auto-swipe timer start
   setTimeout(startNectarAutoSwipe, 200);
+  setTimeout(initBaceKirtanOnOpen, 250);
 
   return `
     <div class="card pad nectar-card-wrapper" style="position:relative;overflow:hidden;border:1px solid rgba(245,158,11,0.35);background:linear-gradient(135deg,rgba(254,243,199,0.25) 0%,var(--surface) 60%,rgba(254,243,199,0.18) 100%);box-shadow:0 8px 24px -4px rgba(245,158,11,0.12)">
@@ -24883,6 +24911,7 @@ loadOutingsFromBackend();
 render();
 syncDevoteesFromServer(true); // forceImmediate on first page load
 verifyUserSessionFromServer();
+initBaceKirtanOnOpen();
 
 
 </script>
