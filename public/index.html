@@ -5421,10 +5421,11 @@ function viewToday(){
    ========================================================================= */
 function viewDashboard(){
   const r=APP.user.role,s=STATS();
-  const title={area_leader:'Community overview',coordinator:'Operations overview',internal_manager:'Management overview',
+  const title={area_leader:'Community blocks',coordinator:'Operations overview',internal_manager:'Management overview',
     preaching_manager:'Preaching overview',care_manager:'Devotee care overview',dept_head:'My department',
     preaching_coord:'My batch',facilitator:'My devotees',devotee:'My BACE',admin:'System overview'}[r];
-  const hd=hero()+head(ROLES[r].emoji+' '+ROLES[r].name,title,ROLES[r].scope,
+  const roleName=r==='area_leader'?'ISKCON BACE':ROLES[r].name;
+  const hd=hero()+head(ROLES[r].emoji+' '+roleName,title,ROLES[r].scope,
     `<span class="demo-flag">Sample data</span><button class="btn" data-act="go" data-r="#/today">⚡ Today</button><button class="btn pri" data-act="go" data-r="#/reports">📊 Reports</button>`);
   if(r==='area_leader')return hd+`${pillarCards()}<div style="height:15px"></div>
      <div class="grid g2">${insightsCard()}${dashboardCalendarWidget()}</div>
