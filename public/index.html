@@ -2341,14 +2341,13 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-off
 }
 
 .nectar-card-wrapper{transition:box-shadow .25s ease, transform .25s ease}
-.nectar-card-wrapper:hover .nectar-timer-progress{animation-play-state:paused!important}
 .nectar-quote-box{animation:nectarFadeSlide .4s cubic-bezier(0.16, 1, 0.3, 1)}
 @keyframes nectarFadeSlide{
   0%{opacity:0;transform:translateY(6px)}
   100%{opacity:1;transform:translateY(0)}
 }
 .nectar-timer-bar-container{height:3px;width:100%;background:rgba(245,158,11,0.12);border-radius:2px;overflow:hidden;margin-top:10px}
-.nectar-timer-progress{height:100%;background:linear-gradient(90deg,#f59e0b,#ea580c);border-radius:2px;width:0%;animation:nectarTimerProg 30s linear infinite}
+.nectar-timer-progress{height:100%;background:linear-gradient(90deg,#f59e0b,#ea580c);border-radius:2px;width:0%;animation:nectarTimerProg 20s linear infinite}
 @keyframes nectarTimerProg{
   0%{width:0%}
   100%{width:100%}
@@ -5634,17 +5633,14 @@ function updateAmbienceUI() {
   });
 }
 
-/* ---------------- 30-Second Auto-Swiping Nectar Quote Engine ---------------- */
+/* ---------------- 20-Second Auto-Swiping Nectar Quote Engine ---------------- */
 let BACE_NECTAR_TIMER = null;
-let BACE_NECTAR_IS_HOVERED = false;
 
 function startNectarAutoSwipe() {
   if (BACE_NECTAR_TIMER) clearInterval(BACE_NECTAR_TIMER);
   BACE_NECTAR_TIMER = setInterval(() => {
-    if (!BACE_NECTAR_IS_HOVERED) {
-      cycleNectarQuote(1);
-    }
-  }, 30000); // 30 seconds
+    cycleNectarQuote(1);
+  }, 20000); // 20 seconds
 }
 
 function cycleNectarQuote(delta = 1) {
@@ -5660,7 +5656,7 @@ function restartNectarProgressBar() {
   if (bar) {
     bar.style.animation = 'none';
     bar.offsetHeight; // trigger reflow
-    bar.style.animation = 'nectarTimerProg 30s linear infinite';
+    bar.style.animation = 'nectarTimerProg 20s linear infinite';
   }
   if (BACE_NECTAR_TIMER) clearInterval(BACE_NECTAR_TIMER);
   startNectarAutoSwipe();
@@ -5714,7 +5710,7 @@ function prabhupadaNectarCard(){
   setTimeout(startNectarAutoSwipe, 200);
 
   return `
-    <div class="card pad nectar-card-wrapper" onmouseenter="BACE_NECTAR_IS_HOVERED=true" onmouseleave="BACE_NECTAR_IS_HOVERED=false" style="position:relative;overflow:hidden;border:1px solid rgba(245,158,11,0.35);background:linear-gradient(135deg,rgba(254,243,199,0.25) 0%,var(--surface) 60%,rgba(254,243,199,0.18) 100%);box-shadow:0 8px 24px -4px rgba(245,158,11,0.12)">
+    <div class="card pad nectar-card-wrapper" style="position:relative;overflow:hidden;border:1px solid rgba(245,158,11,0.35);background:linear-gradient(135deg,rgba(254,243,199,0.25) 0%,var(--surface) 60%,rgba(254,243,199,0.18) 100%);box-shadow:0 8px 24px -4px rgba(245,158,11,0.12)">
       <div style="position:absolute;right:-15px;bottom:-20px;font-size:120px;opacity:0.04;pointer-events:none;user-select:none">🪷</div>
 
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid rgba(245,158,11,0.2)">
@@ -5724,10 +5720,9 @@ function prabhupadaNectarCard(){
           <span class="badge" style="background:rgba(245,158,11,0.15);color:#b45309;font-weight:700;font-size:10px;border:1px solid rgba(245,158,11,0.3)">VANI AMRITA</span>
         </div>
         <div style="display:flex;align-items:center;gap:5px">
-          <button class="btn sm" data-act="prev-nectar-quote" title="Previous quote (swipes every 30s)" style="padding:3px 8px;font-size:13px;border-color:rgba(245,158,11,0.3)">‹</button>
+          <button class="btn sm" data-act="prev-nectar-quote" title="Previous quote (swipes every 20s)" style="padding:3px 8px;font-size:13px;border-color:rgba(245,158,11,0.3)">‹</button>
           <span class="tiny" id="nectarQuoteCount" style="font-weight:700;color:var(--ink-3);min-width:44px;text-align:center">${APP.nectarIdx + 1} / ${len}</span>
-          <button class="btn sm" data-act="next-nectar-quote" title="Next quote (swipes every 30s)" style="padding:3px 8px;font-size:13px;border-color:rgba(245,158,11,0.3)">›</button>
-          <button class="btn sm" data-act="open-add-nectar" title="Add or manage quotes in MongoDB" style="padding:3px 8px;font-size:11.5px;margin-left:4px;border-color:rgba(245,158,11,0.3)">+ Quote</button>
+          <button class="btn sm" data-act="next-nectar-quote" title="Next quote (swipes every 20s)" style="padding:3px 8px;font-size:13px;border-color:rgba(245,158,11,0.3)">›</button>
         </div>
       </div>
 
@@ -5750,8 +5745,8 @@ function prabhupadaNectarCard(){
         </div>
       </div>
 
-      <!-- 30s Auto-swipe progress indicator -->
-      <div class="nectar-timer-bar-container" title="Auto-swipes to next quote every 30 seconds (pauses on hover)">
+      <!-- 20s Auto-swipe progress indicator -->
+      <div class="nectar-timer-bar-container" title="Auto-swipes to next quote every 20 seconds">
         <div class="nectar-timer-progress" id="nectarTimerProg"></div>
       </div>
 
