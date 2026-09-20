@@ -4026,6 +4026,7 @@ function exportReport(title,headerRows,rows){
    ========================================================================= */
 const NAV_TOP=[
   {t:'Dashboard',em:'🏠',r:'#/',m:'dashboard'},
+  {t:'Today',em:'⚡',r:'#/today',m:'today'},
   {t:'Devotees',em:'👥',r:'#/devotees',m:'directory'}
 ];
 const PILLARS=[
@@ -4228,6 +4229,7 @@ function mobileNavDropdown(){
   const careRoutes=['care','friends','groups','group','swabhav','sadhana','facilitators','spiritual-classes','camps','temple-visits','meetings','care-followups','care-reports'];
   const mainItems=[
     {t:'Dashboard',em:'🏠',r:'#/',on:route===''},
+    {t:'Today',em:'⚡',r:'#/today',on:route==='today'},
     {t:'Devotees',em:'👥',r:'#/devotees',on:route==='devotees'||route==='devotee',m:'directory'},
   ];
   const sections=[
@@ -4278,12 +4280,150 @@ function mobileNavDropdown(){
 
 /* ========== GLOBAL TODAY PANEL ========== */
 function globalTodayPanel(){
-  return '';
+  const t=iso(TODAY);
+  const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const dayName = dayNames[TODAY.getDay()];
+  const dateFormatted = fmtLong(t);
+  const svc=DB.activities.filter(a=>a.date===t&&(a.type==='Seva'||a.type==='Service'));
+  const cls=DB.activities.filter(a=>a.date===t&&a.type==='Class');
+  const evs=DB.activities.filter(a=>a.date===t&&a.type==='Event');
+  const fus=DB.followups.filter(f=>f.status==='Pending'&&f.due<=t);
+  const ann=DB.threads.find(x=>x.type==='community');
+  const festivals=DB.activities.filter(a=>a.date===t&&a.cat==='Festivals');
+  const meetings=DB.activities.filter(a=>a.date===t&&a.cat==='Meetings');
+  const collapsed=!APP.todayPanelOpen;
+  const isPinned=!!APP.todayPinned;
+  function tpItems(items,color,type){
+    if(!items.length)return `<div class="tp-empty">✨ None scheduled today</div>`;
+    return items.slice(0,6).map(a=>`
+      <div class="tp-item" data-act="open-today-item" data-type="${type}" data-id="${a.id}" role="button" tabindex="0" title="Click to open ${type}: ${esc(a.name)}">
+        <span class="tp-dot" style="background:${color};color:${color}"></span>
+        <div class="tp-text">
+          <span class="tp-title">${esc(a.name)}</span>
+          <span class="tp-meta">${esc(a.location||scopeName(a)||'BACE')}</span>
+        </div>
+        ${a.start?`<span class="tp-time">${a.start}</span>`:''}
+        <span class="tp-arrow">›</span>
+      </div>
+    `).join('');
+  }
+  const panelContent=`
+    <div class="tp-section"><div class="tp-section-title">⚡ Events <span class="tp-count-badge">${evs.length}</span></div>${tpItems(evs,'var(--mustard)','event')}</div>
+    <div class="tp-section"><div class="tp-section-title">📖 Classes <span class="tp-count-badge">${cls.length}</span></div>${tpItems(cls,'var(--indigo)','class')}</div>
+    <div class="tp-section"><div class="tp-section-title">🛕 Seva <span class="tp-count-badge">${svc.length}</span></div>${tpItems(svc,'var(--saffron)','seva')}</div>
+    ${festivals.length?`<div class="tp-section"><div class="tp-section-title">🪔 Festival <span class="tp-count-badge">${festivals.length}</span></div>${festivals.map(f=>`
+      <div class="tp-item" data-act="open-today-item" data-type="festival" data-id="${f.id}" role="button" tabindex="0" title="Click to view festival: ${esc(f.name)}">
+        <span class="tp-dot" style="background:var(--amber);color:var(--amber)"></span>
+        <div class="tp-text"><span class="tp-title">${esc(f.name)}</span><span class="tp-meta">Special Celebration</span></div>
+        <span class="tp-arrow">›</span>
+      </div>`).join('')}</div>`:''}
+    ${meetings.length?`<div class="tp-section"><div class="tp-section-title">🤝 Meetings <span class="tp-count-badge">${meetings.length}</span></div>${tpItems(meetings,'var(--teal)','meeting')}</div>`:''}
+    <div class="tp-section">
+      <div class="tp-section-title">⏰ Follow-ups Due <span class="tp-count-badge">${fus.length}</span></div>
+      ${fus.length?fus.slice(0,6).map(f=>`
+        <div class="tp-item" data-act="open-today-item" data-type="followup" data-id="${f.id}" role="button" tabindex="0" title="Click to open follow-up: ${esc(subjectName(f))}">
+          <span class="tp-dot" style="background:var(--danger);color:var(--danger)"></span>
+          <div class="tp-text">
+            <span class="tp-title">${esc(subjectName(f))}</span>
+            <span class="tp-meta">${esc(f.purpose||'Follow-up')} · ${relD(f.due)}</span>
+          </div>
+          <span class="tp-arrow">›</span>
+        </div>`).join(''):`<div class="tp-empty">✨ All clear</div>`}
+    </div>
+    ${ann&&ann.messages.length?`<div class="tp-section">
+      <div class="tp-section-title">📣 Announcements</div>
+      ${ann.messages.slice(-3).reverse().map(m=>`
+        <div class="tp-item" data-act="open-today-item" data-type="announcement" role="button" tabindex="0" title="Click to view Community Announcements">
+          <span class="tp-dot" style="background:var(--sky);color:var(--sky)"></span>
+          <div class="tp-text">
+            <span class="tp-title">${esc(nameOf(m.from))}</span>
+            <span class="tp-meta">${esc(m.text).slice(0,60)}${m.text.length>60?'…':''}</span>
+          </div>
+          <span class="tp-arrow">›</span>
+        </div>`).join('')}
+    </div>`:''}
+    <div class="tp-footer-quote">
+      <span class="tp-quote-text">“Always remember Krishna, never forget Him”</span>
+      <span class="tp-quote-sub">Srila Prabhupada</span>
+    </div>
+  `;
+  return `<aside class="today-panel ${collapsed?'collapsed':''} ${isPinned?'is-pinned':''}" id="todayPanel" role="complementary" aria-label="Today's Updates">
+    <div class="today-panel-header">
+      <div class="tp-header-top">
+        <div class="tp-header-title-wrap">
+          <span class="tp-live-dot" title="Live updates active"></span>
+          <span class="tp-header-title">Today's Updates</span>
+        </div>
+        <div class="tp-header-actions">
+          <button class="tp-pin-btn ${isPinned?'is-pinned':''}" data-act="toggle-today-pin" title="${isPinned?'Panel is pinned (stays put). Click to allow auto-close.':'Click to pin panel so it stays put.'}">
+            <span class="tp-pin-icon">${isPinned?'📌':'📍'}</span>
+            <span class="tp-pin-label">${isPinned?'Stay Put':'Auto-close'}</span>
+          </button>
+          <button class="today-panel-toggle" data-act="toggle-today-panel" title="Close Today's Updates">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="tp-header-date-bar">
+        <span class="tp-date-icon">📅</span>
+        <span class="tp-date-text"><b>${dayName}</b>, ${dateFormatted}</span>
+      </div>
+    </div>
+    <div class="today-panel-body" id="todayPanelBody">${panelContent}</div>
+  </aside>
+  <div class="today-panel-tab ${collapsed?'':'hidden'}" data-act="toggle-today-panel" title="Open Today's Updates">
+    <span style="font-size:12px">⚡</span>
+    <span>Today</span>
+  </div>`;
 }
 function mobileTodayDrawer(){
-  return '';
+  if(!APP.mobileTodayOpen)return '';
+  const t=iso(TODAY);
+  const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const dayName = dayNames[TODAY.getDay()];
+  const dateFormatted = fmtLong(t);
+  const svc=DB.activities.filter(a=>a.date===t&&(a.type==='Seva'||a.type==='Service'));
+  const cls=DB.activities.filter(a=>a.date===t&&a.type==='Class');
+  const evs=DB.activities.filter(a=>a.date===t&&a.type==='Event');
+  const fus=DB.followups.filter(f=>f.status==='Pending'&&f.due<=t);
+  function tpMobileItems(items,color,type){
+    if(!items.length)return `<div class="tp-empty" style="padding:8px">None today</div>`;
+    return items.slice(0,5).map(a=>`
+      <div class="tp-item" data-act="open-today-item" data-type="${type}" data-id="${a.id}">
+        <span class="tp-dot" style="background:${color};color:${color}"></span>
+        <div class="tp-text">
+          <span class="tp-title">${esc(a.name)}</span>
+          <span class="tp-meta">${a.start||''} · ${esc(a.location||'BACE')}</span>
+        </div>
+        ${a.start?`<span class="tp-time">${a.start}</span>`:''}
+      </div>
+    `).join('');
+  }
+  return `<div class="mobile-today-drawer">
+    <div class="mobile-today-scrim" data-act="close-mobile-today"></div>
+    <div class="mobile-today-sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
+        <div>
+          <h3 style="margin:0">Today's Updates</h3>
+          <div style="font-size:12px;color:var(--saffron-dark);font-weight:600;margin-top:2px">📅 ${dayName}, ${dateFormatted}</div>
+        </div>
+        <button class="icon-btn" data-act="close-mobile-today" style="border:none">${ic('x')}</button>
+      </div>
+      <div class="sheet-body">
+        <div class="tp-section"><div class="tp-section-title">⚡ Events <span class="tp-count-badge">${evs.length}</span></div>${tpMobileItems(evs,'var(--mustard)','event')}</div>
+        <div class="tp-section"><div class="tp-section-title">📖 Classes <span class="tp-count-badge">${cls.length}</span></div>${tpMobileItems(cls,'var(--indigo)','class')}</div>
+        <div class="tp-section"><div class="tp-section-title">🛕 Seva <span class="tp-count-badge">${svc.length}</span></div>${tpMobileItems(svc,'var(--saffron)','seva')}</div>
+        <div class="tp-section"><div class="tp-section-title">⏰ Follow-ups Due <span class="tp-count-badge">${fus.length}</span></div>${fus.length?fus.slice(0,5).map(f=>`
+          <div class="tp-item" data-act="open-today-item" data-type="followup" data-id="${f.id}">
+            <span class="tp-dot" style="background:var(--danger)"></span>
+            <div class="tp-text"><span class="tp-title">${esc(subjectName(f))}</span><span class="tp-meta">${esc(f.purpose||'')}</span></div>
+          </div>`).join(''):`<div class="tp-empty" style="padding:8px">All clear</div>`}</div>
+      </div>
+    </div>
+  </div>`;
 }
-const CRUMBS={'':'Dashboard',devotees:'Devotees',devotee:'Devotee',org:'Organisation',mgmt:'BACE Management',
+const CRUMBS={'':'Dashboard',today:'Today',devotees:'Devotees',devotee:'Devotee',org:'Organisation',mgmt:'BACE Management',
  depts:'Departments',dept:'Department',assign:'Assign Seva',attendance:'BACE Pillars','dept-reports':'Department reports',
  inventory:'Inventory & BBT',sops:'SOPs & standards',actions:'Action items',preaching:'BACE Preaching',batches:'Batch management',
  batch:'Batch',contacts:'Contacts & pipeline',followups:'Follow-ups',classes:'Classes & events','batch-attendance':'Batch attendance',
@@ -5242,7 +5382,38 @@ const growthPoints=()=>{
    TODAY COMMAND CENTRE
    ========================================================================= */
 function viewToday(){
-  return viewDashboard();
+  const t=iso(TODAY),s=STATS();
+  const svc=DB.activities.filter(a=>a.date===t&&(a.type==='Seva'||a.type==='Service'));
+  const cls=DB.activities.filter(a=>a.date===t&&a.type==='Class');
+  const evs=DB.activities.filter(a=>a.date===t&&a.type==='Event');
+  const mine=DB.assignments.filter(a=>a.devotee===APP.user.devotee).map(a=>({a,act:act(a.activity)})).filter(x=>x.act&&x.act.date===t);
+  const fus=DB.followups.filter(f=>f.status==='Pending'&&f.due<=t);
+  const ann=DB.threads.find(x=>x.type==='community');
+  return hero()+head('⚡ Today','What needs my attention today',fmtLong(t),
+    `<button class="btn" data-act="go" data-r="#/calendar">📅 Calendar</button><button class="btn pri" data-act="open-assign" data-type="Seva">📋 Assign seva</button>`)+
+  `<div class="grid g-2-1" style="margin-bottom:15px">
+    <div style="display:flex;flex-direction:column;gap:15px">
+      ${section('🙏 My seva and classes today',mine.length?`<div class="list">${mine.map(({a,act:x})=>`
+        <div class="li"><span class="badge b-saffron">${esc(x.type)}</span>
+        <span class="grow"><span class="t">${esc(x.name)}</span><span class="d">${x.start||''}${x.end?'–'+x.end:''} · ${esc(x.location||scopeName(x))}</span></span>
+        ${sbadge(a.state)}${['Completed','Completed by Another'].includes(a.state)?'':`<button class="btn sm pri" data-act="open-complete" data-id="${a.id}">I have done it ✓</button>`}</div>`).join('')}</div>`
+        :emptyState('No seva assigned to you today','Enjoy the sadhana. Your next assignment will appear here.','','calm'))}
+      ${section('🛕 Community seva today',svc.length?`<div class="tbl-wrap">${actTable(svc)}</div>`:emptyState('No seva scheduled today','Nothing is on the roster for today.','<button class="btn pri" data-act="open-assign" data-type="Seva">Assign seva</button>'))}
+      ${section('📖 Classes and events today',(cls.length+evs.length)?`<div class="list">${[...cls,...evs].map(x=>`
+        <a class="li click" href="#/activity/${x.id}"><span class="badge ${x.type==='Class'?'b-indigo':'b-mustard'}">${x.type==='Class'?'📖':'✨'} ${esc(x.type)}</span>
+        <span class="grow"><span class="t">${esc(x.name)}</span><span class="d">${esc(scopeName(x))} · ${x.start}–${x.end} · ${esc(x.location)}</span></span>${sbadge(x.status)}</a>`).join('')}</div>`
+        :emptyState('No classes or events today','The calendar is clear.',''))}
+    </div>
+    <div style="display:flex;flex-direction:column;gap:15px">
+      ${needsAttention()}
+      ${section('⏰ Follow-ups due or overdue',fus.length?`<div class="list">${fus.slice(0,7).map(f=>`
+        <div class="li">${av(subjectName(f))}<span class="grow"><span class="t">${esc(subjectName(f))}</span><span class="d">${esc(f.purpose)} · ${relD(f.due)}</span></span>
+        <button class="btn sm" data-act="complete-fu" data-id="${f.id}">Done</button></div>`).join('')}</div>`
+        :emptyState('No follow-ups pending','Every conversation is up to date.','','calm'))}
+      ${section('📣 Announcements',`<div class="list">${(ann?ann.messages:[]).slice(-3).reverse().map(m=>`
+        <div class="li">${av(nameOf(m.from))}<span class="grow"><span class="t">${esc(nameOf(m.from))}</span><span class="d">${esc(m.text)}</span></span></div>`).join('')}</div>`,
+        `<a class="btn sm" href="#/messages">Open</a>`)}
+    </div></div>`;
 }
 
 /* =========================================================================
@@ -5250,18 +5421,18 @@ function viewToday(){
    ========================================================================= */
 function viewDashboard(){
   const r=APP.user.role,s=STATS();
-  const title={area_leader:'Community blocks',coordinator:'Operations overview',internal_manager:'Management overview',
+  const title={area_leader:'Community overview',coordinator:'Operations overview',internal_manager:'Management overview',
     preaching_manager:'Preaching overview',care_manager:'Devotee care overview',dept_head:'My department',
     preaching_coord:'My batch',facilitator:'My devotees',devotee:'My BACE',admin:'System overview'}[r];
-  const roleEyebrow = r === 'area_leader' ? (ROLES[r].emoji + ' ISKCON BACE') : (ROLES[r].emoji + ' ' + ROLES[r].name);
-  const hd=hero()+head(roleEyebrow,title,ROLES[r].scope,
-    `<span class="demo-flag">Sample data</span>`);
+  const hd=hero()+head(ROLES[r].emoji+' '+ROLES[r].name,title,ROLES[r].scope,
+    `<span class="demo-flag">Sample data</span><button class="btn" data-act="go" data-r="#/today">⚡ Today</button><button class="btn pri" data-act="go" data-r="#/reports">📊 Reports</button>`);
   if(r==='area_leader')return hd+`${pillarCards()}<div style="height:15px"></div>
      <div class="grid g2">${insightsCard()}${dashboardCalendarWidget()}</div>
      <div style="height:15px"></div>
      <div class="grid g2">${section('Organisation',`<div class="card-b"><p class="tiny" style="margin-top:0">Area Leader → Overall Coordinator → three managers → department heads, preaching coordinators and facilitators.</p>
         <a class="btn" href="#/org">${ic('layers')}View hierarchy</a></div>`)}
       ${section('Quick links',`<div style="display:flex;flex-wrap:wrap;gap:8px;padding:16px 18px">
+        <a class="btn" href="#/today">⚡ Today</a>
         <a class="btn" href="#/devotees">👥 Devotees</a>
         <a class="btn" href="#/depts">🏢 Departments</a>
         <a class="btn" href="#/batches">🗂 Batches</a>
@@ -5272,11 +5443,11 @@ function viewDashboard(){
 
   if(r==='coordinator')return hd+`<div class="grid g-1-2" style="margin-bottom:15px">${needsAttention()}
     ${section('Today across the community',`<div class="grid g4" style="padding:16px 18px">
-      ${stat('Seva today',DB.activities.filter(x=>x.date===iso(TODAY)&&x.type==='Seva').length,'scheduled',{em:'🪔',act:'go',r:'#/assign'})}
+      ${stat('Seva today',DB.activities.filter(x=>x.date===iso(TODAY)&&x.type==='Seva').length,'scheduled',{em:'🪔',act:'go',r:'#/today'})}
       ${stat('Follow-ups due',s.fuToday+s.careToday,'preaching + care',{em:'⏰',act:'go',r:'#/followups'})}
       ${stat('Action items due',DB.tasks.filter(t=>t.due===iso(TODAY)&&t.status!=='Completed').length,'open',{em:'🎯',act:'go',r:'#/actions'})}
       ${stat('Events',DB.activities.filter(e=>e.date===iso(TODAY)&&e.type==='Event').length,'on the calendar',{em:'✨',act:'go',r:'#/calendar'})}</div>`,
-      `<a class="btn sm" href="#/assign">Assign centre</a>`)}</div>
+      `<a class="btn sm" href="#/today">Today centre</a>`)}</div>
     ${pillarCards()}<div style="height:15px"></div>
     <div class="grid g-2-1">
      ${section('Department completion rate',`<div class="card-b">${barChart(activeDepts().slice(0,9).map(d=>{const m=deptMetrics(d.id);
@@ -5353,7 +5524,7 @@ function viewDashboard(){
     const up=mine.filter(o=>o.x.date>=iso(TODAY)).sort((a,b)=>a.x.date<b.x.date?-1:1);
     return hd+`<div class="grid g4" style="margin-bottom:15px">
       ${stat('My attendance',attFor(me.id)+'%','across all categories',{em:'✅',r:'#/attendance'})}
-      ${stat('My upcoming seva',up.length,'assignments ahead',{em:'🪔',r:'#/assign'})}
+      ${stat('My upcoming seva',up.length,'assignments ahead',{em:'🪔',r:'#/today'})}
       ${stat('My rounds',me.sadhana.rounds,'daily commitment',{em:'📿',r:'#/sadhana'})}
       ${stat('My action items',DB.tasks.filter(t=>t.responsible===me.id&&t.status!=='Completed').length,'open',{em:'🎯',act:'go',r:'#/actions'})}</div>
       <div class="grid g-2-1">
@@ -6326,7 +6497,7 @@ function deptDashboardBody(dp){
     ${stat('Volunteers',m.volunteers,`${DB.devotees.filter(d=>d.dept===dp.id&&d.status==='Active').length} active`,{em:'🛠',r:'#/assign'})}
     ${stat('Completion',m.completion+'%','completed vs missed',{em:'📈',act:'drill-dept',arg:dp.id})}
     ${stat('Attendance',m.attendance+'%',`${m.attRecords} records`,{em:'✅',r:'#/attendance'})}
-    ${stat('Today',today.length,'activities scheduled',{em:'📅',r:'#/calendar'})}
+    ${stat('Today',today.length,'activities scheduled',{em:'📅',r:'#/today'})}
     ${stat('Pending actions',actions.length,actions.filter(a=>a.due<iso(TODAY)).length+' overdue',{em:'🎯',tint:actions.length>3,r:'#/actions'})}
     ${stat('Budget used',m.util+'%',money(dp.budget.spent)+' of '+money(dp.budget.allocated),{em:'🧾',r:'#/reports'})}</div>
    ${teamSection({incharge:dp.incharge,coordinator:dp.head,volunteers:(dp.volunteers||[]),canEdit:ownsDept(dp.id),editAct:'edit-dept',editId:dp.id})}
@@ -19473,7 +19644,7 @@ function routeView(){
     const guard=(mod,fn)=>can(mod)?fn():denied();
     switch(seg){
       case '':return viewDashboard();
-      case 'today':return viewDashboard();
+      case 'today':return viewToday();
       case 'devotees':return guard('directory',viewDevotees);
       case 'devotee':return viewDevotee(arg);
       case 'org':return viewOrg();
@@ -19519,7 +19690,7 @@ function routeView(){
           APP.sideDevFilterBatch = a.batch || '';
           APP.modal={kind:'activity',id:arg};
           if(a.type==='Class'||a.type==='Event')return can('preaching')?viewClasses():viewCalendar();
-          if(a.type==='Seva'||a.type==='Service')return can('assign')?viewAssign():viewDashboard();
+          if(a.type==='Seva'||a.type==='Service')return can('assign')?viewAssign():viewToday();
           if(a.cat==='Meetings')return viewMeetings();
         }
         return can('assign')?viewAssign():viewDashboard();
@@ -19577,20 +19748,27 @@ function render(){
 
   applyAccent(APP.route);
   const body=routeView();
+  const panelCollapsed=!APP.todayPanelOpen;
+  const isPinned=!!APP.todayPinned;
+  const layoutClass=`app-layout ${panelCollapsed || !isPinned ? 'panel-collapsed' : 'panel-pinned'}`;
   const isRouteChange = APP.lastRenderedRoute !== APP.route;
   APP.lastRenderedRoute = APP.route;
   const viewClass = isRouteChange ? 'view route-enter' : 'view';
   const breadcrumb=renderBreadcrumbs();
   app.innerHTML=`${appHeader()}
-    <div class="app-layout panel-collapsed">
+    <div class="${layoutClass}">
       <div class="main"><div class="${viewClass}">${breadcrumb}${body}</div></div>
+      ${globalTodayPanel()}
     </div>
-    ${botnav()}${fab()}${modalHTML()}`;
+    ${botnav()}${fab()}${modalHTML()}${mobileTodayDrawer()}
+    <button class="mobile-today-btn" data-act="open-mobile-today">⚡ Today's Updates</button>`;
   const newDrawerBody = document.querySelector('.drawer .modal-b');
   if (newDrawerBody && prevDrawerScroll > 0) {
     newDrawerBody.scrollTop = prevDrawerScroll;
   }
   const cb=document.getElementById('chatbody');if(cb)cb.scrollTop=cb.scrollHeight;
+  // Auto-collapse today panel on narrow screens
+  if(window.innerWidth<=900&&APP.todayPanelOpen){APP.todayPanelOpen=false}
 }
 function go(r, keepModal = false){
   APP.route=r;
@@ -19598,6 +19776,8 @@ function go(r, keepModal = false){
   APP.mobileDrawerOpen=false;
   APP.mobileSearchOpen=false;
   APP.mobileNavOpen=false;
+  APP.mobileTodayOpen=false;
+  if(!APP.todayPinned){setTodayPanelOpen(false);}
   if(keepModal){APP.keepModalOnNextRoute=true;}
   if(location.hash!==r){
     location.hash=r;
@@ -20235,7 +20415,7 @@ document.addEventListener('click',e=>{
       const a = act(itemId);
       APP.sideDevFilterBatch = a ? (a.batch || '') : '';
       APP.modal = {kind: 'activity', id: itemId};
-      const target = can('assign') ? '#/assign' : '#/';
+      const target = can('assign') ? '#/assign' : '#/today';
       go(target, true);
     } else if(itemType === 'meeting'){
       APP.modal = {kind: 'activity', id: itemId};
