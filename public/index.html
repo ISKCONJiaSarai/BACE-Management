@@ -852,18 +852,35 @@ input,select,textarea{font-family:inherit;font-size:14px;color:var(--ink);backgr
 }
 @keyframes subtleFloat{0%{transform:translateY(0) rotate(0deg)}100%{transform:translateY(-8px) rotate(2deg)}}
 @media(max-width:720px){.hero .art{width:190px;height:190px;right:-20px;top:-20px;opacity:.15}}
-.hero .hstats{display:flex;gap:12px;flex-wrap:wrap;margin-top:22px;position:relative;z-index:2}
+.hero .hstats{
+  display:grid;grid-template-columns:repeat(5, minmax(0, 1fr));gap:12px;margin-top:22px;position:relative;z-index:2
+}
+@media(max-width:1150px){
+  .hero .hstats{grid-template-columns:repeat(auto-fit, minmax(150px, 1fr))}
+}
 .hero .hstat{
-  background:rgba(255,255,255,.12);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
-  border:1px solid rgba(255,255,255,.22);border-radius:14px;padding:11px 18px;min-width:110px;
-  cursor:pointer;transition:all .2s cubic-bezier(0.16,1,0.3,1);box-shadow:0 4px 12px rgba(0,0,0,0.12);
+  background:rgba(255,255,255,.12);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  border:1px solid rgba(255,255,255,.24);border-radius:14px;padding:12px 16px;min-width:0;
+  cursor:pointer;transition:all .2s cubic-bezier(0.16,1,0.3,1);box-shadow:0 4px 14px rgba(0,0,0,0.12);
+  display:flex;flex-direction:column;justify-content:space-between;
 }
 .hero .hstat:hover{
   transform:translateY(-3px) scale(1.02);background:rgba(255,255,255,.22);
-  box-shadow:0 8px 20px rgba(0,0,0,0.25);border-color:rgba(255,255,255,0.4);
+  box-shadow:0 8px 22px rgba(0,0,0,0.25);border-color:rgba(255,255,255,0.45);
 }
-.hero .hstat b{display:block;font-family:var(--f-head);font-size:26px;color:#FFF;line-height:1.15;font-weight:800}
-.hero .hstat span{font-size:11.5px;color:#FEF08A;font-weight:600;letter-spacing:.02em}
+.hero .hstat .hstat-lbl{
+  font-size:12px;color:#FEF08A;font-weight:600;letter-spacing:.02em;
+  display:flex;align-items:center;gap:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.hero .hstat .hstat-lbl span{font-size:14px}
+.hero .hstat b{
+  display:block;font-family:var(--f-head);font-size:26px;color:#FFF;line-height:1.15;
+  font-weight:800;margin:3px 0 2px 0;letter-spacing:-0.01em;
+}
+.hero .hstat .hstat-foot{
+  font-size:11px;color:rgba(255,255,255,0.85);font-weight:500;line-height:1.25;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
 @media(max-width:720px){.hero{padding:22px 18px}.hero h1{font-size:24px}.hero .quote{font-size:18px}}
 
 /* ---------- page header ---------- */
@@ -2119,6 +2136,8 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
   }
   .hero .hstat b{font-size:20px!important}
   .hero .hstat span{font-size:11px!important}
+  .hero .hstat .hstat-lbl{font-size:11px!important}
+  .hero .hstat .hstat-foot{font-size:10px!important}
   .hero .hstats > .hstat:last-child:nth-child(odd){
     grid-column:1 / -1!important;
   }
@@ -5135,7 +5154,6 @@ const HERO_QUOTES=[
 ];
 function hero(){
   const s=STATS(),me=dv(APP.user.devotee);
-  const mine=myToday();
   const displayName = me ? me.name.split(' ')[0] : (APP.user && APP.user.name ? APP.user.name.split(' ')[0] : 'Devotee');
   const quoteIdx = Math.abs(iso(TODAY).split('').reduce((acc,c)=>acc+c.charCodeAt(0),0)) % HERO_QUOTES.length;
   const dayQuote = HERO_QUOTES[quoteIdx];
@@ -5145,11 +5163,31 @@ function hero(){
    <p>${esc(ROLES[APP.user.role].name)} · ${fmtLong(iso(TODAY))}</p>
    <div class="quote"><span class="quote-script">${dayQuote}</span></div>
    <div class="hstats">
-    <div class="hstat" data-act="go" data-r="#/today"><b>${mine.acts.length}</b><span>My seva today</span></div>
-    <div class="hstat" data-act="go" data-r="#/classes"><b>${DB.activities.filter(a=>a.date===iso(TODAY)&&a.type==='Class').length}</b><span>Classes today</span></div>
-    <div class="hstat" data-act="go" data-r="#/followups"><b>${s.fuToday+s.careToday}</b><span>Follow-ups due</span></div>
-    <div class="hstat" data-act="go" data-r="#/calendar"><b>${DB.activities.filter(a=>a.date===iso(TODAY)&&a.type==='Event').length}</b><span>Events today</span></div>
-    <div class="hstat" data-act="go" data-r="#/attendance"><b>${s.svcAtt}%</b><span>Seva attendance</span></div>
+    <div class="hstat" data-act="go" data-r="#/devotees">
+      <div class="hstat-lbl"><span>👥</span> Total devotees</div>
+      <b>${s.total}</b>
+      <div class="hstat-foot">${s.active} active · ${s.inactive} inactive</div>
+    </div>
+    <div class="hstat" data-act="go" data-r="#/devotees">
+      <div class="hstat-lbl"><span>🌱</span> New this month</div>
+      <b>${s.neu}</b>
+      <div class="hstat-foot">joined in the last 30 days</div>
+    </div>
+    <div class="hstat" data-act="go" data-r="#/assign">
+      <div class="hstat-lbl"><span>🛠</span> Active volunteers</div>
+      <b>${s.volunteers}</b>
+      <div class="hstat-foot">across ${s.depts} departments</div>
+    </div>
+    <div class="hstat" data-act="go" data-r="#/attendance">
+      <div class="hstat-lbl"><span>✅</span> Seva attendance</div>
+      <b>${s.svcAtt}%</b>
+      <div class="hstat-foot">last 30 days</div>
+    </div>
+    <div class="hstat" data-act="go" data-r="#/contacts">
+      <div class="hstat-lbl"><span>📖</span> Preaching contacts</div>
+      <b>${s.contacts}</b>
+      <div class="hstat-foot">${s.newContacts} new this month</div>
+    </div>
    </div></div>`;
 }
 function myToday(){
@@ -5345,14 +5383,7 @@ function viewDashboard(){
     preaching_coord:'My batch',facilitator:'My devotees',devotee:'My BACE',admin:'System overview'}[r];
   const hd=hero()+head(ROLES[r].emoji+' '+ROLES[r].name,title,ROLES[r].scope,
     `<span class="demo-flag">Sample data</span><button class="btn" data-act="go" data-r="#/today">⚡ Today</button><button class="btn pri" data-act="go" data-r="#/reports">📊 Reports</button>`);
-  const common=`<div class="grid g5" style="margin-bottom:15px">
-    ${stat('Total devotees',s.total,`${s.active} active · ${s.inactive} inactive`,{em:'👥',act:'go',r:'#/devotees'})}
-    ${stat('New this month',s.neu,'joined in the last 30 days',{em:'🌱',r:'#/devotees'})}
-    ${stat('Active volunteers',s.volunteers,`across ${s.depts} departments`,{em:'🛠',r:'#/assign'})}
-    ${stat('Seva attendance',s.svcAtt+'%','last 30 days',{em:'✅',r:'#/attendance'})}
-    ${stat('Preaching contacts',s.contacts,`${s.newContacts} new this month`,{em:'📖',tint:1,act:'go',r:'#/contacts'})}</div>`;
-
-  if(r==='area_leader')return hd+common+`<div class="grid g-2-1" style="margin-bottom:15px">
+  if(r==='area_leader')return hd+`<div class="grid g-2-1" style="margin-bottom:15px">
      ${section('Community growth',`<div class="card-b">${lineChart(growthPoints())}</div>`,(()=>{
   const curMonthNew = DB.devotees.filter(d => {
     const dt = parseDate(d.joined);
@@ -5376,7 +5407,7 @@ function viewDashboard(){
         <a class="btn" href="#/reports">📊 Reports</a>
       </div>`)}</div>`;
 
-  if(r==='coordinator')return hd+common+`<div class="grid g-1-2" style="margin-bottom:15px">${needsAttention()}
+  if(r==='coordinator')return hd+`<div class="grid g-1-2" style="margin-bottom:15px">${needsAttention()}
     ${section('Today across the community',`<div class="grid g4" style="padding:16px 18px">
       ${stat('Seva today',DB.activities.filter(x=>x.date===iso(TODAY)&&x.type==='Seva').length,'scheduled',{em:'🪔',act:'go',r:'#/today'})}
       ${stat('Follow-ups due',s.fuToday+s.careToday,'preaching + care',{em:'⏰',act:'go',r:'#/followups'})}
