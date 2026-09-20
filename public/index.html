@@ -3706,8 +3706,7 @@ const PILLARS=[
    {t:'Contacts & pipeline',em:'🌱',r:'#/contacts',m:'preaching'},
    {t:'Follow-ups',em:'⏰',r:'#/followups',m:'preaching',badge:'fuOverdue'},
    {t:'Classes & events',em:'✨',r:'#/classes',m:'preaching'},
-   {t:'Attendance',em:'✅',r:'#/batch-attendance',m:'preaching'},
-   {t:'Reports & analytics',em:'📈',r:'#/preaching-reports',m:'reports'}]},
+   {t:'Attendance',em:'✅',r:'#/batch-attendance',m:'preaching'}]},
  {key:'care',t:'Devotee Care',em:'❤️',pill:'var(--green)',m:'care',items:[
    {t:'Care dashboard',em:'📊',r:'#/care',m:'care'},
    {sub:'Emotional care'},
@@ -3787,8 +3786,7 @@ function appHeader(){
       {t:'Contacts & Pipeline',em:'🌱',r:'#/contacts',m:'preaching'},
       {t:'Follow-ups',em:'⏰',r:'#/followups',m:'preaching'},
       {t:'Classes & Events',em:'✨',r:'#/classes',m:'preaching'},
-      {t:'Batch Attendance',em:'✅',r:'#/batch-attendance',m:'preaching'},
-      {t:'Reports & Analytics',em:'📈',r:'#/preaching-reports',m:'reports'}
+      {t:'Batch Attendance',em:'✅',r:'#/batch-attendance',m:'preaching'}
     ]},
     {t:'Devotee Care',r:'#/care',m:'care',children:[
       {t:'Care Dashboard',em:'📊',r:'#/care',m:'care'},
@@ -3810,7 +3808,7 @@ function appHeader(){
   const route=APP.route.replace(/^#\/?/,'').split('/')[0];
   const cleanRoute=APP.route.replace(/^#\/?/,'');
   const mgmtRoutes=['mgmt','depts','dept','assign','attendance','dept-reports','inventory','sops','actions'];
-  const preachRoutes=['preaching','batches','batch','contacts','followups','classes','batch-attendance','preaching-reports'];
+  const preachRoutes=['preaching','batches','batch','contacts','followups','classes','batch-attendance'];
   const careRoutes=['care','friends','groups','group','swabhav','sadhana','facilitators','spiritual-classes','camps','temple-visits','meetings','care-followups','care-reports'];
   function isActive(r){
     const seg=r.replace(/^#\//,'');
@@ -3878,7 +3876,7 @@ function appHeader(){
 function mobileNavDropdown(){
   const route=APP.route.replace(/^#\/?/,'').split('/')[0];
   const mgmtRoutes=['mgmt','depts','dept','assign','attendance','dept-reports','inventory','sops','actions'];
-  const preachRoutes=['preaching','batches','batch','contacts','followups','classes','batch-attendance','preaching-reports'];
+  const preachRoutes=['preaching','batches','batch','contacts','followups','classes','batch-attendance'];
   const careRoutes=['care','friends','groups','group','swabhav','sadhana','facilitators','spiritual-classes','camps','temple-visits','meetings','care-followups','care-reports'];
   const mainItems=[
     {t:'Dashboard',em:'🏠',r:'#/',on:route===''},
@@ -3901,7 +3899,6 @@ function mobileNavDropdown(){
       {t:'Follow-ups',em:'⏰',r:'#/followups',m:'preaching'},
       {t:'Classes & Events',em:'✨',r:'#/classes',m:'preaching'},
       {t:'Attendance',em:'✅',r:'#/batch-attendance',m:'preaching'},
-      {t:'Reports',em:'📈',r:'#/preaching-reports',m:'reports'},
     ]},
     {title:'Devotee Care',items:[
       {t:'Care Dashboard',em:'📊',r:'#/care',m:'care'},
@@ -4727,7 +4724,7 @@ function insightsCard(){
     low?[`📉`,`${low.d.name} has the lowest completion rate this month at ${low.m.completion}%.`,'#/dept/'+low.d.id]:null,
     [`🌱`,`${s.newContacts} new contacts were recorded in the last 30 days.`,'#/contacts'],
     noService?[`🎯`,`${noService} devotees have no active seva allocation.`,'#/swabhav']:null,
-    readyL1?[`🎓`,`${readyL1} Level 1 devotees may be ready for a progression review.`,'#/preaching-reports']:null,
+    readyL1?[`🎓`,`${readyL1} Level 1 devotees may be ready for a progression review.`,'#/batches']:null,
     s.careWeek?[`❤️`,`${s.careWeek} care follow-ups are due this week.`,'#/care-followups']:null
   ].filter(Boolean);
   return section('✨ What the data is saying',`<div class="list">${items.map(([em,t,r])=>`<a class="insight" href="${r}"><span class="ic">${em}</span><span>${esc(t)}</span></a>`).join('')}</div>`,
@@ -4965,7 +4962,7 @@ function viewDashboard(){
      ${stat('Regular participants',s.regulars,'attending consistently',{em:'📖',r:'#/classes'})}
      ${stat('In batches',s.lvl.reduce((a,b)=>a+b,0),`${s.lvl.join(' / ')} at L1/L2/L3`,{em:'🎓',act:'go',r:'#/batches'})}</div>
      <div class="grid g-2-1" style="margin-bottom:15px">
-      ${section('Preaching funnel',`<div class="card-b">${funnelRows()}<div class="tiny" style="margin-top:10px">Click any stage to open that list</div></div>`,`<a class="btn sm" href="#/preaching-reports">Analytics</a>`)}
+      ${section('Preaching funnel',`<div class="card-b">${funnelRows()}<div class="tiny" style="margin-top:10px">Click any stage to open that list</div></div>`,`<a class="btn sm" href="#/reports">Reports & analytics</a>`)}
       ${section('Follow-up load',`<div class="list">
         ${attnRow('var(--danger)',s.fuOverdue,'overdue','#/followups')}${attnRow('var(--amber)',s.fuToday,'due today','#/followups')}
         ${attnRow('var(--mustard)',s.fuTomorrow,'due tomorrow','#/followups')}${attnRow('var(--green)',s.fuUpcoming,'upcoming','#/followups')}</div>`)}</div>
@@ -14928,7 +14925,7 @@ function batchDashboardBody(b){
     ${stat('Classes',m.classes.length,'in the record',{em:'📖',r:'#/classes'})}
     ${stat('Events',events.length,'upcoming programmes',{em:'✨',r:'#/classes'})}
     ${stat('Follow-ups',m.fus.pending,`${m.fus.overdue} overdue`,{em:'⏰',tint:m.fus.overdue>0,act:'go',r:'#/followups'})}
-    ${stat('Budget used',m.util+'%',money(b.budget.spent)+' of '+money(b.budget.allocated),{em:'🧾',r:'#/preaching-reports'})}</div>
+    ${stat('Budget used',m.util+'%',money(b.budget.spent)+' of '+money(b.budget.allocated),{em:'🧾',r:'#/reports'})}</div>
    ${teamSection({incharge:b.incharge,coordinator:b.coordinator,facilitators:facIds,volunteers:(b.volunteers||[]),canEdit:ownsBatch(b.id),editAct:'edit-batch',editId:b.id})}
    <div class="grid g-2-1" style="margin-bottom:15px">
     <div style="display:flex;flex-direction:column;gap:15px">
@@ -15161,7 +15158,7 @@ function batchDashboardBody(b){
         <div class="li"><a class="btn sm block" href="#/messages" data-act="open-thread-go" data-id="${thread.id}">Open ${esc(b.name)} chat</a></div></div>`
         :emptyState('No chat yet','A group chat is created with the batch.','','chat'))}
       ${section('📄 Reports',`<div class="card-b"><button class="btn block" data-act="batch-report" data-id="${b.id}">${ic('doc')}Generate monthly report</button>
-        <button class="btn block" style="margin-top:8px" data-act="go" data-r="#/preaching-reports">All preaching reports</button></div>`)}
+        <button class="btn block" style="margin-top:8px" data-act="go" data-r="#/reports">All community reports</button></div>`)}
     </div></div>`;
 }
 function viewBatch(id){
@@ -15285,7 +15282,7 @@ function viewClasses(){
     ${stat('Classes',rows.filter(a=>a.type==='Class').length,'in this view',{em:'📖',act:'f',k:'cls',n:'type',v:'Class'})}
     ${stat('Events',rows.filter(a=>a.type==='Event').length,'special programmes',{em:'✨',act:'f',k:'cls',n:'type',v:'Event'})}
     ${stat('Expected attendance',rows.reduce((n,a)=>n+(a.expected||0),0),'across these programmes',{em:'👥',r:'#/batch-attendance'})}
-    ${stat('Budget',money(budget.sp),`of ${money(budget.al)} allocated`,{em:'🧾',r:'#/preaching-reports'})}</div>
+    ${stat('Budget',money(budget.sp),`of ${money(budget.al)} allocated`,{em:'🧾',r:'#/reports'})}</div>
    ${dataTable({id:'cls',exportName:'classes-events',cols:[
      {h:'Programme',c:a=>`<b>${typeEmoji(a.type)} ${esc(a.name)}</b><div class="tiny">${esc(a.location)}</div>`},
      {h:'Batch',c:a=>esc(a.batch?batch(a.batch).name:scopeName(a))},
@@ -19146,7 +19143,7 @@ function routeView(){
       case 'followups':return guard('preaching',viewFollowups);
       case 'classes':return guard('preaching',viewClasses);
       case 'batch-attendance':return guard('batch-attendance',viewBatchAttendance);
-      case 'preaching-reports':return guard('reports',viewPreachingReports);
+      case 'preaching-reports':return guard('reports',viewReports);
       case 'care':return guard('care',viewCare);
       case 'friends':return guard('care',viewFriends);
       case 'groups':return guard('care',viewGroups);
@@ -19971,7 +19968,7 @@ document.addEventListener('click',e=>{
     saveDevoteesToStorage();saveBatchesToStorage();
     logAudit('Batch members updated',batch(m.ctx.id).name+' now has '+m.selected.length+' members');
     toast('Members updated — previous batch kept in history');APP.modal='';render();break}
-  case 'batch-report':stop();go('#/preaching-reports');APP.filters.repBatch=id;render();break;
+  case 'batch-report':stop();go('#/reports');render();break;
   case 'rep-batch':break;
   case 'save-batch-narrative':{const b=batch(id);
     const ch=document.querySelector('[name=ch]')?.value,su=document.querySelector('[name=su]')?.value,np=document.querySelector('[name=np]')?.value;
