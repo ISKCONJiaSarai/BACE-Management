@@ -82,6 +82,8 @@ app.use('/api/followups', require('./routes/followupRoutes'));
 app.use('/api/expenses', require('./routes/expenseRoutes'));
 app.use('/api/camps', require('./routes/campRoutes'));
 app.use('/api/outings', require('./routes/outingRoutes'));
+app.use('/api/nectar', require('./routes/nectarRoutes'));
+
 
 // Error handling middleware
 app.use((err, req, res, next) => {
