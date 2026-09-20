@@ -5848,6 +5848,14 @@ function pillarCardMgmt(){
           </div>
           <span class="pillar-item-arrow">›</span>
         </a>
+        <a class="pillar-item" href="#/attendance">
+          <span class="pillar-item-icon">🌐</span>
+          <div class="pillar-item-info">
+            <div class="pillar-item-title">BACE pillars</div>
+            <div class="pillar-item-sub">Foundation to healthy growth</div>
+          </div>
+          <span class="pillar-item-arrow">›</span>
+        </a>
         <a class="pillar-item" href="#/depts">
           <span class="pillar-item-icon">🏛️</span>
           <div class="pillar-item-info">
@@ -5861,14 +5869,6 @@ function pillarCardMgmt(){
           <div class="pillar-item-info">
             <div class="pillar-item-title">Assign seva</div>
             <div class="pillar-item-sub">${s.scheduled} scheduled activities</div>
-          </div>
-          <span class="pillar-item-arrow">›</span>
-        </a>
-        <a class="pillar-item" href="#/attendance">
-          <span class="pillar-item-icon">🌐</span>
-          <div class="pillar-item-info">
-            <div class="pillar-item-title">BACE pillars</div>
-            <div class="pillar-item-sub">Structure &amp; leadership hierarchy</div>
           </div>
           <span class="pillar-item-arrow">›</span>
         </a>
@@ -15937,7 +15937,7 @@ function viewAttendance(){
   const tabs = ['Morning programme', 'Deity Department', 'Cleaning', 'Department Matrix', 'Accounts'];
   if (!tabs.includes(tab)) tab = 'Morning programme';
 
-  return head('🏢 BACE Pillars', 'Central Departments Hub', 'Morning sadhana punctuality, Deity & Cleaning rosters, Department Matrix, and Financial Accounts & Budgets')+
+  return head('🛕 BACE Pillars', 'Foundation to Healthy Growth', 'Morning program punctuality, Deity & Cleaning rosters, Department Matrix, and Financial Accounts & Budgets')+
    `<div class="tabs">${tabs.map(t => `<button class="${t===tab?'on':''}" data-act="tab" data-k="att" data-v="${t}">${t}</button>`).join('')}</div>`+
    (tab === 'Morning programme' ? morningProgramPanel()
    : tab === 'Deity Department' ? deityDepartmentPanel()
