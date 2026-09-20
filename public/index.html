@@ -284,7 +284,9 @@ input,select,textarea{font-family:inherit;font-size:14px;color:var(--ink);backgr
   animation:slideDown .22s cubic-bezier(.16,1,.3,1);
   max-height:calc(100vh - var(--header-h));overflow-y:auto;
 }
+.mobile-nav-dropdown.closing{animation:slideUp .18s cubic-bezier(0.4,0,1,1) forwards!important;pointer-events:none}
 @keyframes slideDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+@keyframes slideUp{to{opacity:0;transform:translateY(-8px)}}
 .mobile-nav-dropdown a{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;font-size:14px;font-weight:500;color:var(--ink-2)}
 .mobile-nav-dropdown a:hover,.mobile-nav-dropdown a.on{background:var(--accent-soft);color:var(--accent);font-weight:600}
 .mobile-nav-dropdown .mnav-section{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3);padding:12px 14px 4px}
@@ -592,12 +594,14 @@ input,select,textarea{font-family:inherit;font-size:14px;color:var(--ink);backgr
 .mobile-today-drawer{
   position:fixed;inset:0;z-index:200;display:flex;flex-direction:column;justify-content:flex-end;
 }
-.mobile-today-scrim{position:absolute;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+.mobile-today-scrim{position:absolute;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);animation:fade .22s ease-out}
 .mobile-today-sheet{
   position:relative;z-index:1;background:var(--surface);border-radius:20px 20px 0 0;
   max-height:80vh;display:flex;flex-direction:column;
   animation:sheetUp .25s cubic-bezier(.16,1,.3,1);
 }
+.mobile-today-drawer.closing .mobile-today-scrim{animation:fadeOut .18s ease-out forwards!important;pointer-events:none}
+.mobile-today-drawer.closing .mobile-today-sheet{animation:sheetDown .18s cubic-bezier(0.4,0,1,1) forwards!important}
 @keyframes sheetUp{from{transform:translateY(100%)}to{transform:none}}
 .mobile-today-sheet .sheet-handle{width:36px;height:4px;border-radius:2px;background:var(--line);margin:8px auto}
 .mobile-today-sheet .sheet-header{padding:8px 18px 12px;display:flex;align-items:center;justify-content:space-between}
@@ -794,9 +798,11 @@ input,select,textarea{font-family:inherit;font-size:14px;color:var(--ink);backgr
 .dot{position:absolute;top:4px;right:4px;min-width:15px;height:15px;padding:0 3px;border-radius:9px;background:var(--danger);color:#fff;font-size:9.5px;font-weight:700;line-height:15px;text-align:center;border:1.5px solid var(--surface)}
 .view{
   padding:22px 28px 60px;max-width:100%;width:100%;box-sizing:border-box;
-  animation:viewFadeIn .24s cubic-bezier(0.16,1,0.3,1);
 }
-@keyframes viewFadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.view.route-enter{
+  animation:viewFadeIn .26s cubic-bezier(0.16,1,0.3,1);
+}
+@keyframes viewFadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 
 /* ---------- mobile drawer, scrim & shell ---------- */
 .mobile-close-btn{display:none!important}
@@ -1121,23 +1127,40 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
 .scrim{
   position:fixed;inset:0;background:rgba(15,23,42,0.64);
   backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
-  z-index:1200;display:grid;place-items:center;padding:16px;animation:fade .18s ease-out;
+  z-index:1200;display:grid;place-items:center;padding:16px;animation:fade .22s cubic-bezier(0.16,1,0.3,1);
+}
+.scrim.closing{
+  animation:fadeOut .18s ease-out forwards!important;
+  pointer-events:none;
+}
+.scrim.closing .modal{
+  animation:popOut .18s cubic-bezier(0.4,0,1,1) forwards!important;
 }
 @keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes fadeOut{to{opacity:0}}
 .modal{
   background:var(--surface);border-radius:var(--r-xl);width:min(680px,100%);max-height:90vh;
-  display:flex;flex-direction:column;box-shadow:var(--sh-3);overflow:hidden;animation:pop .2s cubic-bezier(.2,.9,.3,1.1);
+  display:flex;flex-direction:column;box-shadow:var(--sh-3);overflow:hidden;animation:pop .24s cubic-bezier(0.16,1,0.3,1);
   border:1px solid var(--line);
 }
 .modal.wide{width:min(940px,100%)}
-@keyframes pop{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:none}}
+@keyframes pop{from{opacity:0;transform:translateY(16px) scale(.96)}to{opacity:1;transform:none}}
+@keyframes popOut{to{opacity:0;transform:translateY(12px) scale(.96)}}
 .modal-h{padding:18px 22px;border-bottom:1px solid var(--line-2);display:flex;align-items:center;gap:11px;font-family:var(--f-head);font-weight:700}
 .modal-b{padding:20px 22px;overflow:auto}
 .modal-f{padding:14px 22px calc(14px + env(safe-area-inset-bottom));border-top:1px solid var(--line-2);display:flex;gap:10px;justify-content:flex-end;background:var(--surface-2);flex-wrap:wrap}
-.drawer-wrap{position:fixed;inset:0;z-index:1200;background:rgba(15,23,42,0.64);backdrop-filter:blur(6px);display:flex;justify-content:flex-end}
-.drawer{background:var(--surface);width:min(460px,100%);height:100%;display:flex;flex-direction:column;box-shadow:var(--sh-3);animation:slide .22s cubic-bezier(0.16,1,0.3,1);border-left:1px solid var(--line)}
-@keyframes slide{from{transform:translateX(24px);opacity:.4}to{transform:none;opacity:1}}
-@media(max-width:620px){.modal{border-radius:24px 24px 0 0;max-height:94vh;width:100%}.scrim{padding:0;place-items:end center}}
+.drawer-wrap{position:fixed;inset:0;z-index:1200;background:rgba(15,23,42,0.64);backdrop-filter:blur(6px);display:flex;justify-content:flex-end;animation:fade .22s cubic-bezier(0.16,1,0.3,1)}
+.drawer-wrap.closing{animation:fadeOut .18s ease-out forwards!important;pointer-events:none}
+.drawer-wrap.closing .drawer{animation:slideOut .18s cubic-bezier(0.4,0,1,1) forwards!important}
+.drawer{background:var(--surface);width:min(460px,100%);height:100%;display:flex;flex-direction:column;box-shadow:var(--sh-3);animation:slide .26s cubic-bezier(0.16,1,0.3,1);border-left:1px solid var(--line)}
+@keyframes slide{from{transform:translateX(32px);opacity:0}to{transform:none;opacity:1}}
+@keyframes slideOut{to{transform:translateX(100%);opacity:0}}
+@media(max-width:620px){
+  .modal{border-radius:24px 24px 0 0;max-height:94vh;width:100%;animation:sheetUp .24s cubic-bezier(0.16,1,0.3,1)}
+  .scrim.closing .modal{animation:sheetDown .18s cubic-bezier(0.4,0,1,1) forwards!important}
+  .scrim{padding:0;place-items:end center}
+}
+@keyframes sheetDown{to{transform:translateY(100%)}}
 
 /* ---------- tabs ---------- */
 .tabs{display:flex;gap:4px;border-bottom:1.5px solid var(--line);overflow-x:auto;margin-bottom:18px}
@@ -3752,9 +3775,26 @@ const APP={user:null,route:'#/',search:'',fabOpen:false,modal:'',tab:{},filters:
   mobileTodayOpen:false,
   theme:localStorage.getItem('bace_theme')||(window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'),
   nav:{open:getSavedNavOpen()},sbScroll:0,chat:{thread:null},
-  range:{from:iso(dayOff(-30)),to:iso(dayOff(30))},crumbLeaf:null,draft:{}};
+  range:{from:iso(dayOff(-30)),to:iso(dayOff(30))},crumbLeaf:null,draft:{},lastRenderedRoute:null};
 // Apply theme immediately
 document.documentElement.setAttribute('data-theme',APP.theme);
+
+function setTodayPanelOpen(open){
+  APP.todayPanelOpen=open;
+  localStorage.setItem('bace_today_panel',open?'1':'0');
+  const panel=document.getElementById('todayPanel');
+  const tab=document.querySelector('.today-panel-tab');
+  const layout=document.querySelector('.app-layout');
+  if(panel && layout){
+    panel.classList.toggle('collapsed', !open);
+    if(tab) tab.classList.toggle('hidden', open);
+    const isPinned=!!APP.todayPinned;
+    layout.classList.toggle('panel-collapsed', !open || !isPinned);
+    layout.classList.toggle('panel-pinned', open && isPinned);
+  } else {
+    render();
+  }
+}
 
 const ICONS={
  home:'M3 10.5 12 3l9 7.5M5 9.5V21h14V9.5',people:'M16 20v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 10a4 4 0 1 0 0-8 4 4 0 0 0 0 8M22 20v-2a4 4 0 0 0-3-3.9M16 2.1a4 4 0 0 1 0 7.8',
@@ -19643,10 +19683,13 @@ function render(){
   const panelCollapsed=!APP.todayPanelOpen;
   const isPinned=!!APP.todayPinned;
   const layoutClass=`app-layout ${panelCollapsed || !isPinned ? 'panel-collapsed' : 'panel-pinned'}`;
+  const isRouteChange = APP.lastRenderedRoute !== APP.route;
+  APP.lastRenderedRoute = APP.route;
+  const viewClass = isRouteChange ? 'view route-enter' : 'view';
   const breadcrumb=renderBreadcrumbs();
   app.innerHTML=`${appHeader()}
     <div class="${layoutClass}">
-      <div class="main"><div class="view">${breadcrumb}${body}</div></div>
+      <div class="main"><div class="${viewClass}">${breadcrumb}${body}</div></div>
       ${globalTodayPanel()}
     </div>
     ${botnav()}${fab()}${modalHTML()}${mobileTodayDrawer()}
@@ -19666,11 +19709,18 @@ function go(r, keepModal = false){
   APP.mobileSearchOpen=false;
   APP.mobileNavOpen=false;
   APP.mobileTodayOpen=false;
-  if(!APP.todayPinned){APP.todayPanelOpen=false;}
+  if(!APP.todayPinned){setTodayPanelOpen(false);}
   if(keepModal){APP.keepModalOnNextRoute=true;}
-  if(location.hash!==r)location.hash=r;
-  else render();
-  window.scrollTo(0,0);
+  if(location.hash!==r){
+    location.hash=r;
+  } else {
+    if(document.startViewTransition){
+      document.startViewTransition(()=>render());
+    } else {
+      render();
+    }
+  }
+  window.scrollTo({top:0,behavior:'smooth'});
 }
 async function syncDevoteeToBackend(d, roleKey){
   const token = localStorage.getItem('bace_token');
@@ -19897,10 +19947,8 @@ document.addEventListener('click',e=>{
   if(APP.todayPanelOpen&&!APP.todayPinned){
     const isTodayPanelElement=e.target.closest('#todayPanel')||e.target.closest('.today-panel-tab')||e.target.closest('[data-act="toggle-today-panel"]')||e.target.closest('[data-act="toggle-today-pin"]');
     if(!isTodayPanelElement){
-      APP.todayPanelOpen=false;
-      localStorage.setItem('bace_today_panel','0');
+      setTodayPanelOpen(false);
       if(!e.target.closest('[data-act]')&&!e.target.closest('a[href^="#/"]')){
-        render();
         return;
       }
     }
@@ -20122,7 +20170,16 @@ document.addEventListener('click',e=>{
       APP.accountsState.editingExpense = null;
       APP.accountsState.editingBudgetDept = null;
     }
-    APP.modal='';APP.customModalHtml='';APP.fabOpen=false;render();break}
+    const modalWrap = document.querySelector('.scrim, .drawer-wrap');
+    if(modalWrap){
+      modalWrap.classList.add('closing');
+      setTimeout(()=>{
+        APP.modal='';APP.customModalHtml='';APP.fabOpen=false;render();
+      }, 170);
+    } else {
+      APP.modal='';APP.customModalHtml='';APP.fabOpen=false;render();
+    }
+    break}
   case 'toast':toast(t.dataset.msg||'Saved');break;
   case 'install-hint':toast('Use your browser menu → Add to Home Screen','📱');break;
   /* ---- openers ---- */
@@ -20200,31 +20257,67 @@ document.addEventListener('click',e=>{
     APP.theme=APP.theme==='dark'?'light':'dark';
     localStorage.setItem('bace_theme',APP.theme);
     document.documentElement.setAttribute('data-theme',APP.theme);
-    render();break}
+    const btn=document.querySelector('.theme-toggle');
+    if(btn) btn.innerHTML=APP.theme==='dark'?'☀️':'🌙';
+    break}
   case 'toggle-today-panel':{stop();
-    APP.todayPanelOpen=!APP.todayPanelOpen;
-    localStorage.setItem('bace_today_panel',APP.todayPanelOpen?'1':'0');
-    render();break}
+    setTodayPanelOpen(!APP.todayPanelOpen);
+    break}
   case 'toggle-today-pin':{stop();
     APP.todayPinned=!APP.todayPinned;
     localStorage.setItem('bace_today_pinned',APP.todayPinned?'1':'0');
     if(APP.todayPinned){
-      APP.todayPanelOpen=true;
-      localStorage.setItem('bace_today_panel','1');
+      setTodayPanelOpen(true);
       toast('📌 Today panel pinned — stays put');
     } else {
       toast('📍 Auto-close mode — clicks outside will close panel');
     }
-    render();break}
+    const pinBtn = document.querySelector('.tp-pin-btn');
+    if(pinBtn){
+      pinBtn.classList.toggle('is-pinned', APP.todayPinned);
+      pinBtn.title = APP.todayPinned ? 'Panel is pinned (stays put). Click to allow auto-close.' : 'Click to pin panel so it stays put.';
+      const icon = pinBtn.querySelector('.tp-pin-icon');
+      if(icon) icon.textContent = APP.todayPinned ? '📌' : '📍';
+      const lbl = pinBtn.querySelector('.tp-pin-label');
+      if(lbl) lbl.textContent = APP.todayPinned ? 'Stay Put' : 'Auto-close';
+    }
+    break}
   case 'close-today-panel':{stop();
-    APP.todayPanelOpen=false;
-    localStorage.setItem('bace_today_panel','0');
-    render();break}
-  case 'toggle-mobile-nav':{stop();APP.mobileNavOpen=!APP.mobileNavOpen;render();break}
-  case 'close-mobile-nav':{stop();APP.mobileNavOpen=false;render();break}
+    setTodayPanelOpen(false);
+    break}
+  case 'toggle-mobile-nav':{stop();
+    if(APP.mobileNavOpen){
+      const mn=document.querySelector('.mobile-nav-dropdown');
+      if(mn){
+        mn.classList.add('closing');
+        setTimeout(()=>{APP.mobileNavOpen=false;render();}, 170);
+      } else {
+        APP.mobileNavOpen=false;render();
+      }
+    } else {
+      APP.mobileNavOpen=true;render();
+    }
+    break}
+  case 'close-mobile-nav':{stop();
+    const mn=document.querySelector('.mobile-nav-dropdown');
+    if(mn){
+      mn.classList.add('closing');
+      setTimeout(()=>{APP.mobileNavOpen=false;render();}, 170);
+    } else {
+      APP.mobileNavOpen=false;render();
+    }
+    break}
   case 'mobile-nav-go':{stop();APP.mobileNavOpen=false;go(t.dataset.r||t.getAttribute('href'));break}
   case 'open-mobile-today':{stop();APP.mobileTodayOpen=true;render();break}
-  case 'close-mobile-today':{stop();APP.mobileTodayOpen=false;render();break}
+  case 'close-mobile-today':{stop();
+    const d=document.querySelector('.mobile-today-drawer');
+    if(d){
+      d.classList.add('closing');
+      setTimeout(()=>{APP.mobileTodayOpen=false;render();}, 180);
+    } else {
+      APP.mobileTodayOpen=false;render();
+    }
+    break}
   case 'open-today-item':{
     stop();
     const itemType = t.dataset.type;
@@ -22767,8 +22860,12 @@ window.addEventListener('hashchange',()=>{
   if(!APP.keepModalOnNextRoute){APP.modal='';}
   APP.keepModalOnNextRoute=false;
   APP.mobileDrawerOpen=false;
-  if(!APP.todayPinned){APP.todayPanelOpen=false;}
-  render();
+  if(!APP.todayPinned){setTodayPanelOpen(false);}
+  if(document.startViewTransition){
+    document.startViewTransition(()=>render());
+  } else {
+    render();
+  }
 });
 // Contain scrolling within the Today panel so mouse wheel doesn't scroll the background page
 window.addEventListener('wheel',e=>{
@@ -22779,6 +22876,49 @@ window.addEventListener('wheel',e=>{
     if(atTop||atBottom){e.preventDefault();}
   }
 },{passive:false});
+// Smooth Escape key handler for all overlays and drawers
+window.addEventListener('keydown', e=>{
+  if(e.key==='Escape'){
+    if(APP.modal){
+      const modalWrap=document.querySelector('.scrim, .drawer-wrap');
+      if(modalWrap){
+        modalWrap.classList.add('closing');
+        setTimeout(()=>{
+          APP.modal='';
+          APP.customModalHtml='';
+          render();
+        }, 170);
+      } else {
+        APP.modal='';
+        render();
+      }
+      return;
+    }
+    if(APP.mobileTodayOpen){
+      const d=document.querySelector('.mobile-today-drawer');
+      if(d){
+        d.classList.add('closing');
+        setTimeout(()=>{APP.mobileTodayOpen=false;render();}, 180);
+      } else {
+        APP.mobileTodayOpen=false;render();
+      }
+      return;
+    }
+    if(APP.todayPanelOpen&&!APP.todayPinned){
+      setTodayPanelOpen(false);
+      return;
+    }
+    if(APP.mobileNavOpen){
+      const mn=document.querySelector('.mobile-nav-dropdown');
+      if(mn){
+        mn.classList.add('closing');
+        setTimeout(()=>{APP.mobileNavOpen=false;render();}, 170);
+      } else {
+        APP.mobileNavOpen=false;render();
+      }
+    }
+  }
+});
 loadBatchesFromStorage();
 loadActivitiesFromStorage();
 loadAssignmentsFromStorage();
