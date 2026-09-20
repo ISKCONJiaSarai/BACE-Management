@@ -28,6 +28,30 @@ function isSuryaEmail(email) {
   return clean === 'suryakiranjune2@gmail.com';
 }
 
+function isCounsellorEmail(email) {
+  if (!email) return false;
+  const clean = String(email).toLowerCase().trim();
+  const [local] = clean.split('@');
+  const loc = (local || '').replace(/\./g, '');
+  if (loc === 'anurag0krishna' || clean.startsWith('anurag0krishna@gmail')) return true;
+  if (loc === 'shubhamshukla6606' || clean.startsWith('shubham.shukla6606@gmail')) return true;
+  return false;
+}
+
+function getCounsellorInfo(email) {
+  if (!email) return null;
+  const clean = String(email).toLowerCase().trim();
+  const [local] = clean.split('@');
+  const loc = (local || '').replace(/\./g, '');
+  if (loc === 'anurag0krishna' || clean.startsWith('anurag0krishna@gmail')) {
+    return { name: 'HG Ashray Krishna Pr', email: 'anurag0krishna@gmail.com', appointment: 'Counsellor', role: 'counsellor' };
+  }
+  if (loc === 'shubhamshukla6606' || clean.startsWith('shubham.shukla6606@gmail')) {
+    return { name: 'HG Sarojmukha Madhav Pr', email: 'shubham.shukla6606@gmail.com', appointment: 'Counsellor', role: 'counsellor' };
+  }
+  return null;
+}
+
 const escapeRegex = s => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 /**
@@ -77,6 +101,8 @@ router.post('/google', async (req, res) => {
     const normalizedEmail = email.toLowerCase().trim();
     const isBaceAdmin = isBaceAdminEmail(normalizedEmail);
     const isSuryaAreaLeader = isSuryaEmail(normalizedEmail);
+    const counsellorInfo = getCounsellorInfo(normalizedEmail);
+    const isCounsellor = !!counsellorInfo;
 
     // 1. Check if user already exists by googleId or email
     stage = 'find_user';
@@ -114,17 +140,17 @@ router.post('/google', async (req, res) => {
         // 3. If still no devotee record, create a new one
         stage = 'create_devotee';
         const customId = `d_g_${Date.now()}`;
-        const defaultName = isSuryaAreaLeader ? 'Surya Narayana Das' : (name || 'Google Devotee');
-        const defaultAppt = isSuryaAreaLeader ? 'Area Leader' : 'Devotee';
+        const defaultName = isCounsellor ? counsellorInfo.name : (isSuryaAreaLeader ? 'Surya Narayana Das' : (name || 'Google Devotee'));
+        const defaultAppt = isCounsellor ? 'Counsellor' : (isSuryaAreaLeader ? 'Area Leader' : 'Devotee');
 
         devoteeDoc = await Devotee.create({
           customId,
           name: defaultName,
-          email: normalizedEmail,
-          status: isSuryaAreaLeader ? 'Active' : 'Pending Approval',
+          email: isCounsellor ? counsellorInfo.email : normalizedEmail,
+          status: (isCounsellor || isSuryaAreaLeader) ? 'Active' : 'Pending Approval',
           appointment: defaultAppt,
           joined: new Date(),
-          occupation: 'Student'
+          occupation: isCounsellor ? 'Counsellor / Senior Guide' : 'Student'
         });
       }
     }
@@ -144,10 +170,10 @@ router.post('/google', async (req, res) => {
       else if (appt.includes('facilitator') || devoteeDoc.isFacilitator) devoteeRole = 'facilitator';
     }
 
-    const determinedRole = isBaceAdmin ? 'admin' : (isSuryaAreaLeader ? 'area_leader' : devoteeRole);
-    // Only existing Active devotees (or Admin/Surya) are automatically approved without asking for data or approval!
+    const determinedRole = isBaceAdmin ? 'admin' : (isCounsellor ? 'counsellor' : (isSuryaAreaLeader ? 'area_leader' : devoteeRole));
+    // Only existing Active devotees (or Admin/Surya/Counsellor) are automatically approved without asking for data or approval!
     const isDevoteeActiveInDb = devoteeDoc && devoteeDoc.status === 'Active';
-    const isAutoApproved = isBaceAdmin || isSuryaAreaLeader || isDevoteeActiveInDb;
+    const isAutoApproved = isBaceAdmin || isSuryaAreaLeader || isCounsellor || isDevoteeActiveInDb;
 
     // 4. Create or update User record
     if (!user) {
@@ -179,7 +205,17 @@ router.post('/google', async (req, res) => {
       } else {
         if (!user.devotee && devoteeDoc) user.devotee = devoteeDoc._id;
 
-        if (isSuryaAreaLeader) {
+        if (isCounsellor) {
+          user.role = 'counsellor';
+          user.approvalStatus = 'approved';
+          user.profileCompleted = true;
+          if (devoteeDoc) {
+            devoteeDoc.name = counsellorInfo.name;
+            devoteeDoc.appointment = 'Counsellor';
+            devoteeDoc.status = 'Active';
+            await devoteeDoc.save();
+          }
+        } else if (isSuryaAreaLeader) {
           user.role = 'area_leader';
           user.approvalStatus = 'approved';
           user.profileCompleted = true;
@@ -278,6 +314,8 @@ router.get('/me', protect, async (req, res) => {
 
     const isBace = isBaceAdminEmail(user.email) || user.role === 'admin';
     const isSurya = isSuryaEmail(user.email);
+    const counsellorInfo = getCounsellorInfo(user.email);
+    const isCounsellor = !!counsellorInfo || user.role === 'counsellor';
 
     if (isBace) {
       if (user.role !== 'admin' || user.devotee) {
@@ -306,7 +344,12 @@ router.get('/me', protect, async (req, res) => {
       });
     }
 
-    if (isSurya && user.role !== 'area_leader') {
+    if (isCounsellor) {
+      if (user.role !== 'counsellor') user.role = 'counsellor';
+      user.approvalStatus = 'approved';
+      user.profileCompleted = true;
+      await user.save();
+    } else if (isSurya && user.role !== 'area_leader') {
       user.role = 'area_leader';
       user.approvalStatus = 'approved';
       user.profileCompleted = true;
@@ -323,22 +366,29 @@ router.get('/me', protect, async (req, res) => {
       }
     }
 
+    if (isCounsellor && devoteeDoc && counsellorInfo) {
+      devoteeDoc.name = counsellorInfo.name;
+      devoteeDoc.appointment = 'Counsellor';
+      devoteeDoc.status = 'Active';
+      await devoteeDoc.save();
+    }
+
     const isDevoteeActive = devoteeDoc && devoteeDoc.status === 'Active';
 
-    if (!devoteeDoc && !isBace && !isSurya) {
+    if (!devoteeDoc && !isBace && !isSurya && !isCounsellor) {
       // Devotee was deleted from the main database
       user.approvalStatus = 'pending_profile';
       user.profileCompleted = false;
       user.devotee = null;
       user.role = 'devotee';
       await user.save();
-    } else if (isBace || isSurya || isDevoteeActive) {
+    } else if (isBace || isSurya || isCounsellor || isDevoteeActive) {
       if (user.approvalStatus !== 'approved' || !user.profileCompleted) {
         user.approvalStatus = 'approved';
         user.profileCompleted = true;
       }
       // Sync user role from devotee appointment if assigned
-      if (devoteeDoc && !isBace && !isSurya) {
+      if (devoteeDoc && !isBace && !isSurya && !isCounsellor) {
         const appt = (devoteeDoc.appointment || '').toLowerCase();
         let expectedRole = 'devotee';
         if (appt.includes('area leader')) expectedRole = 'area_leader';

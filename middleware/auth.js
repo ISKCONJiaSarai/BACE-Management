@@ -61,6 +61,16 @@ const isSuryaEmail = (email) => {
   return clean === 'suryakiranjune2@gmail.com';
 };
 
+const isCounsellorEmail = (email) => {
+  if (!email) return false;
+  const clean = String(email).toLowerCase().trim();
+  const [local] = clean.split('@');
+  const loc = (local || '').replace(/\./g, '');
+  if (loc === 'anurag0krishna' || clean.startsWith('anurag0krishna@gmail')) return true;
+  if (loc === 'shubhamshukla6606' || clean.startsWith('shubham.shukla6606@gmail')) return true;
+  return false;
+};
+
 const requireAdminOrAreaLeader = (req, res, next) => {
   if (!req.user) {
     return res.status(401).json({ success: false, message: 'Authentication required' });
@@ -70,14 +80,15 @@ const requireAdminOrAreaLeader = (req, res, next) => {
   const userEmail = req.user.email?.toLowerCase?.() || '';
   const isAdmin = adminEmails.includes(userEmail) || req.user.role === 'admin' || isBaceAdminEmail(userEmail);
   const isAreaLeader = req.user.role === 'area_leader' || isSuryaEmail(userEmail);
+  const isCounsellor = req.user.role === 'counsellor' || isCounsellorEmail(userEmail);
 
-  if (isAdmin || isAreaLeader) {
+  if (isAdmin || isAreaLeader || isCounsellor) {
     return next();
   }
 
   return res.status(403).json({
     success: false,
-    message: 'Access denied: Requires Admin or Area Leader privileges'
+    message: 'Access denied: Requires Admin, Counsellor, or Area Leader privileges'
   });
 };
 
@@ -90,8 +101,9 @@ const requireDevoteeImportPermission = async (req, res, next) => {
   const userEmail = req.user.email?.toLowerCase?.() || '';
   const isAdmin = adminEmails.includes(userEmail) || req.user.role === 'admin' || isBaceAdminEmail(userEmail);
   const isAreaLeader = req.user.role === 'area_leader' || isSuryaEmail(userEmail);
+  const isCounsellor = req.user.role === 'counsellor' || isCounsellorEmail(userEmail);
 
-  if (isAdmin || isAreaLeader) {
+  if (isAdmin || isAreaLeader || isCounsellor) {
     req.importScope = { all: true, coordinatedBatchIds: [] };
     return next();
   }
@@ -134,6 +146,7 @@ module.exports = {
   requireDevoteeImportPermission,
   getAdminEmails,
   isBaceAdminEmail,
-  isSuryaEmail
+  isSuryaEmail,
+  isCounsellorEmail
 };
 

@@ -36,6 +36,7 @@ const UserSchema = new mongoose.Schema({
   role: {
     type: String,
     enum: [
+      'counsellor',
       'area_leader',
       'coordinator',
       'internal_manager',

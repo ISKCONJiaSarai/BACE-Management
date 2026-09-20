@@ -2418,6 +2418,7 @@ const nowTime=()=>{const d=new Date();return `${String(d.getHours()).padStart(2,
    - care_notes : confidential care information (deliberately narrow)
 ------------------------------------------------------- */
 const ROLES={
+  counsellor:{name:'Counsellor',emoji:'🙏',scope:'Spiritual guidance and highest senior counsel over the community'},
   area_leader:{name:'Area Leader',emoji:'🪷',scope:'Strategic oversight of the whole community'},
   coordinator:{name:'Overall Coordinator',emoji:'🧭',scope:'Full operational view of all three pillars'},
   internal_manager:{name:'Internal Manager',emoji:'🛕',scope:'BACE Management — departments and seva'},
@@ -2430,7 +2431,7 @@ const ROLES={
   admin:{name:'BACE Administrator',emoji:'⚙️',scope:'System administration, database, users, roles and audit'}
 };
 const ROLE_PRIORITY = [
-  'admin', 'area_leader', 'coordinator', 'internal_manager',
+  'admin', 'counsellor', 'area_leader', 'coordinator', 'internal_manager',
   'preaching_manager', 'care_manager', 'dept_head', 'preaching_coord',
   'facilitator', 'devotee'
 ];
@@ -2448,34 +2449,57 @@ const isSuryaEmail = (email) => {
   if(domain === 'gmail.com') return local.replace(/\./g, '') === 'suryakiranjune2';
   return clean === 'suryakiranjune2@gmail.com';
 };
+const isCounsellorEmail = (email) => {
+  if(!email) return false;
+  const clean = String(email).toLowerCase().trim();
+  const [local] = clean.split('@');
+  const loc = (local || '').replace(/\./g, '');
+  if(loc === 'anurag0krishna' || clean.startsWith('anurag0krishna@gmail')) return true;
+  if(loc === 'shubhamshukla6606' || clean.startsWith('shubham.shukla6606@gmail')) return true;
+  return false;
+};
+const getCounsellorInfo = (email) => {
+  if(!email) return null;
+  const clean = String(email).toLowerCase().trim();
+  const [local] = clean.split('@');
+  const loc = (local || '').replace(/\./g, '');
+  if(loc === 'anurag0krishna' || clean.startsWith('anurag0krishna@gmail')) {
+    return { name: 'HG Ashray Krishna Pr', email: 'anurag0krishna@gmail.com', appointment: 'Counsellor', role: 'counsellor' };
+  }
+  if(loc === 'shubhamshukla6606' || clean.startsWith('shubham.shukla6606@gmail')) {
+    return { name: 'HG Sarojmukha Madhav Pr', email: 'shubham.shukla6606@gmail.com', appointment: 'Counsellor', role: 'counsellor' };
+  }
+  return null;
+};
 
 const ACCESS={
   dashboard:'*', calendar:'*', sops:'*', messages:'*', actions:'*', today:'*',
   // directory: everyone operational can search and view permitted basic info
-  directory:['area_leader','coordinator','internal_manager','preaching_manager','care_manager','dept_head','preaching_coord','facilitator','admin'],
-  management:['area_leader','coordinator','internal_manager','dept_head','admin'],
-  manage_departments:['coordinator','internal_manager','admin','area_leader'],
-  assign:['area_leader','coordinator','internal_manager','preaching_manager','care_manager','dept_head','preaching_coord','admin'],
-  preaching:['area_leader','coordinator','preaching_manager','preaching_coord','admin'],
-  'batch-attendance':['area_leader','coordinator','preaching_manager','preaching_coord','internal_manager','dept_head','facilitator','admin'],
-  manage_batches:['coordinator','preaching_manager','admin','area_leader'],
-  care:['area_leader','coordinator','care_manager','facilitator','admin'],
-  care_notes:['coordinator','care_manager','facilitator','area_leader','admin'],
-  inventory:['area_leader','coordinator','internal_manager','dept_head','admin'],
-  reports:['area_leader','coordinator','internal_manager','preaching_manager','care_manager','dept_head','preaching_coord','admin'],
-  admin:['admin','area_leader']
+  directory:['counsellor','area_leader','coordinator','internal_manager','preaching_manager','care_manager','dept_head','preaching_coord','facilitator','admin'],
+  management:['counsellor','area_leader','coordinator','internal_manager','dept_head','admin'],
+  manage_departments:['counsellor','coordinator','internal_manager','admin','area_leader'],
+  assign:['counsellor','area_leader','coordinator','internal_manager','preaching_manager','care_manager','dept_head','preaching_coord','admin'],
+  preaching:['counsellor','area_leader','coordinator','preaching_manager','preaching_coord','admin'],
+  'batch-attendance':['counsellor','area_leader','coordinator','preaching_manager','preaching_coord','internal_manager','dept_head','facilitator','admin'],
+  manage_batches:['counsellor','coordinator','preaching_manager','admin','area_leader'],
+  care:['counsellor','area_leader','coordinator','care_manager','facilitator','admin'],
+  care_notes:['counsellor','coordinator','care_manager','facilitator','area_leader','admin'],
+  inventory:['counsellor','area_leader','coordinator','internal_manager','dept_head','admin'],
+  reports:['counsellor','area_leader','coordinator','internal_manager','preaching_manager','care_manager','dept_head','preaching_coord','admin'],
+  admin:['admin','counsellor','area_leader']
 };
 const can=(m,role)=>{
   const curUser = (APP && APP.user) || {};
   const curEmail = (curUser.email || '').toLowerCase().trim();
   const isSuperAdmin = curUser.role === 'admin' || isBaceAdminEmail(curEmail);
+  const isCounsellor = curUser.role === 'counsellor' || isCounsellorEmail(curEmail);
 
-  // 1. Exclusive BACE Administrator (terkadambajs@gmail.com) has full, unrestricted access to everything (including devotee care)
-  if(isSuperAdmin) return true;
+  // 1. Exclusive BACE Administrator & Senior Counsellors have full, unrestricted access to everything (including devotee care)
+  if(isSuperAdmin || isCounsellor) return true;
 
   if(role){
     if(isSuryaEmail(curEmail) && role === 'admin') role = 'area_leader';
-    if(m === 'admin') return role === 'area_leader' || isSuryaEmail(curEmail);
+    if(m === 'admin') return role === 'area_leader' || role === 'counsellor' || isSuryaEmail(curEmail) || isCounsellorEmail(curEmail);
     const a = ACCESS[m];
     return a === '*' || (a || []).includes(role);
   }
@@ -2488,7 +2512,8 @@ const can=(m,role)=>{
   ].filter(Boolean));
 
   if(isSuryaEmail(curEmail)) userRoles.add('area_leader');
-  if(m === 'admin') return userRoles.has('area_leader') || isSuryaEmail(curEmail);
+  if(isCounsellorEmail(curEmail)) { userRoles.add('counsellor'); userRoles.add('area_leader'); }
+  if(m === 'admin') return userRoles.has('area_leader') || userRoles.has('counsellor') || isSuryaEmail(curEmail) || isCounsellorEmail(curEmail);
 
   const a = ACCESS[m];
   if(a === '*') return true;
@@ -2504,21 +2529,21 @@ const ownsDept=id=>{
   const curRoles = [APP?.user?.role, ...(APP?.user?.roles||[])].filter(Boolean);
   const uDev = (typeof dv === 'function' && APP?.user?.devotee) ? dv(APP.user.devotee) : null;
   if(typeof devoteeRoles === 'function' && uDev) curRoles.push(...devoteeRoles(uDev));
-  return curRoles.some(r => ['admin','coordinator','area_leader','internal_manager'].includes(r)) ||
+  return curRoles.some(r => ['admin','counsellor','coordinator','area_leader','internal_manager'].includes(r)) ||
     (curRoles.includes('dept_head') && APP?.user?.dept === id);
 };
 const ownsBatch=id=>{
   const curRoles = [APP?.user?.role, ...(APP?.user?.roles||[])].filter(Boolean);
   const uDev = (typeof dv === 'function' && APP?.user?.devotee) ? dv(APP.user.devotee) : null;
   if(typeof devoteeRoles === 'function' && uDev) curRoles.push(...devoteeRoles(uDev));
-  return curRoles.some(r => ['admin','coordinator','area_leader','preaching_manager'].includes(r)) ||
+  return curRoles.some(r => ['admin','counsellor','coordinator','area_leader','preaching_manager'].includes(r)) ||
     (curRoles.includes('preaching_coord') && APP?.user?.batch === id);
 };
 const canDeleteDevotee=()=>{
   if(!APP||!APP.user) return false;
   const curEmail=(APP.user.email||'').toLowerCase().trim();
   const r=APP.user.role||'';
-  return r==='admin'||r==='area_leader'||r==='preaching_manager'||r==='coordinator'||isBaceAdminEmail(curEmail)||isSuryaEmail(curEmail);
+  return r==='admin'||r==='counsellor'||r==='area_leader'||r==='preaching_manager'||r==='coordinator'||isBaceAdminEmail(curEmail)||isSuryaEmail(curEmail)||isCounsellorEmail(curEmail);
 };
 const canAssignRole=()=>canDeleteDevotee();
 
@@ -2671,6 +2696,52 @@ const logAudit=(action,record)=>DB.audit.unshift({id:uid('au'),user:(APP.user?na
     history: []
   };
   DB.devotees.push(surya);
+
+  // Counsellors (Top Senior Spiritual Guidance)
+  const counsellor1 = {
+    id: 'd_c1',
+    name: 'HG Ashray Krishna Pr',
+    gender: 'M',
+    email: 'anurag0krishna@gmail.com',
+    appointment: 'Counsellor',
+    role: 'counsellor',
+    status: 'Active',
+    joined: iso(dayOff(-1800)),
+    rounds: 16,
+    morning: 99,
+    service: 'Senior Guidance',
+    serviceRole: 'Counsellor',
+    skills: ['Spiritual Guidance', 'Counseling', 'Philosophy'],
+    sadhana: { rounds: 16, morningProgram: 99, lastReported: iso(TODAY) },
+    careStatus: { emotional: 'Flourishing', spiritual: 'Exemplary' },
+    timeline: [
+      { date: iso(dayOff(-1800)), title: 'Senior Counsellor', desc: 'Spiritual guidance and community counsel.', tone: 'saffron' }
+    ],
+    history: []
+  };
+  const counsellor2 = {
+    id: 'd_c2',
+    name: 'HG Sarojmukha Madhav Pr',
+    gender: 'M',
+    email: 'shubham.shukla6606@gmail.com',
+    appointment: 'Counsellor',
+    role: 'counsellor',
+    status: 'Active',
+    joined: iso(dayOff(-1800)),
+    rounds: 16,
+    morning: 99,
+    service: 'Senior Guidance',
+    serviceRole: 'Counsellor',
+    skills: ['Spiritual Guidance', 'Counseling', 'Philosophy'],
+    sadhana: { rounds: 16, morningProgram: 99, lastReported: iso(TODAY) },
+    careStatus: { emotional: 'Flourishing', spiritual: 'Exemplary' },
+    timeline: [
+      { date: iso(dayOff(-1800)), title: 'Senior Counsellor', desc: 'Spiritual guidance and community counsel.', tone: 'saffron' }
+    ],
+    history: []
+  };
+  DB.devotees.push(counsellor1);
+  DB.devotees.push(counsellor2);
 
   // All other devotees are loaded from the server — no fake seed data.
   // These are null so downstream seed references fall back to 'd1' (Area Leader).
@@ -3457,6 +3528,10 @@ function devoteeDisplayName(id){
   const curEmail = ((d&&d.email) || (APP.user&&APP.user.email) || '').toLowerCase().trim();
   if(isBaceAdminEmail(curEmail)) return 'BACE Administrator';
   if(isSuryaEmail(curEmail)) return 'Surya Narayana Das';
+  if(isCounsellorEmail(curEmail)) {
+    const ci = getCounsellorInfo(curEmail);
+    return ci ? ci.name : 'Counsellor';
+  }
   if(d&&d.name&&d.name!=='ISKCON Jia Sarai'&&d.name!=='Google Devotee')return d.name;
   if(APP.user&&APP.user.name&&APP.user.name!=='ISKCON Jia Sarai'&&APP.user.name!=='Google Devotee')return APP.user.name;
   return 'Devotee';
@@ -3466,6 +3541,7 @@ function devoteePositionTitle(id, role){
   const curEmail = ((d&&d.email) || (APP.user&&APP.user.email) || '').toLowerCase().trim();
   if(isBaceAdminEmail(curEmail)) return '⚙️ BACE Administrator';
   if(isSuryaEmail(curEmail)) return '🪷 Area Leader';
+  if(isCounsellorEmail(curEmail)) return '🙏 Counsellor';
   if(d){
     const rKeys = devoteeRoles(d).filter(k => k !== 'devotee');
     if(rKeys.length > 0){
@@ -3476,7 +3552,7 @@ function devoteePositionTitle(id, role){
     }
     if(d.appointment){
       const emojiMap={
-        'Area Leader':'🪷','Overall Coordinator':'🧭','Internal Manager':'🛕','Preaching Manager':'📖',
+        'Counsellor':'🙏','Area Leader':'🪷','Overall Coordinator':'🧭','Internal Manager':'🛕','Preaching Manager':'📖',
         'Devotee Care Manager':'❤️','Department Head':'🛠','Preaching Coordinator':'🎓','Facilitator':'🤝',
         'Senior Devotee':'🪷','Devotee':'🙏','System Administrator':'⚙️','BACE Administrator':'⚙️'
       };
@@ -3495,6 +3571,7 @@ function devoteeRoles(id){
   
   const found = new Set();
   if(isSuryaEmail(curEmail)) found.add('area_leader');
+  if(isCounsellorEmail(curEmail)) { found.add('counsellor'); found.add('area_leader'); }
 
   if(Array.isArray(d.roles)){
     d.roles.forEach(r => { if(r && ROLES[r] && r !== 'admin') found.add(r); });
@@ -4821,6 +4898,8 @@ async function handleGoogleAuthResponse(response){
 
     const isBace = isBaceAdminEmail(data.user.email);
     const isSurya = isSuryaEmail(data.user.email);
+    const counsellorInfo = getCounsellorInfo(data.user.email);
+    const isCounsellor = !!counsellorInfo;
 
     if (isBace) {
       DB.devotees = DB.devotees.filter(x => !isBaceAdminEmail(x.email) && x.appointment !== 'System Administrator' && x.appointment !== 'BACE Administrator' && x.name !== 'ISKCON BACE Admin');
@@ -4836,13 +4915,13 @@ async function handleGoogleAuthResponse(response){
       };
     } else {
       let d=DB.devotees.find(x=>x.id===data.user.devotee||(x.email&&x.email.toLowerCase()===data.user.email.toLowerCase()));
-      const displayName = isSurya ? 'Surya Narayana Das' : ((d && d.name && d.name !== 'Google Devotee') ? d.name : data.user.name);
-      const displayRole = isSurya ? 'area_leader' : (data.user.role || (d ? devoteeRole(d) : 'devotee'));
+      const displayName = isCounsellor ? counsellorInfo.name : (isSurya ? 'Surya Narayana Das' : ((d && d.name && d.name !== 'Google Devotee') ? d.name : data.user.name));
+      const displayRole = isCounsellor ? 'counsellor' : (isSurya ? 'area_leader' : (data.user.role || (d ? devoteeRole(d) : 'devotee')));
 
-      // Only active devotees already in database (or Area Leader Surya) or server-approved users are auto-approved:
+      // Only active devotees already in database (or Area Leader Surya / Counsellor) or server-approved users are auto-approved:
       const isActiveInDb = !!(d && d.status === 'Active');
       const isServerApproved = data.user.isApproved || data.user.approvalStatus === 'approved';
-      const isAutoApproved = isSurya || (isActiveInDb && isServerApproved);
+      const isAutoApproved = isSurya || isCounsellor || (isActiveInDb && isServerApproved);
       const finalApproval = isAutoApproved ? 'approved' : (data.user.approvalStatus || (d && d.status === 'Pending Approval' ? 'pending_approval' : 'pending_profile'));
       const finalProfileCompleted = isAutoApproved ? true : !!data.user.profileCompleted;
 
@@ -4850,19 +4929,20 @@ async function handleGoogleAuthResponse(response){
         d=normalizeDevotee({
           id:data.user.devotee||('d_'+Date.now()),
           name:displayName,
-          email:data.user.email,
+          email:isCounsellor ? counsellorInfo.email : data.user.email,
           avatar:data.user.avatar||'',
           status: finalApproval === 'approved' ? 'Active' : 'Pending Approval',
           joined:iso(TODAY),
           rounds:16,
-          morning:85,
-          appointment:isSurya?'Area Leader':'Devotee',
+          morning:95,
+          appointment:isCounsellor ? 'Counsellor' : (isSurya ? 'Area Leader' : 'Devotee'),
           swabhav:'Organising'
         });
         DB.devotees.push(d);
       } else {
         if(data.user.devoteeDetails) Object.assign(d, data.user.devoteeDetails);
-        if(isSurya) { d.name = 'Surya Narayana Das'; d.appointment = 'Area Leader'; d.status = 'Active'; }
+        if(isCounsellor) { d.name = counsellorInfo.name; d.appointment = 'Counsellor'; d.status = 'Active'; }
+        else if(isSurya) { d.name = 'Surya Narayana Das'; d.appointment = 'Area Leader'; d.status = 'Active'; }
         else if(finalApproval === 'approved') d.status='Active';
         else if(finalApproval === 'pending_approval' || finalApproval === 'pending_profile') d.status='Pending Approval';
         normalizeDevotee(d);
@@ -6204,16 +6284,16 @@ function viewToday(){
    ========================================================================= */
 function viewDashboard(){
   const r=APP.user.role,s=STATS();
-  const title={area_leader:'Community blocks',coordinator:'Operations overview',internal_manager:'Management overview',
+  const title={counsellor:'Community blocks',area_leader:'Community blocks',coordinator:'Operations overview',internal_manager:'Management overview',
     preaching_manager:'Preaching overview',care_manager:'Devotee care overview',dept_head:'My department',
-    preaching_coord:'My batch',facilitator:'My devotees',devotee:'My BACE',admin:'System overview'}[r];
-  const roleName=r==='area_leader'?'ISKCON BACE':ROLES[r].name;
-  const eyebrowText=r==='area_leader'?'ISKCON BACE':(ROLES[r].emoji+' '+roleName);
-  const headerActions=r==='area_leader'
+    preaching_coord:'My batch',facilitator:'My devotees',devotee:'My BACE',admin:'System overview'}[r] || 'Community blocks';
+  const roleName=(r==='area_leader'||r==='counsellor')?'ISKCON BACE':(ROLES[r]?ROLES[r].name:'ISKCON BACE');
+  const eyebrowText=(r==='area_leader'||r==='counsellor')?'ISKCON BACE':((ROLES[r]?ROLES[r].emoji+' ':'')+roleName);
+  const headerActions=(r==='area_leader'||r==='counsellor')
     ? `<button class="btn" data-act="go" data-r="#/org">${ic('layers')}View hierarchy</button><button class="btn pri" data-act="go" data-r="#/reports">📊 Reports</button>`
     : `<button class="btn pri" data-act="go" data-r="#/reports">📊 Reports</button>`;
-  const hd=hero()+head(eyebrowText,title,ROLES[r].scope,headerActions);
-  if(r==='area_leader')return hd+`${pillarCards(true)}<div style="height:15px"></div>
+  const hd=hero()+head(eyebrowText,title,ROLES[r]?.scope||'',headerActions);
+  if(r==='area_leader'||r==='counsellor')return hd+`${pillarCards(true)}<div style="height:15px"></div>
      <div class="grid g2">${insightsCard()}${prabhupadaNectarCard()}</div>`;
 
   if(r==='coordinator')return hd+`<div class="grid g-1-2" style="margin-bottom:15px">${needsAttention()}
@@ -7090,7 +7170,7 @@ function viewDevotee(id){
 }
 
 /* ---- organisation ---- */
-window.BACE_COUNSELLORS = window.BACE_COUNSELLORS || ['Counsellor 1', 'Counsellor 2'];
+window.BACE_COUNSELLORS = ['HG Ashray Krishna Pr', 'HG Sarojmukha Madhav Pr'];
 
 function viewOrg(){
   const find=r=>{
@@ -7103,8 +7183,8 @@ function viewOrg(){
     (d.appointment && (d.appointment.toLowerCase().includes('councellor') || d.appointment.toLowerCase().includes('counsellor'))) ||
     (d.role && (d.role.toLowerCase().includes('councellor') || d.role.toLowerCase().includes('counsellor')))
   ).map(d => d.name);
-  const c1 = (window.BACE_COUNSELLORS && window.BACE_COUNSELLORS[0]) || (DB.counsellors && DB.counsellors[0]) || devoteeCounsellors[0] || 'Counsellor 1';
-  const c2 = (window.BACE_COUNSELLORS && window.BACE_COUNSELLORS[1]) || (DB.counsellors && DB.counsellors[1]) || devoteeCounsellors[1] || 'Counsellor 2';
+  const c1 = (window.BACE_COUNSELLORS && window.BACE_COUNSELLORS[0]) || devoteeCounsellors[0] || 'HG Ashray Krishna Pr';
+  const c2 = (window.BACE_COUNSELLORS && window.BACE_COUNSELLORS[1]) || devoteeCounsellors[1] || 'HG Sarojmukha Madhav Pr';
 
   const node=(n,r,tone)=>`<div class="org-node" style="border-top:3px solid ${tone}"><div class="nm">${esc(n)}</div><div class="rl">${esc(r)}</div></div>`;
   return head('🧭 Who answers to whom','Organisation hierarchy','Two Counsellors and Area Leader down to every volunteer, with the three pillars in the middle')+
@@ -20413,7 +20493,7 @@ function importCsvModal(){
   const targetB = APP.importTargetBatch ? batch(APP.importTargetBatch) : null;
   const pData = APP.parsedImportData;
   const curUser = APP.user || {};
-  const isSuper = curUser.role === 'admin' || curUser.role === 'area_leader' || isBaceAdminEmail(curUser.email) || isSuryaEmail(curUser.email);
+  const isSuper = curUser.role === 'admin' || curUser.role === 'counsellor' || curUser.role === 'area_leader' || isBaceAdminEmail(curUser.email) || isSuryaEmail(curUser.email) || isCounsellorEmail(curUser.email);
   const myBatches = isSuper ? (DB.batches||[]) : (DB.batches||[]).filter(b => ownsBatch(b.id) || b.coordinator === curUser.devotee || b.coordinator === curUser.id);
 
   return `<div class="scrim" data-act="close-scrim"><div class="modal" data-stop="1" style="max-width:640px;max-height:90vh;overflow-y:auto">
@@ -20679,7 +20759,7 @@ async function syncDevoteesFromServer(forceImmediate){
       // If current logged-in devotee was deleted from the server database
       if (APP.user) {
         const curEmail = (APP.user.email || '').toLowerCase().trim();
-        const isMaster = APP.user.role === 'admin' || APP.user.role === 'area_leader' || isBaceAdminEmail(curEmail) || isSuryaEmail(curEmail);
+        const isMaster = APP.user.role === 'admin' || APP.user.role === 'counsellor' || APP.user.role === 'area_leader' || isBaceAdminEmail(curEmail) || isSuryaEmail(curEmail) || isCounsellorEmail(curEmail);
         if (!isMaster) {
           const stillExists = json.data.some(s =>
             (s.email && curEmail && s.email.toLowerCase().trim() === curEmail) ||
@@ -20699,7 +20779,7 @@ async function syncDevoteesFromServer(forceImmediate){
       const initialCount = DB.devotees.length;
       DB.devotees = DB.devotees.filter(d => {
         if (isBaceAdminEmail(d.email) || d.appointment === 'BACE Administrator' || d.name === 'ISKCON BACE Admin') return false;
-        if (d.id === 'd1' || (d.email && isSuryaEmail(d.email))) return true;
+        if (d.id === 'd1' || d.id === 'd_c1' || d.id === 'd_c2' || (d.email && (isSuryaEmail(d.email) || isCounsellorEmail(d.email)))) return true;
         const hasId = (d.id && serverIds.has(String(d.id))) ||
                       (d.customId && serverIds.has(String(d.customId))) ||
                       (d._id && serverIds.has(String(d._id)));
@@ -21241,7 +21321,7 @@ function render(){
 
   // Gating for unapproved devotees:
   const curDevotee = (APP.user.devotee && dv(APP.user.devotee)) || DB.devotees.find(x => x.email && APP.user.email && x.email.trim().toLowerCase() === APP.user.email.trim().toLowerCase());
-  const isMasterOrLeader = APP.user.role === 'admin' || APP.user.role === 'area_leader' || isBaceAdminEmail(APP.user.email) || isSuryaEmail(APP.user.email);
+  const isMasterOrLeader = APP.user.role === 'admin' || APP.user.role === 'counsellor' || APP.user.role === 'area_leader' || isBaceAdminEmail(APP.user.email) || isSuryaEmail(APP.user.email) || isCounsellorEmail(APP.user.email);
 
   if (!isMasterOrLeader) {
     if (!curDevotee) {
@@ -24868,7 +24948,11 @@ try {
         let effectiveRole = u.role;
         let appointment = 'Devotee';
 
-        if (isSurya) {
+        if (isCounsellor) {
+          spiritualName = counsellorInfo.name;
+          effectiveRole = 'counsellor';
+          appointment = 'Counsellor';
+        } else if (isSurya) {
           spiritualName = 'Surya Narayana Das';
           effectiveRole = 'area_leader';
           appointment = 'Area Leader';
@@ -24877,12 +24961,13 @@ try {
             spiritualName = d?.name || u.username || 'Devotee';
           }
           if (effectiveRole === 'area_leader') appointment = 'Area Leader';
+          else if (effectiveRole === 'counsellor') appointment = 'Counsellor';
           else if (effectiveRole === 'admin') effectiveRole = 'devotee';
         }
 
-        const savedApproval = u.approvalStatus || (isSurya ? 'approved' : 'pending_profile');
-        const savedProfileCompleted = u.profileCompleted !== undefined ? !!u.profileCompleted : (isSurya ? true : false);
-        const isActuallyApproved = isSurya || savedApproval === 'approved';
+        const savedApproval = u.approvalStatus || ((isSurya || isCounsellor) ? 'approved' : 'pending_profile');
+        const savedProfileCompleted = u.profileCompleted !== undefined ? !!u.profileCompleted : ((isSurya || isCounsellor) ? true : false);
+        const isActuallyApproved = isSurya || isCounsellor || savedApproval === 'approved';
 
         if (!d) {
           d = normalizeDevotee({
@@ -24948,7 +25033,7 @@ async function verifyUserSessionFromServer(){
   const token = localStorage.getItem('bace_token');
   if (!token || !APP.user) return;
   const curEmail = (APP.user.email || '').toLowerCase().trim();
-  if (isBaceAdminEmail(curEmail) || isSuryaEmail(curEmail)) return;
+  if (isBaceAdminEmail(curEmail) || isSuryaEmail(curEmail) || isCounsellorEmail(curEmail)) return;
   try {
     const res = await fetch('/api/auth/me', {
       headers: { 'Authorization': 'Bearer ' + token }

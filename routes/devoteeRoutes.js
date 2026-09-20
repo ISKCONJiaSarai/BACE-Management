@@ -139,10 +139,11 @@ const requireDeleteDevoteePermission = (req, res, next) => {
   }
   const userEmail = (req.user.email || '').toLowerCase().trim();
   const r = req.user.role || '';
-  const isAllowed = r === 'admin' || r === 'area_leader' || r === 'preaching_manager' || r === 'coordinator' ||
-    userEmail.includes('terkadamba') || userEmail === 'suryakiranjune2@gmail.com';
+  const isAllowed = r === 'admin' || r === 'counsellor' || r === 'area_leader' || r === 'preaching_manager' || r === 'coordinator' ||
+    userEmail.includes('terkadamba') || userEmail === 'suryakiranjune2@gmail.com' ||
+    userEmail.includes('anurag0krishna') || userEmail.includes('shubham.shukla6606');
   if (isAllowed) return next();
-  return res.status(403).json({ success: false, message: 'Access denied: Requires Admin, Area Leader, or Preaching Head privileges to delete devotee data' });
+  return res.status(403).json({ success: false, message: 'Access denied: Requires Admin, Counsellor, Area Leader, or Preaching Head privileges to delete devotee data' });
 };
 
 const getDevoteeQuery = (id) => {
@@ -352,6 +353,7 @@ router.post('/:id/assign-role', protect, async (req, res) => {
     }
     const { role, roles } = req.body;
     const roleTitles = {
+      counsellor: 'Counsellor',
       area_leader: 'Area Leader',
       coordinator: 'Overall Coordinator',
       internal_manager: 'Internal Manager',
@@ -367,7 +369,7 @@ router.post('/:id/assign-role', protect, async (req, res) => {
     selectedRoles = selectedRoles.filter(r => r && r !== 'admin' && roleTitles[r]);
     if (selectedRoles.length === 0) selectedRoles = ['devotee'];
 
-    const rolePriority = ['admin', 'area_leader', 'coordinator', 'internal_manager', 'preaching_manager', 'care_manager', 'dept_head', 'preaching_coord', 'facilitator', 'devotee'];
+    const rolePriority = ['admin', 'counsellor', 'area_leader', 'coordinator', 'internal_manager', 'preaching_manager', 'care_manager', 'dept_head', 'preaching_coord', 'facilitator', 'devotee'];
     selectedRoles.sort((a,b) => rolePriority.indexOf(a) - rolePriority.indexOf(b));
 
     const primaryRole = selectedRoles[0];
