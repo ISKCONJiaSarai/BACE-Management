@@ -80,6 +80,8 @@ app.use('/api/devotees', require('./routes/devoteeRoutes'));
 app.use('/api/attendance', require('./routes/attendanceRoutes'));
 app.use('/api/followups', require('./routes/followupRoutes'));
 app.use('/api/expenses', require('./routes/expenseRoutes'));
+app.use('/api/camps', require('./routes/campRoutes'));
+app.use('/api/outings', require('./routes/outingRoutes'));
 
 // Error handling middleware
 app.use((err, req, res, next) => {

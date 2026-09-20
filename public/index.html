@@ -2538,7 +2538,7 @@ const initials=n=>String(n||'?').split(' ').filter(Boolean).slice(0,2).map(w=>w[
 
 /* ---------------- store ---------------- */
 const DB={devotees:[],departments:[],deptMembers:[],activities:[],templates:[],assignments:[],attendance:[],
-  contacts:[],batches:[],followups:[],careGroups:[],careRecords:[],meetings:[],camps:[],outings:[],templeVisits:[],sadhana:[],
+  contacts:[],batches:[],followups:[],careGroups:[],careRecords:[],meetings:[],camps:[],outings:[],majorRetreats:[],templeVisits:[],sadhana:[],
   sops:[],reports:[],notifications:[],audit:[],users:[],threads:[],inventory:[],invRequests:[],menus:[],rebates:[],
   feedback:[],qrSessions:[],proofs:[],notifPrefs:{}};
 
@@ -3194,6 +3194,45 @@ const logAudit=(action,record)=>DB.audit.unshift({id:uid('au'),user:(APP.user?na
 
   const sampleDevIds = (DB.devotees || []).map(d => d.id);
   const getSlice = (start, count) => sampleDevIds.length ? sampleDevIds.slice(start, start + count) : ['d1','d2','d3'];
+
+  DB.majorRetreats = [
+    {
+      customId: 'camp_1',
+      name: 'Vrindavan Kartik Maha-Retreat',
+      type: '3-Day Annual Dham Retreat',
+      badge: 'Kartik Vrata',
+      dates: '18 – 20 Oct 2026',
+      loc: 'Sri Vrindavan Dham (Krishna Balaram Mandir & Govardhan)',
+      lead: 'HG Audarya Gour Das',
+      desc: 'Annual flagship Kartik retreat: Radha Damodar parikrama, Govardhan circumambulation, Deep Daan on Yamuna, and evening ecstatic kirtan.',
+      participants: 38,
+      status: 'Open'
+    },
+    {
+      customId: 'camp_2',
+      name: 'Mayapur Gaur Purnima International Camp',
+      type: '4-Day Spiritual Intensive',
+      badge: 'Navadvip Mandal',
+      dates: '21 – 25 Mar 2026',
+      loc: 'Sridham Mayapur (World Headquarters)',
+      lead: 'Madhava Das',
+      desc: 'Annual assembly at the spiritual capital: Navadvip parikrama on foot, darshan of Pancha Tattva, and participating in the international Kirtan Mela.',
+      participants: 32,
+      status: 'Annual'
+    },
+    {
+      customId: 'camp_3',
+      name: 'Jagannath Puri Dham Ratha Yatra Camp',
+      type: '3-Day Coastal Pilgrimage',
+      badge: 'Ratha Yatra',
+      dates: '02 – 05 Jul 2026',
+      loc: 'Sri Jagannath Puri Dham, Odisha',
+      lead: 'Sundar Gopal Das',
+      desc: 'Participating in the divine chariot festival: Gundicha Marjana, singing before Lord Jagannath, Tota Gopinath darshan, and ocean bathing.',
+      participants: 29,
+      status: 'Completed'
+    }
+  ];
 
   DB.outings = [
     {
@@ -4189,7 +4228,7 @@ const PILLARS=[
    {sub:'Emotional care'},
    {t:'Friends & Groups',em:'👥',r:'#/groups',m:'care',indent:1},
    {sub:'Spiritual care'},
-   {t:'Sadhana',em:'📿',r:'#/sadhana',m:'care',indent:1},
+   {t:'Sadhana & Swabhav',em:'📿',r:'#/sadhana',m:'care',indent:1},
    {t:'Facilitators',em:'🤝',r:'#/facilitators',m:'care',indent:1},
    {t:'Camps & Outings',em:'⛺',r:'#/camps',m:'care',indent:1},
    {t:'Meetings & Follow-ups',em:'🔒',r:'#/meetings',m:'care',indent:1}]}
@@ -4262,7 +4301,7 @@ function appHeader(){
     {t:'Devotee Care',r:'#/care',m:'care',children:[
       {t:'Care Dashboard',em:'📊',r:'#/care',m:'care'},
       {t:'Friends & Groups',em:'👥',r:'#/groups',m:'care'},
-      {t:'Sadhana',em:'📿',r:'#/sadhana',m:'care'},
+      {t:'Sadhana & Swabhav',em:'📿',r:'#/sadhana',m:'care'},
       {t:'Facilitators',em:'🤝',r:'#/facilitators',m:'care'},
       {t:'Camps & Outings',em:'⛺',r:'#/camps',m:'care'},
       {t:'Meetings & Follow-ups',em:'🔒',r:'#/meetings',m:'care'}
@@ -4369,7 +4408,7 @@ function mobileNavDropdown(){
     {title:'Devotee Care',items:[
       {t:'Care Dashboard',em:'📊',r:'#/care',m:'care'},
       {t:'Friends & Groups',em:'👥',r:'#/groups',m:'care'},
-      {t:'Sadhana',em:'📿',r:'#/sadhana',m:'care'},
+      {t:'Sadhana & Swabhav',em:'📿',r:'#/sadhana',m:'care'},
       {t:'Facilitators',em:'🤝',r:'#/facilitators',m:'care'},
       {t:'Camps & Outings',em:'⛺',r:'#/camps',m:'care'},
       {t:'Meetings & Follow-ups',em:'🔒',r:'#/meetings',m:'care'},
@@ -4545,7 +4584,7 @@ const CRUMBS={'':'Dashboard',today:'Today',devotees:'Devotees',devotee:'Devotee'
  inventory:'Inventory & BBT',sops:'SOPs & standards',actions:'Action items',preaching:'BACE Preaching',batches:'Batch management',
  batch:'Batch',contacts:'Contacts & pipeline',followups:'Follow-ups',classes:'Classes & events','batch-attendance':'Batch attendance',
  'preaching-reports':'Preaching reports',care:'Devotee Care',friends:'Friends & Groups',groups:'Friends & Groups',group:'Group',swabhav:'Swabhav engagement',
- sadhana:'Sadhana',facilitators:'Facilitators',camps:'Camps & Outings',
+ sadhana:'Sadhana & Swabhav',facilitators:'Facilitators',camps:'Camps & Outings',
  meetings:'Meetings & Follow-ups','care-followups':'Meetings & Follow-ups','care-reports':'Care reports',reports:'Reports & analytics',
  calendar:'Community calendar',messages:'Messages',notifications:'Notifications',admin:'Administration',more:'Menu'};
 
@@ -18266,6 +18305,36 @@ function viewSpiritualClasses(){
   go('#/camps');
   return '';
 }
+async function loadCampsFromBackend(){
+  try {
+    const res = await fetch('/api/camps');
+    if (res.ok) {
+      const data = await res.json();
+      if (data.success && Array.isArray(data.camps) && data.camps.length) {
+        DB.majorRetreats = data.camps;
+        if (APP.route === '#/camps' || APP.route === 'camps') render();
+      }
+    }
+  } catch(e) {
+    console.warn('Notice: /api/camps offline or unreachable:', e.message);
+  }
+}
+
+async function loadOutingsFromBackend(){
+  try {
+    const res = await fetch('/api/outings');
+    if (res.ok) {
+      const data = await res.json();
+      if (data.success && Array.isArray(data.outings) && data.outings.length) {
+        DB.outings = data.outings;
+        if (APP.route === '#/camps' || APP.route === 'camps') render();
+      }
+    }
+  } catch(e) {
+    console.warn('Notice: /api/outings offline or unreachable:', e.message);
+  }
+}
+
 function outingModal(o){
   if(!o) return '';
   const coord = dv(o.coordinator);
@@ -18323,6 +18392,10 @@ function outingModal(o){
       </div>
     </div>
     <div class="modal-f">
+      <div style="display:flex;gap:8px;margin-right:auto">
+        <button class="btn sm" data-act="edit-outing" data-id="${o._id || o.customId || o.id}">${ic('edit')}Edit Outing</button>
+        <button class="btn sm" style="color:var(--danger);border-color:var(--danger-soft)" data-act="delete-outing" data-id="${o._id || o.customId || o.id}">${ic('trash')}Delete Outing</button>
+      </div>
       <button class="btn" data-act="close-scrim">Close</button>
     </div>
   </div></div>`;
@@ -18332,43 +18405,8 @@ function viewCamps(){
   const view = APP.tab.camps || 'Camps & Yatras';
   const campRows = DB.camps.map(c => ({...c, d: dv(c.devotee)})).filter(c => c.d);
   const campNames = [...new Set(campRows.map(r => r.name))];
+  const majorRetreats = DB.majorRetreats || [];
   const outings = DB.outings || [];
-
-  const majorRetreats = [
-    {
-      name: 'Vrindavan Kartik Maha-Retreat',
-      type: '3-Day Annual Dham Retreat',
-      badge: 'Kartik Vrata',
-      dates: '18 – 20 Oct 2026',
-      loc: 'Sri Vrindavan Dham (Krishna Balaram Mandir & Govardhan)',
-      lead: 'HG Audarya Gour Das',
-      desc: 'Annual flagship Kartik retreat: Radha Damodar parikrama, Govardhan circumambulation, Deep Daan on Yamuna, and evening ecstatic kirtan.',
-      participants: 38,
-      status: 'Open'
-    },
-    {
-      name: 'Mayapur Gaur Purnima International Camp',
-      type: '4-Day Spiritual Intensive',
-      badge: 'Navadvip Mandal',
-      dates: '21 – 25 Mar 2026',
-      loc: 'Sridham Mayapur (World Headquarters)',
-      lead: 'Madhava Das',
-      desc: 'Annual assembly at the spiritual capital: Navadvip parikrama on foot, darshan of Pancha Tattva, and participating in the international Kirtan Mela.',
-      participants: 32,
-      status: 'Annual'
-    },
-    {
-      name: 'Jagannath Puri Dham Ratha Yatra Camp',
-      type: '3-Day Coastal Pilgrimage',
-      badge: 'Ratha Yatra',
-      dates: '02 – 05 Jul 2026',
-      loc: 'Sri Jagannath Puri Dham, Odisha',
-      lead: 'Sundar Gopal Das',
-      desc: 'Participating in the divine chariot festival: Gundicha Marjana, singing before Lord Jagannath, Tota Gopinath darshan, and ocean bathing.',
-      participants: 29,
-      status: 'Completed'
-    }
-  ];
 
   let body = '';
   if (view === 'Camps & Yatras') {
@@ -18380,26 +18418,40 @@ function viewCamps(){
         ${stat('Never attended', DB.devotees.length - new Set(campRows.map(r => r.devotee)).size, 'consider inviting to next camp', {em:'💡', tint:1, r:'#/devotees'})}
       </div>
 
-      <div class="sec-title" style="margin:20px 0 10px 0;display:flex;align-items:center;justify-content:space-between">
-        <span>Flagship Annual Camps &amp; Retreats</span>
-        <span class="tiny">Held by senior mentors &amp; BACE leadership</span>
+      <div class="sec-title" style="margin:20px 0 12px 0;display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <span>Flagship Annual Camps &amp; Retreats (${majorRetreats.length})</span>
+          <span class="tiny" style="display:block;margin-top:2px">Held by senior mentors &amp; BACE leadership · Stored in MongoDB</span>
+        </div>
+        <button class="btn sm pri" data-act="add-camp-card">${ic('plus')}Add Camp / Retreat</button>
       </div>
+
       <div class="grid g3" style="margin-bottom:20px">
-        ${majorRetreats.map(m => `
-          <div class="card pad" style="display:flex;flex-direction:column;border-top:3px solid var(--teal);transition:transform 0.15s ease,box-shadow 0.15s ease">
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
-              <span class="badge b-teal" style="font-size:10.5px">${esc(m.badge)}</span>
-              <span class="badge ${m.status === 'Open' ? 'b-green' : m.status === 'Completed' ? 'b-grey' : 'b-teal'}">${esc(m.status)}</span>
+        ${majorRetreats.map(m => {
+          const campId = m._id || m.customId || m.id;
+          return `
+            <div class="card pad" style="display:flex;flex-direction:column;border-top:3px solid var(--teal);transition:transform 0.15s ease,box-shadow 0.15s ease">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+                <span class="badge b-teal" style="font-size:10.5px">${esc(m.badge || 'Retreat')}</span>
+                <span class="badge ${m.status === 'Open' ? 'b-green' : m.status === 'Completed' ? 'b-grey' : 'b-teal'}">${esc(m.status || 'Open')}</span>
+              </div>
+              <h3 style="font-size:16px;font-family:'Outfit',sans-serif;margin:0 0 6px 0">${esc(m.name)}</h3>
+              <div class="tiny" style="color:var(--ink-3);margin-bottom:8px">
+                📍 ${esc(m.loc || 'Dham')}<br>
+                📅 ${esc(m.dates || 'Scheduled')}
+              </div>
+              <div style="font-size:12px;line-height:1.5;color:var(--ink-2);flex:1;margin-bottom:12px">${esc(m.desc || '')}</div>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding-top:8px;border-top:1px solid var(--line);font-size:11.5px;margin-bottom:10px">
+                <span>Lead: <b>${esc(m.lead || 'BACE Lead')}</b></span>
+                <span class="badge b-grey">${m.participants || 0} Devotees</span>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:flex-end;gap:6px;padding-top:6px;border-top:1px dashed var(--line)">
+                <button class="btn sm" data-act="edit-camp-card" data-id="${campId}" title="Edit camp details">${ic('edit')}Edit</button>
+                <button class="btn sm" style="color:var(--danger);border-color:var(--danger-soft)" data-act="delete-camp-card" data-id="${campId}" title="Delete camp card">${ic('trash')}Delete</button>
+              </div>
             </div>
-            <h3 style="font-size:16px;font-family:'Outfit',sans-serif;margin:0 0 6px 0">${esc(m.name)}</h3>
-            <div class="tiny" style="color:var(--ink-3);margin-bottom:8px">📍 ${esc(m.loc)}<br>📅 ${esc(m.dates)}</div>
-            <div style="font-size:12px;line-height:1.5;color:var(--ink-2);flex:1;margin-bottom:12px">${esc(m.desc)}</div>
-            <div style="display:flex;align-items:center;justify-content:space-between;padding-top:8px;border-top:1px solid var(--line);font-size:11.5px">
-              <span>Lead: <b>${esc(m.lead)}</b></span>
-              <span class="badge b-grey">${m.participants} Devotees</span>
-            </div>
-          </div>
-        `).join('')}
+          `;
+        }).join('')}
       </div>
 
       <div class="sec-title" style="margin-bottom:10px;display:flex;align-items:center;justify-content:space-between">
@@ -18434,12 +18486,16 @@ function viewCamps(){
       </div>
 
       <div class="sec-title" style="margin:20px 0 12px 0;display:flex;align-items:center;justify-content:space-between">
-        <span>Community Outings, Day Trips &amp; Picnics (${outings.length})</span>
+        <div>
+          <span>Community Outings, Day Trips &amp; Picnics (${outings.length})</span>
+          <span class="tiny" style="display:block;margin-top:2px">Saved &amp; synchronized with MongoDB</span>
+        </div>
         <button class="btn sm pri" data-act="add-outing">${ic('plus')}Plan new outing</button>
       </div>
 
       <div class="grid g3" style="margin-bottom:20px">
         ${outings.map(o => {
+          const outingId = o._id || o.customId || o.id;
           const coord = dv(o.coordinator);
           const atts = (o.attendees || []).map(id => dv(id)).filter(Boolean);
           return `
@@ -18454,17 +18510,24 @@ function viewCamps(){
                 📅 ${fmtLong(o.date)} · Target: <b>${o.batch === 'all' ? 'All BACE' : esc(batch(o.batch)?.name || o.batch)}</b>
               </div>
               <div style="font-size:12px;line-height:1.5;color:var(--ink-2);flex:1;margin-bottom:10px">
-                ${esc(o.description)}
+                ${esc(o.description || '')}
               </div>
               <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:12px">
                 ${(o.highlights || []).map(h => `<span class="badge b-grey" style="font-size:10px">✨ ${esc(h)}</span>`).join('')}
               </div>
-              <div style="display:flex;align-items:center;justify-content:space-between;padding-top:10px;border-top:1px solid var(--line);font-size:11.5px">
+              <div style="display:flex;align-items:center;justify-content:space-between;padding-top:10px;border-top:1px solid var(--line);font-size:11.5px;margin-bottom:10px">
                 <div style="display:flex;align-items:center;gap:6px">
                   ${av(coord?.name || nameOf(o.coordinator), 's')}
                   <span class="tiny">Lead: <b>${esc(coord?.name || nameOf(o.coordinator))}</b></span>
                 </div>
-                <button class="btn sm" data-act="open-outing" data-id="${o.id}">${ic('eye')}View (${atts.length})</button>
+                <span class="badge b-grey">${atts.length} Devotees</span>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;padding-top:6px;border-top:1px dashed var(--line)">
+                <button class="btn sm" data-act="open-outing" data-id="${outingId}">${ic('eye')}View</button>
+                <div style="display:flex;gap:4px">
+                  <button class="btn sm" data-act="edit-outing" data-id="${outingId}" title="Edit outing">${ic('edit')}Edit</button>
+                  <button class="btn sm" style="color:var(--danger);border-color:var(--danger-soft)" data-act="delete-outing" data-id="${outingId}" title="Delete outing">${ic('trash')}</button>
+                </div>
               </div>
             </div>
           `;
@@ -18485,7 +18548,14 @@ function viewCamps(){
           {h:'Target', c:o => o.batch === 'all' ? 'All BACE' : esc(batch(o.batch)?.name || o.batch)},
           {h:'Attendees', c:o => `${o.attendees?.length || 0} devotees`},
           {h:'Status', c:o => `<span class="badge ${o.status === 'Upcoming' ? 'b-teal' : 'b-grey'}">${esc(o.status)}</span>`},
-          {h:'Details', c:o => `<button class="btn sm" data-act="open-outing" data-id="${o.id}">View</button>`}
+          {h:'Actions', c:o => {
+            const oid = o._id || o.customId || o.id;
+            return `<div style="display:flex;gap:4px">
+              <button class="btn sm" data-act="open-outing" data-id="${oid}">View</button>
+              <button class="btn sm" data-act="edit-outing" data-id="${oid}">Edit</button>
+              <button class="btn sm" style="color:var(--danger)" data-act="delete-outing" data-id="${oid}">Delete</button>
+            </div>`;
+          }}
         ],
         rows: outings,
         onRow: 'open-outing'
@@ -18494,13 +18564,14 @@ function viewCamps(){
   }
 
   const actions = view === 'Camps & Yatras'
-    ? `<button class="btn pri" data-act="add-camp">${ic('plus')}Record camp participation</button>`
+    ? `<button class="btn pri" data-act="add-camp-card">${ic('plus')}Add Camp / Retreat</button><button class="btn" data-act="add-camp">${ic('plus')}Record participation</button>`
     : `<button class="btn pri" data-act="add-outing">${ic('plus')}Plan new outing</button>`;
 
   return head('⛺ Devotee Care', 'Camps & Outings', 'Spiritual retreats, yatras, temple outings, parikramas, and outdoor community sangas', actions) +
     `<div class="tabs">${['Camps & Yatras', 'Outings & Picnics'].map(t => `<button class="${t === view ? 'on' : ''}" data-act="tab" data-k="camps" data-v="${t}">${t}</button>`).join('')}</div>` +
     body;
 }
+
 function viewMeetingsAndFollowups(){
   const view = APP.tab.meetings || 'Personal meetings';
   const s = STATS();
@@ -23568,8 +23639,114 @@ document.addEventListener('click',e=>{
     DB.meetings.push({id:uid('mt'),devotee:v.devotee,date:v.date,senior:v.senior,type:v.type,area:v.area,
       points:v.points,actions:v.actions,next:v.next,confidential:true});
     logAudit('Care note updated','Personal meeting recorded (restricted)');toast('Meeting recorded — restricted record','🔒');APP.modal='';render();break}
-  case 'add-outing':
-    openForm('Plan new outing & picnic', [
+  /* --- Camp / Retreat Cards CRUD --- */
+  case 'add-camp-card': {
+    stop();
+    openForm('Add Camp / Retreat', [
+      FLD('name','Camp / Retreat title','text',{ph:'e.g. Rishikesh Himalayan Sadhana Retreat',half:1}),
+      FLD('badge','Badge / Label','text',{ph:'e.g. Himalayan Sadhana',half:1}),
+      FLD('type','Programme Type','text',{ph:'e.g. 3-Day Annual Dham Retreat',half:1}),
+      FLD('status','Status','select',{opts:['Open','Annual','Upcoming','Completed','Planning'],half:1}),
+      FLD('dates','Dates (e.g. 18 – 20 Oct 2026)','text',{ph:'e.g. 18 – 20 Oct 2026',half:1}),
+      FLD('loc','Location / Venue','text',{ph:'e.g. Sri Vrindavan Dham',half:1}),
+      FLD('lead','Lead Coordinator','text',{v:'HG Audarya Gour Das',half:1}),
+      FLD('participants','Participants count','number',{v:25,half:1}),
+      FLD('desc','Description & Schedule','textarea',{ph:'Describe the holy places, morning japa, parikramas, and itinerary...'})
+    ], 'save-camp-card', { isNew: true });
+    break;
+  }
+  case 'edit-camp-card': {
+    stop();
+    const targetId = t.dataset.id || id;
+    const m = (DB.majorRetreats || []).find(x => (x._id === targetId || x.customId === targetId || x.id === targetId));
+    if (!m) { toast('Camp card not found', '⚠️'); break; }
+    openForm('Edit Camp / Retreat', [
+      FLD('name','Camp / Retreat title','text',{v:m.name,half:1}),
+      FLD('badge','Badge / Label','text',{v:m.badge||'Retreat',half:1}),
+      FLD('type','Programme Type','text',{v:m.type||'Annual Dham Retreat',half:1}),
+      FLD('status','Status','select',{v:m.status||'Open',opts:['Open','Annual','Upcoming','Completed','Planning'],half:1}),
+      FLD('dates','Dates (e.g. 18 – 20 Oct 2026)','text',{v:m.dates||'',half:1}),
+      FLD('loc','Location / Venue','text',{v:m.loc||'',half:1}),
+      FLD('lead','Lead Coordinator','text',{v:m.lead||'HG Audarya Gour Das',half:1}),
+      FLD('participants','Participants count','number',{v:m.participants||0,half:1}),
+      FLD('desc','Description & Schedule','textarea',{v:m.desc||''})
+    ], 'save-camp-card', { id: targetId, isNew: false });
+    break;
+  }
+  case 'save-camp-card': {
+    stop();
+    const v = collect();
+    const ctx = APP.modal.ctx || {};
+    if (ctx.isNew) {
+      const newCamp = {
+        customId: 'camp_' + Date.now().toString(36),
+        name: v.name,
+        badge: v.badge || 'Retreat',
+        type: v.type || 'Annual Dham Retreat',
+        status: v.status || 'Open',
+        dates: v.dates || '',
+        loc: v.loc || '',
+        lead: v.lead || 'HG Audarya Gour Das',
+        participants: parseInt(v.participants) || 0,
+        desc: v.desc || ''
+      };
+      (DB.majorRetreats = DB.majorRetreats || []).unshift(newCamp);
+      fetch('/api/camps', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newCamp)
+      }).then(r => r.json()).then(res => {
+        if (res.success && res.camp) {
+          const idx = DB.majorRetreats.findIndex(x => x.customId === newCamp.customId);
+          if (idx !== -1) DB.majorRetreats[idx] = res.camp;
+        }
+      }).catch(err => console.warn('POST /api/camps notice:', err));
+      toast('Camp added & saved to MongoDB', '⛺');
+    } else {
+      const idx = (DB.majorRetreats || []).findIndex(x => (x._id === ctx.id || x.customId === ctx.id || x.id === ctx.id));
+      if (idx !== -1) {
+        const item = DB.majorRetreats[idx];
+        item.name = v.name;
+        item.badge = v.badge || 'Retreat';
+        item.type = v.type || 'Annual Dham Retreat';
+        item.status = v.status || 'Open';
+        item.dates = v.dates || '';
+        item.loc = v.loc || '';
+        item.lead = v.lead || 'HG Audarya Gour Das';
+        item.participants = parseInt(v.participants) || 0;
+        item.desc = v.desc || '';
+      }
+      fetch('/api/camps/' + encodeURIComponent(ctx.id), {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(v)
+      }).then(r => r.json()).then(res => {
+        if (res.success && res.camp && idx !== -1) {
+          DB.majorRetreats[idx] = res.camp;
+        }
+      }).catch(err => console.warn('PUT /api/camps notice:', err));
+      toast('Camp updated & saved to MongoDB', '✅');
+    }
+    APP.modal = '';
+    render();
+    break;
+  }
+  case 'delete-camp-card': {
+    stop();
+    const targetId = t.dataset.id || id;
+    if (!confirm('Are you sure you want to delete this camp / retreat card? This will also remove it from MongoDB.')) break;
+    DB.majorRetreats = (DB.majorRetreats || []).filter(x => !(x._id === targetId || x.customId === targetId || x.id === targetId));
+    fetch('/api/camps/' + encodeURIComponent(targetId), { method: 'DELETE' })
+      .catch(err => console.warn('DELETE /api/camps notice:', err));
+    toast('Camp deleted from MongoDB', '🗑️');
+    render();
+    break;
+  }
+
+  /* --- Community Outings CRUD --- */
+  case 'add-outing': {
+    stop();
+    openForm('Plan New Outing & Picnic', [
       FLD('name','Outing title','text',{ph:'e.g. Deer Park Morning Japa & Picnic',half:1}),
       FLD('category','Category','select',{opts:['Nature Walk & Picnic','Harinam & Sanga','Temple Darshan','Historic Dham Day Trip','Community Picnic'],half:1}),
       FLD('date','Date','date',{v:iso(TODAY),half:1}),
@@ -23581,10 +23758,12 @@ document.addEventListener('click',e=>{
       FLD('description','Agenda & Description','textarea',{ph:'Describe the purpose, schedule, travel plan, and prasadam arrangements...'})
     ], 'save-outing', {});
     break;
+  }
   case 'save-outing': {
+    stop();
     const v = collect();
     const newOuting = {
-      id: uid('out'),
+      customId: 'out_' + Date.now().toString(36),
       name: v.name,
       category: v.category || 'Nature Walk & Picnic',
       date: v.date || iso(TODAY),
@@ -23596,23 +23775,95 @@ document.addEventListener('click',e=>{
       description: v.description || '',
       attendees: [v.coordinator || 'd1']
     };
-    (DB.outings = DB.outings || []).push(newOuting);
+    (DB.outings = DB.outings || []).unshift(newOuting);
+    fetch('/api/outings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newOuting)
+    }).then(r => r.json()).then(res => {
+      if (res.success && res.outing) {
+        const idx = DB.outings.findIndex(x => x.customId === newOuting.customId);
+        if (idx !== -1) DB.outings[idx] = res.outing;
+      }
+    }).catch(err => console.warn('POST /api/outings notice:', err));
     logAudit('Outing planned', v.name);
-    toast('Outing planned successfully', '🌳');
+    toast('Outing planned & saved to MongoDB', '🌳');
     APP.modal = '';
+    render();
+    break;
+  }
+  case 'edit-outing': {
+    stop();
+    const targetId = t.dataset.id || id;
+    const o = (DB.outings || []).find(x => (x._id === targetId || x.customId === targetId || x.id === targetId));
+    if (!o) { toast('Outing not found', '⚠️'); break; }
+    openForm('Edit Outing & Picnic', [
+      FLD('name','Outing title','text',{v:o.name,half:1}),
+      FLD('category','Category','select',{v:o.category,opts:['Nature Walk & Picnic','Harinam & Sanga','Temple Darshan','Historic Dham Day Trip','Community Picnic'],half:1}),
+      FLD('date','Date','date',{v:o.date,half:1}),
+      FLD('location','Location / Venue','text',{v:o.location,half:1}),
+      FLD('coordinator','Lead Coordinator','select',{v:o.coordinator,opts:DB.devotees.map(d=>[d.id,d.name]),half:1}),
+      FLD('batch','Target Batch','select',{v:o.batch||'all',opts:[['all','All BACE Devotees'],...DB.batches.map(b=>[b.id,b.name])],half:1}),
+      FLD('highlights','Highlights (comma-separated)','text',{v:(o.highlights||[]).join(', '),half:1}),
+      FLD('status','Status','select',{v:o.status,opts:['Upcoming','Completed','Planning'],half:1}),
+      FLD('description','Agenda & Description','textarea',{v:o.description||''})
+    ], 'save-outing-edit', { id: targetId });
+    break;
+  }
+  case 'save-outing-edit': {
+    stop();
+    const v = collect();
+    const ctx = APP.modal.ctx || {};
+    const idx = (DB.outings || []).findIndex(x => (x._id === ctx.id || x.customId === ctx.id || x.id === ctx.id));
+    if (idx !== -1) {
+      const o = DB.outings[idx];
+      o.name = v.name;
+      o.category = v.category || 'Nature Walk & Picnic';
+      o.date = v.date;
+      o.location = v.location;
+      o.coordinator = v.coordinator;
+      o.batch = v.batch;
+      o.highlights = (v.highlights || '').split(',').map(s => s.trim()).filter(Boolean);
+      o.status = v.status;
+      o.description = v.description;
+    }
+    fetch('/api/outings/' + encodeURIComponent(ctx.id), {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(v)
+    }).then(r => r.json()).then(res => {
+      if (res.success && res.outing && idx !== -1) {
+        DB.outings[idx] = res.outing;
+      }
+    }).catch(err => console.warn('PUT /api/outings notice:', err));
+    toast('Outing updated & saved to MongoDB', '✅');
+    APP.modal = '';
+    render();
+    break;
+  }
+  case 'delete-outing': {
+    stop();
+    const targetId = t.dataset.id || id;
+    if (!confirm('Are you sure you want to delete this outing? This will also remove it from MongoDB.')) break;
+    DB.outings = (DB.outings || []).filter(x => !(x._id === targetId || x.customId === targetId || x.id === targetId));
+    fetch('/api/outings/' + encodeURIComponent(targetId), { method: 'DELETE' })
+      .catch(err => console.warn('DELETE /api/outings notice:', err));
+    toast('Outing deleted from MongoDB', '🗑️');
+    if (APP.modal && APP.modal.kind === 'outing') APP.modal = '';
     render();
     break;
   }
   case 'open-outing': {
     stop();
     const oid = t.dataset.id || id;
-    const o = (DB.outings || []).find(x => x.id === oid);
+    const o = (DB.outings || []).find(x => (x._id === oid || x.customId === oid || x.id === oid));
     if (o) {
       APP.modal = { kind: 'outing', outing: o };
       render();
     }
     break;
   }
+
   case 'add-camp':openForm('Record camp participation',[FLD('devotee','Devotee','select',{opts:DB.devotees.map(d=>[d.id,d.name])}),
     FLD('name','Camp or yatra','text',{ph:'Vrindavan Yatra',half:1}),FLD('date','Date','date',{v:iso(TODAY),half:1})],'save-camp',{});break;
   case 'save-camp':{const v=collect();DB.camps.push({id:uid('cp'),devotee:v.devotee,name:v.name,date:v.date});
@@ -24211,6 +24462,8 @@ async function verifyUserSessionFromServer(){
 
 APP.route=location.hash||'#/';
 loadMorningAttendanceFromBackend();
+loadCampsFromBackend();
+loadOutingsFromBackend();
 render();
 syncDevoteesFromServer(true); // forceImmediate on first page load
 verifyUserSessionFromServer();

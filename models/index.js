@@ -7,6 +7,8 @@ const Attendance = require('./Attendance');
 const User = require('./User');
 const Followup = require('./Followup');
 const Expense = require('./Expense');
+const Camp = require('./Camp');
+const Outing = require('./Outing');
 
 module.exports = {
   Devotee,
@@ -17,5 +19,7 @@ module.exports = {
   Attendance,
   User,
   Followup,
-  Expense
+  Expense,
+  Camp,
+  Outing
 };
