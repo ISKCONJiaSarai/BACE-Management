@@ -4094,18 +4094,15 @@ const PILLARS=[
  {key:'care',t:'Devotee Care',em:'❤️',pill:'var(--green)',m:'care',items:[
    {t:'Care dashboard',em:'📊',r:'#/care',m:'care'},
    {sub:'Emotional care'},
-   {t:'Friends',em:'🫂',r:'#/friends',m:'care',indent:1},
-   {t:'Groups',em:'👥',r:'#/groups',m:'care',indent:1},
+   {t:'Friends & Groups',em:'👥',r:'#/groups',m:'care',indent:1},
    {t:'Swabhav engagement',em:'🌿',r:'#/swabhav',m:'care',indent:1},
    {sub:'Spiritual care'},
    {t:'Sadhana',em:'📿',r:'#/sadhana',m:'care',indent:1},
    {t:'Facilitators',em:'🤝',r:'#/facilitators',m:'care',indent:1},
    {t:'Spiritual classes',em:'📿',r:'#/spiritual-classes',m:'care',indent:1},
    {t:'Camps',em:'⛺',r:'#/camps',m:'care',indent:1},
-   {t:'Temple visits',em:'🛕',r:'#/temple-visits',m:'care',indent:1},
-   {t:'Personal meetings',em:'🔒',r:'#/meetings',m:'care_notes',indent:1},
+   {t:'Personal meetings & follow-ups',em:'🔒',r:'#/meetings',m:'care',indent:1},
    {sub:' '},
-   {t:'Care follow-ups',em:'⏰',r:'#/care-followups',m:'care'},
    {t:'Care reports',em:'📄',r:'#/care-reports',m:'care'}]}
 ];
 const NAV_BOTTOM=[
@@ -4117,7 +4114,7 @@ const NAV_BOTTOM=[
 ];
 const MODULE_ACCENT={mgmt:'saffron',depts:'saffron',dept:'saffron',assign:'saffron',attendance:'saffron','dept-reports':'saffron',inventory:'saffron',actions:'saffron',sops:'teal',
  preaching:'indigo',batches:'indigo',batch:'indigo',contacts:'indigo',followups:'indigo',classes:'indigo','batch-attendance':'indigo','preaching-reports':'indigo',
- care:'green',friends:'green',groups:'green',group:'green',swabhav:'green',sadhana:'green',facilitators:'green','spiritual-classes':'green',camps:'green','temple-visits':'green',meetings:'green','care-followups':'green','care-reports':'green',
+ care:'green',friends:'green',groups:'green',group:'green',swabhav:'green',sadhana:'green',facilitators:'green','spiritual-classes':'green',camps:'green',meetings:'green','care-followups':'green','care-reports':'green',
  reports:'mustard',calendar:'sky',messages:'teal',admin:'ink',notifications:'mustard'};
 function applyAccent(route){
   const key=MODULE_ACCENT[route.split('/')[1]]||'saffron';
@@ -4175,16 +4172,13 @@ function appHeader(){
     ]},
     {t:'Devotee Care',r:'#/care',m:'care',children:[
       {t:'Care Dashboard',em:'📊',r:'#/care',m:'care'},
-      {t:'Friends',em:'🫂',r:'#/friends',m:'care'},
-      {t:'Groups',em:'👥',r:'#/groups',m:'care'},
+      {t:'Friends & Groups',em:'👥',r:'#/groups',m:'care'},
       {t:'Swabhav Engagement',em:'🌿',r:'#/swabhav',m:'care'},
       {t:'Sadhana',em:'📿',r:'#/sadhana',m:'care'},
       {t:'Facilitators',em:'🤝',r:'#/facilitators',m:'care'},
       {t:'Spiritual Classes',em:'📖',r:'#/spiritual-classes',m:'care'},
       {t:'Camps',em:'⛺',r:'#/camps',m:'care'},
-      {t:'Temple Visits',em:'🛕',r:'#/temple-visits',m:'care'},
-      {t:'Personal Meetings',em:'🔒',r:'#/meetings',m:'care_notes'},
-      {t:'Care Follow-ups',em:'⏰',r:'#/care-followups',m:'care'},
+      {t:'Personal Meetings & Follow-ups',em:'🔒',r:'#/meetings',m:'care'},
       {t:'Care Reports',em:'📄',r:'#/care-reports',m:'care'}
     ]},
     {t:'Calendar',r:'#/calendar',m:'calendar'},
@@ -4194,7 +4188,7 @@ function appHeader(){
   const cleanRoute=APP.route.replace(/^#\/?/,'');
   const mgmtRoutes=['mgmt','depts','dept','assign','attendance','dept-reports','inventory','sops','actions'];
   const preachRoutes=['preaching','batches','batch','contacts','followups','classes','batch-attendance'];
-  const careRoutes=['care','friends','groups','group','swabhav','sadhana','facilitators','spiritual-classes','camps','temple-visits','meetings','care-followups','care-reports'];
+  const careRoutes=['care','friends','groups','group','swabhav','sadhana','facilitators','spiritual-classes','camps','meetings','care-followups','care-reports'];
   function isActive(r){
     const seg=r.replace(/^#\//,'');
     if(seg==='')return route===''||route==='today';
@@ -4263,7 +4257,7 @@ function mobileNavDropdown(){
   const route=APP.route.replace(/^#\/?/,'').split('/')[0];
   const mgmtRoutes=['mgmt','depts','dept','assign','attendance','dept-reports','inventory','sops','actions'];
   const preachRoutes=['preaching','batches','batch','contacts','followups','classes','batch-attendance'];
-  const careRoutes=['care','friends','groups','group','swabhav','sadhana','facilitators','spiritual-classes','camps','temple-visits','meetings','care-followups','care-reports'];
+  const careRoutes=['care','friends','groups','group','swabhav','sadhana','facilitators','spiritual-classes','camps','meetings','care-followups','care-reports'];
   const mainItems=[
     {t:'Dashboard',em:'🏠',r:'#/',on:route===''},
     {t:'Today',em:'⚡',r:'#/today',on:route==='today'},
@@ -4288,11 +4282,11 @@ function mobileNavDropdown(){
     ]},
     {title:'Devotee Care',items:[
       {t:'Care Dashboard',em:'📊',r:'#/care',m:'care'},
-      {t:'Friends',em:'🫂',r:'#/friends',m:'care'},
-      {t:'Groups',em:'👥',r:'#/groups',m:'care'},
+      {t:'Friends & Groups',em:'👥',r:'#/groups',m:'care'},
       {t:'Sadhana',em:'📿',r:'#/sadhana',m:'care'},
       {t:'Facilitators',em:'🤝',r:'#/facilitators',m:'care'},
       {t:'Camps',em:'⛺',r:'#/camps',m:'care'},
+      {t:'Meetings & Follow-ups',em:'🔒',r:'#/meetings',m:'care'},
     ]},
   ];
   const bottomItems=[
@@ -4464,9 +4458,9 @@ const CRUMBS={'':'Dashboard',today:'Today',devotees:'Devotees',devotee:'Devotee'
  depts:'Departments',dept:'Department',assign:'Assign Seva',attendance:'BACE Pillars','dept-reports':'Department reports',
  inventory:'Inventory & BBT',sops:'SOPs & standards',actions:'Action items',preaching:'BACE Preaching',batches:'Batch management',
  batch:'Batch',contacts:'Contacts & pipeline',followups:'Follow-ups',classes:'Classes & events','batch-attendance':'Batch attendance',
- 'preaching-reports':'Preaching reports',care:'Devotee Care',friends:'Friends',groups:'Groups',group:'Group',swabhav:'Swabhav engagement',
- sadhana:'Sadhana',facilitators:'Facilitators','spiritual-classes':'Spiritual classes',camps:'Camps','temple-visits':'Temple visits',
- meetings:'Personal meetings','care-followups':'Care follow-ups','care-reports':'Care reports',reports:'Reports & analytics',
+ 'preaching-reports':'Preaching reports',care:'Devotee Care',friends:'Friends & Groups',groups:'Friends & Groups',group:'Group',swabhav:'Swabhav engagement',
+ sadhana:'Sadhana',facilitators:'Facilitators','spiritual-classes':'Spiritual classes',camps:'Camps',
+ meetings:'Meetings & Follow-ups','care-followups':'Meetings & Follow-ups','care-reports':'Care reports',reports:'Reports & analytics',
  calendar:'Community calendar',messages:'Messages',notifications:'Notifications',admin:'Administration',more:'Menu'};
 
 const CRUMB_PARENTS = {
@@ -5452,19 +5446,11 @@ function pillarCardCare(){
           </div>
           <span class="pillar-item-arrow">›</span>
         </a>
-        <a class="pillar-item" href="#/care">
+        <a class="pillar-item" href="#/groups">
           <span class="pillar-item-icon">👥</span>
           <div class="pillar-item-info">
-            <div class="pillar-item-title">Care groups</div>
-            <div class="pillar-item-sub">${s.groups} weekly care groups</div>
-          </div>
-          <span class="pillar-item-arrow">›</span>
-        </a>
-        <a class="pillar-item" href="#/care">
-          <span class="pillar-item-icon">💛</span>
-          <div class="pillar-item-info">
-            <div class="pillar-item-title">Friends &amp; mentorship</div>
-            <div class="pillar-item-sub">Devotee pairing &amp; connection</div>
+            <div class="pillar-item-title">Friends &amp; Groups</div>
+            <div class="pillar-item-sub">${s.groups} groups · circles &amp; pairing</div>
           </div>
           <span class="pillar-item-arrow">›</span>
         </a>
@@ -5476,7 +5462,7 @@ function pillarCardCare(){
           </div>
           <span class="pillar-item-arrow">›</span>
         </a>
-        <a class="pillar-item" href="#/devotees">
+        <a class="pillar-item" href="#/facilitators">
           <span class="pillar-item-icon">🧑‍🏫</span>
           <div class="pillar-item-info">
             <div class="pillar-item-title">Facilitators</div>
@@ -5489,6 +5475,14 @@ function pillarCardCare(){
           <div class="pillar-item-info">
             <div class="pillar-item-title">Camps &amp; yatras</div>
             <div class="pillar-item-sub">Spiritual retreats &amp; visits</div>
+          </div>
+          <span class="pillar-item-arrow">›</span>
+        </a>
+        <a class="pillar-item" href="#/meetings">
+          <span class="pillar-item-icon">🔒</span>
+          <div class="pillar-item-info">
+            <div class="pillar-item-title">Meetings &amp; follow-ups</div>
+            <div class="pillar-item-sub">Confidential 1-on-1s &amp; check-ins</div>
           </div>
           <span class="pillar-item-arrow">›</span>
         </a>
@@ -5755,7 +5749,7 @@ function viewDashboard(){
      ${section('Spiritual care this month',`<div class="grid g4" style="padding:16px 18px">
       ${stat('Sadhana reports',DB.sadhana.length,'collected this week',{em:'📿',act:'go',r:'#/sadhana'})}
       ${stat('Personal meetings',DB.meetings.length,'recorded',{em:'🔒',act:'go',r:'#/meetings'})}
-      ${stat('Temple visits',DB.templeVisits.length,'logged',{em:'🛕',act:'go',r:'#/temple-visits'})}
+      ${stat('Care follow-ups',STATS().careWeek,'scheduled this week',{em:'⏰',act:'go',r:'#/meetings'})}
       ${stat('Camp participation',DB.camps.length,'devotees',{em:'⛺',act:'go',r:'#/camps'})}</div>`)}`;
 
   if(r==='dept_head'){const dp=dept(APP.user.dept)||activeDepts()[0];return hd+deptDashboardBody(dp)}
@@ -5763,10 +5757,10 @@ function viewDashboard(){
   if(r==='facilitator'){
     const mine=DB.devotees.filter(d=>d.facilitator===APP.user.devotee);
     return hd+`<div class="grid g4" style="margin-bottom:15px">
-      ${stat('My devotees',mine.length,'assigned to me',{em:'🤝',r:'#/friends'})}
+      ${stat('My devotees',mine.length,'assigned to me',{em:'🤝',r:'#/groups'})}
       ${stat('Doing well',mine.filter(d=>d.careStatus.emotional==='Doing well').length,'steady sadhana and seva',{em:'🌸',r:'#/care'})}
-      ${stat('Needs attention',mine.filter(d=>d.careStatus.emotional==='Needs attention').length,'check in this week',{em:'⚠️',tint:1,r:'#/care-followups'})}
-      ${stat('Follow-up required',mine.filter(d=>d.careStatus.emotional==='Follow-up required').length,'overdue conversations',{em:'⏰',act:'go',r:'#/care-followups'})}</div>
+      ${stat('Needs attention',mine.filter(d=>d.careStatus.emotional==='Needs attention').length,'check in this week',{em:'⚠️',tint:1,r:'#/meetings'})}
+      ${stat('Follow-up required',mine.filter(d=>d.careStatus.emotional==='Follow-up required').length,'overdue conversations',{em:'⏰',act:'go',r:'#/meetings'})}</div>
       ${section('❤️ My devotees',mine.length?`<div class="list">${mine.map(d=>`<a class="li click" href="#/devotee/${d.id}">${av(d.name,'m')}
         <span class="grow"><span class="t">${esc(d.name)}</span><span class="d">${esc(d.org)} · ${d.sadhana.rounds} rounds · last interaction ${relD(iso(dayOff(-ri(1,14))))}</span></span>
         ${sbadge(d.careStatus.emotional)}${badge(d.careStatus.spiritual,'teal')}</a>`).join('')}</div>`
@@ -17604,18 +17598,15 @@ function viewCare(){
     ${stat('Pending follow-ups',s.careWeek,`${s.careOverdue} overdue`,{em:'⏰',tint:s.careOverdue>0,act:'go',r:'#/care-followups'})}</div>
    <div class="grid g2" style="margin-bottom:15px">
     ${section('🌸 Emotional care',`<div class="list">
-      <a class="li click" href="#/friends"><span class="badge b-green">🫂</span><span class="grow"><span class="t">Friends</span>
-        <span class="d">${DB.devotees.filter(d=>d.friends.length).length} devotees paired — somebody notices when they stop coming</span></span>${ic('arrow')}</a>
-      <a class="li click" href="#/groups"><span class="badge b-green">👥</span><span class="grow"><span class="t">Groups</span>
-        <span class="d">${s.groups} weekly care groups with ${DB.careGroups.reduce((n,g)=>n+g.members.length,0)} members</span></span>${ic('arrow')}</a>
+      <a class="li click" href="#/groups"><span class="badge b-green">👥</span><span class="grow"><span class="t">Friends &amp; Groups</span>
+        <span class="d">${s.groups} weekly care groups · ${DB.devotees.filter(d=>d.friends.length).length} devotees paired</span></span>${ic('arrow')}</a>
       <a class="li click" href="#/swabhav"><span class="badge b-green">🌿</span><span class="grow"><span class="t">Swabhav engagement</span>
         <span class="d">${DB.devotees.filter(d=>d.swabhav.engaged).length} engaged according to their nature</span></span>${ic('arrow')}</a></div>`)}
     ${section('❤️ Spiritual care',`<div class="list">
       <a class="li click" href="#/sadhana"><span class="badge b-teal">📿</span><span class="grow"><span class="t">Sadhana</span><span class="d">${DB.sadhana.length} reports this week</span></span>${ic('arrow')}</a>
       <a class="li click" href="#/facilitators"><span class="badge b-teal">🤝</span><span class="grow"><span class="t">Facilitators</span><span class="d">${s.facilitators} active facilitators</span></span>${ic('arrow')}</a>
-      <a class="li click" href="#/camps"><span class="badge b-teal">⛺</span><span class="grow"><span class="t">Camps & yatras</span><span class="d">${DB.camps.length} participations recorded</span></span>${ic('arrow')}</a>
-      <a class="li click" href="#/temple-visits"><span class="badge b-teal">🛕</span><span class="grow"><span class="t">Temple visits</span><span class="d">${DB.templeVisits.length} visits logged</span></span>${ic('arrow')}</a>
-      ${can('care_notes')?`<a class="li click" href="#/meetings"><span class="badge b-teal">🔒</span><span class="grow"><span class="t">Personal meetings</span><span class="d">${DB.meetings.length} confidential records</span></span>${ic('arrow')}</a>`:''}</div>`)}</div>
+      <a class="li click" href="#/camps"><span class="badge b-teal">⛺</span><span class="grow"><span class="t">Camps &amp; yatras</span><span class="d">${DB.camps.length} participations recorded</span></span>${ic('arrow')}</a>
+      <a class="li click" href="#/meetings"><span class="badge b-teal">🔒</span><span class="grow"><span class="t">Meetings &amp; Follow-ups</span><span class="d">${can('care_notes')?DB.meetings.length+' meetings · ':''}${s.careWeek} follow-ups scheduled</span></span>${ic('arrow')}</a></div>`)}</div>
    <div class="grid g-2-1">
     ${section('Care group attendance',`<div class="card-b">${barChart(DB.careGroups.filter(g=>g.status==='Active').map(g=>({l:g.name.split('·')[1].trim(),v:groupAttendance(g),color:'var(--green)',
       tip:`${g.name}\nMembers: ${g.members.length}\nLeader: ${nameOf(g.leader)}\nAttendance: ${g.attendance}%`,r:'#/group/'+g.id})),{horizontal:true,unit:'%'})}</div>`,
@@ -17625,47 +17616,75 @@ function viewCare(){
       <span class="d">Facilitator ${esc(nameOf(d.facilitator))}</span></span>${sbadge(d.careStatus.emotional)}</a>`).join('')}</div>`,
       `<span class="tiny">Visible to care roles only</span>`):section('Needs attention',denied('Care flags are restricted to the care team.'))}</div>`;
 }
-function viewFriends(){
+function viewFriendsAndGroups(){
+  const gs=DB.careGroups.filter(g=>APP.filters.showArchived?true:g.status!=='Archived');
   const f=APP.filters.friends||(APP.filters.friends={q:''});
   const rows=DB.devotees.filter(d=>!f.q||d.name.toLowerCase().includes(f.q.toLowerCase()));
   const unpaired=DB.devotees.filter(d=>!d.friends.length);
-  return head('🫂 Devotee Care','Friends','Every devotee should have at least one person who notices when they stop coming',
-    `<button class="btn pri" data-act="add-friend">${ic('plus')}Pair friends</button>`)+
-  `<div class="grid g4" style="margin-bottom:15px">
-    ${stat('Paired',DB.devotees.length-unpaired.length,'have a friend',{em:'🤝',r:'#/friends'})}
-    ${stat('Not yet paired',unpaired.length,'nobody assigned',{em:'⚠️',tint:unpaired.length>0,r:'#/friends'})}
-    ${stat('Average friends',(DB.devotees.reduce((n,d)=>n+d.friends.length,0)/DB.devotees.length).toFixed(1),'per devotee',{em:'📊',r:'#/friends'})}
-    ${stat('Coverage',pct(DB.devotees.length-unpaired.length,DB.devotees.length)+'%','of the community',{em:'✅',r:'#/care-reports'})}</div>
-   ${unpaired.length?section('⚠️ Waiting to be paired',`<div class="list">${unpaired.slice(0,6).map(d=>`<div class="li">${av(d.name)}
-     <span class="grow"><span class="t">${esc(d.name)}</span><span class="d">${esc(d.org)} · joined ${fmtD(d.joined)}</span></span>
-     <button class="btn sm pri" data-act="add-friend" data-id="${d.id}">Pair a friend</button></div>`).join('')}</div>`)+'<div style="height:15px"></div>':''}
-   <div class="card"><div class="toolbar"><input type="search" placeholder="Search devotee" value="${esc(f.q)}" data-act="f" data-k="friends" data-n="q"></div>
-   <div class="list">${rows.slice(0,24).map(d=>`<div class="li">${av(d.name,'m')}
-     <span class="grow"><span class="t">${esc(d.name)}</span><span class="d">${esc(group(d.careGroup)?.name||'No group')} · facilitator ${esc(nameOf(d.facilitator))}</span></span>
-     <div class="chips">${d.friends.map(x=>`<button class="chip" data-act="open-devotee" data-id="${x}">${av(nameOf(x))}${esc(nameOf(x))}</button>`).join('')||'<span class="tiny">No friends yet</span>'}</div>
-     <button class="btn sm" data-act="add-friend" data-id="${d.id}">${ic('plus')}</button></div>`).join('')}</div></div>`;
+
+  return head('👥 Devotee Care','Friends & Groups','Small weekly care groups and devotee friendship pairings — ensuring every devotee is known and cared for',
+    `<div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn" data-act="add-group">${ic('plus')}Create group</button>
+      <button class="btn pri" data-act="add-friend">${ic('plus')}Pair friends</button>
+    </div>`)+
+  `<div class="grid g4" style="margin-bottom:18px">
+    ${stat('Active groups',gs.filter(g=>g.status==='Active').length,'weekly circles',{em:'👥',r:'#/groups'})}
+    ${stat('Group attendance',Math.round(gs.reduce((n,g)=>n+g.attendance,0)/(gs.length||1))+'%','average attendance',{em:'📊',r:'#/groups'})}
+    ${stat('Friends paired',DB.devotees.length-unpaired.length,'have a friend',{em:'🤝',r:'#/groups'})}
+    ${stat('Not yet paired',unpaired.length,'need assignment',{em:'⚠️',tint:unpaired.length>0,r:'#/groups'})}
+  </div>
+
+  <div style="display:flex;gap:10px;margin-bottom:20px">
+    <a class="btn sm" href="#sec-care-groups" style="text-decoration:none">👥 Care Groups (${gs.length})</a>
+    <a class="btn sm" href="#sec-friends-mentorship" style="text-decoration:none">🫂 Friends &amp; Mentorship (${DB.devotees.length-unpaired.length}/${DB.devotees.length})</a>
+  </div>
+
+  <div id="sec-care-groups" style="margin-bottom:30px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid var(--accent)">
+      <div>
+        <h2 style="font-size:18px;margin:0;font-family:var(--font-display);display:flex;align-items:center;gap:8px"><span>👥</span> Sub-Section 1: Care Groups</h2>
+        <div class="tiny" style="color:var(--ink-3)">Small weekly circles where devotees are personally known, encouraged, and guided</div>
+      </div>
+      <button class="btn sm pri" data-act="add-group">${ic('plus')}Create group</button>
+    </div>
+    ${gs.length?`<div class="grid g3">${gs.map(g=>`<div class="card">
+      <a href="#/group/${g.id}" style="display:block"><div class="card-b">
+        <div style="display:flex;gap:11px;align-items:center"><span class="av m" style="background:var(--green);border-radius:12px">🫂</span>
+        <div><h3>${esc(g.name)}</h3><div class="tiny">${g.members.length} members · ${esc(g.freq)} on ${esc(g.day)}</div></div>
+        ${g.status!=='Active'?sbadge(g.status):''}</div>
+        <div style="margin-top:13px"><div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:5px">
+          <span class="muted">Attendance</span><b>${g.attendance}%</b></div>${prog(g.attendance,'var(--green)')}</div>
+        <div class="people" style="margin-top:12px">${g.members.slice(0,6).map(mid=>av(nameOf(mid))).join('')}
+          ${g.members.length>6?`<span class="av s" style="background:var(--ink-3)">+${g.members.length-6}</span>`:''}</div>
+        <div class="tiny" style="margin-top:10px">Leader ${esc(nameOf(g.leader))} · next meeting ${fmtD(g.next)}</div></div></a>
+      ${can('care')?`<div class="card-b" style="border-top:1px solid var(--line-2);display:flex;gap:7px;padding-top:11px">
+        <button class="btn sm" data-act="edit-group" data-id="${g.id}">${ic('edit')}Edit</button>
+        <button class="btn sm" data-act="group-add-member" data-id="${g.id}">${ic('plus')}Member</button>
+        ${g.status==='Active'?`<button class="btn sm danger" data-act="archive-group" data-id="${g.id}">Archive</button>`:''}</div>`:''}
+      </div>`).join('')}</div>`
+    :emptyState('No care groups created yet','Create the first care group and add devotees to it.','<button class="btn pri" data-act="add-group">Create group</button>','people')}
+  </div>
+
+  <div id="sec-friends-mentorship" style="margin-bottom:20px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid var(--accent)">
+      <div>
+        <h2 style="font-size:18px;margin:0;font-family:var(--font-display);display:flex;align-items:center;gap:8px"><span>🫂</span> Sub-Section 2: Friends &amp; Mentorship</h2>
+        <div class="tiny" style="color:var(--ink-3)">Devotee friendship pairing — ensuring every devotee has someone who notices and reaches out</div>
+      </div>
+      <button class="btn sm pri" data-act="add-friend">${ic('plus')}Pair friends</button>
+    </div>
+    ${unpaired.length?section('⚠️ Waiting to be paired',`<div class="list">${unpaired.slice(0,6).map(d=>`<div class="li">${av(d.name)}
+      <span class="grow"><span class="t">${esc(d.name)}</span><span class="d">${esc(d.org)} · joined ${fmtD(d.joined)}</span></span>
+      <button class="btn sm pri" data-act="add-friend" data-id="${d.id}">Pair a friend</button></div>`).join('')}</div>`)+'<div style="height:15px"></div>':''}
+    <div class="card"><div class="toolbar"><input type="search" placeholder="Search devotee by name..." value="${esc(f.q)}" data-act="f" data-k="friends" data-n="q"></div>
+    <div class="list">${rows.slice(0,24).map(d=>`<div class="li">${av(d.name,'m')}
+      <span class="grow"><span class="t">${esc(d.name)}</span><span class="d">${esc(group(d.careGroup)?.name||'No group')} · facilitator ${esc(nameOf(d.facilitator))}</span></span>
+      <div class="chips">${d.friends.map(x=>`<button class="chip" data-act="open-devotee" data-id="${x}">${av(nameOf(x))}${esc(nameOf(x))}</button>`).join('')||'<span class="tiny">No friends yet</span>'}</div>
+      <button class="btn sm" data-act="add-friend" data-id="${d.id}">${ic('plus')}</button></div>`).join('')}</div></div>
+  </div>`;
 }
-function viewGroups(){
-  const gs=DB.careGroups.filter(g=>APP.filters.showArchived?true:g.status!=='Archived');
-  return head('👥 Devotee Care','Care groups','Small weekly groups where people are actually known',
-    `<button class="btn pri" data-act="add-group">${ic('plus')}Create group</button>`)+
-  (gs.length?`<div class="grid g3">${gs.map(g=>`<div class="card">
-    <a href="#/group/${g.id}" style="display:block"><div class="card-b">
-      <div style="display:flex;gap:11px;align-items:center"><span class="av m" style="background:var(--green);border-radius:12px">🫂</span>
-      <div><h3>${esc(g.name)}</h3><div class="tiny">${g.members.length} members · ${esc(g.freq)} on ${esc(g.day)}</div></div>
-      ${g.status!=='Active'?sbadge(g.status):''}</div>
-      <div style="margin-top:13px"><div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:5px">
-        <span class="muted">Attendance</span><b>${g.attendance}%</b></div>${prog(g.attendance,'var(--green)')}</div>
-      <div class="people" style="margin-top:12px">${g.members.slice(0,6).map(mid=>av(nameOf(mid))).join('')}
-        ${g.members.length>6?`<span class="av s" style="background:var(--ink-3)">+${g.members.length-6}</span>`:''}</div>
-      <div class="tiny" style="margin-top:10px">Leader ${esc(nameOf(g.leader))} · next meeting ${fmtD(g.next)}</div></div></a>
-    ${can('care')?`<div class="card-b" style="border-top:1px solid var(--line-2);display:flex;gap:7px;padding-top:11px">
-      <button class="btn sm" data-act="edit-group" data-id="${g.id}">${ic('edit')}Edit</button>
-      <button class="btn sm" data-act="group-add-member" data-id="${g.id}">${ic('plus')}Member</button>
-      ${g.status==='Active'?`<button class="btn sm danger" data-act="archive-group" data-id="${g.id}">Archive</button>`:''}</div>`:''}
-    </div>`).join('')}</div>`
-  :emptyState('No groups created yet','Create the first care group and add members to it.','<button class="btn pri" data-act="add-group">Create group</button>','people'));
-}
+function viewFriends(){return viewFriendsAndGroups();}
+function viewGroups(){return viewFriendsAndGroups();}
 function viewGroup(id){
   const g=group(id);if(!g)return emptyState('Group not found','','<a class="btn" href="#/groups">Back to groups</a>');
   APP.crumbLeaf=g.name;
@@ -17784,38 +17803,60 @@ function viewCamps(){
      {h:'Batch',c:r=>esc(batch(r.d.batch)?.name||'—')},{h:'Facilitator',c:r=>esc(nameOf(r.d.facilitator))}],
     rows,onRow:'open-devotee-row'})}`;
 }
-function viewTempleVisits(){
-  const rows=DB.templeVisits.map(v=>({...v,d:dv(v.devotee)})).filter(v=>v.d);
-  return head('🛕 Devotee Care','Temple visits','First visits matter — this is where many journeys turn',
-    `<button class="btn pri" data-act="add-visit">${ic('plus')}Record visit</button>`)+
-   dataTable({id:'tv',exportName:'temple-visits',cols:[
-     {h:'Devotee',c:r=>`<div class="who">${av(r.d.name,'m')}<b>${esc(r.d.name)}</b></div>`},
-     {h:'Temple',c:r=>esc(r.temple)},{h:'Date',c:r=>fmtD(r.date)},
-     {h:'Notes',c:r=>`<span class="tiny">${esc(r.notes)}</span>`}],rows,onRow:'open-devotee-row'});
-}
-function viewMeetings(){
-  if(!can('care_notes'))return head('🔒 Devotee Care','Personal meetings','Restricted')+denied('Personal meeting notes are confidential. Only the Devotee Care Manager, the Overall Coordinator, the Area Leader and the assigned facilitator can open them.');
+function viewMeetingsAndFollowups(){
+  const s=STATS();
   let rows=DB.meetings.map(m=>({...m,d:dv(m.devotee)})).filter(m=>m.d);
   if(APP.user.role==='facilitator')rows=rows.filter(m=>m.senior===APP.user.devotee||m.d.facilitator===APP.user.devotee);
-  return head('🔒 Devotee Care','Personal meetings','Confidential records of one-to-one conversations',
-    `<button class="btn pri" data-act="add-meeting">${ic('plus')}Record meeting</button>`)+
-  `<div class="note" style="margin-bottom:15px">These notes are restricted. They do not appear in department dashboards, batch reports or group chats.</div>
-   <div class="grid g2">${rows.slice(0,12).map(m=>section(m.d.name,`<div class="card-b">
-     <div class="chips" style="margin-bottom:10px">${badge(m.type,'teal')}${badge(fmtD(m.date),'grey')}${badge('With '+nameOf(m.senior),'green')}</div>
-     <dl class="kv"><dt>Area discussed</dt><dd>${esc(m.area)}</dd><dt>Key points</dt><dd>${esc(m.points)}</dd>
-       <dt>Action agreed</dt><dd>${esc(m.actions)}</dd><dt>Next meeting</dt><dd>${fmtD(m.next)}</dd></dl>
-     <a class="btn sm" style="margin-top:11px" href="#/devotee/${m.d.id}">Open profile</a></div>`)).join('')}</div>`;
-}
-function viewCareFollowups(){
-  const s=STATS();
-  return head('⏰ Devotee Care','Care follow-ups','Check-ins that were promised, tracked until they happen',
-    `<button class="btn pri" data-act="add-followup" data-kind="Care">${ic('plus')}New follow-up</button>`)+
-  `<div class="grid g4" style="margin-bottom:15px">
-    ${stat('Overdue',s.careOverdue,'past due date',{em:'⚠️',tint:s.careOverdue>0,act:'f-bucket',arg:'Overdue'})}
+
+  return head('🤝 Devotee Care','Meetings & Follow-ups','Personal one-to-one confidential care conversations and timely check-in follow-ups',
+    `<div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn pri" data-act="add-followup" data-kind="Care">${ic('plus')}New follow-up</button>
+      ${can('care_notes')?`<button class="btn" data-act="add-meeting">${ic('plus')}Record meeting</button>`:''}
+    </div>`)+
+  `<div class="grid g4" style="margin-bottom:18px">
+    ${stat('Overdue follow-ups',s.careOverdue,'past due date',{em:'⚠️',tint:s.careOverdue>0,act:'f-bucket',arg:'Overdue'})}
     ${stat('Due today',s.careToday,'check in today',{em:'📞',act:'f-bucket',arg:'Today'})}
     ${stat('This week',s.careWeek,'scheduled',{em:'📅',act:'f-bucket',arg:'Upcoming'})}
-    ${stat('Completed',DB.followups.filter(f=>f.kind==='Care'&&f.status==='Completed').length,'closed out',{em:'✅',act:'f-bucket',arg:'Completed'})}</div>`+fuList('Care');
+    ${stat('Personal meetings',can('care_notes')?rows.length:'🔒 Restricted','one-to-one records',{em:'🔒',r:'#/meetings'})}
+  </div>
+
+  <div style="display:flex;gap:10px;margin-bottom:20px">
+    <a class="btn sm" href="#sec-personal-meetings" style="text-decoration:none">🔒 Personal Meetings (${can('care_notes')?rows.length:'Restricted'})</a>
+    <a class="btn sm" href="#sec-care-followups" style="text-decoration:none">⏰ Care Follow-ups (${s.careOverdue+s.careToday} active)</a>
+  </div>
+
+  <div id="sec-personal-meetings" style="margin-bottom:30px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid var(--accent)">
+      <div>
+        <h2 style="font-size:18px;margin:0;font-family:var(--font-display);display:flex;align-items:center;gap:8px"><span>🔒</span> Sub-Section 1: Personal Meetings</h2>
+        <div class="tiny" style="color:var(--ink-3)">Confidential records of one-to-one spiritual conversations and guidance</div>
+      </div>
+      ${can('care_notes')?`<button class="btn sm pri" data-act="add-meeting">${ic('plus')}Record meeting</button>`:''}
+    </div>
+    ${!can('care_notes')?
+      denied('Personal meeting notes are confidential. Only the Devotee Care Manager, the Overall Coordinator, the Area Leader and the assigned facilitator can open them.')
+      :`<div class="note" style="margin-bottom:15px">These notes are restricted. They do not appear in department dashboards, batch reports or group chats.</div>
+        ${rows.length?`<div class="grid g2">${rows.slice(0,12).map(m=>section(m.d.name,`<div class="card-b">
+          <div class="chips" style="margin-bottom:10px">${badge(m.type,'teal')}${badge(fmtD(m.date),'grey')}${badge('With '+nameOf(m.senior),'green')}</div>
+          <dl class="kv"><dt>Area discussed</dt><dd>${esc(m.area)}</dd><dt>Key points</dt><dd>${esc(m.points)}</dd>
+            <dt>Action agreed</dt><dd>${esc(m.actions)}</dd><dt>Next meeting</dt><dd>${fmtD(m.next)}</dd></dl>
+          <a class="btn sm" style="margin-top:11px" href="#/devotee/${m.d.id}">Open profile</a></div>`)).join('')}</div>`
+        :emptyState('No personal meetings recorded yet','Confidential meeting notes between facilitators and devotees will appear here.','<button class="btn pri" data-act="add-meeting">Record meeting</button>','notes')}`}
+  </div>
+
+  <div id="sec-care-followups" style="margin-bottom:20px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid var(--accent)">
+      <div>
+        <h2 style="font-size:18px;margin:0;font-family:var(--font-display);display:flex;align-items:center;gap:8px"><span>⏰</span> Sub-Section 2: Care Follow-ups</h2>
+        <div class="tiny" style="color:var(--ink-3)">Check-ins that were promised, systematically tracked until they happen</div>
+      </div>
+      <button class="btn sm pri" data-act="add-followup" data-kind="Care">${ic('plus')}New follow-up</button>
+    </div>
+    ${fuList('Care')}
+  </div>`;
 }
+function viewMeetings(){return viewMeetingsAndFollowups();}
+function viewCareFollowups(){return viewMeetingsAndFollowups();}
 function viewCareReports(){
   const g=DB.careGroups.filter(x=>x.status==='Active');
   const s=STATS();
