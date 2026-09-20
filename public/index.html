@@ -5457,8 +5457,8 @@ function pillarCardCare(){
         <a class="pillar-item" href="#/sadhana">
           <span class="pillar-item-icon">📿</span>
           <div class="pillar-item-info">
-            <div class="pillar-item-title">Sadhana tracking</div>
-            <div class="pillar-item-sub">Japa rounds &amp; reading logs</div>
+            <div class="pillar-item-title">Sadhana &amp; Swabhav</div>
+            <div class="pillar-item-sub">Japa, reading &amp; seva matching</div>
           </div>
           <span class="pillar-item-arrow">›</span>
         </a>
@@ -17596,17 +17596,16 @@ function viewCare(){
     ${stat('Friends paired',DB.devotees.filter(d=>d.friends.length).length,'have at least one friend',{em:'🤝',act:'go',r:'#/friends'})}
     ${stat('Facilitators',s.facilitators,`covering ${s.covered} devotees`,{em:'🧑‍🏫',act:'go',r:'#/facilitators'})}
     ${stat('Pending follow-ups',s.careWeek,`${s.careOverdue} overdue`,{em:'⏰',tint:s.careOverdue>0,act:'go',r:'#/care-followups'})}</div>
-   <div class="grid g2" style="margin-bottom:15px">
-    ${section('🌸 Emotional care',`<div class="list">
-      <a class="li click" href="#/groups"><span class="badge b-green">👥</span><span class="grow"><span class="t">Friends &amp; Groups</span>
-        <span class="d">${s.groups} weekly care groups · ${DB.devotees.filter(d=>d.friends.length).length} devotees paired</span></span>${ic('arrow')}</a>
-      <a class="li click" href="#/swabhav"><span class="badge b-green">🌿</span><span class="grow"><span class="t">Swabhav engagement</span>
-        <span class="d">${DB.devotees.filter(d=>d.swabhav.engaged).length} engaged according to their nature</span></span>${ic('arrow')}</a></div>`)}
-    ${section('❤️ Spiritual care',`<div class="list">
-      <a class="li click" href="#/sadhana"><span class="badge b-teal">📿</span><span class="grow"><span class="t">Sadhana</span><span class="d">${DB.sadhana.length} reports this week</span></span>${ic('arrow')}</a>
-      <a class="li click" href="#/facilitators"><span class="badge b-teal">🤝</span><span class="grow"><span class="t">Facilitators</span><span class="d">${s.facilitators} active facilitators</span></span>${ic('arrow')}</a>
-      <a class="li click" href="#/camps"><span class="badge b-teal">⛺</span><span class="grow"><span class="t">Camps &amp; yatras</span><span class="d">${DB.camps.length} participations recorded</span></span>${ic('arrow')}</a>
-      <a class="li click" href="#/meetings"><span class="badge b-teal">🔒</span><span class="grow"><span class="t">Meetings &amp; Follow-ups</span><span class="d">${can('care_notes')?DB.meetings.length+' meetings · ':''}${s.careWeek} follow-ups scheduled</span></span>${ic('arrow')}</a></div>`)}</div>
+    <div class="grid g2" style="margin-bottom:15px">
+     ${section('🌸 Emotional care',`<div class="list">
+       <a class="li click" href="#/groups"><span class="badge b-green">👥</span><span class="grow"><span class="t">Friends &amp; Groups</span>
+         <span class="d">${s.groups} weekly care groups · ${DB.devotees.filter(d=>d.friends.length).length} devotees paired</span></span>${ic('arrow')}</a>
+       <a class="li click" href="#/sadhana"><span class="badge b-green">📿</span><span class="grow"><span class="t">Sadhana &amp; Swabhav</span>
+         <span class="d">${DB.sadhana.length} sadhana reports · ${DB.devotees.filter(d=>d.swabhav.engaged).length} engaged by nature</span></span>${ic('arrow')}</a></div>`)}
+     ${section('❤️ Spiritual care',`<div class="list">
+       <a class="li click" href="#/facilitators"><span class="badge b-teal">🤝</span><span class="grow"><span class="t">Facilitators</span><span class="d">${s.facilitators} active facilitators</span></span>${ic('arrow')}</a>
+       <a class="li click" href="#/camps"><span class="badge b-teal">⛺</span><span class="grow"><span class="t">Camps &amp; yatras</span><span class="d">${DB.camps.length} participations recorded</span></span>${ic('arrow')}</a>
+       <a class="li click" href="#/meetings"><span class="badge b-teal">🔒</span><span class="grow"><span class="t">Meetings &amp; Follow-ups</span><span class="d">${can('care_notes')?DB.meetings.length+' meetings · ':''}${s.careWeek} follow-ups scheduled</span></span>${ic('arrow')}</a></div>`)}</div>
    <div class="grid g-2-1">
     ${section('Care group attendance',`<div class="card-b">${barChart(DB.careGroups.filter(g=>g.status==='Active').map(g=>({l:g.name.split('·')[1].trim(),v:groupAttendance(g),color:'var(--green)',
       tip:`${g.name}\nMembers: ${g.members.length}\nLeader: ${nameOf(g.leader)}\nAttendance: ${g.attendance}%`,r:'#/group/'+g.id})),{horizontal:true,unit:'%'})}</div>`,
@@ -17717,44 +17716,73 @@ function viewGroup(id){
         can('care')?`<button class="btn sm" data-act="log-meeting" data-id="${g.id}">${ic('plus')}Log meeting</button>`:'')}
     </div></div>`;
 }
-function viewSwabhav(){
-  const f=APP.filters.sw||(APP.filters.sw={nature:''});
-  const rows=DB.devotees.filter(d=>!f.nature||d.swabhav.nature===f.nature);
-  const natures=[...new Set(DB.devotees.map(d=>d.swabhav.nature))];
-  return head('🌿 Devotee Care','Swabhav engagement','Engage people according to their nature, not just where the gap is',
-    `<button class="btn pri" data-act="open-assign">${ic('plus')}Assign matching seva</button>`)+
-  `<div class="grid g4" style="margin-bottom:15px">
-    ${stat('Engaged by nature',DB.devotees.filter(d=>d.swabhav.engaged).length,'matched to suitable seva',{em:'✅',r:'#/swabhav'})}
-    ${stat('Not yet engaged',DB.devotees.filter(d=>!d.swabhav.engaged).length,'no matching service',{em:'⚠️',tint:1,r:'#/swabhav'})}
-    ${stat('Natures represented',natures.length,'distinct inclinations',{em:'🌿',r:'#/swabhav'})}
-    ${stat('No seva at all',DB.devotees.filter(d=>!d.dept&&d.status!=='Inactive').length,'unallocated',{em:'🎯',r:'#/assign'})}</div>
-   ${section('Nature distribution',`<div class="card-b">${barChart(natures.map(n=>({l:n,v:DB.devotees.filter(d=>d.swabhav.nature===n).length,color:'var(--green)',
-     tip:`${n}\nDevotees: ${DB.devotees.filter(d=>d.swabhav.nature===n).length}\nEngaged: ${DB.devotees.filter(d=>d.swabhav.nature===n&&d.swabhav.engaged).length}`})),{horizontal:true})}</div>`)}
-   <div style="height:15px"></div>
-   ${dataTable({id:'sw',exportName:'swabhav',cols:[
-     {h:'Devotee',c:d=>`<div class="who">${av(d.name,'m')}<div><b>${esc(d.name)}</b><span>${esc(d.org)}</span></div></div>`},
-     {h:'Nature',c:d=>badge(d.swabhav.nature,'green')},
-     {h:'Suggested engagement',c:d=>esc(d.swabhav.suggested)},
-     {h:'Interests',c:d=>`<span class="tiny">${esc(d.swabhav.interests.join(', '))}</span>`},
-     {h:'Current seva',c:d=>d.dept?esc(dept(d.dept).name):'<span class="tiny">None</span>'},
-     {h:'Engaged',c:d=>d.swabhav.engaged?badge('Yes','green'):badge('Not yet','amber')}],rows,onRow:'open-devotee',
-    toolbar:`<select data-act="f" data-k="sw" data-n="nature"><option value="">All natures</option>${natures.map(n=>`<option ${f.nature===n?'selected':''}>${n}</option>`).join('')}</select>`})}`;
+function viewSadhanaAndSwabhav(){
+  const view = APP.tab.sadhana || 'Sadhana tracking';
+
+  let body = '';
+  if (view === 'Sadhana tracking') {
+    const rows = DB.sadhana.map(s => ({...s, id: s.id, d: dv(s.devotee)})).filter(s => s.d);
+    body = `
+      <div class="grid g4" style="margin-bottom:18px">
+        ${stat('Reports this week', rows.length, 'submitted', {em:'📿', r:'#/sadhana'})}
+        ${stat('Chanting 16 rounds', rows.filter(r => r.rounds >= 16).length, 'devotees', {em:'🌸', r:'#/sadhana'})}
+        ${stat('Average rounds', (rows.reduce((n, r) => n + r.rounds, 0) / (rows.length || 1)).toFixed(1), 'across reports', {em:'📊', r:'#/sadhana'})}
+        ${stat('Morning programme', Math.round(rows.reduce((n, r) => n + r.program, 0) / (rows.length || 1)) + '%', 'average attendance', {em:'🌅', r:'#/sadhana'})}
+      </div>
+      ${dataTable({id:'sadhana', exportName:'sadhana', cols:[
+        {h:'Devotee', c:r => `<div class="who">${av(r.d.name, 'm')}<div><b>${esc(r.d.name)}</b><span>${esc(r.d.org)}</span></div></div>`},
+        {h:'Rounds', c:r => `<b>${r.rounds}</b>`},
+        {h:'Average rising', c:r => esc(r.avgWake)},
+        {h:'Reading', c:r => esc(r.reading)},
+        {h:'Morning programme', c:r => `<div style="min-width:90px">${prog(r.program, 'var(--green)')}<span class="tiny">${r.program}%</span></div>`},
+        {h:'Facilitator', c:r => esc(nameOf(r.d.facilitator))}
+      ], rows, onRow:'open-devotee-row'})}
+    `;
+  } else {
+    const f = APP.filters.sw || (APP.filters.sw = {nature: ''});
+    const rows = DB.devotees.filter(d => !f.nature || d.swabhav.nature === f.nature);
+    const natures = [...new Set(DB.devotees.map(d => d.swabhav.nature))];
+    body = `
+      <div class="grid g4" style="margin-bottom:18px">
+        ${stat('Engaged by nature', DB.devotees.filter(d => d.swabhav.engaged).length, 'matched to suitable seva', {em:'✅', r:'#/swabhav'})}
+        ${stat('Not yet engaged', DB.devotees.filter(d => !d.swabhav.engaged).length, 'no matching service', {em:'⚠️', tint:1, r:'#/swabhav'})}
+        ${stat('Natures represented', natures.length, 'distinct inclinations', {em:'🌿', r:'#/swabhav'})}
+        ${stat('No seva at all', DB.devotees.filter(d => !d.dept && d.status !== 'Inactive').length, 'unallocated', {em:'🎯', r:'#/assign'})}
+      </div>
+      ${section('Nature distribution', `<div class="card-b">${barChart(natures.map(n => ({
+        l: n,
+        v: DB.devotees.filter(d => d.swabhav.nature === n).length,
+        color: 'var(--green)',
+        tip: `${n}\nDevotees: ${DB.devotees.filter(d => d.swabhav.nature === n).length}\nEngaged: ${DB.devotees.filter(d => d.swabhav.nature === n && d.swabhav.engaged).length}`
+      })), {horizontal: true})}</div>`)}
+      <div style="height:15px"></div>
+      ${dataTable({id:'sw', exportName:'swabhav', cols:[
+        {h:'Devotee', c:d => `<div class="who">${av(d.name, 'm')}<div><b>${esc(d.name)}</b><span>${esc(d.org)}</span></div></div>`},
+        {h:'Nature', c:d => badge(d.swabhav.nature, 'green')},
+        {h:'Suggested engagement', c:d => esc(d.swabhav.suggested)},
+        {h:'Interests', c:d => `<span class="tiny">${esc(d.swabhav.interests.join(', '))}</span>`},
+        {h:'Current seva', c:d => d.dept ? esc(dept(d.dept).name) : '<span class="tiny">None</span>'},
+        {h:'Engaged', c:d => d.swabhav.engaged ? badge('Yes', 'green') : badge('Not yet', 'amber')}
+      ], rows, onRow:'open-devotee',
+      toolbar:`<select data-act="f" data-k="sw" data-n="nature"><option value="">All natures</option>${natures.map(n => `<option ${f.nature === n ? 'selected' : ''}>${n}</option>`).join('')}</select>`})}
+    `;
+  }
+
+  const topAction = view === 'Swabhav engagement'
+    ? `<button class="btn pri" data-act="open-assign">${ic('plus')}Assign matching seva</button>`
+    : '';
+
+  return head('📿 Devotee Care', 'Sadhana & Swabhav', 'Self-reported spiritual practice and engagement according to nature', topAction) +
+    `<div class="tabs">${['Sadhana tracking', 'Swabhav engagement'].map(t => `<button class="${t === view ? 'on' : ''}" data-act="tab" data-k="sadhana" data-v="${t}">${t}</button>`).join('')}</div>` +
+    body;
 }
 function viewSadhana(){
-  const rows=DB.sadhana.map(s=>({...s,id:s.id,d:dv(s.devotee)})).filter(s=>s.d);
-  return head('📿 Devotee Care','Sadhana','Self-reported rounds, rising time and reading — encouragement, not surveillance')+
-  `<div class="grid g4" style="margin-bottom:15px">
-    ${stat('Reports this week',rows.length,'submitted',{em:'📿',r:'#/sadhana'})}
-    ${stat('Chanting 16 rounds',rows.filter(r=>r.rounds>=16).length,'devotees',{em:'🌸',r:'#/sadhana'})}
-    ${stat('Average rounds',(rows.reduce((n,r)=>n+r.rounds,0)/(rows.length||1)).toFixed(1),'across reports',{em:'📊',r:'#/sadhana'})}
-    ${stat('Morning programme',Math.round(rows.reduce((n,r)=>n+r.program,0)/(rows.length||1))+'%','average attendance',{em:'🌅',r:'#/sadhana'})}</div>
-   ${dataTable({id:'sadhana',exportName:'sadhana',cols:[
-     {h:'Devotee',c:r=>`<div class="who">${av(r.d.name,'m')}<div><b>${esc(r.d.name)}</b><span>${esc(r.d.org)}</span></div></div>`},
-     {h:'Rounds',c:r=>`<b>${r.rounds}</b>`},{h:'Average rising',c:r=>esc(r.avgWake)},
-     {h:'Reading',c:r=>esc(r.reading)},
-     {h:'Morning programme',c:r=>`<div style="min-width:90px">${prog(r.program,'var(--green)')}<span class="tiny">${r.program}%</span></div>`},
-     {h:'Facilitator',c:r=>esc(nameOf(r.d.facilitator))}],
-    rows,onRow:'open-devotee-row'})}`;
+  if(!APP.tab.sadhana) APP.tab.sadhana = 'Sadhana tracking';
+  return viewSadhanaAndSwabhav();
+}
+function viewSwabhav(){
+  APP.tab.sadhana = 'Swabhav engagement';
+  return viewSadhanaAndSwabhav();
 }
 function viewFacilitators(){
   const facs=DB.devotees.filter(d=>d.isFacilitator);
