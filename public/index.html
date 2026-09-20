@@ -7090,6 +7090,8 @@ function viewDevotee(id){
 }
 
 /* ---- organisation ---- */
+window.BACE_COUNSELLORS = window.BACE_COUNSELLORS || ['Counsellor 1', 'Counsellor 2'];
+
 function viewOrg(){
   const find=r=>{
     const u = (DB.users||[]).find(x=>x.role===r);
@@ -7097,9 +7099,21 @@ function viewOrg(){
     const d = (DB.devotees||[]).find(x => x.appointment === ROLES[r]?.name || devoteeRole(x) === r);
     return d ? d.name : '—';
   };
+  const devoteeCounsellors = (DB.devotees || []).filter(d => 
+    (d.appointment && (d.appointment.toLowerCase().includes('councellor') || d.appointment.toLowerCase().includes('counsellor'))) ||
+    (d.role && (d.role.toLowerCase().includes('councellor') || d.role.toLowerCase().includes('counsellor')))
+  ).map(d => d.name);
+  const c1 = (window.BACE_COUNSELLORS && window.BACE_COUNSELLORS[0]) || (DB.counsellors && DB.counsellors[0]) || devoteeCounsellors[0] || 'Counsellor 1';
+  const c2 = (window.BACE_COUNSELLORS && window.BACE_COUNSELLORS[1]) || (DB.counsellors && DB.counsellors[1]) || devoteeCounsellors[1] || 'Counsellor 2';
+
   const node=(n,r,tone)=>`<div class="org-node" style="border-top:3px solid ${tone}"><div class="nm">${esc(n)}</div><div class="rl">${esc(r)}</div></div>`;
-  return head('🧭 Who answers to whom','Organisation hierarchy','Area Leader down to every volunteer, with the three pillars in the middle')+
+  return head('🧭 Who answers to whom','Organisation hierarchy','Two Counsellors and Area Leader down to every volunteer, with the three pillars in the middle')+
   `<div class="card pad"><div class="org">
+    <div class="org-row">
+      ${node(c1,'🙏 Counsellor','#D97706')}
+      ${node(c2,'🙏 Counsellor','#D97706')}
+    </div>
+    <div class="org-line"></div>
     ${node(find('area_leader'),'🪷 Area Leader','var(--ink)')}<div class="org-line"></div>
     ${node(find('coordinator'),'🧭 Overall Coordinator','var(--ink-2)')}<div class="org-line"></div>
     <div class="org-row">
