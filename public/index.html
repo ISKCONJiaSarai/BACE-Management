@@ -2217,15 +2217,20 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
   .att-filter-collapse.open{max-height:500px;opacity:1}
   /* Sticky batch selector at top of scroll */
   .att-batch-sticky{
-    position:sticky;top:0;z-index:50;
+    position:sticky;top:var(--header-h);z-index:45;
     background:var(--surface);border-bottom:1px solid var(--line-2);
     padding:8px 12px;display:flex;gap:8px;align-items:center;
+    box-shadow:0 2px 6px rgba(0,0,0,0.06);
+  }
+  .card:has(.att-batch-sticky), .card.att-sticky-card{
+    overflow:visible!important;
   }
   /* Tighter att-btn on phones */
   .att-btn{padding:6px 0!important;font-size:11px!important}
 }
 @media(max-width:480px){
-  .att-btn{min-height:36px!important;height:36px!important;padding:4px 0!important;font-size:10.5px!important}
+  .att-btn{min-height:36px!important;height:36px!important;padding:0 2px!important;font-size:10.5px!important;display:flex!important;align-items:center!important;justify-content:center!important}
+  .att-chips{gap:4px!important}
 }
 
 /* Mobile Dropdown & Anti-Overlap Rules */
@@ -2337,6 +2342,9 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
     max-width:100%!important;
     box-sizing:border-box!important;
     overflow:hidden!important;
+  }
+  .card:has(.att-batch-sticky), .card.att-sticky-card{
+    overflow:visible!important;
   }
 
   /* Global anti-overlap & alignment for mobile */
