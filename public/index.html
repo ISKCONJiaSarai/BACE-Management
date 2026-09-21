@@ -845,22 +845,21 @@ input,select,textarea{font-family:inherit;font-size:14px;color:var(--ink);backgr
   line-height:1.35;text-shadow:0 2px 6px rgba(0,0,0,0.3);letter-spacing:0.02em;display:flex;align-items:center;gap:8px;
 }
 .hero .quote:before{content:"✨";font-size:16px}
-.hero .art{
-  position:absolute;right:18px;top:16px;bottom:16px;width:175px;max-height:calc(100% - 32px);object-fit:contain;opacity:.32;
-  pointer-events:none;filter:drop-shadow(0 6px 20px rgba(0,0,0,0.35));
-  animation:subtleFloat 8s ease-in-out infinite alternate;
-}
+.hero-header{position:relative;z-index:2;max-width:calc(100% - 200px)}
+.hero-bottom{position:relative;margin-top:20px;z-index:2}
+.hero-art-col{position:absolute;right:0;top:-80px;bottom:0;width:175px;display:flex;align-items:center;justify-content:center;pointer-events:none}
+.hero-art-col .art{width:100%;max-height:100%;object-fit:contain;opacity:.32;filter:drop-shadow(0 6px 20px rgba(0,0,0,0.35));animation:subtleFloat 8s ease-in-out infinite alternate}
 @keyframes subtleFloat{0%{transform:translateY(0) rotate(0deg)}100%{transform:translateY(-8px) rotate(2deg)}}
-@media(max-width:880px){.hero .art{width:130px;height:130px;right:10px;top:12px;opacity:.14}}
 .hero .hstats{
-  display:grid;grid-template-columns:repeat(5, minmax(0, 1fr));gap:10px;margin-top:20px;position:relative;z-index:2;
+  display:grid;grid-template-columns:repeat(5, minmax(0, 1fr));gap:10px;position:relative;z-index:2;
   max-width:calc(100% - 195px);
 }
 @media(max-width:1300px){
   .hero .hstats{grid-template-columns:repeat(3, minmax(0, 1fr));max-width:calc(100% - 195px)}
 }
 @media(max-width:880px){
-  .hero .hstats{grid-template-columns:repeat(2, minmax(0, 1fr));max-width:100%}
+  .hero .hstats{grid-template-columns:repeat(2, minmax(0, 1fr));max-width:calc(100% - 140px)}
+  .hero-art-col{width:130px;top:-40px}
 }
 .hero .hstat{
   background:rgba(255,255,255,.12);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
@@ -898,7 +897,23 @@ input,select,textarea{font-family:inherit;font-size:14px;color:var(--ink);backgr
   font-size:10px;color:rgba(255,255,255,0.85);font-weight:500;line-height:1.2;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
-@media(max-width:720px){.hero{padding:22px 18px}.hero h1{font-size:24px}.hero .quote{font-size:18px}}
+@media(max-width:768px){
+  .hero{padding:14px 12px!important;border-radius:var(--r-l)!important}
+  .hero-header{max-width:100%!important}
+  .hero h1{font-size:18px!important;line-height:1.25!important;margin:0!important}
+  .hero p{font-size:12px!important;margin:3px 0 0!important;line-height:1.4!important}
+  .hero .quote{font-size:14px!important;line-height:1.35!important;margin-top:8px!important;gap:6px!important}
+  .hero .quote:before{font-size:13px!important}
+  .hero-bottom{display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:space-between!important;gap:8px!important;margin-top:10px!important;position:relative!important}
+  .hero-bottom .hstats{display:flex!important;flex-direction:column!important;flex:1 1 auto!important;min-width:0!important;width:auto!important;max-width:calc(100% - 95px)!important;gap:5px!important;margin:0!important}
+  .hero .hstat{display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:space-between!important;padding:5px 9px!important;min-height:30px!important;height:30px!important;border-radius:8px!important;gap:6px!important;width:100%!important;box-sizing:border-box!important}
+  .hero .hstat .hstat-foot{display:none!important}
+  .hero .hstat .hstat-lbl{font-size:11px!important;font-weight:600!important;color:#FEF08A!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;flex:1!important;min-width:0!important;display:flex!important;align-items:center!important;gap:4px!important}
+  .hero .hstat .hstat-lbl span{font-size:12px!important;flex-shrink:0!important}
+  .hero .hstat b{font-size:15px!important;font-weight:800!important;color:#FFF!important;flex-shrink:0!important;text-align:right!important;padding-left:4px!important;line-height:1!important}
+  .hero-art-col{position:static!important;width:88px!important;min-width:88px!important;max-width:88px!important;flex:0 0 88px!important;display:flex!important;align-items:center!important;justify-content:center!important;pointer-events:none!important;align-self:center!important;margin:0!important;top:auto!important;bottom:auto!important;right:auto!important}
+  .hero-art-col .art{position:static!important;width:84px!important;max-width:84px!important;height:auto!important;max-height:165px!important;object-fit:contain!important;opacity:0.9!important;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.35))!important;display:block!important;animation:subtleFloat 6s ease-in-out infinite alternate!important}
+}
 
 /* ---------- page header ---------- */
 .page-head{display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:18px;padding-left:16px;position:relative}
@@ -2133,30 +2148,133 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
 
   /* Hero banner on compact screens */
   .hero{
-    padding:16px 14px!important;
+    padding:14px 12px!important;
     border-radius:var(--r-l)!important;
   }
-  .hero h1{font-size:20px!important}
-  .hero p{font-size:13px!important}
-  .hero .hstats{
-    display:grid!important;
-    grid-template-columns:repeat(2, minmax(0, 1fr))!important;
-    gap:8px!important;
-    width:100%!important;
-    margin-top:14px!important;
+  .hero-header{
+    max-width:100%!important;
   }
-  .hero .hstat{
+  .hero h1{
+    font-size:18px!important;
+    line-height:1.25!important;
+    margin:0!important;
+  }
+  .hero p{
+    font-size:12px!important;
+    margin:3px 0 0!important;
+    line-height:1.4!important;
+  }
+  .hero .quote{
+    font-size:14px!important;
+    line-height:1.35!important;
+    margin-top:8px!important;
+    gap:6px!important;
+  }
+  .hero .quote:before{
+    font-size:13px!important;
+  }
+
+  /* Bottom area: Cards placed on left stacked one below another, ISKCON logo on the right */
+  .hero-bottom{
+    display:flex!important;
+    flex-direction:row!important;
+    align-items:center!important;
+    justify-content:space-between!important;
+    gap:8px!important;
+    margin-top:10px!important;
+    position:relative!important;
+  }
+
+  /* Left column: cards placed one below another */
+  .hero-bottom .hstats{
+    display:flex!important;
+    flex-direction:column!important;
+    flex:1 1 auto!important;
     min-width:0!important;
+    width:auto!important;
+    max-width:calc(100% - 95px)!important;
+    gap:5px!important;
+    margin:0!important;
+  }
+
+  /* Cards: reduced height, compact row */
+  .hero .hstat{
+    display:flex!important;
+    flex-direction:row!important;
+    align-items:center!important;
+    justify-content:space-between!important;
+    padding:5px 9px!important;
+    min-height:30px!important;
+    height:30px!important;
+    border-radius:8px!important;
+    gap:6px!important;
     width:100%!important;
-    padding:8px 10px!important;
     box-sizing:border-box!important;
   }
-  .hero .hstat b{font-size:24px!important}
-  .hero .hstat span{font-size:11px!important}
-  .hero .hstat .hstat-lbl{font-size:11px!important}
-  .hero .hstat .hstat-foot{font-size:10px!important}
-  .hero .hstats > .hstat:last-child:nth-child(odd){
-    grid-column:1 / -1!important;
+
+  /* Remove description inside each card */
+  .hero .hstat .hstat-foot{
+    display:none!important;
+  }
+
+  .hero .hstat .hstat-lbl{
+    font-size:11px!important;
+    font-weight:600!important;
+    color:#FEF08A!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+    flex:1!important;
+    min-width:0!important;
+    display:flex!important;
+    align-items:center!important;
+    gap:4px!important;
+  }
+
+  .hero .hstat .hstat-lbl span{
+    font-size:12px!important;
+    flex-shrink:0!important;
+  }
+
+  .hero .hstat b{
+    font-size:15px!important;
+    font-weight:800!important;
+    color:#FFF!important;
+    flex-shrink:0!important;
+    text-align:right!important;
+    padding-left:4px!important;
+    line-height:1!important;
+  }
+
+  /* Right column: ISKCON logo shifted to the right of cards, nothing above it */
+  .hero-art-col{
+    position:static!important;
+    width:88px!important;
+    min-width:88px!important;
+    max-width:88px!important;
+    flex:0 0 88px!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    pointer-events:none!important;
+    align-self:center!important;
+    margin:0!important;
+    top:auto!important;
+    bottom:auto!important;
+    right:auto!important;
+  }
+
+  .hero-art-col .art{
+    position:static!important;
+    width:84px!important;
+    max-width:84px!important;
+    height:auto!important;
+    max-height:165px!important;
+    object-fit:contain!important;
+    opacity:0.9!important;
+    filter:drop-shadow(0 4px 12px rgba(0,0,0,0.35))!important;
+    display:block!important;
+    animation:subtleFloat 6s ease-in-out infinite alternate!important;
   }
 }
 
@@ -5477,38 +5595,45 @@ function hero(){
     : ((typeof deptMetrics === 'function' && deptMetrics('dp8').total > 0) ? deptMetrics('dp8').completion : 0);
   const overallBaceHealth = Math.round((avgMorning + avgDeity + avgCleaning) / 3);
 
-  return `<div class="hero">${HERO_ART}
-   <h1>Hare Krishna, ${esc(displayName)} 🙏</h1>
-
-   <p>${esc(ROLES[APP.user.role].name)} · ${fmtLong(iso(TODAY))}</p>
-   <div class="quote"><span class="quote-script">${dayQuote}</span></div>
-   <div class="hstats">
-    <div class="hstat" data-act="go" data-r="#/attendance" title="Weekly summary: Morning ${avgMorning}%, Deity ${avgDeity}%, Cleaning ${avgCleaning}%">
-      <div class="hstat-lbl"><span>🏛️</span> Overall BACE health</div>
-      <b>${overallBaceHealth}%</b>
-      <div class="hstat-foot">🌅 ${avgMorning}% · 🛕 ${avgDeity}% · 🧹 ${avgCleaning}%</div>
-    </div>
-    <div class="hstat" data-act="go" data-r="#/devotees">
-      <div class="hstat-lbl"><span>👥</span> Total devotees</div>
-      <b>${s.total}</b>
-      <div class="hstat-foot">${s.active} active · ${s.inactive} inactive</div>
-    </div>
-    <div class="hstat" data-act="go" data-r="#/batches">
-      <div class="hstat-lbl"><span>🎓</span> Preaching batches</div>
-      <b>${actBatches}</b>
-      <div class="hstat-foot">${(DB.batches||[]).length} batches · ${inBatchesDevs} devotees</div>
-    </div>
-    <div class="hstat" data-act="go" data-r="#/assign">
-      <div class="hstat-lbl"><span>🛠</span> Active volunteers</div>
-      <b>${s.volunteers}</b>
-      <div class="hstat-foot">across ${s.depts} departments</div>
-    </div>
-    <div class="hstat" data-act="go" data-r="#/contacts">
-      <div class="hstat-lbl"><span>📖</span> Preaching contacts</div>
-      <b>${s.contacts}</b>
-      <div class="hstat-foot">${s.newContacts} new this month</div>
-    </div>
-   </div></div>`;
+  return `<div class="hero">
+   <div class="hero-header">
+     <h1>Hare Krishna, ${esc(displayName)} 🙏</h1>
+     <p>${esc(ROLES[APP.user.role].name)} · ${fmtLong(iso(TODAY))}</p>
+     <div class="quote"><span class="quote-script">${dayQuote}</span></div>
+   </div>
+   <div class="hero-bottom">
+     <div class="hstats">
+      <div class="hstat" data-act="go" data-r="#/attendance" title="Weekly summary: Morning ${avgMorning}%, Deity ${avgDeity}%, Cleaning ${avgCleaning}%">
+        <div class="hstat-lbl"><span>🏛️</span> Overall BACE health</div>
+        <b>${overallBaceHealth}%</b>
+        <div class="hstat-foot">🌅 ${avgMorning}% · 🛕 ${avgDeity}% · 🧹 ${avgCleaning}%</div>
+      </div>
+      <div class="hstat" data-act="go" data-r="#/devotees">
+        <div class="hstat-lbl"><span>👥</span> Total devotees</div>
+        <b>${s.total}</b>
+        <div class="hstat-foot">${s.active} active · ${s.inactive} inactive</div>
+      </div>
+      <div class="hstat" data-act="go" data-r="#/batches">
+        <div class="hstat-lbl"><span>🎓</span> Preaching batches</div>
+        <b>${actBatches}</b>
+        <div class="hstat-foot">${(DB.batches||[]).length} batches · ${inBatchesDevs} devotees</div>
+      </div>
+      <div class="hstat" data-act="go" data-r="#/assign">
+        <div class="hstat-lbl"><span>🛠</span> Active volunteers</div>
+        <b>${s.volunteers}</b>
+        <div class="hstat-foot">across ${s.depts} departments</div>
+      </div>
+      <div class="hstat" data-act="go" data-r="#/contacts">
+        <div class="hstat-lbl"><span>📖</span> Preaching contacts</div>
+        <b>${s.contacts}</b>
+        <div class="hstat-foot">${s.newContacts} new this month</div>
+      </div>
+     </div>
+     <div class="hero-art-col">
+       ${HERO_ART}
+     </div>
+   </div>
+  </div>`;
 }
 function myToday(){
   const mine=DB.assignments.filter(a=>a.devotee===APP.user.devotee).map(a=>act(a.activity)).filter(a=>a&&a.date===iso(TODAY));
