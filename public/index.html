@@ -2258,18 +2258,20 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
     font-size:16px!important;
   }
 
-  /* 2. Organization hierarchy tree - preserved horizontal layout on mobile */
+  /* 2. Organization hierarchy tree & subgrid - preserved layout with NO horizontal scroll */
   .org-card{
-    padding:12px 6px!important;
+    padding:8px 4px!important;
+    overflow-x:hidden!important;
+    max-width:100%!important;
+    box-sizing:border-box!important;
   }
   .org{
     width:100%!important;
-    padding:10px 0!important;
+    padding:8px 0!important;
     display:flex!important;
     flex-direction:column!important;
     align-items:center!important;
-    overflow-x:auto!important;
-    -webkit-overflow-scrolling:touch!important;
+    overflow-x:hidden!important;
     box-sizing:border-box!important;
   }
   .org-row{
@@ -2278,10 +2280,11 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
     flex-wrap:nowrap!important;
     justify-content:center!important;
     align-items:stretch!important;
-    gap:6px!important;
+    gap:4px!important;
     width:100%!important;
     max-width:100%!important;
     margin:0 auto!important;
+    box-sizing:border-box!important;
   }
   .org-node{
     background:var(--surface)!important;
@@ -2296,27 +2299,28 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
   .org > .org-node{
     width:min(185px, 60%)!important;
     max-width:210px!important;
-    min-width:130px!important;
+    min-width:120px!important;
     flex:none!important;
-    padding:7px 8px!important;
+    padding:6px 4px!important;
   }
   .org-row .org-node{
     flex:1 1 0!important;
-    width:auto!important;
-    max-width:130px!important;
-    padding:6px 4px!important;
+    width:0!important;
+    min-width:0!important;
+    max-width:none!important;
+    padding:5px 2px!important;
   }
   .org-node .nm{
     font-weight:700!important;
-    font-size:11px!important;
-    line-height:1.22!important;
+    font-size:10.5px!important;
+    line-height:1.2!important;
     word-break:break-word!important;
     text-align:center!important;
     color:var(--ink)!important;
   }
   .org-node .rl{
-    font-size:9px!important;
-    line-height:1.2!important;
+    font-size:8.5px!important;
+    line-height:1.15!important;
     color:var(--ink-3)!important;
     margin-top:2px!important;
     word-break:break-word!important;
@@ -2325,9 +2329,128 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
   }
   .org-line{
     width:1.5px!important;
-    height:14px!important;
+    height:12px!important;
     background:var(--line)!important;
     margin:0 auto!important;
+  }
+
+  /* Department heads, Preaching coordinators & Facilitators side-by-side on mobile without horizontal scroll */
+  .org-subgrid{
+    display:grid!important;
+    grid-template-columns:repeat(3, minmax(0, 1fr))!important;
+    gap:4px!important;
+    width:100%!important;
+    max-width:100%!important;
+    box-sizing:border-box!important;
+    overflow-x:hidden!important;
+    margin-top:8px!important;
+  }
+  .org-subgrid .card{
+    min-width:0!important;
+    max-width:100%!important;
+    width:100%!important;
+    overflow:hidden!important;
+    border-radius:8px!important;
+    box-sizing:border-box!important;
+    box-shadow:var(--sh-1)!important;
+    display:flex!important;
+    flex-direction:column!important;
+  }
+  .org-subgrid .card-h{
+    padding:6px 2px!important;
+    min-height:36px!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    text-align:center!important;
+    box-sizing:border-box!important;
+    background:var(--surface-2)!important;
+    border-bottom:1px solid var(--line)!important;
+  }
+  .org-subgrid .card-h h3{
+    font-size:9.5px!important;
+    font-weight:700!important;
+    line-height:1.15!important;
+    text-align:center!important;
+    word-break:break-word!important;
+    white-space:normal!important;
+    margin:0!important;
+    padding:0!important;
+    width:100%!important;
+    color:var(--ink)!important;
+    display:block!important;
+  }
+  .org-subgrid .card-h .r{
+    display:none!important;
+  }
+  .org-subgrid .list{
+    max-height:270px!important;
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+    scrollbar-width:thin!important;
+    -webkit-overflow-scrolling:touch!important;
+    display:flex!important;
+    flex-direction:column!important;
+    padding:0!important;
+  }
+  .org-subgrid .li{
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:center!important;
+    text-align:center!important;
+    padding:6px 2px!important;
+    gap:3px!important;
+    border-bottom:1px solid var(--line-2)!important;
+    box-sizing:border-box!important;
+    width:100%!important;
+    min-width:0!important;
+    overflow:hidden!important;
+    text-decoration:none!important;
+  }
+  .org-subgrid .li:hover, .org-subgrid .li:active{
+    background:var(--surface-2)!important;
+  }
+  .org-subgrid .li .av{
+    width:22px!important;
+    height:22px!important;
+    min-width:22px!important;
+    min-height:22px!important;
+    font-size:9px!important;
+    margin:0 auto!important;
+    flex:none!important;
+  }
+  .org-subgrid .li .grow{
+    width:100%!important;
+    min-width:0!important;
+    text-align:center!important;
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:center!important;
+  }
+  .org-subgrid .li .t{
+    font-size:9.5px!important;
+    font-weight:600!important;
+    line-height:1.18!important;
+    color:var(--ink)!important;
+    text-align:center!important;
+    word-break:break-word!important;
+    white-space:normal!important;
+    width:100%!important;
+    display:block!important;
+  }
+  .org-subgrid .li .d{
+    font-size:8px!important;
+    line-height:1.15!important;
+    color:var(--ink-3)!important;
+    text-align:center!important;
+    word-break:break-word!important;
+    white-space:normal!important;
+    width:100%!important;
+    display:block!important;
+    margin-top:1px!important;
+  }
+  .org-subgrid .li > svg{
+    display:none!important;
   }
 
   /* 3. Kanban carousel swipe snap on mobile */
@@ -7837,7 +7960,7 @@ function viewOrg(){
       ${node(find('preaching_manager'),'📖 Preaching Manager','var(--indigo)')}
       ${node(find('care_manager'),'❤️ Devotee Care Manager','var(--green)')}</div>
     <div class="org-line"></div></div>
-  <div class="grid g3" style="margin-top:4px">
+  <div class="grid g3 org-subgrid" style="margin-top:8px">
     ${section('Department heads',`<div class="list" style="max-height:320px;overflow:auto">${activeDepts().map(d=>`<a class="li click" href="#/dept/${d.id}">${av(nameOf(d.head))}<span class="grow"><span class="t">${esc(nameOf(d.head))}</span><span class="d">${d.icon} ${esc(d.name)}</span></span></a>`).join('')}</div>`)}
     ${section('Preaching coordinators',`<div class="list" style="max-height:320px;overflow:auto">${DB.batches.map(b=>`<a class="li click" href="#/batch/${b.id}">${av(nameOf(b.coordinator))}<span class="grow"><span class="t">${esc(nameOf(b.coordinator))}</span><span class="d">${esc(b.name)} · Level ${b.level}</span></span></a>`).join('')}</div>`)}
     ${section('Facilitators',`<div class="list" style="max-height:320px;overflow:auto">${DB.devotees.filter(d=>d.isFacilitator||devoteeRole(d)==='facilitator').map(f=>`<a class="li click" href="#/devotee/${f.id}">${av(f.name)}<span class="grow"><span class="t">${esc(f.name)}</span><span class="d">${DB.devotees.filter(x=>x.facilitator===f.id).length} devotees</span></span></a>`).join('')}</div>`)}
