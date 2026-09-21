@@ -925,7 +925,58 @@ input,select,textarea{font-family:inherit;font-size:14px;color:var(--ink);backgr
 .page-head .eyebrow{font-size:12.5px;color:var(--accent);font-weight:600;letter-spacing:.04em;text-transform:uppercase}
 .page-head p.sub{font-size:13.5px;color:var(--ink-2);margin:5px 0 0;padding:0;border:0}
 .page-head .actions{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
-@media(max-width:620px){.page-head .actions{margin-left:0;width:100%}}
+.dash-header-btn-col{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+  align-items:flex-end;
+  justify-content:center;
+}
+.dash-head-btn{
+  font-size:11px!important;
+  font-weight:600!important;
+  padding:3px 7px!important;
+  min-height:26px!important;
+  height:26px!important;
+  border-radius:7px!important;
+  white-space:nowrap!important;
+  width:112px!important;
+  box-sizing:border-box!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:4px!important;
+  box-shadow:0 1px 2px rgba(0,0,0,0.04)!important;
+  flex:none!important;
+  letter-spacing:0.1px!important;
+}
+.dash-head-btn svg{
+  width:12px!important;
+  height:12px!important;
+  flex-shrink:0!important;
+}
+.page-head.has-dash-actions,
+.page-head:has(.dash-header-btn-col){
+  display:flex!important;
+  flex-direction:row!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  flex-wrap:nowrap!important;
+  gap:10px!important;
+}
+.page-head.has-dash-actions > div:first-child,
+.page-head:has(.dash-header-btn-col) > div:first-child{
+  flex:1 1 auto!important;
+  min-width:0!important;
+}
+.page-head.has-dash-actions .actions,
+.page-head:has(.dash-header-btn-col) .actions{
+  margin-left:auto!important;
+  width:auto!important;
+  flex-shrink:0!important;
+  flex-wrap:nowrap!important;
+}
+@media(max-width:620px){.page-head:not(.has-dash-actions):not(:has(.dash-header-btn-col)) .actions{margin-left:0;width:100%}}
 
 /* ---------- buttons ---------- */
 .btn{
@@ -2038,16 +2089,42 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
     box-sizing:border-box!important;
   }
   .page-head h1{font-size:20px!important;line-height:1.25!important}
-  .page-head .actions{
+  .page-head:not(.has-dash-actions):not(:has(.dash-header-btn-col)) .actions{
     margin-left:0!important;
     width:100%!important;
     display:flex!important;
     gap:8px!important;
     flex-wrap:wrap!important;
   }
-  .page-head .actions .btn{
+  .page-head:not(.has-dash-actions):not(:has(.dash-header-btn-col)) .actions .btn{
     flex:1 1 auto!important;
     justify-content:center!important;
+  }
+  .page-head.has-dash-actions,
+  .page-head:has(.dash-header-btn-col){
+    display:flex!important;
+    flex-direction:row!important;
+    align-items:center!important;
+    justify-content:space-between!important;
+    flex-wrap:nowrap!important;
+    gap:10px!important;
+  }
+  .page-head.has-dash-actions > div:first-child,
+  .page-head:has(.dash-header-btn-col) > div:first-child{
+    flex:1 1 auto!important;
+    min-width:0!important;
+  }
+  .page-head.has-dash-actions .actions,
+  .page-head:has(.dash-header-btn-col) .actions{
+    margin-left:auto!important;
+    width:auto!important;
+    flex-shrink:0!important;
+    display:flex!important;
+    flex-wrap:nowrap!important;
+  }
+  .page-head.has-dash-actions .actions .btn,
+  .page-head:has(.dash-header-btn-col) .actions .btn{
+    flex:none!important;
   }
   .toolbar{
     padding:10px 12px!important;
@@ -4515,8 +4592,8 @@ const denied=(what)=>`<div class="locked">${ic('lock')}<p style="margin:10px 0 0
 const loadingRows=n=>`<div class="card-b">${[...Array(n)].map(()=>`<div class="skeleton" style="height:16px;margin-bottom:10px"></div>`).join('')}</div>`;
 
 /* ---------- head / section / stat ---------- */
-function head(eyebrow,title,sub,actions=''){
-  return `<div class="page-head"><div><div class="eyebrow">${esc(eyebrow)}</div><h1>${esc(title)}</h1>${sub?`<p class="sub">${esc(sub)}</p>`:''}</div>
+function head(eyebrow,title,sub,actions='',extraClass=''){
+  return `<div class="page-head ${extraClass}"><div><div class="eyebrow">${esc(eyebrow)}</div><h1>${esc(title)}</h1>${sub?`<p class="sub">${esc(sub)}</p>`:''}</div>
   <div class="actions">${actions}</div></div>`;
 }
 function section(title,body,right=''){
@@ -6715,9 +6792,9 @@ function viewDashboard(){
   const roleName=(r==='area_leader'||r==='counsellor')?'ISKCON BACE':(ROLES[r]?ROLES[r].name:'ISKCON BACE');
   const eyebrowText=(r==='area_leader'||r==='counsellor')?'ISKCON BACE':((ROLES[r]?ROLES[r].emoji+' ':'')+roleName);
   const headerActions=(r==='area_leader'||r==='counsellor')
-    ? `<button class="btn" data-act="go" data-r="#/org">${ic('layers')}View hierarchy</button><button class="btn pri" data-act="go" data-r="#/reports">📊 Reports</button>`
-    : `<button class="btn pri" data-act="go" data-r="#/reports">📊 Reports</button>`;
-  const hd=hero()+head(eyebrowText,title,ROLES[r]?.scope||'',headerActions);
+    ? `<div class="dash-header-btn-col"><button class="btn sm dash-head-btn" data-act="go" data-r="#/org">${ic('layers')}View hierarchy</button><button class="btn sm pri dash-head-btn" data-act="go" data-r="#/reports">📊 Reports</button></div>`
+    : `<div class="dash-header-btn-col"><button class="btn sm pri dash-head-btn" data-act="go" data-r="#/reports">📊 Reports</button></div>`;
+  const hd=hero()+head(eyebrowText,title,ROLES[r]?.scope||'',headerActions,'has-dash-actions');
   if(r==='area_leader'||r==='counsellor')return hd+`${pillarCards(true)}<div style="height:15px"></div>
      <div class="grid g2">${insightsCard()}${prabhupadaNectarCard()}</div>`;
 
