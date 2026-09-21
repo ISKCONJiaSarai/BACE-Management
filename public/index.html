@@ -5443,25 +5443,13 @@ async function fetchServerPendingApprovals(){
    SHARED DASHBOARD BLOCKS
    ========================================================================= */
 const HERO_ART=`<img src="/logo.png?v=2" class="art" alt="ISKCON Logo">`;
-const HERO_QUOTES=[
-  '“Serving together. Growing together. Caring together.”',
-  '“Unity in Krishna’s service is our greatest strength.”',
-  '“Enthusiasm, determination, and patience are the foundation of devotion.”',
-  '“Simple living, high thinking, and dedicated service.”',
-  '“Books are the basis, preaching is the essence, utility is the principle.”',
-  '“In the association of sincere devotees, spiritual strength multiplies.”',
-  '“Sincere chanting and humble service cleanse the heart.”',
-  '“Cooperation and mutual care are the true signs of love.”',
-  '“Steady morning sadhana illuminates every step of life.”',
-  '“Fix your mind in transcendental remembrance and remain always joyful.”'
-];
+const HERO_FIXED_QUOTE = '“Enthusiasm, determination, and patience are the foundation of devotion.”';
 function hero(){
   const s=STATS(),me=dv(APP.user.devotee);
   const displayName = (typeof devoteeDisplayName === 'function')
     ? devoteeDisplayName(APP.user.devotee || APP.user.id)
     : (me && me.name ? me.name : (APP.user && APP.user.name ? APP.user.name : 'Devotee'));
-  const quoteIdx = Math.abs(iso(TODAY).split('').reduce((acc,c)=>acc+c.charCodeAt(0),0)) % HERO_QUOTES.length;
-  const dayQuote = HERO_QUOTES[quoteIdx];
+  const dayQuote = HERO_FIXED_QUOTE;
   const actBatches = activeBatches().length;
   const inBatchesDevs = s.lvl.reduce((a,b)=>a+b,0);
 
