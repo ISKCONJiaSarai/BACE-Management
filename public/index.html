@@ -585,13 +585,14 @@ input,select,textarea{font-family:inherit;font-size:14px;color:var(--ink);backgr
 }
 /* Mobile Today drawer */
 .mobile-today-btn{
-  display:none;position:fixed;bottom:calc(76px + env(safe-area-inset-bottom));left:16px;transform:none;
-  z-index:38;padding:7px 14px;border-radius:16px;
+  display:none;position:fixed;bottom:calc(68px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);
+  z-index:75;padding:7px 15px;border-radius:20px;
   background:var(--accent);color:#fff;font-size:12px;font-weight:600;
-  box-shadow:0 4px 16px rgba(0,0,0,.15);border:none;cursor:pointer;
+  box-shadow:0 4px 16px rgba(0,0,0,.18);border:none;cursor:pointer;
   transition:transform .2s,box-shadow .2s;white-space:nowrap;
 }
-.mobile-today-btn:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(0,0,0,.2)}
+.mobile-today-btn:hover{transform:translateX(-50%) translateY(-2px);box-shadow:0 6px 24px rgba(0,0,0,.22)}
+.mobile-today-btn:active{transform:translateX(-50%) scale(0.96)}
 @media(max-width:900px){.mobile-today-btn{display:flex;align-items:center;gap:6px}}
 .mobile-today-drawer{
   position:fixed;inset:0;z-index:200;display:flex;flex-direction:column;justify-content:flex-end;
