@@ -1508,23 +1508,69 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
 .org-subgrid .list{
   overflow-y:scroll!important;
   overflow-x:hidden!important;
-  max-height:290px;
-  scrollbar-width:thin;
-  scrollbar-color:var(--line) transparent;
+  max-height:280px!important;
+  height:280px!important;
+  scrollbar-width:thin!important;
+  scrollbar-color:var(--line) transparent!important;
+  display:flex!important;
+  flex-direction:column!important;
+  padding:0!important;
 }
 .org-subgrid .list::-webkit-scrollbar{
-  width:5px;
-  display:block;
+  width:5px!important;
+  display:block!important;
 }
 .org-subgrid .list::-webkit-scrollbar-track{
-  background:rgba(0,0,0,0.03);
+  background:rgba(0,0,0,0.03)!important;
 }
 .org-subgrid .list::-webkit-scrollbar-thumb{
-  background:var(--line);
-  border-radius:4px;
+  background:var(--line)!important;
+  border-radius:4px!important;
 }
-.org-subgrid .li .t{font-weight:600;font-size:13px}
-.org-subgrid .li .d{font-size:11.5px;color:var(--ink-3)}
+.org-subgrid .li{
+  flex:0 0 auto!important;
+  flex-shrink:0!important;
+  min-height:fit-content!important;
+  height:auto!important;
+  padding:10px 14px!important;
+  border-bottom:1px solid var(--line-2)!important;
+  width:100%!important;
+  box-sizing:border-box!important;
+  display:flex!important;
+  align-items:center!important;
+  overflow:visible!important;
+  text-decoration:none!important;
+}
+.org-subgrid .li:hover{
+  background:var(--surface-2)!important;
+}
+.org-subgrid .li .grow{
+  flex:1!important;
+  min-width:0!important;
+  width:100%!important;
+  word-break:break-word!important;
+  overflow-wrap:anywhere!important;
+}
+.org-subgrid .li .t{
+  font-weight:600!important;
+  font-size:13px!important;
+  line-height:1.3!important;
+  color:var(--ink)!important;
+  white-space:normal!important;
+  word-break:break-word!important;
+  overflow-wrap:anywhere!important;
+  display:block!important;
+}
+.org-subgrid .li .d{
+  font-size:11.5px!important;
+  color:var(--ink-3)!important;
+  line-height:1.25!important;
+  white-space:normal!important;
+  word-break:break-word!important;
+  overflow-wrap:anywhere!important;
+  display:block!important;
+  margin-top:2px!important;
+}
 .funnel-wrap{width:100%}
 .funnel-row{display:flex;align-items:center;gap:11px;width:100%}
 .funnel-lbl{width:145px;font-size:12.5px;color:var(--ink-2);flex:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -2404,7 +2450,8 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
     display:none!important;
   }
   .org-subgrid .list{
-    max-height:275px!important;
+    max-height:280px!important;
+    height:280px!important;
     overflow-y:scroll!important;
     overflow-x:hidden!important;
     scrollbar-width:thin!important;
@@ -2431,13 +2478,17 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
     flex-direction:column!important;
     align-items:center!important;
     text-align:center!important;
-    padding:7px 4px!important;
+    padding:8px 4px!important;
     gap:2px!important;
     border-bottom:1px solid var(--line-2)!important;
     box-sizing:border-box!important;
     width:100%!important;
     min-width:0!important;
-    overflow:hidden!important;
+    flex:0 0 auto!important;
+    flex-shrink:0!important;
+    height:auto!important;
+    min-height:fit-content!important;
+    overflow:visible!important;
     text-decoration:none!important;
   }
   .org-subgrid .li:hover, .org-subgrid .li:active{
@@ -2450,24 +2501,28 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
     display:flex!important;
     flex-direction:column!important;
     align-items:center!important;
+    word-break:break-word!important;
+    overflow-wrap:anywhere!important;
   }
   .org-subgrid .li .t{
     font-size:10.5px!important;
     font-weight:600!important;
-    line-height:1.2!important;
+    line-height:1.25!important;
     color:var(--ink)!important;
     text-align:center!important;
     word-break:break-word!important;
+    overflow-wrap:anywhere!important;
     white-space:normal!important;
     width:100%!important;
     display:block!important;
   }
   .org-subgrid .li .d{
     font-size:8.5px!important;
-    line-height:1.18!important;
+    line-height:1.22!important;
     color:var(--ink-3)!important;
     text-align:center!important;
     word-break:break-word!important;
+    overflow-wrap:anywhere!important;
     white-space:normal!important;
     width:100%!important;
     display:block!important;
@@ -7985,9 +8040,9 @@ function viewOrg(){
       ${node(find('care_manager'),'❤️ Devotee Care Manager','var(--green)')}</div>
     <div class="org-line"></div></div>
   <div class="grid g3 org-subgrid" style="margin-top:8px">
-    ${section('Department heads',`<div class="list" style="max-height:280px;overflow-y:scroll;overflow-x:hidden">${activeDepts().map(d=>`<a class="li click" href="#/dept/${d.id}"><span class="grow"><span class="t">${esc(nameOf(d.head))}</span><span class="d">${d.icon} ${esc(d.name)}</span></span></a>`).join('')}</div>`)}
-    ${section('Preaching coordinators',`<div class="list" style="max-height:280px;overflow-y:scroll;overflow-x:hidden">${DB.batches.map(b=>`<a class="li click" href="#/batch/${b.id}"><span class="grow"><span class="t">${esc(nameOf(b.coordinator))}</span><span class="d">${esc(b.name)} · Level ${b.level}</span></span></a>`).join('')}</div>`)}
-    ${section('Facilitators',`<div class="list" style="max-height:280px;overflow-y:scroll;overflow-x:hidden">${DB.devotees.filter(d=>d.isFacilitator||devoteeRole(d)==='facilitator').map(f=>`<a class="li click" href="#/devotee/${f.id}"><span class="grow"><span class="t">${esc(f.name)}</span><span class="d">${DB.devotees.filter(x=>x.facilitator===f.id).length} devotees</span></span></a>`).join('')}</div>`)}
+    ${section('Department heads',`<div class="list" style="height:280px;max-height:280px;overflow-y:scroll;overflow-x:hidden">${activeDepts().map(d=>`<a class="li click" href="#/dept/${d.id}"><span class="grow"><span class="t">${esc(nameOf(d.head))}</span><span class="d">${d.icon} ${esc(d.name)}</span></span></a>`).join('')}</div>`)}
+    ${section('Preaching coordinators',`<div class="list" style="height:280px;max-height:280px;overflow-y:scroll;overflow-x:hidden">${DB.batches.map(b=>`<a class="li click" href="#/batch/${b.id}"><span class="grow"><span class="t">${esc(nameOf(b.coordinator))}</span><span class="d">${esc(b.name)} · Level ${b.level}</span></span></a>`).join('')}</div>`)}
+    ${section('Facilitators',`<div class="list" style="height:280px;max-height:280px;overflow-y:scroll;overflow-x:hidden">${DB.devotees.filter(d=>d.isFacilitator||devoteeRole(d)==='facilitator').map(f=>{const cnt=DB.devotees.filter(x=>x.facilitator===f.id).length;return `<a class="li click" href="#/devotee/${f.id}"><span class="grow"><span class="t">${esc(f.name)}</span><span class="d">${cnt} ${cnt===1?'devotee':'devotees'}</span></span></a>`;}).join('')}</div>`)}
   </div></div>`;
 }
 /* =========================================================================
