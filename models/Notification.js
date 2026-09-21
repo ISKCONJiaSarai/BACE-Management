@@ -45,6 +45,11 @@ const NotificationSchema = new mongoose.Schema({
     type: String,
     default: '',
     trim: true
+  },
+  dismissed: {
+    type: Boolean,
+    default: false,
+    index: true
   }
 }, {
   timestamps: true

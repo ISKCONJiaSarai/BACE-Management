@@ -795,8 +795,10 @@ input,select,textarea{font-family:inherit;font-size:14px;color:var(--ink);backgr
   padding:0;cursor:pointer;transition:all .16s ease;box-shadow:0 1px 2px rgba(15,23,42,0.04);
 }
 .icon-btn:hover{background:var(--surface-2);transform:translateY(-1px);box-shadow:0 3px 8px rgba(15,23,42,0.06)}
-.icon-btn:active{transform:scale(.96)}
-.icon-btn svg{width:17px;height:17px}
+.icon-btn svg{width:17px;height:17px;pointer-events:none!important}
+.icon-btn svg *{pointer-events:none!important}
+.notif-actions{pointer-events:auto}
+.notif-actions button{pointer-events:auto;cursor:pointer}
 .dot{position:absolute;top:4px;right:4px;min-width:15px;height:15px;padding:0 3px;border-radius:9px;background:var(--danger);color:#fff;font-size:9.5px;font-weight:700;line-height:15px;text-align:center;border:1.5px solid var(--surface)}
 .view{
   padding:22px 28px 60px;max-width:100%;width:100%;box-sizing:border-box;
@@ -19827,9 +19829,9 @@ function viewNotifications(){
         ${n.link ? `<span class="tiny" style="color:var(--accent);font-weight:600;display:inline-block;margin-top:3px">View details →</span>` : ''}
       </span>
       <span class="tiny" style="color:var(--ink-3);white-space:nowrap">${relD(n.date)}</span>
-      <div style="display:flex;gap:4px">
-        ${n.read?'':`<button class="btn sm" data-act="mark-read" data-id="${esc(n.id)}">Mark read</button>`}
-        <button class="icon-btn sm" data-act="delete-notif" data-id="${esc(n.id)}" title="Delete">${ic('trash')}</button>
+      <div style="display:flex;gap:4px;align-items:center" onclick="event.stopPropagation();">
+        ${n.read?'':`<button type="button" class="btn sm" onclick="event.stopPropagation();markNotificationRead('${esc(n.id)}');" data-act="mark-read" data-id="${esc(n.id)}">Mark read</button>`}
+        <button type="button" class="icon-btn sm" onclick="event.stopPropagation();deleteNotification('${esc(n.id)}');" data-act="delete-notif" data-id="${esc(n.id)}" title="Delete">${ic('trash')}</button>
       </div></div>`).join('')}</div>`
       :emptyState('Nothing here','No notifications in this category.','','calm'))}
     ${section('⚙️ Preferences',`<div class="list">${Object.entries(DB.notifPrefs||{}).map(([k,v])=>`<label class="li" style="cursor:pointer">
@@ -21099,10 +21101,25 @@ async function loadNotificationsFromBackend(force = false) {
   }
 }
 
+function updateNotificationBadge() {
+  const bellBtn = document.querySelector('[data-act="notifications"]');
+  if (bellBtn) {
+    const unread = (DB.notifications || []).filter(x => !x.read).length;
+    const dot = bellBtn.querySelector('.dot');
+    if (unread > 0) {
+      if (dot) dot.textContent = unread;
+      else bellBtn.insertAdjacentHTML('beforeend', `<i class="dot">${unread}</i>`);
+    } else if (dot) {
+      dot.remove();
+    }
+  }
+}
+
 async function markNotificationRead(notifId) {
   if (!notifId) return;
-  const n = (DB.notifications || []).find(x => x.id === notifId || x.customId === notifId);
+  const n = (DB.notifications || []).find(x => x.id === notifId || x.customId === notifId || x._id === notifId);
   if (n) n.read = true;
+  updateNotificationBadge();
   render();
   try {
     await fetch('/api/notifications/' + encodeURIComponent(notifId) + '/read', {
@@ -21115,6 +21132,7 @@ async function markNotificationRead(notifId) {
 
 async function markAllNotificationsRead() {
   (DB.notifications || []).forEach(n => n.read = true);
+  updateNotificationBadge();
   toast('All notifications marked as read', '✓');
   render();
   try {
@@ -21130,7 +21148,8 @@ async function markAllNotificationsRead() {
 
 async function deleteNotification(notifId) {
   if (!notifId) return;
-  DB.notifications = (DB.notifications || []).filter(x => x.id !== notifId && x.customId !== notifId);
+  DB.notifications = (DB.notifications || []).filter(x => x.id !== notifId && x.customId !== notifId && x._id !== notifId);
+  updateNotificationBadge();
   toast('Notification removed', '🗑');
   render();
   try {
@@ -21149,6 +21168,7 @@ async function clearReadNotifications() {
     return;
   }
   DB.notifications = (DB.notifications || []).filter(n => !n.read);
+  updateNotificationBadge();
   toast('Cleared read notifications', '🧹');
   render();
   try {
@@ -21231,9 +21251,9 @@ function notifDrawer(){
                     ${n.link ? `<span style="color:var(--accent);font-weight:600;font-size:11px">View details →</span>` : ''}
                   </div>
                 </div>
-                <div class="notif-actions" data-stop="1">
-                  ${!n.read ? `<button class="icon-btn sm" data-act="mark-read" data-id="${esc(n.id)}" title="Mark as read" style="width:28px;height:28px">${ic('check')}</button>` : ''}
-                  <button class="icon-btn sm" data-act="delete-notif" data-id="${esc(n.id)}" title="Delete" style="width:28px;height:28px">${ic('trash')}</button>
+                <div class="notif-actions" onclick="event.stopPropagation();" data-stop="1" style="display:flex;align-items:center;gap:4px">
+                  ${!n.read ? `<button type="button" class="icon-btn sm" onclick="event.stopPropagation();markNotificationRead('${esc(n.id)}');" data-act="mark-read" data-id="${esc(n.id)}" title="Mark as read" style="width:28px;height:28px;cursor:pointer">${ic('check')}</button>` : ''}
+                  <button type="button" class="icon-btn sm" onclick="event.stopPropagation();deleteNotification('${esc(n.id)}');" data-act="delete-notif" data-id="${esc(n.id)}" title="Delete notification" style="width:28px;height:28px;cursor:pointer">${ic('trash')}</button>
                 </div>
               </div>
             `).join('')}

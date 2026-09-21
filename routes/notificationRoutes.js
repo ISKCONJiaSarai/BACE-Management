@@ -1,96 +1,98 @@
 const express = require('express');
 const router = express.Router();
-const { Notification } = require('../models');
+const { Notification, Camp, Outing, Devotee, MorningAttendance } = require('../models');
 
-const SEED_NOTIFICATIONS = [
-  {
-    customId: 'notif_1',
-    devoteeId: 'all',
-    em: '🪔',
-    title: 'Seva assigned',
-    body: 'You are assigned to Sunday feast prasadam cooking & distribution seva.',
-    category: 'Management',
-    date: new Date().toISOString(),
-    read: false,
-    link: '#/assign'
-  },
-  {
-    customId: 'notif_2',
-    devoteeId: 'all',
-    em: '⛺',
-    title: 'Kartik Yatra Retreat Registration',
-    body: 'Registrations are now open for Vrindavan Kartik Maha-Retreat (18 – 20 Oct). Limited seats available.',
-    category: 'Care',
-    date: new Date(Date.now() - 3600000 * 3).toISOString(), // 3 hrs ago
-    read: false,
-    link: '#/camps'
-  },
-  {
-    customId: 'notif_3',
-    devoteeId: 'all',
-    em: '📖',
-    title: 'Morning Bhagavata Discourse',
-    body: 'Srimad Bhagavatam Canto 1 study session begins tomorrow at 6:45 AM in the Temple Hall.',
-    category: 'Preaching',
-    date: new Date(Date.now() - 3600000 * 12).toISOString(), // 12 hrs ago
-    read: false,
-    link: '#/calendar'
-  },
-  {
-    customId: 'notif_4',
-    devoteeId: 'all',
-    em: '📿',
-    title: 'Weekly Sadhana Sync',
-    body: 'Please record your japa rounds, wake-up time and morning program attendance for this week.',
-    category: 'Care',
-    date: new Date(Date.now() - 3600000 * 24).toISOString(), // 1 day ago
-    read: false,
-    link: '#/swabhav'
-  },
-  {
-    customId: 'notif_5',
-    devoteeId: 'all',
-    em: '✨',
-    title: 'Janmashtami Maha-Abhisheka Planning',
-    body: 'Department seva coordinators coordination meeting scheduled for Thursday evening.',
-    category: 'Community',
-    date: new Date(Date.now() - 3600000 * 48).toISOString(), // 2 days ago
-    read: true,
-    link: '#/calendar'
-  },
-  {
-    customId: 'notif_6',
-    devoteeId: 'all',
-    em: '💬',
-    title: 'Batch Update in Gaurvani',
-    body: 'Temple cleaning seva roster updated with weekend seva slots.',
-    category: 'Messages',
-    date: new Date(Date.now() - 3600000 * 72).toISOString(), // 3 days ago
-    read: true,
-    link: '#/messages'
-  }
-];
-
-// Seed initial notifications if collection is empty
-async function ensureSeedNotifications() {
+// Clean up any historical dummy seed notifications once on module load
+(async function cleanupDummySeedNotifications() {
   try {
-    const count = await Notification.countDocuments();
-    if (count === 0) {
-      await Notification.insertMany(SEED_NOTIFICATIONS);
-      console.log('Seeded initial notifications into MongoDB');
+    await Notification.deleteMany({
+      customId: { $in: ['notif_1', 'notif_2', 'notif_3', 'notif_4', 'notif_5', 'notif_6'] }
+    });
+  } catch (err) {
+    console.warn('Notice cleaning up dummy notifications:', err.message);
+  }
+})();
+
+/**
+ * Synchronize REAL system notifications based on live MongoDB records
+ * (e.g. open camps, upcoming outings, pending devotee approvals)
+ */
+async function syncRealSystemNotifications() {
+  try {
+    // 1. Check for real open camps (e.g. Vrindavan Kartik Maha-Retreat)
+    const openCamps = await Camp.find({ status: 'Open' }).lean();
+    for (const camp of openCamps) {
+      const notifId = 'camp_' + (camp.customId || camp._id.toString());
+      const exists = await Notification.findOne({ customId: notifId });
+      if (!exists) {
+        await Notification.create({
+          customId: notifId,
+          devoteeId: 'all',
+          title: `Registration Open: ${camp.name}`,
+          body: camp.desc ? camp.desc.slice(0, 160) : `${camp.type || 'Camp'} scheduled for ${camp.dates} at ${camp.loc}.`,
+          em: '⛺',
+          category: 'Care',
+          link: '#/camps',
+          read: false,
+          date: new Date().toISOString()
+        });
+      }
+    }
+
+    // 2. Check for real pending devotee registrations awaiting leader approval
+    const pendingDevotees = await Devotee.find({ status: 'pending' }).lean();
+    for (const dev of pendingDevotees) {
+      const notifId = 'dev_pending_' + (dev.customId || dev._id.toString());
+      const exists = await Notification.findOne({ customId: notifId });
+      if (!exists) {
+        await Notification.create({
+          customId: notifId,
+          devoteeId: 'all',
+          title: `Devotee Approval: ${dev.name}`,
+          body: `New devotee registration received for ${dev.name} (${dev.phone || 'No phone'}). Please review and approve access.`,
+          em: '👤',
+          category: 'Management',
+          link: '#/devotees',
+          read: false,
+          date: new Date().toISOString()
+        });
+      }
+    }
+
+    // 3. Check for any upcoming non-completed outings
+    const activeOutings = await Outing.find({ status: { $nin: ['Completed', 'completed'] } }).lean();
+    for (const outing of activeOutings) {
+      const notifId = 'outing_' + (outing.customId || outing._id.toString());
+      const exists = await Notification.findOne({ customId: notifId });
+      if (!exists) {
+        await Notification.create({
+          customId: notifId,
+          devoteeId: 'all',
+          title: `Upcoming Outing: ${outing.name}`,
+          body: outing.description ? outing.description.slice(0, 160) : `${outing.category} at ${outing.location} on ${outing.date}.`,
+          em: '🚌',
+          category: 'Community',
+          link: '#/camps',
+          read: false,
+          date: new Date().toISOString()
+        });
+      }
     }
   } catch (err) {
-    console.error('Error seeding initial notifications:', err.message);
+    console.error('Error synchronizing real notifications:', err.message);
   }
 }
 
 // @route   GET /api/notifications
-// @desc    Get all notifications (optionally filtered by devoteeId, category, unread)
+// @desc    Get all real notifications (optionally filtered by devoteeId, category, unread)
 router.get('/', async (req, res) => {
   try {
-    await ensureSeedNotifications();
+    await syncRealSystemNotifications();
 
-    const query = {};
+    const query = {
+      dismissed: { $ne: true }
+    };
+
     if (req.query.category && req.query.category !== 'All') {
       query.category = req.query.category;
     }
@@ -105,7 +107,7 @@ router.get('/', async (req, res) => {
     }
 
     const notifs = await Notification.find(query).sort({ createdAt: -1, date: -1 }).lean();
-    
+
     // Normalize id field for frontend compatibility
     const formatted = notifs.map(n => ({
       ...n,
@@ -121,43 +123,44 @@ router.get('/', async (req, res) => {
       notifications: formatted
     });
   } catch (err) {
-    console.error('Error fetching notifications:', err.message);
+    console.error('Error fetching real notifications:', err.message);
     res.status(500).json({ success: false, message: 'Server error fetching notifications' });
   }
 });
 
 // @route   POST /api/notifications
-// @desc    Create a new notification
+// @desc    Create a new real notification
 router.post('/', async (req, res) => {
   try {
-    const { title, body, em, category, devoteeId, link } = req.body;
+    const { title, body, em, category, link, devoteeId, customId } = req.body;
+
     if (!title || !body) {
       return res.status(400).json({ success: false, message: 'Title and body are required' });
     }
 
-    const customId = req.body.customId || req.body.id || 'notif_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 4);
+    const generatedId = customId || ('notif_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6));
 
-    const newNotif = await Notification.create({
-      customId,
+    const notification = await Notification.create({
+      customId: generatedId,
       devoteeId: devoteeId || 'all',
-      title: title.trim(),
-      body: body.trim(),
+      title,
+      body,
       em: em || '🔔',
       category: category || 'General',
-      date: req.body.date || new Date().toISOString(),
+      link: link || '',
       read: false,
-      link: link || ''
+      date: new Date().toISOString()
     });
 
     res.status(201).json({
       success: true,
       notification: {
-        ...newNotif.toObject(),
-        id: newNotif.customId || newNotif._id.toString()
+        ...notification.toObject(),
+        id: notification.customId || notification._id.toString()
       }
     });
   } catch (err) {
-    console.error('Error creating notification:', err.message);
+    console.error('Error creating real notification:', err.message);
     res.status(500).json({ success: false, message: 'Server error creating notification' });
   }
 });
@@ -166,7 +169,7 @@ router.post('/', async (req, res) => {
 // @desc    Mark all notifications as read
 router.post('/mark-all-read', async (req, res) => {
   try {
-    const filter = {};
+    const filter = { dismissed: { $ne: true } };
     if (req.body.devoteeId) {
       filter.$or = [
         { devoteeId: 'all' },
@@ -176,13 +179,13 @@ router.post('/mark-all-read', async (req, res) => {
     const result = await Notification.updateMany(filter, { $set: { read: true } });
     res.json({ success: true, message: 'All notifications marked as read', modifiedCount: result.modifiedCount });
   } catch (err) {
-    console.error('Error marking all notifications as read:', err.message);
+    console.error('Error marking all notifications read:', err.message);
     res.status(500).json({ success: false, message: 'Server error updating notifications' });
   }
 });
 
 // @route   PATCH /api/notifications/:id/read
-// @desc    Mark a specific notification as read
+// @desc    Mark a single notification as read
 router.patch('/:id/read', async (req, res) => {
   try {
     const target = req.params.id;
@@ -210,7 +213,7 @@ router.patch('/:id/read', async (req, res) => {
   }
 });
 
-// Also support PUT /api/notifications/:id/read for broader client compatibility
+// Also support PUT /api/notifications/:id/read
 router.put('/:id/read', async (req, res) => {
   try {
     const target = req.params.id;
@@ -239,18 +242,28 @@ router.put('/:id/read', async (req, res) => {
 });
 
 // @route   DELETE /api/notifications/:id
-// @desc    Delete a notification
+// @desc    Delete a notification permanently (marks as dismissed so sync won't recreate it)
 router.delete('/:id', async (req, res) => {
   try {
     const target = req.params.id;
-    let deleted = await Notification.findOneAndDelete({ customId: target });
-    if (!deleted && target.match(/^[0-9a-fA-F]{24}$/)) {
-      deleted = await Notification.findByIdAndDelete(target);
+    const query = {
+      $or: [
+        { customId: target }
+      ]
+    };
+    if (target.match(/^[0-9a-fA-F]{24}$/)) {
+      query.$or.push({ _id: target });
     }
-    if (!deleted) {
-      return res.status(404).json({ success: false, message: 'Notification not found' });
-    }
-    res.json({ success: true, message: 'Notification deleted successfully' });
+
+    // Mark as dismissed so syncRealSystemNotifications will not recreate it,
+    // and remove from active list
+    const updated = await Notification.updateMany(query, { $set: { dismissed: true, read: true } });
+
+    res.json({
+      success: true,
+      message: 'Notification deleted successfully',
+      deletedCount: updated.modifiedCount
+    });
   } catch (err) {
     console.error('Error deleting notification:', err.message);
     res.status(500).json({ success: false, message: 'Server error deleting notification' });
@@ -258,18 +271,18 @@ router.delete('/:id', async (req, res) => {
 });
 
 // @route   POST /api/notifications/clear-read
-// @desc    Delete all read notifications
+// @desc    Clear all read notifications permanently
 router.post('/clear-read', async (req, res) => {
   try {
-    const filter = { read: true };
+    const filter = { read: true, dismissed: { $ne: true } };
     if (req.body.devoteeId) {
       filter.$or = [
         { devoteeId: 'all' },
         { devoteeId: req.body.devoteeId }
       ];
     }
-    const result = await Notification.deleteMany(filter);
-    res.json({ success: true, message: 'Read notifications cleared', deletedCount: result.deletedCount });
+    const result = await Notification.updateMany(filter, { $set: { dismissed: true } });
+    res.json({ success: true, message: 'Read notifications cleared', deletedCount: result.modifiedCount });
   } catch (err) {
     console.error('Error clearing read notifications:', err.message);
     res.status(500).json({ success: false, message: 'Server error clearing notifications' });
