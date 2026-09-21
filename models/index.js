@@ -10,6 +10,7 @@ const Expense = require('./Expense');
 const Camp = require('./Camp');
 const Outing = require('./Outing');
 const NectarQuote = require('./NectarQuote');
+const Notification = require('./Notification');
 
 module.exports = {
   Devotee,
@@ -23,6 +24,7 @@ module.exports = {
   Expense,
   Camp,
   Outing,
-  NectarQuote
+  NectarQuote,
+  Notification
 };
 

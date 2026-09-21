@@ -2495,6 +2495,85 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-off
   0%{width:0%}
   100%{width:100%}
 }
+/* ---- Enhanced Notification Drawer ---- */
+.drawer-wrap.notif-drawer-wrap{
+  position:fixed;inset:0;z-index:1200;background:rgba(15,23,42,0.64);backdrop-filter:blur(6px);
+  display:flex;justify-content:flex-end;animation:fade .22s cubic-bezier(0.16,1,0.3,1);
+}
+.notif-drawer{
+  background:var(--surface);width:min(450px,100%);height:100%;display:flex;flex-direction:column;
+  box-shadow:var(--sh-3);animation:slide .26s cubic-bezier(0.16,1,0.3,1);border-left:1px solid var(--line);
+}
+.notif-drawer .modal-h{
+  padding:16px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;
+  background:var(--surface);flex:none;gap:12px;
+}
+.notif-filter-bar{
+  display:flex;align-items:center;gap:6px;padding:9px 18px;background:var(--surface-2);border-bottom:1px solid var(--line);flex:none;
+}
+.notif-filter-btn{
+  padding:5px 12px;font-size:12px;font-weight:600;border-radius:20px;border:1px solid var(--line);
+  background:var(--surface);color:var(--ink-2);cursor:pointer;transition:all .15s ease;
+}
+.notif-filter-btn.on{
+  background:var(--accent);color:#fff;border-color:var(--accent);box-shadow:0 1px 4px rgba(245,158,11,0.3);
+}
+.notif-drawer .modal-b{
+  padding:0!important;overflow-y:auto!important;flex:1 1 auto!important;min-height:0!important;
+  -webkit-overflow-scrolling:touch;overscroll-behavior:contain;
+}
+.notif-item{
+  display:flex;align-items:flex-start;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line);
+  transition:background .18s ease;cursor:pointer;position:relative;text-decoration:none;color:inherit;
+}
+.notif-item:hover{
+  background:var(--surface-2);
+}
+.notif-item.unread{
+  background:rgba(245,158,11,0.06);
+}
+.notif-item.unread::before{
+  content:'';position:absolute;left:4px;top:16px;bottom:16px;width:3.5px;
+  background:var(--accent);border-radius:2px;
+}
+.notif-icon-box{
+  width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+  font-size:18px;flex:none;background:var(--surface-2);border:1px solid var(--line);box-shadow:0 1px 3px rgba(0,0,0,0.04);
+}
+.notif-content{
+  flex:1;min-width:0;
+}
+.notif-title-row{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:3px;
+}
+.notif-title{
+  font-size:13.5px;font-weight:600;color:var(--ink);line-height:1.3;
+}
+.notif-body{
+  font-size:12.5px;color:var(--ink-2);line-height:1.45;margin-bottom:6px;word-break:break-word;
+}
+.notif-meta{
+  display:flex;align-items:center;gap:8px;font-size:11px;color:var(--ink-3);
+}
+.notif-actions{
+  display:flex;align-items:center;gap:4px;opacity:0.75;transition:opacity .15s;flex:none;margin-left:4px;
+}
+.notif-item:hover .notif-actions{
+  opacity:1;
+}
+.notif-drawer .modal-f{
+  padding:12px 18px calc(12px + env(safe-area-inset-bottom, 0px))!important;
+  border-top:1px solid var(--line)!important;background:var(--surface)!important;display:flex!important;
+  align-items:center!important;justify-content:space-between!important;gap:10px!important;flex:none!important;
+}
+@media(max-width:620px){
+  .notif-drawer{
+    width:100%!important;max-width:100%!important;height:100%!important;border-left:none!important;
+  }
+  .notif-item{
+    padding:13px 14px;
+  }
+}
 
 </style>
 </head>
@@ -19724,19 +19803,36 @@ function viewActions(){
    🔔 NOTIFICATIONS
    ========================================================================= */
 function viewNotifications(){
+  loadNotificationsFromBackend();
   const tab=APP.tab.notif||'All';
   const cats=['All','Management','Preaching','Care','Messages','Community'];
-  const rows=DB.notifications.filter(n=>tab==='All'||n.cat===tab||(tab==='Management'&&n.cat==='Tasks'));
-  return head('🔔 Notifications','Notifications','Assignments, reminders, approvals and messages — with your own preferences',
-    `<button class="btn" data-act="mark-all-read">${ic('check')}Mark all read</button>`)+
+  const allNotifs = DB.notifications || [];
+  const rows = allNotifs.filter(n => {
+    const c = n.category || n.cat || 'General';
+    return tab==='All' || c===tab || (tab==='Management' && c==='Tasks');
+  });
+  return head('🔔 Notifications','Notifications','Assignments, reminders, approvals and messages — synced with MongoDB',
+    `<div style="display:flex;gap:8px">
+      <button class="btn sm" data-act="refresh-notifs">${ic('repeat')}Sync</button>
+      <button class="btn sm" data-act="clear-read-notifs" title="Clear read notifications">Clear read</button>
+      <button class="btn pri sm" data-act="mark-all-read">${ic('check')}Mark all read</button>
+    </div>`)+
   `<div class="tabs">${cats.map(c=>`<button class="${tab===c?'on':''}" data-act="tab" data-k="notif" data-v="${c}">${c}</button>`).join('')}</div>
    <div class="grid g-2-1">
-    ${section('Recent',rows.length?`<div class="list">${rows.map(n=>`<div class="li" style="${n.read?'':'background:var(--accent-soft)'}">
-      <span class="av m" style="background:var(--surface-2);color:var(--ink);border-radius:11px">${n.em}</span>
-      <span class="grow"><span class="t">${esc(n.title)}</span><span class="d">${esc(n.body)}</span></span>
-      <span class="tiny">${relD(n.date)}</span>${n.read?'':`<button class="btn sm" data-act="mark-read" data-id="${n.id}">Mark read</button>`}</div>`).join('')}</div>`
+    ${section('Recent',rows.length?`<div class="list">${rows.map(n=>`<div class="li" style="${n.read?'':'background:rgba(245,158,11,0.06);border-left:3px solid var(--accent)'}">
+      <span class="av m" style="background:var(--surface-2);color:var(--ink);border-radius:11px;font-size:18px">${n.em||'🔔'}</span>
+      <span class="grow click" data-act="click-notif" data-id="${esc(n.id)}" data-link="${esc(n.link||'')}">
+        <span class="t">${esc(n.title)}</span>
+        <span class="d">${esc(n.body)}</span>
+        ${n.link ? `<span class="tiny" style="color:var(--accent);font-weight:600;display:inline-block;margin-top:3px">View details →</span>` : ''}
+      </span>
+      <span class="tiny" style="color:var(--ink-3);white-space:nowrap">${relD(n.date)}</span>
+      <div style="display:flex;gap:4px">
+        ${n.read?'':`<button class="btn sm" data-act="mark-read" data-id="${esc(n.id)}">Mark read</button>`}
+        <button class="icon-btn sm" data-act="delete-notif" data-id="${esc(n.id)}" title="Delete">${ic('trash')}</button>
+      </div></div>`).join('')}</div>`
       :emptyState('Nothing here','No notifications in this category.','','calm'))}
-    ${section('⚙️ Preferences',`<div class="list">${Object.entries(DB.notifPrefs).map(([k,v])=>`<label class="li" style="cursor:pointer">
+    ${section('⚙️ Preferences',`<div class="list">${Object.entries(DB.notifPrefs||{}).map(([k,v])=>`<label class="li" style="cursor:pointer">
       <span class="grow"><span class="t">${esc(k)}</span><span class="d">Push and in-app</span></span>
       <input type="checkbox" ${v?'checked':''} data-act="notif-pref" data-k="${esc(k)}" style="width:18px;height:18px;accent-color:var(--accent)"></label>`).join('')}
       <div class="li"><span class="tiny">Preferences apply to this device and to push notifications when the app is installed to the home screen.</span></div></div>`)}</div>`;
@@ -20969,17 +21065,195 @@ async function syncDevoteesFromServer(forceImmediate){
   }
 }
 
+async function loadNotificationsFromBackend(force = false) {
+  try {
+    const res = await fetch('/api/notifications');
+    if (res.ok) {
+      const data = await res.json();
+      if (data.success && Array.isArray(data.notifications)) {
+        DB.notifications = data.notifications.map(n => ({
+          ...n,
+          id: n.id || n.customId || n._id,
+          cat: n.category || n.cat || 'General',
+          category: n.category || n.cat || 'General'
+        }));
+        // Update header bell unread count indicator
+        const bellBtn = document.querySelector('[data-act="notifications"]');
+        if (bellBtn) {
+          const unread = DB.notifications.filter(x => !x.read).length;
+          const dot = bellBtn.querySelector('.dot');
+          if (unread > 0) {
+            if (dot) dot.textContent = unread;
+            else bellBtn.insertAdjacentHTML('beforeend', `<i class="dot">${unread}</i>`);
+          } else if (dot) {
+            dot.remove();
+          }
+        }
+        if (APP.modal === 'notif' || APP.route === '#/notifications' || APP.route === 'notifications') {
+          render();
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('Notice: /api/notifications unreachable:', err.message);
+  }
+}
+
+async function markNotificationRead(notifId) {
+  if (!notifId) return;
+  const n = (DB.notifications || []).find(x => x.id === notifId || x.customId === notifId);
+  if (n) n.read = true;
+  render();
+  try {
+    await fetch('/api/notifications/' + encodeURIComponent(notifId) + '/read', {
+      method: 'PATCH'
+    });
+  } catch (err) {
+    console.warn('Error marking notification read in MongoDB:', err.message);
+  }
+}
+
+async function markAllNotificationsRead() {
+  (DB.notifications || []).forEach(n => n.read = true);
+  toast('All notifications marked as read', '✓');
+  render();
+  try {
+    await fetch('/api/notifications/mark-all-read', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({})
+    });
+  } catch (err) {
+    console.warn('Error marking all read in MongoDB:', err.message);
+  }
+}
+
+async function deleteNotification(notifId) {
+  if (!notifId) return;
+  DB.notifications = (DB.notifications || []).filter(x => x.id !== notifId && x.customId !== notifId);
+  toast('Notification removed', '🗑');
+  render();
+  try {
+    await fetch('/api/notifications/' + encodeURIComponent(notifId), {
+      method: 'DELETE'
+    });
+  } catch (err) {
+    console.warn('Error deleting notification from MongoDB:', err.message);
+  }
+}
+
+async function clearReadNotifications() {
+  const hadRead = (DB.notifications || []).some(n => n.read);
+  if (!hadRead) {
+    toast('No read notifications to clear', 'ℹ️');
+    return;
+  }
+  DB.notifications = (DB.notifications || []).filter(n => !n.read);
+  toast('Cleared read notifications', '🧹');
+  render();
+  try {
+    await fetch('/api/notifications/clear-read', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({})
+    });
+  } catch (err) {
+    console.warn('Error clearing read notifications in MongoDB:', err.message);
+  }
+}
+
+async function createNotification(notifData) {
+  const newNotif = {
+    id: notifData.id || notifData.customId || ('notif_' + Date.now().toString(36)),
+    em: notifData.em || '🔔',
+    title: notifData.title || 'Notification',
+    body: notifData.body || '',
+    category: notifData.category || notifData.cat || 'General',
+    cat: notifData.category || notifData.cat || 'General',
+    date: notifData.date || new Date().toISOString(),
+    read: false,
+    link: notifData.link || ''
+  };
+  DB.notifications = DB.notifications || [];
+  DB.notifications.unshift(newNotif);
+  render();
+  try {
+    await fetch('/api/notifications', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newNotif)
+    });
+  } catch (err) {
+    console.warn('Notice: Failed to save notification to MongoDB:', err.message);
+  }
+}
+
 function notifDrawer(){
-  return `<div class="drawer-wrap"><div class="drawer" data-stop="1">
-   <div class="modal-h"><h2 style="font-size:18px">🔔 Notifications</h2>
-     <button class="icon-btn" style="margin-left:auto" data-act="close-scrim">${ic('x')}</button></div>
-   <div class="modal-b" style="padding:0"><div class="list">
-     ${DB.notifications.slice(0,10).map(n=>`<div class="li" style="${n.read?'':'background:var(--accent-soft)'}">
-       <span class="av m" style="background:var(--surface-2);color:var(--ink);border-radius:11px">${n.em}</span>
-       <span class="grow"><span class="t">${esc(n.title)}</span><span class="d">${esc(n.body)}</span></span>
-       <span class="tiny">${relD(n.date)}</span></div>`).join('')}</div></div>
-   <div class="modal-f"><button class="btn" data-act="mark-all-read">Mark all read</button>
-     <button class="btn pri" data-act="go" data-r="#/notifications">Open notifications</button></div></div></div>`;
+  const tab = APP.notifTab || 'all';
+  const allNotifs = DB.notifications || [];
+  const unreadCount = allNotifs.filter(n => !n.read).length;
+  const filtered = tab === 'unread' ? allNotifs.filter(n => !n.read) : allNotifs;
+
+  return `<div class="drawer-wrap notif-drawer-wrap" data-act="close-scrim">
+    <div class="drawer notif-drawer" data-stop="1">
+      <div class="modal-h">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:20px">🔔</span>
+          <span style="font-size:17px;font-weight:700;color:var(--ink)">Notifications</span>
+          ${unreadCount > 0 ? `<span class="badge b-amber" style="font-size:11px;font-weight:700;padding:2px 8px">${unreadCount} new</span>` : ''}
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+          ${unreadCount > 0 ? `<button class="btn sm" data-act="mark-all-read" title="Mark all read" style="font-size:12px;padding:4px 9px">${ic('check')} Read all</button>` : ''}
+          <button class="icon-btn" data-act="close-scrim" title="Close" aria-label="Close">${ic('x')}</button>
+        </div>
+      </div>
+      <div class="notif-filter-bar">
+        <button class="notif-filter-btn ${tab === 'all' ? 'on' : ''}" data-act="notif-tab" data-tab="all">All (${allNotifs.length})</button>
+        <button class="notif-filter-btn ${tab === 'unread' ? 'on' : ''}" data-act="notif-tab" data-tab="unread">Unread (${unreadCount})</button>
+        <div style="margin-left:auto;display:flex;align-items:center">
+          <button class="btn sm link" data-act="refresh-notifs" title="Sync with MongoDB" style="font-size:11px;padding:3px 6px;color:var(--ink-3)">🔄 Sync</button>
+        </div>
+      </div>
+      <div class="modal-b" style="padding:0">
+        ${filtered.length ? `
+          <div class="notif-list">
+            ${filtered.map(n => `
+              <div class="notif-item ${n.read ? 'read' : 'unread'}" data-act="click-notif" data-id="${esc(n.id)}" data-link="${esc(n.link || '')}">
+                <div class="notif-icon-box">${n.em || '🔔'}</div>
+                <div class="notif-content">
+                  <div class="notif-title-row">
+                    <span class="notif-title">${esc(n.title)}</span>
+                    <span class="tiny" style="color:var(--ink-3);white-space:nowrap">${relD(n.date)}</span>
+                  </div>
+                  <div class="notif-body">${esc(n.body)}</div>
+                  <div class="notif-meta">
+                    <span class="badge b-grey" style="font-size:10px;padding:1px 6px">${esc(n.category || n.cat || 'General')}</span>
+                    ${n.link ? `<span style="color:var(--accent);font-weight:600;font-size:11px">View details →</span>` : ''}
+                  </div>
+                </div>
+                <div class="notif-actions" data-stop="1">
+                  ${!n.read ? `<button class="icon-btn sm" data-act="mark-read" data-id="${esc(n.id)}" title="Mark as read" style="width:28px;height:28px">${ic('check')}</button>` : ''}
+                  <button class="icon-btn sm" data-act="delete-notif" data-id="${esc(n.id)}" title="Delete" style="width:28px;height:28px">${ic('trash')}</button>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        ` : `
+          <div class="empty-notifs" style="padding:50px 24px;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%">
+            <div style="font-size:44px;margin-bottom:12px;opacity:0.85">🪷</div>
+            <div style="font-size:16px;font-weight:700;color:var(--ink);margin-bottom:6px">${tab === 'unread' ? 'No unread notifications' : 'No notifications yet'}</div>
+            <div class="tiny" style="color:var(--ink-2);max-width:260px;line-height:1.5">All assignments, yatra updates, reminders and approvals will appear here in real time.</div>
+          </div>
+        `}
+      </div>
+      <div class="modal-f">
+        <button class="btn sm" data-act="clear-read-notifs" title="Clear already read notifications" style="color:var(--ink-2);font-size:12px">Clear read</button>
+        <div style="display:flex;gap:8px">
+          <button class="btn pri sm" data-act="go-notifications">Full page view →</button>
+        </div>
+      </div>
+    </div>
+  </div>`;
 }
 function searchModal(){
   const q=APP.search.toLowerCase();
@@ -24682,8 +24956,26 @@ document.addEventListener('click',e=>{
     logAudit('Role granted',`${ROLES[v.role].name} for ${nameOf(v.devotee)}`);
     toast('User saved','⚙️');APP.modal='';render();break}
   /* ---- notifications ---- */
-  case 'mark-read':stop();{const n=DB.notifications.find(x=>x.id===id);n.read=true;render();break}
-  case 'mark-all-read':DB.notifications.forEach(n=>n.read=true);toast('All marked read');APP.modal='';render();break;
+  case 'mark-read':stop();markNotificationRead(id||t.dataset.id);break;
+  case 'mark-all-read':markAllNotificationsRead();APP.modal='';break;
+  case 'delete-notif':stop();deleteNotification(id||t.dataset.id);break;
+  case 'clear-read-notifs':clearReadNotifications();break;
+  case 'refresh-notifs':loadNotificationsFromBackend(true);toast('Notifications synced with MongoDB','🔄');break;
+  case 'notif-tab':APP.notifTab=t.dataset.tab;render();break;
+  case 'go-notifications':APP.modal='';go('#/notifications');break;
+  case 'click-notif':{
+    stop();
+    const notifTarget = t.closest('[data-act="click-notif"]') || t;
+    const nId = id || notifTarget.dataset.id;
+    const nLink = notifTarget.dataset.link;
+    if(nId) markNotificationRead(nId);
+    if(nLink){
+      APP.modal='';
+      if(nLink.startsWith('#')) go(nLink);
+      else if(nLink.startsWith('http')) window.open(nLink,'_blank');
+    }
+    break;
+  }
   case 'notif-pref':{DB.notifPrefs[t.dataset.k]=!DB.notifPrefs[t.dataset.k];
     toast(t.dataset.k+(DB.notifPrefs[t.dataset.k]?' on':' off'),'🔔');render();break}
   /* ---- messages ---- */
@@ -25243,6 +25535,8 @@ APP.route=location.hash||'#/';
 loadMorningAttendanceFromBackend();
 loadCampsFromBackend();
 loadOutingsFromBackend();
+loadNotificationsFromBackend();
+setInterval(() => loadNotificationsFromBackend(false), 45000);
 render();
 syncDevoteesFromServer(true); // forceImmediate on first page load
 verifyUserSessionFromServer();
