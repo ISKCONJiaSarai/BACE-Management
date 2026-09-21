@@ -3264,6 +3264,408 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-off
   }
 }
 
+/* =========================================================================
+   PHASE 1 — GLOBAL MOBILE-FIRST FOUNDATIONS
+   All new classes added as part of the comprehensive mobile overhaul.
+   ========================================================================= */
+
+/* ── 1a. Eyebrow: hide on mobile (breadcrumb replaces it) ── */
+@media(max-width:768px){
+  .eyebrow{display:none!important}
+  .page-head p.sub{
+    display:-webkit-box!important;
+    -webkit-line-clamp:1!important;
+    -webkit-box-orient:vertical!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+}
+@media(max-width:480px){
+  .page-head p.sub{display:none!important}
+}
+
+/* ── 1b. Breadcrumb trail enhancements ── */
+.crumbs{
+  display:flex;align-items:center;gap:2px;
+  flex-wrap:nowrap;overflow:hidden;
+  padding:0 0 10px;
+  min-height:0;
+}
+@media(max-width:480px){
+  .crumbs{padding:0 0 8px}
+  .crumb-btn span{
+    max-width:90px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:inline-block;
+    vertical-align:middle;
+  }
+}
+@media(max-width:380px){
+  .crumb-btn:not(.crumb-home):not(.crumb-leaf){display:none}
+}
+
+/* ── 1c. Button minimum 44px touch target on all mobile ── */
+@media(max-width:1080px){
+  .btn{min-height:36px}
+  .btn.sm{min-height:32px}
+  .btn.xs{min-height:28px}
+}
+@media(max-width:768px){
+  .btn{min-height:40px}
+  .btn.sm{min-height:34px}
+}
+
+/* ── 1d. Global view padding reduction on very small screens ── */
+@media(max-width:480px){
+  .view{padding-left:11px!important;padding-right:11px!important}
+}
+@media(max-width:380px){
+  .view{padding-left:9px!important;padding-right:9px!important}
+}
+
+/* ── 1e. Sticky Mobile Action Footer ── */
+.mobile-sticky-footer{
+  display:none;
+  position:fixed;
+  bottom:0;left:0;right:0;
+  z-index:310;
+  background:var(--surface);
+  border-top:1px solid var(--line);
+  padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));
+  gap:8px;
+  flex-direction:row;
+  align-items:center;
+  box-shadow:0 -4px 18px rgba(0,0,0,0.08);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+}
+.mobile-sticky-footer .btn{flex:1;justify-content:center;min-height:44px;font-size:14px}
+.mobile-sticky-footer .btn.pri{flex:2}
+@media(max-width:1080px){
+  .mobile-sticky-footer{display:flex}
+  /* Ensure pages with sticky footer have extra bottom padding */
+  .view.has-sticky-footer{padding-bottom:calc(120px + env(safe-area-inset-bottom,0px))!important}
+}
+[data-theme="dark"] .mobile-sticky-footer{
+  background:rgba(18,16,12,0.92);
+  border-top-color:var(--line);
+}
+
+/* ── 1f. Swipe Row Infrastructure ── */
+.swipe-row-wrap{
+  position:relative;
+  overflow:hidden;
+  display:block;
+}
+.swipe-row-content{
+  position:relative;
+  transform:translateX(0);
+  transition:transform .22s cubic-bezier(0.16,1,0.3,1);
+  will-change:transform;
+  background:var(--surface);
+  z-index:1;
+}
+.swipe-row-actions{
+  position:absolute;
+  top:0;right:0;bottom:0;
+  display:flex;
+  align-items:stretch;
+  z-index:0;
+  overflow:hidden;
+}
+.swipe-row-action-btn{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:3px;padding:0 18px;
+  font-size:11px;font-weight:700;
+  color:#fff;cursor:pointer;border:none;outline:none;
+  transition:filter .15s ease;
+  min-width:64px;
+}
+.swipe-row-action-btn:hover{filter:brightness(1.1)}
+.swipe-row-action-btn .sa-icon{font-size:17px;line-height:1}
+.swipe-row-action-btn.edit{background:var(--sky)}
+.swipe-row-action-btn.delete{background:var(--danger)}
+.swipe-row-action-btn.message{background:var(--indigo)}
+.swipe-row-action-btn.view{background:var(--teal)}
+.swipe-row-action-btn.attend{background:var(--green)}
+.swipe-row-action-btn.manage{background:var(--amber)}
+
+/* Swipe reveal only on touch devices on mobile */
+@media(max-width:1080px){
+  .swipe-row-wrap.revealed .swipe-row-content{
+    transform:translateX(-128px);
+  }
+}
+
+/* ── 1g. Collapsible Section CSS ── */
+.collapsible-section{
+  overflow:hidden;
+}
+.collapsible-header{
+  display:flex;align-items:center;justify-content:space-between;
+  cursor:pointer;
+  user-select:none;
+  -webkit-tap-highlight-color:transparent;
+  gap:8px;
+}
+.collapsible-header .ch-toggle{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:24px;height:24px;border-radius:50%;
+  background:var(--surface-2);
+  border:1px solid var(--line);
+  color:var(--ink-3);
+  flex-shrink:0;
+  transition:transform .32s cubic-bezier(0.34,1.56,0.64,1), background .2s, color .2s;
+}
+.collapsible-header .ch-toggle svg{
+  width:13px;height:13px;
+  display:block;
+  transition:transform .32s cubic-bezier(0.34,1.56,0.64,1);
+}
+.collapsible-section.is-open .collapsible-header .ch-toggle svg{
+  transform:rotate(180deg);
+}
+.collapsible-section.is-open .collapsible-header .ch-toggle{
+  background:var(--accent-soft);color:var(--accent);border-color:var(--accent);
+}
+/* Grid-based height animation (GPU-accelerated, no layout thrash) */
+.collapsible-body-wrap{
+  display:grid;
+  grid-template-rows:0fr;
+  transition:grid-template-rows .35s cubic-bezier(0.16,1,0.3,1);
+}
+.collapsible-section.is-open .collapsible-body-wrap{
+  grid-template-rows:1fr;
+}
+.collapsible-body{
+  overflow:hidden;
+  min-height:0;
+  opacity:0;
+  transform:translateY(-4px);
+  transition:opacity .28s cubic-bezier(0.16,1,0.3,1) .05s, transform .3s cubic-bezier(0.16,1,0.3,1) .05s;
+}
+.collapsible-section.is-open .collapsible-body{
+  opacity:1;transform:translateY(0);
+}
+/* On desktop — always show, no toggle */
+@media(min-width:1081px){
+  .collapsible-body-wrap{grid-template-rows:1fr!important}
+  .collapsible-body{opacity:1!important;transform:none!important}
+  .collapsible-header .ch-toggle{display:none}
+  .collapsible-header{cursor:default}
+}
+
+/* ── 1h. Horizontal Mobile Tab Bar ── */
+.mob-tab-bar{
+  display:none;
+  overflow-x:auto;
+  scroll-snap-type:x mandatory;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+  gap:4px;
+  padding:8px 12px;
+  background:var(--surface-2);
+  border-bottom:1px solid var(--line);
+  flex-wrap:nowrap;
+  flex-shrink:0;
+}
+.mob-tab-bar::-webkit-scrollbar{display:none}
+.mob-tab-btn{
+  scroll-snap-align:start;
+  display:inline-flex;align-items:center;gap:5px;
+  padding:7px 14px;
+  white-space:nowrap;
+  font-size:12.5px;font-weight:600;
+  color:var(--ink-2);
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:20px;
+  cursor:pointer;
+  transition:all .18s ease;
+  flex-shrink:0;
+  min-height:34px;
+  -webkit-tap-highlight-color:transparent;
+}
+.mob-tab-btn.on{
+  background:var(--accent);color:#fff;border-color:var(--accent);
+  box-shadow:0 2px 8px rgba(201,96,27,0.28);
+}
+.mob-tab-btn .mob-tab-icon{font-size:14px;line-height:1}
+.mob-tab-panel{display:none}
+.mob-tab-panel.on{display:block}
+@media(max-width:1080px){
+  .mob-tab-bar{display:flex}
+  /* Hide desktop-style tab bars when mobile tab bar is active */
+  .has-mob-tabs > .tabs{display:none!important}
+}
+@media(min-width:1081px){
+  .mob-tab-panel{display:block!important}
+}
+
+/* ── 1i. Compact Table Rows for Mobile ── */
+.tbl-compact-row{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:10px 14px;
+  border-bottom:1px solid var(--line-2);
+  cursor:pointer;
+  transition:background .15s ease;
+  text-decoration:none;color:inherit;
+  -webkit-tap-highlight-color:transparent;
+}
+.tbl-compact-row:hover,.tbl-compact-row:active{background:var(--surface-2)}
+.tbl-compact-row .tcr-main{flex:1;min-width:0}
+.tbl-compact-row .tcr-title{
+  font-size:13.5px;font-weight:600;color:var(--ink);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  line-height:1.3;
+}
+.tbl-compact-row .tcr-sub{
+  font-size:11.5px;color:var(--ink-3);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  margin-top:2px;
+  line-height:1.3;
+}
+.tbl-compact-row .tcr-right{
+  display:flex;flex-direction:column;align-items:flex-end;
+  gap:4px;flex-shrink:0;
+}
+.tbl-compact-row .tcr-arr{
+  font-size:16px;color:var(--ink-3);opacity:.4;flex-shrink:0;
+}
+
+/* ── 1j. Typography Polish ── */
+@media(max-width:480px){
+  h1{font-size:19px!important}
+  .page-head h1{font-size:19px!important}
+  .card-h h3{font-size:13.5px!important}
+  .stat .val{font-size:21px!important}
+  .stat .lbl{font-size:11px!important}
+  .stat .foot{font-size:10.5px!important}
+  .badge,.chip{font-size:10.5px!important}
+  .btn{font-size:13px!important}
+  .btn.sm{font-size:12px!important}
+}
+
+/* ── 1k. Mobile filter collapse chip ── */
+.mob-filter-toggle{
+  display:none;
+  align-items:center;gap:5px;
+  padding:6px 12px;
+  font-size:12px;font-weight:600;
+  border:1px solid var(--line);border-radius:20px;
+  background:var(--surface);color:var(--ink-2);
+  cursor:pointer;
+  transition:all .15s;
+  -webkit-tap-highlight-color:transparent;
+}
+.mob-filter-toggle.has-filters{
+  background:var(--accent-soft);color:var(--accent);border-color:var(--accent);
+}
+@media(max-width:1080px){
+  .mob-filter-toggle{display:inline-flex}
+}
+.mob-filter-collapse{
+  overflow:hidden;
+  max-height:0;
+  transition:max-height .3s cubic-bezier(0.16,1,0.3,1), opacity .25s ease;
+  opacity:0;
+}
+.mob-filter-collapse.open{
+  max-height:600px;
+  opacity:1;
+}
+
+/* ── 1l. Mobile Filter Chip Rows ── */
+.mob-filter-chip-row{
+  display:flex;
+  overflow-x:auto;
+  scroll-snap-type:x mandatory;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+  gap:6px;padding:4px 0;
+  flex-wrap:nowrap;
+}
+.mob-filter-chip-row::-webkit-scrollbar{display:none}
+.mob-filter-chip-row .chip,.mob-filter-chip-row .filter-chip{
+  scroll-snap-align:start;
+  flex-shrink:0;
+  white-space:nowrap;
+}
+
+/* ── 1m. General section card-body collapsible on mobile ── */
+/* Sections that use .section-collapsible class become collapsible on mobile */
+@media(max-width:1080px){
+  .section-collapsible .card-h{
+    cursor:pointer;
+    user-select:none;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .section-collapsible .card-h::after{
+    content:'▾';
+    margin-left:auto;
+    font-size:14px;color:var(--ink-3);
+    transition:transform .3s ease;
+    flex-shrink:0;
+  }
+  .section-collapsible.is-collapsed .card-h::after{
+    transform:rotate(-90deg);
+  }
+  .section-collapsible.is-collapsed .card-b,
+  .section-collapsible.is-collapsed .list,
+  .section-collapsible.is-collapsed .tbl-wrap,
+  .section-collapsible.is-collapsed .card-body-inner{
+    display:none!important;
+  }
+}
+
+/* ── 1n. Detail Bottom Sheet (for row tap) ── */
+.detail-sheet-wrap{
+  position:fixed;inset:0;z-index:900;
+  background:rgba(0,0,0,0.48);
+  backdrop-filter:blur(4px);
+  -webkit-backdrop-filter:blur(4px);
+  display:flex;align-items:flex-end;justify-content:center;
+  animation:fade .2s ease;
+}
+.detail-sheet{
+  background:var(--surface);
+  border-radius:24px 24px 0 0;
+  width:100%;max-width:600px;
+  max-height:85dvh;
+  display:flex;flex-direction:column;
+  animation:slideUp .28s cubic-bezier(0.16,1,0.3,1);
+  overflow:hidden;
+  box-shadow:0 -8px 40px rgba(0,0,0,0.18);
+}
+.detail-sheet-handle{
+  width:36px;height:4px;background:var(--line);border-radius:2px;
+  margin:10px auto 4px;flex-shrink:0;
+}
+.detail-sheet-h{
+  padding:12px 18px;border-bottom:1px solid var(--line);
+  display:flex;align-items:center;justify-content:space-between;
+  gap:10px;flex-shrink:0;
+}
+.detail-sheet-h h3{font-size:15px;font-weight:700;margin:0;color:var(--ink)}
+.detail-sheet-body{
+  flex:1;overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+  padding:14px 18px;
+}
+.detail-sheet-footer{
+  padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));
+  border-top:1px solid var(--line);
+  display:flex;gap:8px;flex-shrink:0;
+}
+.detail-sheet-footer .btn{flex:1;justify-content:center;min-height:44px}
+.detail-sheet-footer .btn.pri{flex:2}
+@keyframes slideUp{
+  from{transform:translateY(100%)}
+  to{transform:translateY(0)}
+}
+
 </style>
 </head>
 <body>
@@ -5064,15 +5466,265 @@ const emptyState=(title,msg,action,ill='empty')=>`<div class="empty">${ILL[ill]|
 const denied=(what)=>`<div class="locked">${ic('lock')}<p style="margin:10px 0 0"><b>You don't have permission to view this information.</b><br>${esc(what||'Ask the Overall Coordinator if you need access.')}</p></div>`;
 const loadingRows=n=>`<div class="card-b">${[...Array(n)].map(()=>`<div class="skeleton" style="height:16px;margin-bottom:10px"></div>`).join('')}</div>`;
 
+/* =========================================================================
+   PHASE 1 JS — MOBILE UX INFRASTRUCTURE HELPERS
+   Shared utilities used by all pages for collapsible, swipe, detail sheets.
+   ========================================================================= */
+
+/* ── Collapsible State (localStorage-backed) ── */
+const COLLAPSIBLE_KEY = 'bace_collapsible_v1';
+function getCollapsibleState(){
+  try{ return JSON.parse(localStorage.getItem(COLLAPSIBLE_KEY)||'{}'); }catch(e){ return {}; }
+}
+function setCollapsibleState(key, open){
+  try{
+    const s = getCollapsibleState();
+    s[key] = open;
+    localStorage.setItem(COLLAPSIBLE_KEY, JSON.stringify(s));
+  }catch(e){}
+}
+function isCollapsibleOpen(key, defaultOpen=true){
+  const s = getCollapsibleState();
+  return s.hasOwnProperty(key) ? s[key] : defaultOpen;
+}
+
+/* Build a collapsible section card (Phase 1g).
+   key       = unique localStorage key (e.g. 'dash_insights')
+   title     = section header text (can include HTML)
+   body      = inner HTML of the body
+   right     = optional right-side header content
+   defaultOpen = true if this is the "most important" section for smart default
+*/
+function collSection(key, title, body, right='', defaultOpen=true){
+  const isMob = window.innerWidth <= 1080;
+  const open = isMob ? isCollapsibleOpen(key, defaultOpen) : true;
+  const h3 = (typeof title === 'string' && title.includes('<')) ? title : esc(title);
+  const chevron = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 6 8 10 12 6"/></svg>`;
+  return `<div class="card collapsible-section${open?' is-open':''}" data-coll-key="${esc(key)}">
+    <div class="card-h collapsible-header" data-act="toggle-collapsible" data-coll-key="${esc(key)}">
+      <h3 style="display:inline-flex;align-items:center;flex:1;min-width:0">${h3}</h3>
+      <div class="r" style="display:flex;align-items:center;gap:6px">${right}<span class="ch-toggle">${chevron}</span></div>
+    </div>
+    <div class="collapsible-body-wrap"><div class="collapsible-body">${body}</div></div>
+  </div>`;
+}
+
+/* Toggle a collapsible section by its key or by its DOM element */
+function toggleCollapsible(keyOrEl){
+  let el, key;
+  if(typeof keyOrEl === 'string'){
+    key = keyOrEl;
+    el = document.querySelector(`.collapsible-section[data-coll-key="${key}"]`);
+  } else {
+    el = keyOrEl.closest('.collapsible-section');
+    key = el ? el.dataset.collKey : null;
+  }
+  if(!el) return;
+  const open = !el.classList.contains('is-open');
+  el.classList.toggle('is-open', open);
+  if(key) setCollapsibleState(key, open);
+}
+
+/* ── Swipe-Row Infrastructure (Phase 1f) ── */
+/* Wrap a list item in swipe-row markup.
+   content    = inner HTML of the main row
+   actions    = array of {cls, icon, label, act, arg} objects
+*/
+function swipeRow(content, actions=[]){
+  const actionBtns = actions.map(a =>
+    `<button class="swipe-row-action-btn ${esc(a.cls||'')}" data-act="${esc(a.act||'')}" data-id="${esc(a.id||'')}" data-arg="${esc(a.arg||'')}" aria-label="${esc(a.label||'')}">
+      <span class="sa-icon">${a.icon||''}</span>
+      <span>${esc(a.label||'')}</span>
+    </button>`
+  ).join('');
+  return `<div class="swipe-row-wrap">
+    <div class="swipe-row-actions">${actionBtns}</div>
+    <div class="swipe-row-content">${content}</div>
+  </div>`;
+}
+
+/* Initialise swipe-to-reveal on all .swipe-row-wrap inside a container */
+function initSwipeRows(container){
+  if(!container || window.innerWidth > 1080) return;
+  container.querySelectorAll('.swipe-row-wrap').forEach(wrap => {
+    const content = wrap.querySelector('.swipe-row-content');
+    const actions = wrap.querySelector('.swipe-row-actions');
+    if(!content) return;
+    let startX=0, startY=0, diffX=0, swiping=false, revealed=false;
+    const REVEAL_W = actions ? actions.scrollWidth : 128;
+
+    content.addEventListener('touchstart', e => {
+      if(e.touches.length !== 1) return;
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+      diffX = 0; swiping = false;
+    }, {passive:true});
+
+    content.addEventListener('touchmove', e => {
+      if(e.touches.length !== 1) return;
+      diffX = startX - e.touches[0].clientX;
+      const diffY = Math.abs(startY - e.touches[0].clientY);
+      if(!swiping && Math.abs(diffX) > 8 && diffY < 20) swiping = true;
+      if(!swiping) return;
+      e.stopPropagation();
+      const offset = revealed ? diffX + REVEAL_W : diffX;
+      const clamped = Math.min(Math.max(offset, 0), REVEAL_W);
+      content.style.transform = `translateX(-${clamped}px)`;
+    }, {passive:true});
+
+    content.addEventListener('touchend', () => {
+      if(!swiping){ content.style.transform=''; return; }
+      content.style.transform = '';
+      content.style.transition = '';
+      const offset = revealed ? diffX + REVEAL_W : diffX;
+      if(offset > REVEAL_W * 0.35){
+        wrap.classList.add('revealed');
+        revealed = true;
+        // Close others
+        container.querySelectorAll('.swipe-row-wrap.revealed').forEach(w => {
+          if(w !== wrap){ w.classList.remove('revealed'); w.querySelector('.swipe-row-content').style.transform=''; }
+        });
+      } else {
+        wrap.classList.remove('revealed');
+        revealed = false;
+      }
+    }, {passive:true});
+
+    // Close on scroll or tap of content
+    content.addEventListener('click', () => {
+      if(revealed){ wrap.classList.remove('revealed'); revealed=false; }
+    }, {passive:true});
+  });
+  // Close all on scroll
+  container.addEventListener('scroll', () => {
+    container.querySelectorAll('.swipe-row-wrap.revealed').forEach(w => {
+      w.classList.remove('revealed');
+      const c = w.querySelector('.swipe-row-content');
+      if(c) c.style.transform = '';
+    });
+  }, {passive:true});
+}
+
+/* ── Detail Bottom Sheet (Phase 1n) ── */
+/* Open a detail bottom-sheet with title, body HTML, and optional footer buttons */
+function openDetailSheet({title='', body='', footerBtns=[], onClose=null}={}){
+  closeDetailSheet();
+  const id = 'ds_' + Math.random().toString(36).slice(2,8);
+  const footer = footerBtns.length
+    ? `<div class="detail-sheet-footer">${footerBtns.map(b=>`<button class="btn${b.pri?' pri':''}" data-act="${esc(b.act||'')}" data-id="${esc(b.id||'')}" data-arg="${esc(b.arg||'')}">${esc(b.label||b.text||'')}</button>`).join('')}</div>`
+    : '';
+  const html = `<div class="detail-sheet-wrap" id="${id}" data-act="close-detail-sheet">
+    <div class="detail-sheet" id="${id}_sheet">
+      <div class="detail-sheet-handle"></div>
+      <div class="detail-sheet-h">
+        <h3>${esc(title)}</h3>
+        <button class="icon-btn" data-act="close-detail-sheet" aria-label="Close">${ic('x')}</button>
+      </div>
+      <div class="detail-sheet-body">${body}</div>
+      ${footer}
+    </div>
+  </div>`;
+  document.body.insertAdjacentHTML('beforeend', html);
+  const wrap = document.getElementById(id);
+  const sheet = document.getElementById(id+'_sheet');
+  if(!wrap||!sheet) return;
+  wrap.addEventListener('click', e => { if(e.target===wrap) closeDetailSheet(onClose); });
+  // Pull-to-dismiss
+  let startY=0, dragging=false;
+  const handle = sheet.querySelector('.detail-sheet-handle');
+  if(handle){
+    handle.addEventListener('touchstart', e => { startY = e.touches[0].clientY; dragging=true; }, {passive:true});
+    handle.addEventListener('touchmove', e => {
+      if(!dragging) return;
+      const dy = Math.max(0, e.touches[0].clientY - startY);
+      sheet.style.transform = `translateY(${dy}px)`;
+    }, {passive:true});
+    handle.addEventListener('touchend', e => {
+      dragging=false;
+      const dy = e.changedTouches[0].clientY - startY;
+      if(dy > 80){ closeDetailSheet(onClose); }
+      else { sheet.style.transform=''; }
+    }, {passive:true});
+  }
+  // Focus trap for a11y
+  setTimeout(() => { const f = sheet.querySelector('button,a,[tabindex]'); if(f) f.focus(); }, 100);
+}
+function closeDetailSheet(cb){
+  document.querySelectorAll('.detail-sheet-wrap').forEach(el => el.remove());
+  if(typeof cb === 'function') cb();
+}
+
+/* ── Mobile Sticky Footer ── */
+function mobileStickyFooter(buttons=[]){
+  if(!buttons.length) return '';
+  return `<div class="mobile-sticky-footer">${buttons.map(b =>
+    `<button class="btn${b.pri?' pri':''}${b.danger?' danger':''}" data-act="${esc(b.act||'')}" data-id="${esc(b.id||'')}" data-arg="${esc(b.arg||'')}">${b.icon?`<span>${b.icon}</span>`:''}${esc(b.label||'')}</button>`
+  ).join('')}</div>`;
+}
+
+/* ── Mobile Tab Bar ── */
+function mobTabBar(tabs=[], activeId=''){
+  const active = activeId || (tabs[0]||{}).id || '';
+  const buttons = tabs.map(t =>
+    `<button class="mob-tab-btn${t.id===active?' on':''}" data-act="mob-tab" data-tab-bar="${esc(t.bar||'')}" data-tab-id="${esc(t.id)}" aria-label="${esc(t.label)}">
+      ${t.icon?`<span class="mob-tab-icon">${t.icon}</span>`:''}
+      <span>${esc(t.label)}</span>
+    </button>`
+  ).join('');
+  const panels = tabs.map(t =>
+    `<div class="mob-tab-panel${t.id===active?' on':''}" data-tab-panel="${esc(t.bar||'')}" data-tab-id="${esc(t.id)}">${t.content||''}</div>`
+  ).join('');
+  return `<div class="has-mob-tabs">
+    <div class="mob-tab-bar" data-tab-bar="${esc((tabs[0]||{}).bar||'')}">${buttons}</div>
+    ${panels}
+  </div>`;
+}
+
+/* ── Register mob-tab clicks (called after render) ── */
+function initMobTabs(container){
+  if(!container) return;
+  container.querySelectorAll('[data-act="mob-tab"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const bar = btn.dataset.tabBar;
+      const id = btn.dataset.tabId;
+      container.querySelectorAll(`.mob-tab-btn[data-tab-bar="${bar}"]`).forEach(b => b.classList.toggle('on', b.dataset.tabId===id));
+      container.querySelectorAll(`.mob-tab-panel[data-tab-bar="${bar}"]`).forEach(p => p.classList.toggle('on', p.dataset.tabId===id));
+    });
+  });
+}
+
+/* ── Compact table row builder ── */
+function tcrRow(opts={}){
+  // opts: {icon, av, title, sub, badge, right, act, id, arg, actions}
+  const inner = `<div class="tbl-compact-row"
+    data-act="${esc(opts.act||'go')}" data-id="${esc(opts.id||'')}" data-r="${esc(opts.r||'')}" data-arg="${esc(opts.arg||'')}">
+    ${opts.av ? opts.av : (opts.icon ? `<span style="font-size:20px;flex-shrink:0">${opts.icon}</span>` : '')}
+    <div class="tcr-main">
+      <div class="tcr-title">${opts.title||''}</div>
+      ${opts.sub ? `<div class="tcr-sub">${opts.sub}</div>` : ''}
+    </div>
+    <div class="tcr-right">
+      ${opts.badge||''}
+    </div>
+    <span class="tcr-arr">›</span>
+  </div>`;
+  if(opts.actions && opts.actions.length){
+    return swipeRow(inner, opts.actions);
+  }
+  return inner;
+}
+
 /* ---------- head / section / stat ---------- */
 function head(eyebrow,title,sub,actions='',extraClass=''){
-  return `<div class="page-head ${extraClass}"><div><div class="eyebrow">${esc(eyebrow)}</div><h1>${esc(title)}</h1>${sub?`<p class="sub">${esc(sub)}</p>`:''}</div>
+  const crumbs = (typeof renderBreadcrumbs === 'function') ? renderBreadcrumbs() : '';
+  return `<div class="page-head ${extraClass}">${crumbs}<div><div class="eyebrow">${esc(eyebrow)}</div><h1>${esc(title)}</h1>${sub?`<p class="sub">${esc(sub)}</p>`:''}</div>
   <div class="actions">${actions}</div></div>`;
 }
 function section(title,body,right=''){
   const h3 = (typeof title === 'string' && title.includes('<')) ? title : esc(title);
   return `<div class="card"><div class="card-h"><h3 style="display:inline-flex;align-items:center">${h3}</h3><div class="r">${right}</div></div>${body}</div>`;
 }
+
 const stat=(lbl,val,foot='',o={})=>{
   const act = o.act || (o.r ? 'go' : '');
   const attrs = [];
@@ -22571,10 +23223,9 @@ function render(){
   const isRouteChange = APP.lastRenderedRoute !== APP.route;
   APP.lastRenderedRoute = APP.route;
   const viewClass = isRouteChange ? 'view route-enter' : 'view';
-  const breadcrumb=renderBreadcrumbs();
   app.innerHTML=`${appHeader()}
     <div class="${layoutClass}">
-      <div class="main"><div class="${viewClass}">${breadcrumb}${body}</div></div>
+      <div class="main"><div class="${viewClass}">${body}</div></div>
       ${globalTodayPanel()}
     </div>
     ${botnav()}${fab()}${modalHTML()}${mobileTodayDrawer()}
@@ -22587,6 +23238,14 @@ function render(){
   const cb=document.getElementById('chatbody');if(cb)cb.scrollTop=cb.scrollHeight;
   // Auto-collapse today panel on narrow screens
   if(window.innerWidth<=900&&APP.todayPanelOpen){APP.todayPanelOpen=false}
+  // Phase 1: Init mobile interactions after render
+  const viewEl = document.querySelector('.view');
+  if(viewEl){
+    initSwipeRows(viewEl);
+    initMobTabs(viewEl);
+  }
+  // Close any stale detail sheets on navigation
+  if(isRouteChange) closeDetailSheet();
 }
 function go(r, keepModal = false){
   APP.route=r;
@@ -22906,6 +23565,26 @@ document.addEventListener('click',e=>{
    case 'ms-toggle-item':{
      updateMultiSelectUI(t.dataset.name);
      break}
+
+  /* ---- Phase 1: Collapsible, Detail Sheet, Mob Tabs ---- */
+  case 'toggle-collapsible':stop();{
+    toggleCollapsible(t);
+    break;}
+  case 'close-detail-sheet':stop();{
+    closeDetailSheet();
+    break;}
+  case 'mob-tab':stop();{
+    const bar = t.dataset.tabBar;
+    const tabId = t.dataset.tabId;
+    const barEl = t.closest('.mob-tab-bar') || document;
+    const root = barEl.closest('.has-mob-tabs') || document;
+    root.querySelectorAll(`.mob-tab-btn[data-tab-bar="${bar}"]`).forEach(b => b.classList.toggle('on', b.dataset.tabId===tabId));
+    root.querySelectorAll(`.mob-tab-panel[data-tab-bar="${bar}"]`).forEach(p => p.classList.toggle('on', p.dataset.tabId===tabId));
+    break;}
+  case 'toggle-section-collapsible':stop();{
+    const card = t.closest('.section-collapsible');
+    if(card) card.classList.toggle('is-collapsed');
+    break;}
 
   /* ---- session / navigation ---- */
   case 'pick-user':loginPick=id;render();break;
