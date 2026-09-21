@@ -244,7 +244,7 @@ input,select,textarea{font-family:inherit;font-size:14px;color:var(--ink);backgr
   background:rgba(255,102,0,0.2);
   color:var(--accent);
 }
-.header-controls{display:flex;align-items:center;gap:6px;flex:none}
+.header-controls{display:flex;align-items:center;gap:6px;flex:none;margin-left:auto}
 .theme-toggle{
   width:36px;height:36px;border-radius:10px;display:grid;place-items:center;
   border:1px solid var(--line);background:var(--surface);cursor:pointer;transition:all .2s;flex:none;
@@ -257,8 +257,9 @@ input,select,textarea{font-family:inherit;font-size:14px;color:var(--ink);backgr
 @media(max-width:1080px){
   .header-nav{display:none}
   .header-mobile-menu{display:grid}
-  .app-header{padding:0 12px;gap:6px}
+  .app-header{padding:0 8px 0 12px;gap:5px}
   .app-header .brand-text{font-size:14px}
+  .header-controls{margin-left:auto}
 }
 @media(max-width:620px){
   .header-controls .searchbox{display:none}
@@ -266,10 +267,11 @@ input,select,textarea{font-family:inherit;font-size:14px;color:var(--ink);backgr
 }
 @media(max-width:480px){
   :root{--header-h:50px}
-  .app-header{height:var(--header-h);padding:0 10px}
+  .app-header{height:var(--header-h);padding:0 6px 0 10px;gap:4px}
   .app-header .brand-text{font-size:13px}
   .app-header .brand-logo-wrap{width:30px;height:30px;padding:3.5px;border-radius:8px}
   .app-header .brand-os-pill{display:none}
+  .header-controls{gap:4px;margin-left:auto}
   .header-controls .theme-toggle{width:32px;height:32px;border-radius:8px}
   .header-controls .icon-btn{width:32px;height:32px;border-radius:8px}
   .header-mobile-menu{width:32px;height:32px;border-radius:8px}
