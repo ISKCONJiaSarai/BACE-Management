@@ -3641,7 +3641,7 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-off
 /* On ≤640px hide the desktop .tbl-wrap inside the devotee card, show .dev-mob-list instead */
 .dev-mob-list{display:none}
 @media(max-width:640px){
-  .tbl-wrap.tbl-wrap-dev{display:none!important}
+  .tbl-wrap.tbl-wrap-dev, .tbl-wrap.tbl-wrap-has-mob{display:none!important}
   .dev-mob-list{display:block}
   /* Compact hero card on devotee detail page */
   .dev-hero-actions{display:none!important}
@@ -4039,6 +4039,56 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-off
   .bmr-sub{font-size:11.5px;color:var(--ink-3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .bmr-right{display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0}
   .bmr-stat{font-size:12.5px;font-weight:700;font-family:var(--f-head);color:var(--ink)}
+}
+
+/* ── Phase 8: Contacts & Followups Mobile Ergonomics ── */
+.contact-mob-list{display:none}
+@media(max-width:640px){
+  .tbl-wrap.tbl-wrap-contacts, .tbl-wrap.tbl-wrap-has-mob{display:none!important}
+  .contact-mob-list{display:block}
+}
+.contact-mob-row{
+  display:flex;align-items:center;gap:11px;padding:11px 13px;border-bottom:1px solid var(--line-2);
+  background:var(--surface);cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .13s;
+}
+.contact-mob-row:active{background:var(--surface-2)}
+.cmr-main{flex:1;min-width:0}
+.cmr-top{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:2px}
+.cmr-name{font-weight:700;font-size:13.5px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cmr-meta{font-size:11.5px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px}
+.cmr-foot{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--ink-3)}
+.cmr-classes{background:var(--indigo-soft, rgba(99,102,241,.12));color:var(--indigo);padding:1px 6px;border-radius:6px;font-weight:600}
+.cmr-actions{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.cmr-act-btn{
+  width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  text-decoration:none;border:1px solid var(--line);font-size:14px;color:var(--ink-2);background:var(--surface-2);
+  transition:all .15s ease;
+}
+.cmr-act-btn:active{transform:scale(0.92)}
+.cmr-act-call{color:var(--green);border-color:rgba(16,185,129,.25);background:rgba(16,185,129,.08)}
+.cmr-act-wa{color:#25d366;border-color:rgba(37,211,102,.25);background:rgba(37,211,102,.08)}
+
+/* Followups filter chips horizontal scroll */
+.fu-chips-scroll{
+  display:flex;gap:7px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:3px;scrollbar-width:none;
+}
+.fu-chips-scroll::-webkit-scrollbar{display:none}
+
+/* ── Phase 10: Pull-to-dismiss Handle for Modals on Mobile ── */
+@media(max-width:768px){
+  .modal-drag-indicator{
+    width:36px;height:4px;border-radius:2px;background:var(--line);
+    margin:6px auto 4px auto;display:block;opacity:0.6;
+  }
+}
+@media(min-width:769px){
+  .modal-drag-indicator{display:none!important}
+}
+
+/* ── Phase 11: Typography Polish Completion ── */
+@media(max-width:480px){
+  table.tbl td{font-size:13px!important}
+  .field label{font-size:12px!important}
 }
 
 </style>
@@ -6449,7 +6499,7 @@ function dataTable({id,cols,rows,onRow,per=10,toolbar='',empty,exportName,mobLis
   const pages=Math.ceil(rows.length/currentPer),p=Math.min(APP.page[id]||1,pages),slice=rows.slice((p-1)*currentPer,p*currentPer);
   const hasWidths=cols.some(c=>c.w);
   const colgroup=hasWidths?`<colgroup>${cols.map(c=>`<col${c.w?` style="width:${c.w}"`:''}>`).join('')}</colgroup>`:'';
-  const tblClass = id === 'dev' ? 'tbl-wrap tbl-wrap-dev' : 'tbl-wrap';
+  const tblClass = (id === 'dev' || id === 'contacts' || mobList) ? `tbl-wrap tbl-wrap-${id} ${mobList ? 'tbl-wrap-has-mob' : ''}` : 'tbl-wrap';
   return `<div class="card">${t}
    ${mobList||''}
    <div class="${tblClass}" id="tbl-wrap-${id}"><table class="tbl tbl-${id}">${colgroup}<thead><tr>${cols.map(c=>`<th>${c.h}</th>`).join('')}</tr></thead>
@@ -19075,6 +19125,29 @@ function viewContacts(){
     <select data-act="f" data-k="contact" data-n="source"><option value="">All sources</option>${SOURCES.map(s=>`<option ${f.source===s?'selected':''}>${s}</option>`).join('')}</select>
     <select data-act="f" data-k="contact" data-n="org"><option value="">All colleges</option>${ORGS.map(s=>`<option ${f.org===s?'selected':''}>${s}</option>`).join('')}</select>
     <button class="btn sm" data-act="export-contacts">${ic('download')}Export CSV</button>`;
+  const contactMobList = (rowsAll) => {
+    const currentPer = APP.perPage?.['contacts'] || 10;
+    const pages = Math.ceil(rowsAll.length / currentPer);
+    const p = Math.min(APP.page['contacts'] || 1, pages);
+    const slice = rowsAll.slice((p-1)*currentPer, p*currentPer);
+    if(!slice.length) return '';
+    const items = slice.map(c => {
+      const stageBadge = badge(c.stage, STAGES.indexOf(c.stage)>=6?'green':STAGES.indexOf(c.stage)>=3?'indigo':'grey');
+      return `
+        <div class="dev-mob-row" data-act="open-contact" data-id="${c.id}">
+          <div class="dmr-av">${av(c.name,'m')}</div>
+          <div class="dmr-main">
+            <div class="dmr-name">${esc(c.name)}</div>
+            <div class="dmr-sub" style="gap:4px">${stageBadge}<span style="color:var(--ink-3)">${esc(c.org||c.profession||'')} · ${relD(c.last)}</span></div>
+          </div>
+          <div class="dmr-right">
+            ${c.classes ? `<span class="badge b-indigo" style="font-size:10px">${c.classes} cls</span>` : ''}
+            <span style="font-size:18px;color:var(--ink-3);opacity:.35">›</span>
+          </div>
+        </div>`;
+    }).join('');
+    return `<div class="dev-mob-list" id="contacts-mob-list">${items}</div>`;
+  };
   const body=view==='Pipeline'?`<div class="card"><div class="toolbar">${toolbar}</div><div class="card-b"><div class="kanban">
      ${STAGES.map(st=>{const list=rows.filter(c=>c.stage===st);return `<div class="kcol" data-stage="${esc(st)}">
        <div class="kcol-h">${esc(st)}<span class="n">${list.length}</span></div>
@@ -19083,7 +19156,7 @@ function viewContacts(){
          <div class="row">${badge('Last '+relD(c.last),'grey')}${c.classes?badge(c.classes+' classes','indigo'):''}</div></div>`).join('')
         ||'<div class="tiny" style="padding:6px">Empty</div>'}</div>`}).join('')}
      </div><div class="tiny" style="margin-top:8px">Drag a card between columns to move a contact through the pipeline.</div></div></div>`
-   :dataTable({id:'contacts',exportName:'contacts',toolbar,cols:[
+   :dataTable({id:'contacts',exportName:'contacts',toolbar,mobList:contactMobList(rows),cols:[
       {h:'Contact',c:c=>`<div class="who">${av(c.name,'m')}<div><b>${esc(c.name)}</b><span>${esc(c.org)} · ${esc(c.profession)}</span></div></div>`},
       {h:'Stage',c:c=>badge(c.stage,STAGES.indexOf(c.stage)>=6?'green':STAGES.indexOf(c.stage)>=3?'indigo':'grey')},
       {h:'Source',c:c=>esc(c.source)},{h:'First contact',c:c=>fmtD(c.firstContact)},
