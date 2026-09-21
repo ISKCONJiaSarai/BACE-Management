@@ -227,6 +227,48 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+// @route   GET /api/devotees/:id/vcard
+// @desc    Export devotee contact as RFC 6350 / vCard 3.0 for mobile Contacts app
+router.get('/:id/vcard', async (req, res) => {
+  try {
+    const query = getDevoteeQuery(req.params.id);
+    const devotee = await Devotee.findOne(query)
+      .populate('dept')
+      .populate('batch');
+
+    if (!devotee || isAdminDevotee(devotee)) {
+      return res.status(404).json({ success: false, message: 'Devotee not found' });
+    }
+
+    const cleanPhone = (devotee.phone || '').replace(/\D/g, '').slice(-10);
+    const formattedPhone = cleanPhone ? `+91${cleanPhone}` : '';
+    const safeName = (devotee.name || 'Devotee').replace(/[;\r\n]/g, ' ').trim();
+    const org = 'ISKCON BACE Jia Sarai';
+    const title = devotee.batch?.name ? `Batch: ${devotee.batch.name}` : (devotee.occupation || 'Devotee');
+    const note = `Department: ${devotee.dept?.name || 'Unallocated'}\nBACE Jia Sarai`;
+
+    const vcard = [
+      'BEGIN:VCARD',
+      'VERSION:3.0',
+      `FN:${safeName}`,
+      `N:${safeName};;;;`,
+      formattedPhone ? `TEL;TYPE=CELL,VOICE:${formattedPhone}` : '',
+      devotee.email ? `EMAIL;TYPE=INTERNET,HOME:${devotee.email}` : '',
+      `ORG:${org}`,
+      `TITLE:${title}`,
+      `NOTE:${note.replace(/\n/g, '\\n')}`,
+      'END:VCARD'
+    ].filter(Boolean).join('\r\n');
+
+    const fileName = `${safeName.replace(/[^a-zA-Z0-9]/g, '_') || 'devotee'}.vcf`;
+    res.setHeader('Content-Type', 'text/vcard; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    res.send(vcard);
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // @route   POST /api/devotees
 // @desc    Create a new devotee
 router.post('/', async (req, res) => {

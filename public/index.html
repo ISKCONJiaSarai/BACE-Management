@@ -5800,6 +5800,8 @@ function openDevoteeDetailSheet(id){
   const d = dv(id);
   if(!d) return;
   const cleanPhone = (d.phone||'').replace(/\D/g,'').slice(-10);
+  const waGreeting = encodeURIComponent(`Hare Krishna ${d.name} Prabhu ji, `);
+  const cleanEmail = (d.email||'').trim();
   const att = getDevoteeRealAttendance(d);
   const rKeys = devoteeRoles(d);
   const roleBadges = rKeys.map(rk=>{
@@ -5821,9 +5823,19 @@ function openDevoteeDetailSheet(id){
     </div>
 
     ${cleanPhone.length >= 10 ? `
-      <div style="display:flex;gap:8px;margin-bottom:14px">
-        <a href="tel:+91${cleanPhone}" class="btn sm" style="flex:1;justify-content:center;background:rgba(16,185,129,0.08);color:#059669;border-color:rgba(16,185,129,0.25);font-weight:600;text-decoration:none;min-height:38px;display:inline-flex;align-items:center;gap:5px">📞 Call</a>
-        <a href="https://wa.me/91${cleanPhone}" target="_blank" rel="noopener" class="btn sm" style="flex:1;justify-content:center;background:rgba(16,185,129,0.08);color:#059669;border-color:rgba(16,185,129,0.25);font-weight:600;text-decoration:none;min-height:38px;display:inline-flex;align-items:center;gap:5px">💬 WhatsApp</a>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:6px;margin-bottom:10px">
+        <a href="tel:+91${cleanPhone}" class="btn sm" style="justify-content:center;background:rgba(16,185,129,0.08);color:#059669;border-color:rgba(16,185,129,0.25);font-weight:600;text-decoration:none;min-height:38px;display:inline-flex;align-items:center;gap:4px" title="Call devotee phone">📞 Call</a>
+        <a href="https://wa.me/91${cleanPhone}?text=${waGreeting}" target="_blank" rel="noopener" class="btn sm" style="justify-content:center;background:rgba(16,185,129,0.08);color:#059669;border-color:rgba(16,185,129,0.25);font-weight:600;text-decoration:none;min-height:38px;display:inline-flex;align-items:center;gap:4px" title="Open WhatsApp chat with greeting">💬 WhatsApp</a>
+        <a href="sms:+91${cleanPhone}" class="btn sm" style="justify-content:center;background:rgba(59,130,246,0.08);color:#2563eb;border-color:rgba(59,130,246,0.25);font-weight:600;text-decoration:none;min-height:38px;display:inline-flex;align-items:center;gap:4px" title="Send SMS message">✉️ SMS</a>
+        ${cleanEmail ? `<a href="mailto:${esc(cleanEmail)}?subject=ISKCON%20BACE%20Jia%20Sarai" class="btn sm" style="justify-content:center;background:rgba(139,92,246,0.08);color:#7c3aed;border-color:rgba(139,92,246,0.25);font-weight:600;text-decoration:none;min-height:38px;display:inline-flex;align-items:center;gap:4px" title="Send email">📧 Email</a>` : ''}
+      </div>
+      <div style="display:flex;gap:6px;margin-bottom:14px">
+        <button class="btn sm ghost" data-act="save-vcard-contact" data-id="${d.id}" style="flex:1;justify-content:center;font-size:12px;min-height:34px;border:1px solid var(--line);gap:5px" title="Download .vcf contact for phone Contacts app">
+          👤 Save Contact
+        </button>
+        <button class="btn sm ghost" data-act="share-devotee-contact" data-id="${d.id}" style="flex:1;justify-content:center;font-size:12px;min-height:34px;border:1px solid var(--line);gap:5px" title="Share devotee contact details via WhatsApp, etc.">
+          📤 Share Contact
+        </button>
       </div>
     ` : ''}
 
@@ -5856,7 +5868,7 @@ function openDevoteeDetailSheet(id){
     { act: 'open-devotee-profile-from-sheet', id: d.id, label: 'View Full Profile →', pri: true }
   ];
   if (can('directory')) {
-    footerBtns.unshift({ act: 'edit-devotee', id: d.id, label: 'Edit' });
+    footerBtns.unshift({ act: 'edit-devotee', id: d.id, label: 'Edit Profile' });
   }
 
   openDetailSheet({
@@ -5864,6 +5876,143 @@ function openDevoteeDetailSheet(id){
     body,
     footerBtns
   });
+}
+
+/* ── Native Phone Applications Integrations ── */
+function saveDevoteeContact(id){
+  const d = dv(id);
+  if(!d) return;
+  const cleanPhone = (d.phone||'').replace(/\D/g,'').slice(-10);
+  const formattedPhone = cleanPhone ? `+91${cleanPhone}` : '';
+  const safeName = (d.name || 'Devotee').replace(/[;\r\n]/g, ' ').trim();
+  const org = 'ISKCON BACE Jia Sarai';
+  const title = d.batch && batch(d.batch) ? `Batch: ${batch(d.batch).name}` : (d.occupation || 'Devotee');
+  const note = `Department: ${d.dept && dept(d.dept) ? dept(d.dept).name : 'Unallocated'}\\nBACE Jia Sarai`;
+
+  const vcard = [
+    'BEGIN:VCARD',
+    'VERSION:3.0',
+    `FN:${safeName}`,
+    `N:${safeName};;;;`,
+    formattedPhone ? `TEL;TYPE=CELL,VOICE:${formattedPhone}` : '',
+    d.email ? `EMAIL;TYPE=INTERNET,HOME:${d.email}` : '',
+    `ORG:${org}`,
+    `TITLE:${title}`,
+    `NOTE:${note}`,
+    'END:VCARD'
+  ].filter(Boolean).join('\r\n');
+
+  const blob = new Blob([vcard], { type: 'text/vcard;charset=utf-8' });
+  const fileName = `${safeName.replace(/[^a-zA-Z0-9]/g, '_') || 'devotee'}.vcf`;
+
+  const file = new File([blob], fileName, { type: 'text/vcard' });
+  if(navigator.canShare && navigator.canShare({ files: [file] })){
+    navigator.share({
+      files: [file],
+      title: `${safeName} Contact Card`,
+      text: `Contact card for ${safeName} (${org})`
+    }).catch(err => {
+      if(err.name !== 'AbortError') triggerVcardDownload(blob, fileName);
+    });
+    return;
+  }
+
+  triggerVcardDownload(blob, fileName);
+}
+
+function triggerVcardDownload(blob, fileName){
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1500);
+  toast('Contact file downloaded! Tap to add to Phone Contacts app 👤', '📥');
+}
+
+async function shareDevoteeContact(id){
+  const d = dv(id);
+  if(!d) return;
+  const cleanPhone = (d.phone||'').replace(/\D/g,'').slice(-10);
+  const text = `Hare Krishna!\n👤 Devotee: ${d.name}\n📞 Phone: ${cleanPhone ? '+91 ' + cleanPhone : 'N/A'}\n📧 Email: ${d.email || 'N/A'}\n📖 Batch: ${d.batch && batch(d.batch) ? batch(d.batch).name : '—'}\n🛕 Department: ${d.dept && dept(d.dept) ? dept(d.dept).name : '—'}\n📍 ISKCON BACE Jia Sarai`;
+
+  if(navigator.share){
+    try {
+      await navigator.share({
+        title: `${d.name} — BACE Devotee`,
+        text: text
+      });
+      return;
+    } catch(err){
+      if(err.name === 'AbortError') return;
+    }
+  }
+
+  try {
+    await navigator.clipboard.writeText(text);
+    toast('Contact details copied to clipboard! Ready to share on WhatsApp 💬', '📋');
+  } catch(e){
+    toast('Copied devotee contact', '📋');
+  }
+}
+
+async function shareNectarQuote(){
+  const len = (typeof BACE_NECTAR_QUOTES !== 'undefined' ? BACE_NECTAR_QUOTES : []).length;
+  if(!len) return;
+  const q = BACE_NECTAR_QUOTES[APP.nectarIdx % len];
+  if(!q) return;
+  const shareText = `🪷 *Daily Srila Prabhupada Nectar*\n\n"${q.quote}"\n\n— *Srila Prabhupada*\n📜 _${q.citation || 'Srila Prabhupada Vani'}_\n\n(ISKCON BACE Jia Sarai)`;
+
+  if(navigator.share){
+    try {
+      await navigator.share({
+        title: 'Daily Srila Prabhupada Nectar',
+        text: shareText
+      });
+      return;
+    } catch(e){
+      if(e.name === 'AbortError') return;
+    }
+  }
+
+  try {
+    await navigator.clipboard.writeText(shareText);
+    toast('Quote copied! Paste in WhatsApp Status or Chats 🪷', '📋');
+  } catch(e){
+    toast('Quote copied to clipboard', '📋');
+  }
+}
+
+async function shareMorningAttendanceReport(){
+  const data = APP.morningData;
+  if(!data || !data.rows) {
+    toast('No morning attendance log loaded to share', '⚠️');
+    return;
+  }
+  const m = data.metrics || computeMorningMetrics(data.rows || [], data.date || iso(TODAY));
+  const dateStr = fmtExactDate(data.date || iso(TODAY));
+  const reportText = `🌅 *ISKCON BACE Jia Sarai*\n*Morning Programme Attendance Report*\n📅 Date: ${dateStr}\n\n👥 *Total Present:* ${m.totalPresent || 0} / ${m.totalRegistered || (data.rows||[]).length}\n⏰ *On Time (by 04:30):* ${m.onTimeCount || 0}\n⏱️ *Grace (by 05:30):* ${m.graceCount || 0}\n⚠️ *Late (by 06:30):* ${m.lateCount || 0}\n❌ *Absent / Not Marked:* ${m.absentCount || 0}\n📈 *Punctuality Rate:* ${m.punctualityRate || 0}%\n\n_Hare Krishna!_`;
+
+  if(navigator.share){
+    try {
+      await navigator.share({
+        title: `Morning Attendance Report — ${dateStr}`,
+        text: reportText
+      });
+      return;
+    } catch(e){
+      if(e.name === 'AbortError') return;
+    }
+  }
+
+  try {
+    await navigator.clipboard.writeText(reportText);
+    toast('Morning report copied! Ready to paste in WhatsApp group 🌅', '📋');
+  } catch(e){
+    window.open(`https://wa.me/?text=${encodeURIComponent(reportText)}`, '_blank');
+  }
 }
 
 /* ── Mobile Sticky Footer ── */
@@ -7662,6 +7811,7 @@ function prabhupadaNectarCard(){
           <span class="badge nectar-vani-badge" style="background:rgba(245,158,11,0.15);color:#b45309;font-weight:700;font-size:10px;border:1px solid rgba(245,158,11,0.3)">VANI AMRITA</span>
         </div>
         <div style="display:flex;align-items:center;gap:5px">
+          <button class="btn sm" data-act="share-nectar-quote" title="Share quote to WhatsApp or other phone apps" style="padding:3px 8px;font-size:12px;border-color:rgba(245,158,11,0.3);display:inline-flex;align-items:center;gap:3px">📤 Share</button>
           <button class="btn sm" data-act="prev-nectar-quote" title="Previous quote (swipes every 20s)" style="padding:3px 8px;font-size:13px;border-color:rgba(245,158,11,0.3)">‹</button>
           <span class="tiny" id="nectarQuoteCount" style="font-weight:700;color:var(--ink-3);min-width:44px;text-align:center">${APP.nectarIdx + 1} / ${len}</span>
           <button class="btn sm" data-act="next-nectar-quote" title="Next quote (swipes every 20s)" style="padding:3px 8px;font-size:13px;border-color:rgba(245,158,11,0.3)">›</button>
@@ -9057,11 +9207,20 @@ function viewDevotee(id){
     <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
       ${(()=>{
         const cleanPhone = (d.phone||'').replace(/\D/g,'').slice(-10);
+        const waGreeting = encodeURIComponent(`Hare Krishna ${d.name} Prabhu ji, `);
+        const cleanEmail = (d.email||'').trim();
+        let res = '';
         if(cleanPhone.length >= 10){
-          return `<a class="btn sm" href="tel:+91${cleanPhone}" style="color:#059669;border-color:rgba(16,185,129,.3);background:rgba(16,185,129,.06);text-decoration:none;display:inline-flex;align-items:center;gap:4px">📞 Call</a>
-          <a class="btn sm" href="https://wa.me/91${cleanPhone}" target="_blank" rel="noopener" style="color:#059669;border-color:rgba(16,185,129,.3);background:rgba(16,185,129,.06);text-decoration:none;display:inline-flex;align-items:center;gap:4px">💬 WhatsApp</a>`;
+          res += `<a class="btn sm" href="tel:+91${cleanPhone}" style="color:#059669;border-color:rgba(16,185,129,.3);background:rgba(16,185,129,.06);text-decoration:none;display:inline-flex;align-items:center;gap:4px" title="Call devotee phone">📞 Call</a>
+          <a class="btn sm" href="https://wa.me/91${cleanPhone}?text=${waGreeting}" target="_blank" rel="noopener" style="color:#059669;border-color:rgba(16,185,129,.3);background:rgba(16,185,129,.06);text-decoration:none;display:inline-flex;align-items:center;gap:4px" title="WhatsApp chat">💬 WhatsApp</a>
+          <a class="btn sm" href="sms:+91${cleanPhone}" style="color:#2563eb;border-color:rgba(59,130,246,.3);background:rgba(59,130,246,.06);text-decoration:none;display:inline-flex;align-items:center;gap:4px" title="Send SMS message">✉️ SMS</a>`;
         }
-        return '';
+        if(cleanEmail){
+          res += `<a class="btn sm" href="mailto:${esc(cleanEmail)}?subject=ISKCON%20BACE%20Jia%20Sarai" style="color:#7c3aed;border-color:rgba(139,92,246,.3);background:rgba(139,92,246,.06);text-decoration:none;display:inline-flex;align-items:center;gap:4px" title="Send Email">📧 Email</a>`;
+        }
+        res += `<button class="btn sm ghost" data-act="save-vcard-contact" data-id="${d.id}" title="Save to Phone Contacts app">👤 Save Contact</button>
+        <button class="btn sm ghost" data-act="share-devotee-contact" data-id="${d.id}" title="Share devotee contact details">📤 Share</button>`;
+        return res;
       })()}
       <button class="btn" data-act="dm" data-id="${d.id}">${ic('chat')}Message</button>
       <button class="btn" data-act="add-followup">${ic('clock')}Follow-up</button>
@@ -9071,7 +9230,12 @@ function viewDevotee(id){
     </div>
    </div>
    <div class="tabs">${tabs.map(t=>`<button class="${t===tab?'on':''}" data-act="tab" data-k="devotee" data-v="${t}">${t}${t==='Care'&&!careOK?' 🔒':''}</button>`).join('')}</div>
-   ${body}`;
+   ${body}
+   ${mobileStickyFooter([
+     { act: 'edit-devotee', id: d.id, label: 'Edit Profile', pri: true, icon: '✏️ ' },
+     { act: 'save-vcard-contact', id: d.id, label: 'Save Contact', icon: '👤 ' },
+     { act: 'share-devotee-contact', id: d.id, label: 'Share', icon: '📤 ' }
+   ])}`;
 }
 
 /* ---- organisation ---- */
@@ -12136,6 +12300,9 @@ function morningProgramPanel(){
 
         <!-- Today, Weekly, and Monthly View Switcher Controls -->
         <div class="morning-report-controls" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <button class="btn sm" data-act="share-morning-report" title="Share Morning Program report to WhatsApp / phone apps" style="background:rgba(16,185,129,0.08);color:#059669;border-color:rgba(16,185,129,0.25);font-weight:600;display:inline-flex;align-items:center;gap:4px;padding:5px 11px">
+            📤 Share to WhatsApp
+          </button>
           <div class="morning-view-btn-group">
             <button type="button" class="btn sm ${reportView === 'today' ? 'pri' : ''}" data-act="morning-report-view" data-v="today" style="border-radius:0;border:none;padding:5px 12px;font-weight:600" title="${fmtExactDate(data.date)}">
               ${data.date === (typeof TODAY !== 'undefined' ? iso(TODAY) : '') ? "📅 Today's View" : "📅 Daily View"}
@@ -24112,6 +24279,24 @@ document.addEventListener('click',e=>{
   case 'open-devotee-profile-from-sheet':stop();{
     closeDetailSheet();
     go('#/devotee/'+id);
+    break;
+  }
+  case 'save-vcard-contact':stop();{
+    const dId = t.dataset.id || id || '';
+    saveDevoteeContact(dId);
+    break;
+  }
+  case 'share-devotee-contact':stop();{
+    const dId = t.dataset.id || id || '';
+    shareDevoteeContact(dId);
+    break;
+  }
+  case 'share-nectar-quote':stop();{
+    shareNectarQuote();
+    break;
+  }
+  case 'share-morning-report':stop();{
+    shareMorningAttendanceReport();
     break;
   }
   case 'delete-devotee':{stop();const dId=t.dataset.id||id;APP.deleteDevoteeTarget=dId;APP.modal='delete-devotee-modal';render();break}
