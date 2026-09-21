@@ -1119,9 +1119,8 @@ input,select,textarea{font-family:inherit;font-size:14px;color:var(--ink);backgr
 .g-2-1{grid-template-columns:2fr 1fr}
 .g-1-2{grid-template-columns:1fr 2fr}
 @media(max-width:1240px){.g6{grid-template-columns:repeat(3,minmax(0,1fr))}}
-@media(max-width:1180px){.g5,.g4{grid-template-columns:repeat(2,minmax(0,1fr))}.g-2-1,.g-1-2,.g3{grid-template-columns:1fr}}
 @media(max-width:720px){.g2,.g3,.g4,.g5,.g6{grid-template-columns:repeat(2,minmax(0,1fr))}.grid{gap:12px}}
-@media(max-width:480px){.g2{grid-template-columns:1fr}}
+@media(max-width:480px){.g2,.g3,.g4,.g5,.g6{grid-template-columns:1fr}}
 .card{
   background:var(--surface);border:1px solid var(--line);border-radius:var(--r-l);
   box-shadow:var(--sh-card);max-width:100%;box-sizing:border-box;overflow:hidden;
@@ -2259,11 +2258,77 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
     font-size:16px!important;
   }
 
-  /* 2. Organization tree vertical stacking on mobile */
-  .org{width:100%!important;padding:6px 0!important}
-  .org-row{flex-direction:column!important;align-items:center!important;gap:10px!important;width:100%!important}
-  .org-node{width:min(280px,100%)!important;min-width:0!important;box-sizing:border-box!important}
-  .org-line{height:16px!important}
+  /* 2. Organization hierarchy tree - preserved horizontal layout on mobile */
+  .org-card{
+    padding:12px 6px!important;
+  }
+  .org{
+    width:100%!important;
+    padding:10px 0!important;
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:center!important;
+    overflow-x:auto!important;
+    -webkit-overflow-scrolling:touch!important;
+    box-sizing:border-box!important;
+  }
+  .org-row{
+    display:flex!important;
+    flex-direction:row!important;
+    flex-wrap:nowrap!important;
+    justify-content:center!important;
+    align-items:stretch!important;
+    gap:6px!important;
+    width:100%!important;
+    max-width:100%!important;
+    margin:0 auto!important;
+  }
+  .org-node{
+    background:var(--surface)!important;
+    border:1px solid var(--line)!important;
+    border-radius:8px!important;
+    box-shadow:var(--sh-1)!important;
+    text-align:center!important;
+    box-sizing:border-box!important;
+    min-width:0!important;
+    transition:transform .15s ease!important;
+  }
+  .org > .org-node{
+    width:min(185px, 60%)!important;
+    max-width:210px!important;
+    min-width:130px!important;
+    flex:none!important;
+    padding:7px 8px!important;
+  }
+  .org-row .org-node{
+    flex:1 1 0!important;
+    width:auto!important;
+    max-width:130px!important;
+    padding:6px 4px!important;
+  }
+  .org-node .nm{
+    font-weight:700!important;
+    font-size:11px!important;
+    line-height:1.22!important;
+    word-break:break-word!important;
+    text-align:center!important;
+    color:var(--ink)!important;
+  }
+  .org-node .rl{
+    font-size:9px!important;
+    line-height:1.2!important;
+    color:var(--ink-3)!important;
+    margin-top:2px!important;
+    word-break:break-word!important;
+    text-align:center!important;
+    font-weight:500!important;
+  }
+  .org-line{
+    width:1.5px!important;
+    height:14px!important;
+    background:var(--line)!important;
+    margin:0 auto!important;
+  }
 
   /* 3. Kanban carousel swipe snap on mobile */
   .kanban{
@@ -7759,7 +7824,7 @@ function viewOrg(){
 
   const node=(n,r,tone)=>`<div class="org-node" style="border-top:3px solid ${tone}"><div class="nm">${esc(n)}</div><div class="rl">${esc(r)}</div></div>`;
   return head('🧭 Who answers to whom','Organisation hierarchy','Two Counsellors and Area Leader down to every volunteer, with the three pillars in the middle')+
-  `<div class="card pad"><div class="org">
+  `<div class="card pad org-card"><div class="org">
     <div class="org-row">
       ${node(c1,'🙏 Counsellor','#D97706')}
       ${node(c2,'🙏 Counsellor','#D97706')}
