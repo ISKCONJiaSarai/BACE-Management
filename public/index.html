@@ -258,7 +258,9 @@ input,select,textarea{font-family:inherit;font-size:14px;color:var(--ink);backgr
 .theme-toggle svg{width:17px;height:17px;transition:transform .3s}
 
 /* Mobile hamburger in header */
-.header-mobile-menu{display:none;width:36px;height:36px;border-radius:10px;place-items:center;border:1px solid var(--line);background:var(--surface);cursor:pointer;flex:none}
+.header-mobile-menu{display:none;width:36px;height:36px;border-radius:10px;place-items:center;border:1px solid var(--line);background:var(--surface);cursor:pointer;flex:none;color:var(--ink);transition:all .18s ease}
+.header-mobile-menu:hover{background:var(--surface-2);color:var(--accent)}
+.header-mobile-menu.open{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
 @media(max-width:1080px){
   .header-nav{display:none}
   .header-mobile-menu{display:grid}
@@ -284,16 +286,41 @@ input,select,textarea{font-family:inherit;font-size:14px;color:var(--ink);backgr
 
 /* Mobile nav dropdown */
 .mobile-nav-dropdown{
-  position:fixed;top:var(--header-h);left:0;right:0;z-index:98;
-  background:var(--glass);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  position:fixed;top:var(--header-h);left:0;right:0;z-index:490;
+  background:var(--glass);backdrop-filter:blur(24px) saturate(1.8);-webkit-backdrop-filter:blur(24px) saturate(1.8);
   border-bottom:1px solid var(--line);
-  padding:8px 12px 12px;display:flex;flex-direction:column;gap:2px;
-  animation:slideDown .22s cubic-bezier(.16,1,.3,1);
-  max-height:calc(100vh - var(--header-h));overflow-y:auto;
+  box-shadow:0 16px 40px rgba(0,0,0,0.18);
+  padding:8px 12px 14px;display:flex;flex-direction:column;gap:2px;
+  animation:mnavSlideDown .26s cubic-bezier(.16,1,.3,1) forwards;
+  max-height:calc(100vh - var(--header-h) - 16px);overflow-y:auto;
+  touch-action:pan-y;
+  will-change:transform, opacity;
 }
-.mobile-nav-dropdown.closing{animation:slideUp .18s cubic-bezier(0.4,0,1,1) forwards!important;pointer-events:none}
-@keyframes slideDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
-@keyframes slideUp{to{opacity:0;transform:translateY(-8px)}}
+.mobile-nav-dropdown.closing{animation:mnavSlideUp .2s cubic-bezier(0.4,0,0.2,1) forwards!important;pointer-events:none}
+@keyframes mnavSlideDown{
+  0%{opacity:0;transform:translateY(-100%)}
+  50%{opacity:0.9}
+  100%{opacity:1;transform:translateY(0)}
+}
+@keyframes mnavSlideUp{
+  0%{opacity:1;transform:translateY(0)}
+  100%{opacity:0;transform:translateY(-100%)}
+}
+.mnav-swipe-bar{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:4px;padding:12px 0 6px;margin-top:6px;cursor:pointer;
+  touch-action:none;user-select:none;
+}
+.mnav-swipe-pill{
+  width:38px;height:4.5px;border-radius:4px;
+  background:var(--line-2, #cbd5e1);transition:all .18s ease;
+}
+.mnav-swipe-text{
+  font-size:10.5px;color:var(--ink-3);font-weight:500;letter-spacing:0.02em;
+}
+.mnav-swipe-bar:hover .mnav-swipe-pill,.mnav-swipe-bar:active .mnav-swipe-pill{
+  background:var(--accent);width:46px;
+}
 .mobile-nav-dropdown a{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;font-size:14px;font-weight:500;color:var(--ink-2);transition:all .15s ease}
 .mobile-nav-dropdown a:hover,.mobile-nav-dropdown a.on{background:var(--accent-soft);color:var(--accent);font-weight:600}
 .mobile-nav-dropdown .mnav-section{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3);padding:12px 14px 4px}
@@ -933,10 +960,12 @@ body.mobile-today-open{
   background:rgba(15,23,42,0.65);
   backdrop-filter:blur(6px);
   -webkit-backdrop-filter:blur(6px);
-  z-index:92;
+  z-index:480;
   animation:fadeIn .2s ease-out;
 }
+.mobile-scrim.closing{animation:fadeOut .18s ease forwards!important;pointer-events:none}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes fadeOut{to{opacity:0}}
 @keyframes drop{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
 
 @media(max-width:1080px){
@@ -6944,7 +6973,7 @@ function mobileNavDropdown(){
       <div style="flex:1;min-width:0"><div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(devoteeDisplayName(APP.user.devotee))}</div><div style="font-size:11px;color:var(--ink-3)">${esc(devoteePositionTitle(APP.user.devotee, APP.user.role))}</div></div>
       <button class="btn sm danger" data-act="logout">${ic('logout')} Sign out</button>
     </div>
-  </div><div class="mobile-scrim" data-act="close-mobile-nav" style="z-index:97"></div>`;
+  </div><div class="mobile-scrim" data-act="close-mobile-nav" style="z-index:480"></div>`;
 }
 
 /* ========== GLOBAL TODAY PANEL ========== */
