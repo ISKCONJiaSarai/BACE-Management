@@ -3041,6 +3041,119 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-off
   0%{width:0%}
   100%{width:100%}
 }
+.nectar-portrait-wrap{
+  width:68px;
+  height:68px;
+  border-radius:50%;
+  overflow:hidden;
+  border:2.5px solid #f59e0b;
+  box-shadow:0 0 14px rgba(245,158,11,0.35);
+  flex-shrink:0;
+  background:#0f172a;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.nectar-quote-text{
+  font-family:'Caveat',cursive;
+  font-size:20.5px;
+  line-height:1.42;
+  font-weight:600;
+  color:var(--ink);
+  margin:4px 0 6px 0;
+}
+.nectar-citation{
+  font-size:11.5px;
+  font-weight:600;
+  color:var(--accent);
+  display:flex;
+  align-items:center;
+  gap:4px;
+}
+
+@media(max-width:768px){
+  .hide-mobile{
+    display:none!important;
+  }
+  .nectar-card-wrapper{
+    padding:12px 14px!important;
+  }
+  .nectar-card-header{
+    margin-bottom:8px!important;
+    padding-bottom:7px!important;
+  }
+  .nectar-card-title{
+    font-size:13.5px!important;
+  }
+  .nectar-vani-badge{
+    font-size:8.5px!important;
+    padding:1px 5px!important;
+  }
+  .nectar-portrait-wrap{
+    width:48px!important;
+    height:48px!important;
+    border-width:2px!important;
+    box-shadow:0 0 8px rgba(245,158,11,0.3)!important;
+  }
+  .nectar-quote-row{
+    gap:10px!important;
+    margin-bottom:6px!important;
+  }
+  .nectar-quote-text{
+    font-size:14.5px!important;
+    line-height:1.32!important;
+    margin:2px 0 4px 0!important;
+  }
+  .nectar-citation{
+    font-size:10px!important;
+    line-height:1.25!important;
+  }
+  .nectar-topic-badge{
+    font-size:8.5px!important;
+    padding:1px 4px!important;
+  }
+  .nectar-acharya-tag{
+    font-size:9.5px!important;
+  }
+  .nectar-timer-bar-container{
+    margin-top:6px!important;
+    height:2.5px!important;
+  }
+  .nectar-ambience-bar{
+    padding:7px 9px!important;
+    margin-top:7px!important;
+    gap:6px!important;
+  }
+  .nectar-ambience-bar .btn.sm{
+    padding:3px 7px!important;
+    font-size:11px!important;
+  }
+}
+@media(max-width:480px){
+  .nectar-card-wrapper{
+    padding:10px 11px!important;
+  }
+  .nectar-card-title{
+    font-size:12.5px!important;
+  }
+  .nectar-portrait-wrap{
+    width:42px!important;
+    height:42px!important;
+  }
+  .nectar-quote-text{
+    font-size:13.8px!important;
+    line-height:1.28!important;
+  }
+  .nectar-citation{
+    font-size:9.5px!important;
+  }
+  .nectar-vani-badge{
+    display:none!important;
+  }
+  #ambTrackDesc{
+    display:none!important;
+  }
+}
 /* ---- Enhanced Notification Drawer ---- */
 .drawer-wrap.notif-drawer-wrap{
   position:fixed;inset:0;z-index:1200;background:rgba(15,23,42,0.64);backdrop-filter:blur(6px);
@@ -6315,7 +6428,7 @@ function insightsCard(){
     s.careWeek?[`❤️`,`${s.careWeek} care follow-ups are due this week.`,'#/care-followups']:null
   ].filter(Boolean);
   return section('✨ What the data is saying',`<div class="list">${items.map(([em,t,r])=>`<a class="insight" href="${r}"><span class="ic">${em}</span><span>${esc(t)}</span></a>`).join('')}</div>`,
-    `<span class="tiny">Generated from stored records only</span>`);
+    `<span class="tiny hide-mobile">Generated from stored records only</span>`);
 }
 /* ---------------- Srila Prabhupada Nectar & Audio Ambience (MongoDB Connected) ---------------- */
 let PRABHUPADA_NECTAR_QUOTES = [
@@ -6580,14 +6693,14 @@ function updateNectarQuoteDOM() {
   quoteBox.classList.add('nectar-quote-box');
 
   quoteBox.innerHTML = `
-    <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
-      <span class="badge b-grey" style="font-size:10px;padding:1px 6px">Topic: ${esc(q.topic || 'Srila Prabhupada Vani')}</span>
-      <span class="tiny" style="color:var(--ink-3)">Founder-Acharya ISKCON</span>
+    <div class="nectar-quote-meta" style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+      <span class="badge b-grey nectar-topic-badge" style="font-size:10px;padding:1px 6px">Topic: ${esc(q.topic || 'Srila Prabhupada Vani')}</span>
+      <span class="tiny nectar-acharya-tag" style="color:var(--ink-3)">Founder-Acharya ISKCON</span>
     </div>
-    <div style="font-family:'Caveat',cursive;font-size:20.5px;line-height:1.42;font-weight:600;color:var(--ink);margin:4px 0 6px 0">
+    <div class="nectar-quote-text">
       “${esc(q.quote)}”
     </div>
-    <div style="font-size:11.5px;font-weight:600;color:var(--accent);display:flex;align-items:center;gap:4px">
+    <div class="nectar-citation">
       <span>📜</span>
       <span>${esc(q.citation)}</span>
     </div>
@@ -6617,11 +6730,11 @@ function prabhupadaNectarCard(){
     <div class="card pad nectar-card-wrapper" style="position:relative;overflow:hidden;border:1px solid rgba(245,158,11,0.35);background:linear-gradient(135deg,rgba(254,243,199,0.25) 0%,var(--surface) 60%,rgba(254,243,199,0.18) 100%);box-shadow:0 8px 24px -4px rgba(245,158,11,0.12)">
       <div style="position:absolute;right:-15px;bottom:-20px;font-size:120px;opacity:0.04;pointer-events:none;user-select:none">🪷</div>
 
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid rgba(245,158,11,0.2)">
+      <div class="nectar-card-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid rgba(245,158,11,0.2)">
         <div style="display:flex;align-items:center;gap:8px">
           <span style="font-size:18px">🪷</span>
-          <span style="font-family:'Outfit',sans-serif;font-weight:700;font-size:15px;color:var(--ink);letter-spacing:-0.01em">Daily Srila Prabhupada Nectar</span>
-          <span class="badge" style="background:rgba(245,158,11,0.15);color:#b45309;font-weight:700;font-size:10px;border:1px solid rgba(245,158,11,0.3)">VANI AMRITA</span>
+          <span class="nectar-card-title" style="font-family:'Outfit',sans-serif;font-weight:700;font-size:15px;color:var(--ink);letter-spacing:-0.01em">Daily Srila Prabhupada Nectar</span>
+          <span class="badge nectar-vani-badge" style="background:rgba(245,158,11,0.15);color:#b45309;font-weight:700;font-size:10px;border:1px solid rgba(245,158,11,0.3)">VANI AMRITA</span>
         </div>
         <div style="display:flex;align-items:center;gap:5px">
           <button class="btn sm" data-act="prev-nectar-quote" title="Previous quote (swipes every 20s)" style="padding:3px 8px;font-size:13px;border-color:rgba(245,158,11,0.3)">‹</button>
@@ -6630,19 +6743,19 @@ function prabhupadaNectarCard(){
         </div>
       </div>
 
-      <div style="display:flex;gap:14px;align-items:flex-start;margin-bottom:12px">
-        <div style="width:68px;height:68px;border-radius:50%;overflow:hidden;border:2.5px solid #f59e0b;box-shadow:0 0 14px rgba(245,158,11,0.35);flex-shrink:0;background:#0f172a;display:flex;align-items:center;justify-content:center" title="His Divine Grace A.C. Bhaktivedanta Swami Srila Prabhupada">
+      <div class="nectar-quote-row" style="display:flex;gap:14px;align-items:flex-start;margin-bottom:12px">
+        <div class="nectar-portrait-wrap" title="His Divine Grace A.C. Bhaktivedanta Swami Srila Prabhupada">
           <img src="${BACE_PRABHUPADA_SRC}" alt="Srila Prabhupada" style="width:100%;height:100%;object-fit:cover;object-position:center 10%">
         </div>
         <div style="flex:1;min-width:0" id="nectarQuoteContent" class="nectar-quote-box">
-          <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
-            <span class="badge b-grey" style="font-size:10px;padding:1px 6px">Topic: ${esc(q.topic || 'Srila Prabhupada Vani')}</span>
-            <span class="tiny" style="color:var(--ink-3)">Founder-Acharya ISKCON</span>
+          <div class="nectar-quote-meta" style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+            <span class="badge b-grey nectar-topic-badge" style="font-size:10px;padding:1px 6px">Topic: ${esc(q.topic || 'Srila Prabhupada Vani')}</span>
+            <span class="tiny nectar-acharya-tag" style="color:var(--ink-3)">Founder-Acharya ISKCON</span>
           </div>
-          <div style="font-family:'Caveat',cursive;font-size:20.5px;line-height:1.42;font-weight:600;color:var(--ink);margin:4px 0 6px 0">
+          <div class="nectar-quote-text">
             “${esc(q.quote)}”
           </div>
-          <div style="font-size:11.5px;font-weight:600;color:var(--accent);display:flex;align-items:center;gap:4px">
+          <div class="nectar-citation">
             <span>📜</span>
             <span>${esc(q.citation)}</span>
           </div>
@@ -6654,7 +6767,7 @@ function prabhupadaNectarCard(){
         <div class="nectar-timer-progress" id="nectarTimerProg"></div>
       </div>
 
-      <div style="background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.22);border-radius:10px;padding:10px 12px;margin-top:10px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+      <div class="nectar-ambience-bar" style="background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.22);border-radius:10px;padding:10px 12px;margin-top:10px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
         <div style="display:flex;align-items:center;gap:10px">
           <div class="audio-equalizer ${isPlaying ? 'playing' : ''}" id="ambEqualizer" title="${isPlaying ? 'Ambience active' : 'Ambience paused'}">
             <span class="audio-eq-bar"></span>
