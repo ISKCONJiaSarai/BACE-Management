@@ -594,22 +594,51 @@ input,select,textarea{font-family:inherit;font-size:14px;color:var(--ink);backgr
 .mobile-today-btn:hover{transform:translateX(-50%) translateY(-2px);box-shadow:0 6px 24px rgba(0,0,0,.22)}
 .mobile-today-btn:active{transform:translateX(-50%) scale(0.96)}
 @media(max-width:900px){.mobile-today-btn{display:flex;align-items:center;gap:6px}}
+body.mobile-today-open{
+  overflow:hidden!important;
+  overscroll-behavior-y:none!important;
+}
 .mobile-today-drawer{
   position:fixed;inset:0;z-index:200;display:flex;flex-direction:column;justify-content:flex-end;
+  overscroll-behavior:contain;
+  overscroll-behavior-y:contain;
+  touch-action:none;
 }
-.mobile-today-scrim{position:absolute;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);animation:fade .22s ease-out}
+.mobile-today-scrim{
+  position:absolute;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+  animation:fade .22s ease-out;touch-action:none;cursor:pointer;
+}
 .mobile-today-sheet{
-  position:relative;z-index:1;background:var(--surface);border-radius:20px 20px 0 0;
-  max-height:80vh;display:flex;flex-direction:column;
+  position:relative;z-index:1;background:var(--surface);border-radius:22px 22px 0 0;
+  max-height:82vh;display:flex;flex-direction:column;
   animation:sheetUp .25s cubic-bezier(.16,1,.3,1);
+  overscroll-behavior:contain;overscroll-behavior-y:contain;
+  touch-action:pan-y;will-change:transform;
+  box-shadow:0 -8px 32px rgba(0,0,0,.22);
 }
-.mobile-today-drawer.closing .mobile-today-scrim{animation:fadeOut .18s ease-out forwards!important;pointer-events:none}
-.mobile-today-drawer.closing .mobile-today-sheet{animation:sheetDown .18s cubic-bezier(0.4,0,1,1) forwards!important}
+.mobile-today-drawer.closing .mobile-today-scrim{animation:fadeOut .2s ease-out forwards!important;pointer-events:none}
+.mobile-today-drawer.closing .mobile-today-sheet{animation:sheetDown .2s cubic-bezier(0.4,0,1,1) forwards!important}
 @keyframes sheetUp{from{transform:translateY(100%)}to{transform:none}}
-.mobile-today-sheet .sheet-handle{width:36px;height:4px;border-radius:2px;background:var(--line);margin:8px auto}
-.mobile-today-sheet .sheet-header{padding:8px 18px 12px;display:flex;align-items:center;justify-content:space-between}
+.mobile-today-sheet .sheet-handle-wrap{
+  padding:12px 0 6px;cursor:grab;touch-action:none;display:flex;justify-content:center;
+  user-select:none;-webkit-user-select:none;
+}
+.mobile-today-sheet .sheet-handle{
+  width:42px;height:5px;border-radius:3px;background:var(--line);
+  transition:background .15s;
+}
+.mobile-today-sheet .sheet-handle-wrap:active .sheet-handle{
+  background:var(--accent);
+}
+.mobile-today-sheet .sheet-header{
+  padding:4px 18px 12px;display:flex;align-items:center;justify-content:space-between;
+  touch-action:none;user-select:none;-webkit-user-select:none;
+}
 .mobile-today-sheet .sheet-header h3{font-size:16px;font-weight:700;color:var(--ink)}
-.mobile-today-sheet .sheet-body{flex:1;overflow-y:auto;padding:0 18px 24px;overscroll-behavior:contain}
+.mobile-today-sheet .sheet-body{
+  flex:1;overflow-y:auto;padding:0 18px 24px;
+  overscroll-behavior:contain;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch;
+}
 
 /* ---------- login ---------- */
 .login{min-height:100vh;display:grid;grid-template-columns:1.08fr .92fr;background:var(--paper)}
@@ -5530,6 +5559,21 @@ function globalTodayPanel(){
     <span>Today</span>
   </div>`;
 }
+function closeMobileToday(){
+  const d=document.querySelector('.mobile-today-drawer');
+  if(d && !d.classList.contains('closing')){
+    d.classList.add('closing');
+    setTimeout(()=>{
+      APP.mobileTodayOpen=false;
+      document.body.classList.remove('mobile-today-open');
+      render();
+    }, 190);
+  } else {
+    APP.mobileTodayOpen=false;
+    document.body.classList.remove('mobile-today-open');
+    render();
+  }
+}
 function mobileTodayDrawer(){
   if(!APP.mobileTodayOpen)return '';
   const t=iso(TODAY);
@@ -5556,13 +5600,13 @@ function mobileTodayDrawer(){
   return `<div class="mobile-today-drawer">
     <div class="mobile-today-scrim" data-act="close-mobile-today"></div>
     <div class="mobile-today-sheet">
-      <div class="sheet-handle"></div>
+      <div class="sheet-handle-wrap" data-act="close-mobile-today"><div class="sheet-handle"></div></div>
       <div class="sheet-header">
         <div>
           <h3 style="margin:0">Today's Updates</h3>
           <div style="font-size:12px;color:var(--saffron-dark);font-weight:600;margin-top:2px">📅 ${dayName}, ${dateFormatted}</div>
         </div>
-        <button class="icon-btn" data-act="close-mobile-today" style="border:none">${ic('x')}</button>
+        <button class="icon-btn" data-act="close-mobile-today" style="border:none" aria-label="Close today updates">${ic('x')}</button>
       </div>
       <div class="sheet-body">
         <div class="tp-section"><div class="tp-section-title">⚡ Events <span class="tp-count-badge">${evs.length}</span></div>${tpMobileItems(evs,'var(--mustard)','event')}</div>
@@ -22535,6 +22579,7 @@ function render(){
     </div>
     ${botnav()}${fab()}${modalHTML()}${mobileTodayDrawer()}
     <button class="mobile-today-btn" data-act="open-mobile-today">⚡ Today's Updates</button>`;
+  document.body.classList.toggle('mobile-today-open', !!APP.mobileTodayOpen);
   const newDrawerBody = document.querySelector('.drawer .modal-b');
   if (newDrawerBody && prevDrawerScroll > 0) {
     newDrawerBody.scrollTop = prevDrawerScroll;
@@ -22550,6 +22595,7 @@ function go(r, keepModal = false){
   APP.mobileSearchOpen=false;
   APP.mobileNavOpen=false;
   APP.mobileTodayOpen=false;
+  document.body.classList.remove('mobile-today-open');
   if(!APP.todayPinned){setTodayPanelOpen(false);}
   if(keepModal){APP.keepModalOnNextRoute=true;}
   if(location.hash!==r){
@@ -23190,16 +23236,8 @@ document.addEventListener('click',e=>{
     }
     break}
   case 'mobile-nav-go':{stop();APP.mobileNavOpen=false;go(t.dataset.r||t.getAttribute('href'));break}
-  case 'open-mobile-today':{stop();APP.mobileTodayOpen=true;render();break}
-  case 'close-mobile-today':{stop();
-    const d=document.querySelector('.mobile-today-drawer');
-    if(d){
-      d.classList.add('closing');
-      setTimeout(()=>{APP.mobileTodayOpen=false;render();}, 180);
-    } else {
-      APP.mobileTodayOpen=false;render();
-    }
-    break}
+  case 'open-mobile-today':{stop();APP.mobileTodayOpen=true;document.body.classList.add('mobile-today-open');render();break}
+  case 'close-mobile-today':{stop();closeMobileToday();break}
   case 'open-today-item':{
     stop();
     const itemType = t.dataset.type;
@@ -26078,6 +26116,106 @@ window.addEventListener('wheel',e=>{
     if(atTop||atBottom){e.preventDefault();}
   }
 },{passive:false});
+// Smooth Swipe-Down & Pull-to-Dismiss controller for Mobile Today Drawer
+// Prevents mobile browsers (Chrome / Safari) from triggering pull-to-refresh reload
+(function(){
+  let touchState = null;
+
+  document.addEventListener('touchstart', e => {
+    if (!APP.mobileTodayOpen) return;
+    const drawer = document.querySelector('.mobile-today-drawer');
+    if (!drawer || drawer.classList.contains('closing')) return;
+
+    const sheet = drawer.querySelector('.mobile-today-sheet');
+    if (!sheet || !sheet.contains(e.target)) return;
+
+    const handleOrHeader = e.target.closest('.sheet-handle-wrap, .sheet-handle, .sheet-header');
+    const sheetBody = sheet.querySelector('.sheet-body');
+    const touch = e.touches[0];
+
+    touchState = {
+      drawer,
+      sheet,
+      scrim: drawer.querySelector('.mobile-today-scrim'),
+      sheetBody,
+      isHandle: !!handleOrHeader,
+      startY: touch.clientY,
+      startX: touch.clientX,
+      lastY: touch.clientY,
+      startTime: Date.now(),
+      isDragging: false
+    };
+  }, { passive: true });
+
+  document.addEventListener('touchmove', e => {
+    if (!touchState || !APP.mobileTodayOpen) return;
+    const touch = e.touches[0];
+    const dy = touch.clientY - touchState.startY;
+    const dx = touch.clientX - touchState.startX;
+    touchState.lastY = touch.clientY;
+
+    if (!touchState.isDragging) {
+      if (dy > 6 && Math.abs(dy) > Math.abs(dx)) {
+        if (touchState.isHandle) {
+          touchState.isDragging = true;
+        } else if (touchState.sheetBody) {
+          if (touchState.sheetBody.scrollTop <= 0) {
+            touchState.isDragging = true;
+          }
+        } else {
+          touchState.isDragging = true;
+        }
+      }
+    }
+
+    if (touchState.isDragging) {
+      if (e.cancelable) e.preventDefault();
+
+      const pull = Math.max(0, dy);
+      touchState.sheet.style.animation = 'none';
+      touchState.sheet.style.transition = 'none';
+      touchState.sheet.style.transform = `translateY(${pull}px)`;
+      if (touchState.scrim) {
+        touchState.scrim.style.transition = 'none';
+        const op = Math.max(0.05, 1 - (pull / 400));
+        touchState.scrim.style.opacity = op.toFixed(2);
+      }
+    }
+  }, { passive: false });
+
+  function endTouch() {
+    if (!touchState) return;
+    const state = touchState;
+    touchState = null;
+    if (!state.isDragging) return;
+
+    const dy = Math.max(0, state.lastY - state.startY);
+    const dt = Math.max(1, Date.now() - state.startTime);
+    const velocity = dy / dt;
+
+    if (dy > 65 || (dy > 25 && velocity > 0.32)) {
+      state.sheet.style.transition = 'transform 0.22s cubic-bezier(0.25, 1, 0.5, 1)';
+      state.sheet.style.transform = 'translateY(100%)';
+      if (state.scrim) {
+        state.scrim.style.transition = 'opacity 0.2s ease-out';
+        state.scrim.style.opacity = '0';
+      }
+      setTimeout(() => {
+        closeMobileToday();
+      }, 200);
+    } else {
+      state.sheet.style.transition = 'transform 0.22s cubic-bezier(0.16, 1, 0.3, 1)';
+      state.sheet.style.transform = '';
+      if (state.scrim) {
+        state.scrim.style.transition = 'opacity 0.2s ease-out';
+        state.scrim.style.opacity = '';
+      }
+    }
+  }
+
+  document.addEventListener('touchend', endTouch, { passive: true });
+  document.addEventListener('touchcancel', endTouch, { passive: true });
+})();
 // Smooth Escape key handler for all overlays and drawers
 window.addEventListener('keydown', e=>{
   if(e.key==='Escape'){
@@ -26097,13 +26235,7 @@ window.addEventListener('keydown', e=>{
       return;
     }
     if(APP.mobileTodayOpen){
-      const d=document.querySelector('.mobile-today-drawer');
-      if(d){
-        d.classList.add('closing');
-        setTimeout(()=>{APP.mobileTodayOpen=false;render();}, 180);
-      } else {
-        APP.mobileTodayOpen=false;render();
-      }
+      closeMobileToday();
       return;
     }
     if(APP.todayPanelOpen&&!APP.todayPinned){
