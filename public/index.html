@@ -43,6 +43,8 @@
   --sh-glow:0 0 24px -2px rgba(255,102,0,0.35);
   --sidebar:280px;
   --header-h:56px;
+  --crumbs-h:36px;
+  --header-total-h:92px;
   --today-w:325px;
   --f-head:"Outfit",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
   --f-ui:"Plus Jakarta Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
@@ -1200,6 +1202,7 @@ body.mobile-today-open{
 .g-2-1{grid-template-columns:2fr 1fr}
 .g-1-2{grid-template-columns:1fr 2fr}
 @media(max-width:1240px){.g6{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:960px){.g-2-1,.g-1-2{grid-template-columns:1fr}}
 @media(max-width:720px){.g2,.g3,.g4,.g5,.g6{grid-template-columns:repeat(2,minmax(0,1fr))}.grid{gap:12px}}
 @media(max-width:480px){.g2,.g3,.g4,.g5,.g6{grid-template-columns:1fr}}
 .card{
@@ -6131,7 +6134,10 @@ function head(eyebrow,title,sub,actions='',extraClass=''){
   return `<div class="page-head ${extraClass}"><div><div class="eyebrow">${esc(eyebrow)}</div><h1>${esc(title)}</h1>${sub?`<p class="sub">${esc(sub)}</p>`:''}</div>
   <div class="actions">${actions}</div></div>`;
 }
-function section(title,body,right=''){
+function section(title,body,right='',collKey='',defaultOpen=true){
+  if(collKey){
+    return collSection(collKey, title, body, right, defaultOpen);
+  }
   const h3 = (typeof title === 'string' && title.includes('<')) ? title : esc(title);
   return `<div class="card"><div class="card-h"><h3 style="display:inline-flex;align-items:center">${h3}</h3><div class="r">${right}</div></div>${body}</div>`;
 }
@@ -7527,7 +7533,7 @@ function needsAttention(){
     ['var(--mustard)',s.actionsOverdue,'overdue action items','#/actions'],
     ['var(--green)',s.attention,'devotees flagged for personal attention','#/care']].filter(r=>r[1]>0);
   return section('⚠️ Needs attention today',rows.length?`<div class="list">${rows.map(r=>attnRow(...r)).join('')}</div>`
-    :emptyState('Everything is clear','No overdue follow-ups or unfilled seva right now.','','calm'));
+    :emptyState('Everything is clear','No overdue follow-ups or unfilled seva right now.','','calm'), '', 'needs_attn', true);
 }
 function insightsCard(){
   const s=STATS();
@@ -8354,22 +8360,22 @@ function viewToday(){
         <div class="li"><span class="badge b-saffron">${esc(x.type)}</span>
         <span class="grow"><span class="t">${esc(x.name)}</span><span class="d">${x.start||''}${x.end?'–'+x.end:''} · ${esc(x.location||scopeName(x))}</span></span>
         ${sbadge(a.state)}${['Completed','Completed by Another'].includes(a.state)?'':`<button class="btn sm pri" data-act="open-complete" data-id="${a.id}">I have done it ✓</button>`}</div>`).join('')}</div>`
-        :emptyState('No seva assigned to you today','Enjoy the sadhana. Your next assignment will appear here.','','calm'))}
-      ${section('🛕 Community seva today',svc.length?`<div class="tbl-wrap">${actTable(svc)}</div>`:emptyState('No seva scheduled today','Nothing is on the roster for today.','<button class="btn pri" data-act="open-assign" data-type="Seva">Assign seva</button>'))}
+        :emptyState('No seva assigned to you today','Enjoy the sadhana. Your next assignment will appear here.','','calm'), '', 'today_mine', true)}
+      ${section('🛕 Community seva today',svc.length?`<div class="tbl-wrap">${actTable(svc)}</div>`:emptyState('No seva scheduled today','Nothing is on the roster for today.','<button class="btn pri" data-act="open-assign" data-type="Seva">Assign seva</button>'), '', 'today_svc', false)}
       ${section('📖 Classes and events today',(cls.length+evs.length)?`<div class="list">${[...cls,...evs].map(x=>`
         <a class="li click" href="#/activity/${x.id}"><span class="badge ${x.type==='Class'?'b-indigo':'b-mustard'}">${x.type==='Class'?'📖':'✨'} ${esc(x.type)}</span>
         <span class="grow"><span class="t">${esc(x.name)}</span><span class="d">${esc(scopeName(x))} · ${x.start}–${x.end} · ${esc(x.location)}</span></span>${sbadge(x.status)}</a>`).join('')}</div>`
-        :emptyState('No classes or events today','The calendar is clear.',''))}
+        :emptyState('No classes or events today','The calendar is clear.',''), '', 'today_cls', false)}
     </div>
     <div style="display:flex;flex-direction:column;gap:15px">
       ${needsAttention()}
       ${section('⏰ Follow-ups due or overdue',fus.length?`<div class="list">${fus.slice(0,7).map(f=>`
         <div class="li">${av(subjectName(f))}<span class="grow"><span class="t">${esc(subjectName(f))}</span><span class="d">${esc(f.purpose)} · ${relD(f.due)}</span></span>
         <button class="btn sm" data-act="complete-fu" data-id="${f.id}">Done</button></div>`).join('')}</div>`
-        :emptyState('No follow-ups pending','Every conversation is up to date.','','calm'))}
+        :emptyState('No follow-ups pending','Every conversation is up to date.','','calm'), '', 'today_fus', true)}
       ${section('📣 Announcements',`<div class="list">${(ann?ann.messages:[]).slice(-3).reverse().map(m=>`
         <div class="li">${av(nameOf(m.from))}<span class="grow"><span class="t">${esc(nameOf(m.from))}</span><span class="d">${esc(m.text)}</span></span></div>`).join('')}</div>`,
-        `<a class="btn sm" href="#/messages">Open</a>`)}
+        `<a class="btn sm" href="#/messages">Open</a>`, 'today_ann', false)}
     </div></div>`;
 }
 
@@ -18549,20 +18555,21 @@ function batchDashboardBody(b){
           ${ownsBatch(b.id)?`<button class="btn sm" data-act="go-batch-attendance" data-b="${b.id}">Attendance</button>`:''}
           ${renderActMenu(nextClass, b.id)}</div>`:''}</div>`
         :emptyState('No class scheduled','Schedule the next class for this batch.',ownsBatch(b.id)?`<button class="btn pri" data-act="open-schedule" data-batch="${b.id}" data-type="Class">Schedule class</button>`:''),
-        ownsBatch(b.id)?`<button class="btn sm pri" data-act="open-schedule" data-batch="${b.id}" data-type="Class">${ic('plus')}Schedule class</button>`:'')}
+        ownsBatch(b.id)?`<button class="btn sm pri" data-act="open-schedule" data-batch="${b.id}" data-type="Class">${ic('plus')}Schedule class</button>`:'', 'batch_today', true)}
       ${section('✨ Events & special programmes',events.length?`<div class="tbl-wrap">${actTable(events)}</div>${allBatchEvents.length > events.length ? `<div class="tiny muted" style="padding:10px 14px;border-top:1px solid var(--line);display:flex;justify-content:space-between;align-items:center"><span>Showing ${events.length} upcoming event${events.length!==1?'s':''}</span><a href="#/classes" style="color:var(--accent);text-decoration:none;font-weight:600">View all ${allBatchEvents.length} events in archive →</a></div>` : ''}`
         :emptyState('No upcoming events','There are no upcoming events scheduled for this batch.' + (allBatchEvents.length ? ` (${allBatchEvents.length} past event${allBatchEvents.length!==1?'s':''} in archive)` : ''),ownsBatch(b.id)?`<button class="btn pri" data-act="open-schedule" data-batch="${b.id}" data-type="Event">Create event</button>`:''),
-        ownsBatch(b.id)?`<button class="btn sm pri" data-act="open-schedule" data-batch="${b.id}" data-type="Event">${ic('plus')}Create event</button>`:null)}
+        ownsBatch(b.id)?`<button class="btn sm pri" data-act="open-schedule" data-batch="${b.id}" data-type="Event">${ic('plus')}Create event</button>`:null, 'batch_events', false)}
       ${section('📊 Class attendance trend',trend.length?`<div class="card-b">${lineChart(trend,{unit:'%',color:'var(--indigo)'})}
         <div class="tiny" style="margin-top:8px">Hover a point for present / absent / total for that class</div></div>`
-        :emptyState('No attendance yet','The trend appears once classes are held and attendance is marked.',''))}
+        :emptyState('No attendance yet','The trend appears once classes are held and attendance is marked.',''), '', 'batch_trend', false)}
       ${(() => {
         if (!m.members.length) {
           return section(`👥 Members <span class="badge b-grey" style="font-size:11.5px;padding:2px 8px;font-weight:600;vertical-align:middle;margin-left:6px">0</span>`,
             emptyState('No members yet','Add members to this batch.',ownsBatch(b.id)?`<button class="btn pri" data-act="batch-members" data-id="${b.id}">Add members</button>`:'','people'),
             ownsBatch(b.id)?`
               ${canImportCsv(b.id)?`<button class="btn sm" data-act="open-import-csv" data-batch="${b.id}" style="margin-right:6px">${ic('upload')}Import CSV</button>`:''}
-              <button class="btn sm" data-act="batch-members" data-id="${b.id}">${ic('plus')}Manage members</button>`:''
+              <button class="btn sm" data-act="batch-members" data-id="${b.id}">${ic('plus')}Manage members</button>`:'',
+            'batch_members', true
           );
         }
 
@@ -18735,7 +18742,8 @@ function batchDashboardBody(b){
           memSectionBody,
           ownsBatch(b.id)?`
             ${canImportCsv(b.id)?`<button class="btn sm" data-act="open-import-csv" data-batch="${b.id}" style="margin-right:6px">${ic('upload')}Import CSV</button>`:''}
-            <button class="btn sm" data-act="batch-members" data-id="${b.id}">${ic('plus')}Manage members</button>`:''
+            <button class="btn sm" data-act="batch-members" data-id="${b.id}">${ic('plus')}Manage members</button>`:'',
+          'batch_members', true
         );
       })()}
     </div>
@@ -18747,7 +18755,7 @@ function batchDashboardBody(b){
           <span>Tracks member progression from Registered to Actively Serving.</span>
           <span style="color:var(--ink-3)">Click any bar to drill down</span>
         </div>
-      </div>`, `<span class="badge b-purple" style="font-size:11px">6-Stage Funnel</span>`)}
+      </div>`, `<span class="badge b-purple" style="font-size:11px">6-Stage Funnel</span>`, 'batch_funnel', false)}
       ${section('🧾 Budget', `<div class="card-b click" data-act="open-budget" data-kind="batch" data-id="${b.id}" style="cursor:pointer" title="Click to update collected budget & expenses">
         <div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:6px"><span class="muted">Budget Overview</span><b>${pct(b.budget.spent, b.budget.allocated)}% spent</b></div>
         ${prog(pct(b.budget.spent, b.budget.allocated), pct(b.budget.spent, b.budget.allocated)>95?'var(--danger)':'var(--mustard)')}
@@ -18758,17 +18766,17 @@ function batchDashboardBody(b){
         </div>
         <div class="tiny muted" style="margin-top:8px;display:flex;align-items:center;gap:4px">
           ${ic('edit')} Tap anywhere on budget to edit collection & expenses
-        </div></div>`, ownsBatch(b.id)?`<button class="btn sm" data-act="open-budget" data-kind="batch" data-id="${b.id}">${ic('edit')}Edit budget</button>`:null)}
+        </div></div>`, ownsBatch(b.id)?`<button class="btn sm" data-act="open-budget" data-kind="batch" data-id="${b.id}">${ic('edit')}Edit budget</button>`:null, 'batch_budget', false)}
       ${section('⏰ Follow-ups',`<div class="list">
         ${attnRow('var(--danger)',m.fus.overdue,'overdue','#/followups')}
         ${attnRow('var(--amber)',m.fus.pending,'pending','#/followups')}
-        ${attnRow('var(--green)',m.fus.done,'completed','#/followups')}</div>`)}
+        ${attnRow('var(--green)',m.fus.done,'completed','#/followups')}</div>`, '', 'batch_fus', false)}
       ${section('💬 Batch chat',thread?`<div class="list">${thread.messages.slice(-2).map(msg=>`<div class="li">${av(nameOf(msg.from))}
         <span class="grow"><span class="t">${esc(nameOf(msg.from))}</span><span class="d">${esc(msg.text)}</span></span></div>`).join('')}
         <div class="li"><a class="btn sm block" href="#/messages" data-act="open-thread-go" data-id="${thread.id}">Open ${esc(b.name)} chat</a></div></div>`
-        :emptyState('No chat yet','A group chat is created with the batch.','','chat'))}
+        :emptyState('No chat yet','A group chat is created with the batch.','','chat'), '', 'batch_chat', false)}
       ${section('📄 Reports',`<div class="card-b"><button class="btn block" data-act="batch-report" data-id="${b.id}">${ic('doc')}Generate monthly report</button>
-        <button class="btn block" style="margin-top:8px" data-act="go" data-r="#/reports">All community reports</button></div>`)}
+        <button class="btn block" style="margin-top:8px" data-act="go" data-r="#/reports">All community reports</button></div>`, '', 'batch_reports', false)}
     </div></div>`;
 }
 function viewBatch(id){
@@ -18855,17 +18863,25 @@ function fuList(kind){
     <div class="chips">${Object.keys(buckets).map(b=>`<button class="chip ${f.bucket===b?'on':''}" data-act="f" data-k="fu" data-n="bucket" data-v="${b}">${b}</button>`).join('')}</div>
     <input type="search" placeholder="Search person" value="${esc(f.q)}" data-act="f" data-k="fu" data-n="q" style="margin-left:auto">
     <button class="btn sm pri" data-act="add-followup">${ic('plus')}New</button></div>
-   ${rows.length?`<div class="list">${rows.sort((a,b)=>a.due<b.due?-1:1).map(x=>`<div class="li" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-     ${av(subjectName(x))}<span class="grow" style="min-width:200px"><span class="t">${esc(subjectName(x))}</span>
-     <span class="d">${esc(x.purpose)} · assigned to ${esc(nameOf(x.assigned))}${x.notes?' · '+esc(x.notes):''}</span></span>
-     <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-left:auto">
-       ${isOverdue(x)?badge('Overdue '+relD(x.due),'red'):badge(relD(x.due),isDueToday(x)?'amber':'grey')}
-       ${sbadge(x.priority)}
-       ${x.status==='Pending'?`<button class="btn sm pri" data-act="complete-fu" data-id="${x.id}">Mark done</button>
-         <button class="btn sm" data-act="snooze-fu" data-id="${x.id}">+3 days</button>`:sbadge(x.status)}
-       <button class="btn sm" data-act="edit-fu" data-id="${x.id}" title="Edit follow-up">${ic('edit')}Edit</button>
-       <button class="btn sm danger" data-act="delete-fu" data-id="${x.id}" title="Delete follow-up">${ic('trash')}Delete</button>
-     </div></div>`).join('')}</div>`
+   ${rows.length?`<div class="list">${rows.sort((a,b)=>a.due<b.due?-1:1).map(x=>{
+     const content = `<div class="li" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+       ${av(subjectName(x))}<span class="grow" style="min-width:200px"><span class="t">${esc(subjectName(x))}</span>
+       <span class="d">${esc(x.purpose)} · assigned to ${esc(nameOf(x.assigned))}${x.notes?' · '+esc(x.notes):''}</span></span>
+       <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-left:auto">
+         ${isOverdue(x)?badge('Overdue '+relD(x.due),'red'):badge(relD(x.due),isDueToday(x)?'amber':'grey')}
+         ${sbadge(x.priority)}
+         ${x.status==='Pending'?`<button class="btn sm pri" data-act="complete-fu" data-id="${x.id}">Mark done</button>
+           <button class="btn sm" data-act="snooze-fu" data-id="${x.id}">+3 days</button>`:sbadge(x.status)}
+         <button class="btn sm" data-act="edit-fu" data-id="${x.id}" title="Edit follow-up">${ic('edit')}Edit</button>
+         <button class="btn sm danger" data-act="delete-fu" data-id="${x.id}" title="Delete follow-up">${ic('trash')}Delete</button>
+       </div></div>`;
+     const actions = [
+       x.status==='Pending' ? {cls:'attend', icon:'✓', label:'Done', act:'complete-fu', id:x.id} : null,
+       {cls:'edit', icon:'✎', label:'Edit', act:'edit-fu', id:x.id},
+       {cls:'delete', icon:'🗑', label:'Del', act:'delete-fu', id:x.id}
+     ].filter(Boolean);
+     return swipeRow(content, actions);
+   }).join('')}</div>`
    :emptyState('Nothing in this bucket','No follow-ups match this filter.','<button class="btn pri" data-act="add-followup">Create follow-up</button>','calm')}</div>`;
 }
 function viewFollowups(){
