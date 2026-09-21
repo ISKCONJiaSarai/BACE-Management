@@ -6,15 +6,18 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="theme-color" content="#C9601B">
+<meta name="theme-color" content="#FF6600">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="BACE Jia Sarai">
 <meta name="description" content="ISKCON BACE Jia Sarai — Community Operating System for management, preaching and devotee care.">
 <title>ISKCON BACE — Jia Sarai · Community Operating System</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png">
 <link rel="icon" type="image/png" href="/logo.png">
-<link rel="apple-touch-icon" href="/logo.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,600&display=swap" rel="stylesheet">
@@ -4091,10 +4094,95 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-off
   .field label{font-size:12px!important}
 }
 
+/* ── Initial App Loading / Splash Screen ── */
+.app-splash-screen{
+  position:fixed;inset:0;width:100%;height:100%;
+  display:flex;align-items:center;justify-content:center;
+  background:#FAF8F5;z-index:999999;
+  font-family:"Plus Jakarta Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  user-select:none;-webkit-user-select:none;
+}
+.splash-card{
+  display:flex;flex-direction:column;align-items:center;text-align:center;
+  padding:32px 24px;max-width:340px;width:100%;
+}
+.splash-logo-wrap{
+  width:92px;height:92px;border-radius:24px;
+  background:linear-gradient(135deg,#FF6600 0%,#EA580C 100%);
+  display:flex;align-items:center;justify-content:center;
+  padding:8px;
+  box-shadow:0 12px 32px rgba(234,88,12,0.35), 0 2px 6px rgba(0,0,0,0.08);
+  animation:splashPulse 2.2s ease-in-out infinite alternate;
+  margin-bottom:18px;
+}
+.splash-logo-img{
+  width:100%;height:100%;object-fit:contain;
+  filter:drop-shadow(0 2px 4px rgba(0,0,0,0.22));
+}
+.splash-title{
+  font-family:"Outfit",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  font-size:24px;font-weight:800;letter-spacing:-0.02em;color:#0F172A;
+  line-height:1.2;
+}
+.splash-location{
+  display:flex;align-items:center;gap:6px;margin-top:4px;
+  font-size:12px;font-weight:700;color:#C9601B;letter-spacing:0.04em;text-transform:uppercase;
+}
+.splash-tagline{
+  font-size:11.5px;color:#64748B;margin-top:3px;font-weight:500;letter-spacing:0.02em;
+}
+.splash-loader-track{
+  margin-top:24px;width:140px;height:4px;background:#E2E8F0;border-radius:99px;
+  overflow:hidden;position:relative;
+}
+.splash-loader-bar{
+  width:45%;height:100%;background:linear-gradient(90deg,#FF6600,#EA580C);
+  border-radius:99px;position:absolute;left:-45%;
+  animation:splashBar 1.4s ease-in-out infinite;
+}
+.splash-maha-mantra{
+  margin-top:20px;font-family:"Caveat","Brush Script MT",cursive;
+  font-size:16px;color:#B45309;font-weight:600;opacity:0.92;
+}
+@keyframes splashPulse{
+  0%{transform:scale(1);box-shadow:0 10px 28px rgba(234,88,12,0.3)}
+  100%{transform:scale(1.04);box-shadow:0 16px 40px rgba(234,88,12,0.5)}
+}
+@keyframes splashBar{
+  0%{left:-45%}
+  100%{left:100%}
+}
+[data-theme="dark"] .app-splash-screen,
+@media (prefers-color-scheme: dark){
+  .app-splash-screen{background:#090D16}
+  .splash-title{color:#F8FAFC}
+  .splash-location{color:#FF7A00}
+  .splash-tagline{color:#94A3B8}
+  .splash-loader-track{background:#1E293B}
+  .splash-maha-mantra{color:#F59E0B}
+}
+
 </style>
 </head>
 <body>
-<div id="app"></div>
+<div id="app">
+  <div class="app-splash-screen" id="appSplashScreen">
+    <div class="splash-card">
+      <div class="splash-logo-wrap">
+        <img src="/icon-512.png" alt="ISKCON BACE Jia Sarai Logo" class="splash-logo-img">
+      </div>
+      <div class="splash-title">ISKCON BACE</div>
+      <div class="splash-location">
+        <span>Jia Sarai · New Delhi</span>
+      </div>
+      <div class="splash-tagline">Community Operating System</div>
+      <div class="splash-loader-track">
+        <div class="splash-loader-bar"></div>
+      </div>
+      <div class="splash-maha-mantra">Hare Krishna Hare Krishna · Krishna Krishna Hare Hare</div>
+    </div>
+  </div>
+</div>
 <script>
 // Development API Router: When frontend is served from VS Code Live Server (port 5500)
 // or another dev port, automatically route /api requests to the Express backend on port 5000.
