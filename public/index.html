@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -2177,6 +2177,42 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
   color:#fff;
   border-color:var(--danger);
   box-shadow:0 1px 4px rgba(198,40,40,0.3);
+}
+
+/* ── Phase 6: Attendance Mobile Enhancements ── */
+/* Collapsible filter row toggle */
+.att-filter-toggle{
+  display:none;align-items:center;gap:6px;
+  padding:6px 12px;border-radius:20px;
+  font-size:12px;font-weight:600;
+  border:1px solid var(--line);
+  background:var(--surface);color:var(--ink-2);
+  cursor:pointer;transition:all .15s;
+  -webkit-tap-highlight-color:transparent;
+  white-space:nowrap;
+}
+.att-filter-toggle.active{background:var(--accent-soft);color:var(--accent);border-color:var(--accent)}
+/* On desktop: always show filters, no collapse */
+.att-filter-collapse{overflow:visible;max-height:none;opacity:1;transition:none}
+@media(max-width:760px){
+  .att-filter-toggle{display:inline-flex}
+  /* On mobile: collapse behaviour */
+  .att-filter-collapse{
+    overflow:hidden;max-height:0;opacity:0;
+    transition:max-height .3s cubic-bezier(0.16,1,0.3,1),opacity .25s ease;
+  }
+  .att-filter-collapse.open{max-height:500px;opacity:1}
+  /* Sticky batch selector at top of scroll */
+  .att-batch-sticky{
+    position:sticky;top:0;z-index:50;
+    background:var(--surface);border-bottom:1px solid var(--line-2);
+    padding:8px 12px;display:flex;gap:8px;align-items:center;
+  }
+  /* Tighter att-btn on phones */
+  .att-btn{padding:6px 0!important;font-size:11px!important}
+}
+@media(max-width:480px){
+  .att-btn{min-height:36px!important;height:36px!important;padding:4px 0!important;font-size:10.5px!important}
 }
 
 /* Mobile Dropdown & Anti-Overlap Rules */
@@ -8895,35 +8931,39 @@ function viewDevotee(id){
     return `<span class="badge ${rk==='area_leader'?'b-gold':rk==='admin'?'b-ink':rk==='devotee'?'b-grey':'b-saffron'}" style="font-weight:600" title="${esc(ro.scope)}">${ro.emoji} ${esc(ro.name)}</span>`;
   }).join(' ');
   const body={
-   Overview:`<div class="grid g-2-1">
-     <div class="card"><div class="card-h"><h3>Basic information</h3></div><div class="card-b">
-      <dl class="kv"><dt>Full name</dt><dd>${esc(d.name)}</dd><dt>Gender</dt><dd><span class="badge ${d.gender==='Female'?'b-amber':'b-indigo'}">${esc(d.gender||'Male')}</span></dd><dt>Date of birth</dt><dd>${fmtD(d.dob)}</dd>
-      <dt>Phone</dt><dd>${esc(d.phone)}</dd><dt>Email</dt><dd>${esc(d.email)}</dd>
-      <dt>Residence</dt><dd>${esc(d.residence||d.address||'—')}</dd>
-      <dt>Attendance mode</dt><dd><span class="badge ${d.attendanceMode==='Online'?'b-indigo':'b-teal'}">${esc(d.attendanceMode||'Offline at BACE')}</span></dd>
-      <dt>Occupation</dt><dd>${esc(d.occupation||'—')}</dd><dt>College / organisation</dt><dd>${esc(d.org||'—')}</dd>
-      <dt>Higher education</dt><dd>${esc(d.highestEducation||'—')}</dd>
-      <dt>Present studies or job</dt><dd>${esc(d.presentStudiesOrJob||'—')}</dd>
-      <dt>Permanent address</dt><dd>${esc(d.address||'—')}</dd>
-      <dt>Emergency contact</dt><dd>${esc(d.emergency||'—')}</dd><dt>Skills</dt><dd>${(d.skills||[]).map(s=>badge(s,'grey')).join(' ')||'—'}</dd>
-      <dt>Availability</dt><dd>${esc(d.availability||'Weekends')}</dd></dl></div>
-      <div class="card-h" style="border-top:1px solid var(--line-2)"><h3>Community information</h3></div><div class="card-b">
-      <dl class="kv"><dt>Joining date</dt><dd>${fmtD(d.joined)}</dd><dt>Status</dt><dd>${sbadge(d.status)}</dd>
-      <dt>Hierarchy ${rKeys.length>1?'roles':'role'}</dt><dd style="display:flex;flex-wrap:wrap;gap:6px">${roleBadges}</dd>
-      <dt>Current level</dt><dd>${d.level?'Level '+d.level:'Not yet levelled'}</dd>
-      <dt>Batch</dt><dd>${esc(batch(d.batch)?.name||'—')}</dd>
-      <dt>Batch role</dt><dd><span class="badge b-grey">${esc(d.batchRole||'Member')}</span></dd>
-      <dt>Care group</dt><dd>${esc(group(d.careGroup)?.name||'—')}</dd><dt>Facilitator</dt><dd>${esc(nameOf(d.facilitator))}</dd>
-      <dt>Mentor</dt><dd>${esc(nameOf(d.mentor))}</dd></dl></div></div>
+   Overview:(()=>{
+    const basicInfoBody = `<dl class="kv"><dt>Full name</dt><dd>${esc(d.name)}</dd><dt>Gender</dt><dd><span class="badge ${d.gender==='Female'?'b-amber':'b-indigo'}">${esc(d.gender||'Male')}</span></dd><dt>Date of birth</dt><dd>${fmtD(d.dob)}</dd>
+       <dt>Phone</dt><dd>${esc(d.phone)}</dd><dt>Email</dt><dd>${esc(d.email)}</dd>
+       <dt>Residence</dt><dd>${esc(d.residence||d.address||'—')}</dd>
+       <dt>Attendance mode</dt><dd><span class="badge ${d.attendanceMode==='Online'?'b-indigo':'b-teal'}">${esc(d.attendanceMode||'Offline at BACE')}</span></dd>
+       <dt>Occupation</dt><dd>${esc(d.occupation||'—')}</dd><dt>College / organisation</dt><dd>${esc(d.org||'—')}</dd>
+       <dt>Higher education</dt><dd>${esc(d.highestEducation||'—')}</dd>
+       <dt>Present studies or job</dt><dd>${esc(d.presentStudiesOrJob||'—')}</dd>
+       <dt>Permanent address</dt><dd>${esc(d.address||'—')}</dd>
+       <dt>Emergency contact</dt><dd>${esc(d.emergency||'—')}</dd><dt>Skills</dt><dd>${(d.skills||[]).map(s=>badge(s,'grey')).join(' ')||'—'}</dd>
+       <dt>Availability</dt><dd>${esc(d.availability||'Weekends')}</dd></dl>`;
+    const communityInfoBody = `<dl class="kv"><dt>Joining date</dt><dd>${fmtD(d.joined)}</dd><dt>Status</dt><dd>${sbadge(d.status)}</dd>
+       <dt>Hierarchy ${rKeys.length>1?'roles':'role'}</dt><dd style="display:flex;flex-wrap:wrap;gap:6px">${roleBadges}</dd>
+       <dt>Current level</dt><dd>${d.level?'Level '+d.level:'Not yet levelled'}</dd>
+       <dt>Batch</dt><dd>${esc(batch(d.batch)?.name||'—')}</dd>
+       <dt>Batch role</dt><dd><span class="badge b-grey">${esc(d.batchRole||'Member')}</span></dd>
+       <dt>Care group</dt><dd>${esc(group(d.careGroup)?.name||'—')}</dd><dt>Facilitator</dt><dd>${esc(nameOf(d.facilitator))}</dd>
+       <dt>Mentor</dt><dd>${esc(nameOf(d.mentor))}</dd></dl>`;
+    return `<div class="grid g-2-1">
+     <div style="display:flex;flex-direction:column;gap:12px">
+      ${collSection('dv-basic-'+d.id,'👤 Basic information','<div class="card-b">'+basicInfoBody+'</div>','',true)}
+      ${collSection('dv-community-'+d.id,'🛕 Community information','<div class="card-b">'+communityInfoBody+'</div>','',true)}
+     </div>
      <div style="display:flex;flex-direction:column;gap:15px">
-      ${section('Connected across three pillars',`<div class="list">
+      ${collSection('dv-pillars-'+d.id,'🔗 Connected across three pillars',`<div class="list">
         <a class="li click" href="#/dept/${d.dept||''}"><span class="badge b-saffron">🛕 Seva</span><span class="grow"><span class="t">${esc(d.service||'Not allocated')}</span><span class="d">${esc(dept(d.dept)?.name||'No department')}</span></span></a>
         <a class="li click" href="#/batch/${d.batch||''}"><span class="badge b-indigo">📖 Preaching</span><span class="grow"><span class="t">${esc(batch(d.batch)?.name||'No batch')}</span><span class="d">First contact ${fmtD(d.firstContact)} via ${esc(d.source)}</span></span></a>
         <a class="li click" href="#/group/${d.careGroup||''}"><span class="badge b-green">❤️ Care</span><span class="grow"><span class="t">${esc(group(d.careGroup)?.name||'No group')}</span><span class="d">Facilitator ${esc(nameOf(d.facilitator))}</span></span></a>
-      </div>`)}
-      ${section('Attendance',`<div class="card-b">${donut(getDevoteeRealAttendance(d).overall,'Overall attendance across classes, seva and the morning programme.')}</div>`)}
-      ${d.history.length?section('History retained',`<div class="list">${d.history.map(h=>`<div class="li"><span class="grow"><span class="t">${esc(h.from)} → ${esc(h.to)}</span><span class="d">${fmtD(h.date)} · ${esc(h.type)} change</span></span></div>`).join('')}</div>`):''}
-     </div></div>`,
+      </div>`,'',true)}
+      ${collSection('dv-att-'+d.id,'📊 Attendance','<div class="card-b">'+donut(getDevoteeRealAttendance(d).overall,'Overall attendance across classes, seva and the morning programme.')+'</div>','',true)}
+      ${d.history.length?collSection('dv-history-'+d.id,'🕐 History retained',`<div class="list">${d.history.map(h=>`<div class="li"><span class="grow"><span class="t">${esc(h.from)} → ${esc(h.to)}</span><span class="d">${fmtD(h.date)} · ${esc(h.type)} change</span></span></div>`).join('')}</div>`,'',false):''}
+     </div></div>`;
+   })(),
    Preaching:`<div class="grid g-2-1"><div class="card"><div class="card-h"><h3>Preaching record</h3></div><div class="card-b">
       <dl class="kv"><dt>First contact</dt><dd>${fmtD(d.firstContact)}</dd><dt>Contact source</dt><dd>${esc(d.source)}</dd>
       <dt>Current stage</dt><dd>${d.level?badge('Level '+d.level,'indigo'):badge('Pre-batch','grey')}</dd>
@@ -18317,6 +18357,10 @@ function batchAttendancePanel(){
        <button class="btn sm" data-act="open-schedule" data-batch="${bid}" data-type="Event">✨ Create event</button>
        <button class="btn sm" data-act="open-schedule" data-batch="${bid}" data-type="Class" style="border-color:var(--indigo-soft);color:var(--indigo)">${ic('plus')}Schedule class</button>
      </div>
+      <div class="att-toolbar-row" style="align-items:center;gap:8px">
+       <button type="button" class="att-filter-toggle" id="att-filter-toggle" onclick="(function(){var c=document.getElementById('att-filter-collapse');var t=document.getElementById('att-filter-toggle');if(c&&t){var open=c.classList.toggle('open');t.classList.toggle('active',open);t.innerHTML=open?'&#128269; Hide filters':'&#128269; Filters';}})()">&#128269; Filters</button>
+     </div>
+     <div class="att-filter-collapse" id="att-filter-collapse">
      <div class="att-toolbar-row att-filter-controls-row" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:4px;padding-top:8px;border-top:1px solid var(--line-2)">
        <div style="position:relative;flex:1;min-width:170px;max-width:280px">
          <input type="text" class="inp sm" data-act="att-q" value="${esc(APP.filters.attSearch||'')}" placeholder="Search devotee name..." style="width:100%;font-size:12.5px;padding:6px 10px 6px 28px;border-radius:8px;box-sizing:border-box">
@@ -18338,6 +18382,7 @@ function batchAttendancePanel(){
          <option value="default" ${APP.filters.attSort==='default'?'selected':''}>Sort: Default batch order</option>
        </select>
        ${(q || stFilter || (APP.filters.attSort && APP.filters.attSort !== 'name_asc')) ? `<button class="btn sm ghost" data-act="reset-att-filters" style="font-size:11.5px;padding:4px 8px;color:var(--accent)" title="Reset filters & sorting">Reset filters</button>` : ''}
+     </div>
      </div>
    </div>
    ${cl?`<div class="card-b att-summary-bar" style="padding-bottom:0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><div class="tiny">${fmtLong(cl.date)} · ${esc(cl.location||'Online / BACE')} · <b>${present} of ${allMembers.length}</b> present (${pct(present,allMembers.length)}%)${late?` · <span style="color:var(--amber);font-weight:600">${late} late</span>`:''}${absent?` · <span style="color:var(--danger);font-weight:600">${absent} absent</span>`:''}${unmarked?` · <span style="color:var(--ink-3)">${unmarked} unmarked</span>`:''}</div><div class="tiny" style="color:var(--ink-2)">Showing <b>${members.length}</b> of ${allMembers.length} devotees</div></div>`:''}
