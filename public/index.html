@@ -3580,6 +3580,36 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-off
   font-size:16px;color:var(--ink-3);opacity:.4;flex-shrink:0;
 }
 
+/* ── Phase 3. Mobile Devotee List ── */
+/* On ≤640px hide the desktop .tbl-wrap inside the devotee card, show .dev-mob-list instead */
+.dev-mob-list{display:none}
+@media(max-width:640px){
+  .tbl-wrap.tbl-wrap-dev{display:none!important}
+  .dev-mob-list{display:block}
+  /* Compact hero card on devotee detail page */
+  .dev-hero-actions{display:none!important}
+  .dev-hero-card{flex-direction:column!important;gap:10px!important;padding:12px!important}
+  .dev-hero-card .av-l{width:52px!important;height:52px!important;font-size:20px!important}
+  .dev-hero-card h1{font-size:18px!important}
+  .dev-hero-name-row{display:flex;align-items:center;gap:12px;width:100%}
+}
+/* Dev mob list row */
+.dev-mob-row{
+  display:flex;align-items:center;gap:11px;
+  padding:11px 14px;border-bottom:1px solid var(--line-2);
+  background:var(--surface);cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+  transition:background .13s;
+}
+.dev-mob-row:active{background:var(--surface-2)}
+.dev-mob-row .dmr-av{flex:none}
+.dev-mob-row .dmr-main{flex:1;min-width:0}
+.dev-mob-row .dmr-name{font-size:13.5px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.25}
+.dev-mob-row .dmr-sub{font-size:11.5px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;display:flex;align-items:center;gap:5px}
+.dev-mob-row .dmr-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
+.dev-mob-list .tbl-foot{display:flex;align-items:center;gap:8px;padding:10px 14px;border-top:1px solid var(--line-2);font-size:12px;color:var(--ink-2);flex-wrap:wrap;background:var(--surface-2)}
+.dev-mob-list .pg{margin-left:auto;display:flex;gap:5px}
+
 /* ── 1j. Typography Polish ── */
 @media(max-width:480px){
   h1{font-size:19px!important}
@@ -6232,15 +6262,17 @@ function budgetBlock(b,label='Budget'){
 }
 
 /* ---------- data table with mobile card fallback ---------- */
-function dataTable({id,cols,rows,onRow,per=10,toolbar='',empty,exportName}){
+function dataTable({id,cols,rows,onRow,per=10,toolbar='',empty,exportName,mobList=''}){
   const t=toolbar?`<div class="toolbar">${toolbar}</div>`:'';
-  if(!rows.length)return `<div class="card">${t}${empty||emptyState('Nothing to show','No records match the current filters.','')}</div>`;
+  if(!rows.length)return `<div class="card">${t}${mobList||''}${empty||emptyState('Nothing to show','No records match the current filters.','')}</div>`;
   const currentPer=APP.perPage?.[id]||per;
   const pages=Math.ceil(rows.length/currentPer),p=Math.min(APP.page[id]||1,pages),slice=rows.slice((p-1)*currentPer,p*currentPer);
   const hasWidths=cols.some(c=>c.w);
   const colgroup=hasWidths?`<colgroup>${cols.map(c=>`<col${c.w?` style="width:${c.w}"`:''}>`).join('')}</colgroup>`:'';
+  const tblClass = id === 'dev' ? 'tbl-wrap tbl-wrap-dev' : 'tbl-wrap';
   return `<div class="card">${t}
-   <div class="tbl-wrap" id="tbl-wrap-${id}"><table class="tbl tbl-${id}">${colgroup}<thead><tr>${cols.map(c=>`<th>${c.h}</th>`).join('')}</tr></thead>
+   ${mobList||''}
+   <div class="${tblClass}" id="tbl-wrap-${id}"><table class="tbl tbl-${id}">${colgroup}<thead><tr>${cols.map(c=>`<th>${c.h}</th>`).join('')}</tr></thead>
    <tbody>${slice.map(r=>`<tr class="${onRow?'click':''}" ${onRow?`data-act="${onRow}" data-id="${r.id}"`:''}>${cols.map(c=>`<td data-l="${esc(c.label || (typeof c.h==='string'?c.h.replace(/<[^>]*>/g,'').trim():''))}">${c.c(r)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>
    <div class="tbl-foot"><span>${rows.length} record${rows.length!==1?'s':''} · page ${p} of ${pages}</span>
      ${exportName?`<button class="btn sm" data-act="export-table" data-t="${id}">${ic('download')}CSV</button>`:''}
@@ -8658,11 +8690,60 @@ function viewDevotees(){
     </select>`;
   };
 
+   const devMobList = (rowsAll) => {
+    const currentPer = APP.perPage?.['dev'] || 10;
+    const pages = Math.ceil(rowsAll.length / currentPer);
+    const p = Math.min(APP.page['dev'] || 1, pages);
+    const slice = rowsAll.slice((p-1)*currentPer, p*currentPer);
+    if(!slice.length) return '';
+    const items = slice.map(d => {
+      const att = getDevoteeRealAttendance(d);
+      const v = att.overall;
+      const attCol = v >= 75 ? '#10B981' : (v >= 50 ? '#F59E0B' : (v > 0 ? '#EF4444' : 'var(--line)'));
+      const batchName = d.batch && batch(d.batch) ? batch(d.batch).name : '';
+      const deptName  = d.dept  && dept(d.dept)  ? dept(d.dept).name  : '';
+      const rKeys = devoteeRoles(d);
+      const isLeader = rKeys.some(k => k !== 'devotee');
+      const leaderEmojis = isLeader ? rKeys.filter(k => k !== 'devotee').map(k => ROLES[k]?.emoji || '').join('') : '';
+      const subParts = [
+        batchName ? `📖 ${esc(batchName)}` : '',
+        deptName  ? `🛕 ${esc(deptName)}`  : ''
+      ].filter(Boolean).join(' · ');
+      const rowContent = `
+        <div class="dev-mob-row" data-act="open-devotee" data-id="${d.id}">
+          <div class="dmr-av">${av(d.name,'s')}</div>
+          <div class="dmr-main">
+            <div class="dmr-name">${esc(d.name)}${leaderEmojis ? ` <span style="font-size:10px;color:var(--accent)">${leaderEmojis}</span>` : ''}</div>
+            <div class="dmr-sub">${sbadge(d.status)}${subParts ? `<span style="color:var(--ink-3)">${subParts}</span>` : ''}</div>
+          </div>
+          <div class="dmr-right">
+            <div style="display:flex;align-items:center;gap:5px">
+              <div class="prog" style="width:44px;height:5px;background:var(--line-2);border-radius:3px;overflow:hidden"><i style="width:${Math.min(100,v)}%;background:${attCol};display:block;height:100%"></i></div>
+              <span style="font-size:11px;font-weight:700;color:${attCol}">${v}%</span>
+            </div>
+            <span style="font-size:18px;color:var(--ink-3);opacity:.35">›</span>
+          </div>
+        </div>`;
+      return swipeRow(rowContent, [
+        { cls: 'sa-edit',  icon: '✏️', label: 'Edit',    act: 'edit-devotee',   id: d.id },
+        { cls: 'sa-msg',   icon: '💬', label: 'Message', act: 'dm',             id: d.id }
+      ]);
+    }).join('');
+    const foot = `<div class="tbl-foot">
+      <span>${rowsAll.length} devotee${rowsAll.length!==1?'s':''} · page ${p} of ${pages||1}</span>
+      <div class="pg">
+        <button class="btn sm" data-act="page" data-t="dev" data-p="${p-1}" ${p<=1?'disabled':''}>Prev</button>
+        <button class="btn sm" data-act="page" data-t="dev" data-p="${p+1}" ${p>=pages?'disabled':''}>Next</button>
+      </div>
+    </div>`;
+    return `<div class="dev-mob-list" id="dev-mob-list">${items}${foot}</div>`;
+  };
+
    return head('👥 One devotee, one record','Devotee directory',
      `${rows.length} devotee${rows.length!==1?'s':''} matching filters — searchable by everyone with an operational role; sensitive care information stays restricted`,
      `${canImportCsv()?`<button class="btn" data-act="open-import-csv" style="margin-right:8px">${ic('upload')}Import CSV</button>`:''}<button class="btn pri" data-act="add-devotee">${ic('plus')}Add devotee</button>`)+
     (scoped?`<div class="note" style="margin-bottom:14px">You can search and view the whole community directory. You can only <b>edit</b> people inside your own ${APP.user.role==='dept_head'?'department':APP.user.role==='preaching_coord'?'batch':'care list'}.</div>`:'')+
-    dataTable({id:'dev',exportName:'devotees',toolbar,cols:[
+    dataTable({id:'dev',exportName:'devotees',toolbar,mobList:devMobList(rows),cols:[
      {
        w:'22%',
        h: `<div class="col-filter-wrap">
@@ -9251,12 +9332,14 @@ function viewDevotee(id){
      <button class="btn pri" data-act="toast" data-msg="Note saved">Save note</button>
      <div style="height:15px"></div><div class="note">${esc(d.swabhav.nature)} by nature — suggested engagement: ${esc(d.swabhav.suggested)}. Interests: ${esc(d.swabhav.interests.join(', '))}.</div></div>`)
   }[tab];
-  return `<div class="card pad" style="margin-bottom:16px;display:flex;gap:18px;align-items:center;flex-wrap:wrap">
+  return `<div class="card pad dev-hero-card" style="margin-bottom:16px;display:flex;gap:18px;align-items:center;flex-wrap:wrap">
+    <div class="dev-hero-name-row">
     ${av(d.name,'l')}
     <div style="min-width:190px"><h1 style="font-size:23px">${esc(d.name)}</h1>
       <div class="tiny" style="margin-top:4px">${esc(d.occupation)} · ${esc(d.org)} · joined ${fmtD(d.joined)}</div>
       <div class="chips" style="margin-top:10px">${roleBadges}${sbadge(d.status)}${d.batch && batch(d.batch) ? badge('📖 ' + batch(d.batch).name, 'indigo') : ''}${d.dept && dept(d.dept) ? badge('🛕 ' + dept(d.dept).name, 'saffron') : ''}${d.careGroup && group(d.careGroup) ? badge('❤️ ' + group(d.careGroup).name, 'green') : ''}</div></div>
-    <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+    </div>
+    <div class="dev-hero-actions" style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
       ${(()=>{
         const cleanPhone = (d.phone||'').replace(/\D/g,'').slice(-10);
         const waGreeting = encodeURIComponent(`Hare Krishna ${d.name} Prabhu ji, `);
