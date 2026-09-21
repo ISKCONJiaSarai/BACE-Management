@@ -23708,6 +23708,7 @@ function render(){
   const layoutClass=`app-layout ${panelCollapsed || !isPinned ? 'panel-collapsed' : 'panel-pinned'}`;
   const isRouteChange = APP.lastRenderedRoute !== APP.route;
   APP.lastRenderedRoute = APP.route;
+  const viewClass = isRouteChange ? 'view route-enter' : 'view';
   const breadcrumbBar = (typeof renderBreadcrumbs === 'function')
     ? `<div class="global-breadcrumbs-bar" id="globalBreadcrumbsBar">
         <div class="global-breadcrumbs-inner">
