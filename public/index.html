@@ -1278,23 +1278,18 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
 .morning-charts-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-bottom:16px}
 .morning-view-btn-group{display:inline-flex;border:1.5px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)}
 @media(max-width:768px){
-  .morning-top-actions{width:100% !important;display:grid !important;grid-template-columns:repeat(2,1fr) !important;gap:8px !important}
-  .morning-top-actions .btn{width:100% !important;justify-content:center !important;text-align:center !important;padding:8px 10px !important;font-size:12px !important}
-}
-@media(max-width:440px){
-  .morning-top-actions{grid-template-columns:1fr !important}
-}
-@media(max-width:860px){
+  .morning-top-actions{width:100% !important;display:flex !important;gap:6px !important;flex-wrap:wrap !important}
+  .morning-top-actions .btn{flex:1 1 auto !important;justify-content:center !important;text-align:center !important;padding:7px 10px !important;font-size:12px !important}
   .morning-charts-grid{grid-template-columns:1fr !important}
   .morning-report-header{flex-direction:column !important;align-items:stretch !important;gap:12px !important}
   .morning-report-controls{width:100% !important;display:flex !important;flex-direction:column !important;align-items:stretch !important;gap:8px !important}
-  .morning-view-btn-group{display:flex !important;width:100% !important}
-  .morning-view-btn-group button{flex:1 1 0 !important;text-align:center !important;padding:7px 6px !important;font-size:12px !important}
-  .morning-report-controls select,.morning-report-controls button:not(.morning-view-btn-group button){width:100% !important}
+  .morning-view-btn-group{display:flex !important;flex-direction:row !important;width:100% !important;border-radius:10px !important}
+  .morning-view-btn-group button{flex:1 1 0 !important;text-align:center !important;padding:7px 4px !important;font-size:11.5px !important;white-space:nowrap !important;border-bottom:none !important;border-right:1px solid var(--line) !important}
+  .morning-view-btn-group button:last-child{border-right:none !important}
+  .morning-report-controls select{width:100% !important}
 }
 @media(max-width:520px){
-  .morning-view-btn-group{flex-direction:column !important}
-  .morning-view-btn-group button{border-bottom:1px solid var(--line) !important;border-right:none !important;width:100% !important}
+  .morning-view-btn-group button{padding:6px 2px !important;font-size:11px !important}
 }
 
 /* Responsive Accounts & Budgets KPI Grid */
@@ -3661,9 +3656,113 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-off
 }
 .detail-sheet-footer .btn{flex:1;justify-content:center;min-height:44px}
 .detail-sheet-footer .btn.pri{flex:2}
-@keyframes slideUp{
-  from{transform:translateY(100%)}
-  to{transform:translateY(0)}
+/* ── Phase 3: Mobile Stat Grids, Table Card Polish & Touch Tabs ── */
+@media(max-width:480px){
+  .grid:has(> .stat), .grid:has(> .stat-card), .g-batch-dash{
+    grid-template-columns:repeat(2, minmax(0, 1fr))!important;
+    gap:8px!important;
+  }
+  .stat{
+    padding:10px 12px!important;
+    border-radius:12px!important;
+  }
+  .stat .val{
+    font-size:22px!important;
+  }
+  .stat .lbl{
+    font-size:11px!important;
+  }
+  .stat .foot{
+    font-size:10px!important;
+  }
+}
+
+/* Horizontal scrollable tabs on touch screens */
+.tabs{
+  overflow-x:auto!important;
+  -webkit-overflow-scrolling:touch!important;
+  scrollbar-width:none!important;
+  flex-wrap:nowrap!important;
+}
+.tabs::-webkit-scrollbar{display:none}
+
+/* Mobile table card refinement */
+@media(max-width:760px){
+  .tbl-wrap{
+    overflow:visible!important;
+  }
+  table.tbl{
+    display:block!important;
+    width:100%!important;
+  }
+  table.tbl thead{
+    display:none!important;
+  }
+  table.tbl tbody{
+    display:flex!important;
+    flex-direction:column!important;
+    gap:9px!important;
+    width:100%!important;
+  }
+  table.tbl tr{
+    display:block!important;
+    width:100%!important;
+    box-sizing:border-box!important;
+    border:1px solid var(--line)!important;
+    border-radius:13px!important;
+    background:var(--surface)!important;
+    padding:10px 12px!important;
+    margin-bottom:0!important;
+    box-shadow:0 1px 3px rgba(0,0,0,0.03)!important;
+    transition:transform .12s ease, background .12s ease!important;
+  }
+  table.tbl tr.click:active{
+    background:var(--surface-2)!important;
+    transform:scale(0.99)!important;
+  }
+  table.tbl td{
+    display:flex!important;
+    align-items:center!important;
+    gap:8px!important;
+    padding:4px 0!important;
+    border:none!important;
+    font-size:12.5px!important;
+  }
+  table.tbl td:before{
+    content:attr(data-l)!important;
+    font-size:11px!important;
+    font-weight:600!important;
+    color:var(--ink-3)!important;
+    min-width:76px!important;
+    flex-shrink:0!important;
+  }
+  table.tbl td:first-child{
+    padding-bottom:8px!important;
+    margin-bottom:6px!important;
+    border-bottom:1px solid var(--line-2)!important;
+    font-size:14px!important;
+    font-weight:700!important;
+  }
+  table.tbl td:first-child:before{
+    display:none!important;
+  }
+  table.tbl td[data-l="Actions"], table.tbl td:last-child{
+    padding-top:8px!important;
+    margin-top:4px!important;
+    border-top:1px solid var(--line-2)!important;
+    justify-content:flex-end!important;
+  }
+  table.tbl td[data-l="Actions"]:before{
+    display:none!important;
+  }
+  .tbl-act{
+    min-width:34px!important;
+    min-height:34px!important;
+    display:inline-flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    border-radius:8px!important;
+  }
 }
 
 </style>
@@ -5394,7 +5493,7 @@ const APP={user:null,route:'#/',search:'',fabOpen:false,modal:'',tab:{},filters:
   sbClosed:localStorage.getItem('bace_sb_closed')==='1',
   mobileDrawerOpen:false,mobileSearchOpen:false,
   mobileNavOpen:false,todayPanelOpen:localStorage.getItem('bace_today_panel')!=='0',todayPinned:localStorage.getItem('bace_today_pinned')==='1',
-  mobileTodayOpen:false,
+  mobileTodayOpen:false,morningTableCollapsed:localStorage.getItem('bace_morning_table_collapsed')==='1',
   theme:localStorage.getItem('bace_theme')||(window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'),
   nav:{open:getSavedNavOpen()},sbScroll:0,chat:{thread:null},
   range:{from:iso(dayOff(-30)),to:iso(dayOff(30))},crumbLeaf:null,draft:{},lastRenderedRoute:null};
@@ -6296,7 +6395,14 @@ const CRUMB_PARENTS = {
 function renderBreadcrumbs(){
   const cleanRoute = APP.route.replace(/^#\/?/, '');
   const routeParts = cleanRoute.split('/').filter(Boolean);
-  if (!routeParts.length || routeParts[0] === '') return '';
+  if (!routeParts.length || routeParts[0] === '') {
+    return `<nav class="crumbs" aria-label="Breadcrumb navigation">
+      <span class="crumb-btn crumb-leaf" title="Dashboard">
+        <span style="font-size:13px;line-height:1;margin-right:2px">🏠</span>
+        <b>Home</b>
+      </span>
+    </nav>`;
+  }
 
   const part0 = routeParts[0];
   const crumbLabel = CRUMBS[part0] || (part0.charAt(0).toUpperCase() + part0.slice(1));
@@ -7124,8 +7230,17 @@ function insightsCard(){
     readyL1?[`🎓`,`${readyL1} Level 1 devotees may be ready for a progression review.`,'#/batches']:null,
     s.careWeek?[`❤️`,`${s.careWeek} care follow-ups are due this week.`,'#/care-followups']:null
   ].filter(Boolean);
-  return section('✨ What the data is saying',`<div class="list">${items.map(([em,t,r])=>`<a class="insight" href="${r}"><span class="ic">${em}</span><span>${esc(t)}</span></a>`).join('')}</div>`,
-    `<span class="tiny hide-mobile">Generated from stored records only</span>`);
+
+  const isAll = !!APP.showAllInsights;
+  const isMob = window.innerWidth <= 820;
+  const visibleItems = (isMob && !isAll) ? items.slice(0, 3) : items;
+  const toggleBtn = (isMob && items.length > 3)
+    ? `<button class="btn sm block" data-act="toggle-all-insights" style="width:100%;margin-top:8px;font-size:12px">${isAll ? '▴ Show fewer insights' : `▾ Show all ${items.length} insights`}</button>`
+    : '';
+
+  return collSection('dash_insights', '✨ What the data is saying',
+    `<div class="list">${visibleItems.map(([em,t,r])=>`<a class="insight" href="${r}"><span class="ic">${em}</span><span>${esc(t)}</span></a>`).join('')}</div>${toggleBtn}`,
+    `<span class="tiny hide-mobile">Generated from stored records only</span>`, true);
 }
 /* ---------------- Srila Prabhupada Nectar & Audio Ambience (MongoDB Connected) ---------------- */
 let PRABHUPADA_NECTAR_QUOTES = [
@@ -7495,6 +7610,21 @@ function prabhupadaNectarCard(){
   `;
 }
 
+function getPillarIsOpen(key){
+  if(APP.expandedPillars && APP.expandedPillars[key] !== undefined){
+    return APP.expandedPillars[key];
+  }
+  try {
+    const saved = localStorage.getItem('bace_pillar_' + key);
+    if(saved !== null) {
+      APP.expandedPillars = APP.expandedPillars || {};
+      APP.expandedPillars[key] = (saved === '1');
+      return APP.expandedPillars[key];
+    }
+  } catch(e){}
+  return false;
+}
+
 function togglePillarCard(key, cardEl){
   const card = cardEl || document.querySelector(`.pillar-card[data-pillar="${key}"]`);
   if(!card) return;
@@ -7502,11 +7632,14 @@ function togglePillarCard(key, cardEl){
   card.classList.toggle('is-expanded', isNowOpen);
   APP.expandedPillars = APP.expandedPillars || {};
   APP.expandedPillars[key] = isNowOpen;
+  try {
+    localStorage.setItem('bace_pillar_' + key, isNowOpen ? '1' : '0');
+  } catch(e){}
 }
 
 function pillarCardMgmt(){
   const s=STATS();
-  const isOpen = !!(APP.expandedPillars && APP.expandedPillars.mgmt);
+  const isOpen = getPillarIsOpen('mgmt');
   return `<div class="card pillar-card pillar-mgmt ${isOpen ? 'is-expanded' : ''}" data-pillar="mgmt">
     <div class="pillar-card-bg">🛕</div>
     <div class="card-b">
@@ -7589,7 +7722,7 @@ function pillarCardMgmt(){
 
 function pillarCardPreach(){
   const s=STATS(), batchesCount=activeBatches().length;
-  const isOpen = !!(APP.expandedPillars && APP.expandedPillars.preach);
+  const isOpen = getPillarIsOpen('preach');
   return `<div class="card pillar-card pillar-preach ${isOpen ? 'is-expanded' : ''}" data-pillar="preach">
     <div class="pillar-card-bg">📖</div>
     <div class="card-b">
@@ -7672,7 +7805,7 @@ function pillarCardPreach(){
 
 function pillarCardCare(){
   const s=STATS();
-  const isOpen = !!(APP.expandedPillars && APP.expandedPillars.care);
+  const isOpen = getPillarIsOpen('care');
   return `<div class="card pillar-card pillar-care ${isOpen ? 'is-expanded' : ''}" data-pillar="care">
     <div class="pillar-card-bg">❤️</div>
     <div class="card-b">
@@ -8808,10 +8941,21 @@ function viewDevotee(id){
     <div style="min-width:190px"><h1 style="font-size:23px">${esc(d.name)}</h1>
       <div class="tiny" style="margin-top:4px">${esc(d.occupation)} · ${esc(d.org)} · joined ${fmtD(d.joined)}</div>
       <div class="chips" style="margin-top:10px">${roleBadges}${sbadge(d.status)}${d.batch && batch(d.batch) ? badge('📖 ' + batch(d.batch).name, 'indigo') : ''}${d.dept && dept(d.dept) ? badge('🛕 ' + dept(d.dept).name, 'saffron') : ''}${d.careGroup && group(d.careGroup) ? badge('❤️ ' + group(d.careGroup).name, 'green') : ''}</div></div>
-    <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
+    <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      ${(()=>{
+        const cleanPhone = (d.phone||'').replace(/\D/g,'').slice(-10);
+        if(cleanPhone.length >= 10){
+          return `<a class="btn sm" href="tel:+91${cleanPhone}" style="color:#059669;border-color:rgba(16,185,129,.3);background:rgba(16,185,129,.06);text-decoration:none;display:inline-flex;align-items:center;gap:4px">📞 Call</a>
+          <a class="btn sm" href="https://wa.me/91${cleanPhone}" target="_blank" rel="noopener" style="color:#059669;border-color:rgba(16,185,129,.3);background:rgba(16,185,129,.06);text-decoration:none;display:inline-flex;align-items:center;gap:4px">💬 WhatsApp</a>`;
+        }
+        return '';
+      })()}
       <button class="btn" data-act="dm" data-id="${d.id}">${ic('chat')}Message</button>
       <button class="btn" data-act="add-followup">${ic('clock')}Follow-up</button>
-      ${canAssignRole()?`<button class="btn" data-act="assign-role" data-id="${d.id}" title="Assign role from hierarchy">🧭 Assign role</button>`:''}\n      <button class="btn pri" data-act="edit-devotee" data-id="${d.id}">${ic('edit')}Edit profile</button>\n      ${canDeleteDevotee()?`<button class="btn danger" data-act="delete-devotee" data-id="${d.id}" style="color:var(--danger);border-color:rgba(220,53,69,0.3);background:rgba(220,53,69,0.05)">🗑 Delete Devotee Data</button>`:''}</div>
+      ${canAssignRole()?`<button class="btn" data-act="assign-role" data-id="${d.id}" title="Assign role from hierarchy">🧭 Assign role</button>`:''}
+      <button class="btn pri" data-act="edit-devotee" data-id="${d.id}">${ic('edit')}Edit profile</button>
+      ${canDeleteDevotee()?`<button class="btn danger" data-act="delete-devotee" data-id="${d.id}" style="color:var(--danger);border-color:rgba(220,53,69,0.3);background:rgba(220,53,69,0.05)">🗑 Delete Devotee Data</button>`:''}
+    </div>
    </div>
    <div class="tabs">${tabs.map(t=>`<button class="${t===tab?'on':''}" data-act="tab" data-k="devotee" data-v="${t}">${t}${t==='Care'&&!careOK?' 🔒':''}</button>`).join('')}</div>
    ${body}`;
@@ -11962,7 +12106,11 @@ function morningProgramPanel(){
         </div>
 
         <!-- Devotee Rows Table -->
-        <div class="tbl-wrap" id="morning-report-table">
+        <div class="card-h click" data-act="toggle-morning-table" style="cursor:pointer;padding:10px 14px;border:1px solid var(--line);border-radius:10px;display:flex;align-items:center;justify-content:space-between;background:var(--surface);margin-bottom:10px;-webkit-tap-highlight-color:transparent">
+          <span style="font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px">👥 Devotee Check-in Records (${rows.length})</span>
+          <button type="button" class="btn sm ghost" style="font-size:11.5px;padding:3px 8px;font-weight:600;pointer-events:none">${APP.morningTableCollapsed ? 'Show Table ▼' : 'Hide Table ▲'}</button>
+        </div>
+        <div class="tbl-wrap" id="morning-report-table" style="${APP.morningTableCollapsed ? 'display:none' : ''}">
           <table class="tbl">
             <thead>
               <tr>
@@ -12081,7 +12229,11 @@ function morningProgramPanel(){
           ` : ''}
         </div>
 
-        <div class="tbl-wrap" id="morning-report-table">
+        <div class="card-h click" data-act="toggle-morning-table" style="cursor:pointer;padding:10px 14px;border:1px solid var(--line);border-radius:10px;display:flex;align-items:center;justify-content:space-between;background:var(--surface);margin-bottom:10px;-webkit-tap-highlight-color:transparent">
+          <span style="font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px">👥 Weekly Devotee Summary (${weekly.devStats ? weekly.devStats.length : 0})</span>
+          <button type="button" class="btn sm ghost" style="font-size:11.5px;padding:3px 8px;font-weight:600;pointer-events:none">${APP.morningTableCollapsed ? 'Show Table ▼' : 'Hide Table ▲'}</button>
+        </div>
+        <div class="tbl-wrap" id="morning-report-table" style="${APP.morningTableCollapsed ? 'display:none' : ''}">
           <table class="tbl">
             <thead>
               <tr>
@@ -12203,7 +12355,11 @@ function morningProgramPanel(){
           ` : ''}
         </div>
 
-        <div class="tbl-wrap" id="morning-report-table">
+        <div class="card-h click" data-act="toggle-morning-table" style="cursor:pointer;padding:10px 14px;border:1px solid var(--line);border-radius:10px;display:flex;align-items:center;justify-content:space-between;background:var(--surface);margin-bottom:10px;-webkit-tap-highlight-color:transparent">
+          <span style="font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px">👥 Monthly Devotee Summary (${monthly.devStats ? monthly.devStats.length : 0})</span>
+          <button type="button" class="btn sm ghost" style="font-size:11.5px;padding:3px 8px;font-weight:600;pointer-events:none">${APP.morningTableCollapsed ? 'Show Table ▼' : 'Hide Table ▲'}</button>
+        </div>
+        <div class="tbl-wrap" id="morning-report-table" style="${APP.morningTableCollapsed ? 'display:none' : ''}">
           <table class="tbl">
             <thead>
               <tr>
@@ -23581,9 +23737,26 @@ document.addEventListener('click',e=>{
     root.querySelectorAll(`.mob-tab-btn[data-tab-bar="${bar}"]`).forEach(b => b.classList.toggle('on', b.dataset.tabId===tabId));
     root.querySelectorAll(`.mob-tab-panel[data-tab-bar="${bar}"]`).forEach(p => p.classList.toggle('on', p.dataset.tabId===tabId));
     break;}
-  case 'toggle-section-collapsible':stop();{
-    const card = t.closest('.section-collapsible');
-    if(card) card.classList.toggle('is-collapsed');
+  case 'toggle-section-collapsible':
+  case 'toggle-coll-section':stop();{
+    const key = t.dataset.collKey;
+    const card = t.closest('.coll-section') || t.closest('.section-collapsible');
+    if(card) {
+      const isNowOpen = !card.classList.contains('is-open');
+      card.classList.toggle('is-open', isNowOpen);
+      if(key) {
+        try { localStorage.setItem('bace_coll_' + key, isNowOpen ? '1' : '0'); } catch(e){}
+      }
+    }
+    break;}
+  case 'toggle-all-insights':stop();{
+    APP.showAllInsights = !APP.showAllInsights;
+    render();
+    break;}
+  case 'toggle-morning-table':stop();{
+    APP.morningTableCollapsed = !APP.morningTableCollapsed;
+    try { localStorage.setItem('bace_morning_table_collapsed', APP.morningTableCollapsed ? '1' : '0'); } catch(e){}
+    render();
     break;}
 
   /* ---- session / navigation ---- */
