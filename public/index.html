@@ -5954,7 +5954,7 @@ function saveNavOpen(){
 const APP={user:null,route:'#/',search:'',fabOpen:false,modal:'',tab:{},filters:{},page:{},perPage:{},
   sbClosed:localStorage.getItem('bace_sb_closed')==='1',
   mobileDrawerOpen:false,mobileSearchOpen:false,
-  mobileNavOpen:false,mobileNavSections:{},todayPanelOpen:localStorage.getItem('bace_today_panel')!=='0',todayPinned:localStorage.getItem('bace_today_pinned')==='1',
+  mobileNavOpen:false,mobileNavSections:{},mobileNavExpanded:null,todayPanelOpen:localStorage.getItem('bace_today_panel')!=='0',todayPinned:localStorage.getItem('bace_today_pinned')==='1',
   mobileTodayOpen:false,morningTableCollapsed:localStorage.getItem('bace_morning_table_collapsed')==='1',
   theme:localStorage.getItem('bace_theme')||(window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'),
   nav:{open:getSavedNavOpen()},sbScroll:0,chat:{thread:null},
@@ -6880,7 +6880,7 @@ function mobileNavDropdown(){
     {t:'Devotees',em:'👥',r:'#/devotees',on:route==='devotees'||route==='devotee',m:'directory'},
   ];
   const sections=[
-    {title:'Management',items:[
+    {id:'mgmt', title:'Management', em:'🛕', hasActive:mgmtRoutes.includes(route), items:[
       {t:'Management Dashboard',em:'📊',r:'#/mgmt',m:'management'},
       {t:'BACE Pillars',em:'🛕',r:'#/attendance',m:'management'},
       {t:'Departments',em:'🏢',r:'#/depts',m:'management'},
@@ -6888,7 +6888,7 @@ function mobileNavDropdown(){
       {t:'Assign Seva',em:'📋',r:'#/assign',m:'assign'},
       {t:'SOPs',em:'📘',r:'#/sops'},
     ]},
-    {title:'Preaching',items:[
+    {id:'preach', title:'Preaching', em:'📖', hasActive:preachRoutes.includes(route), items:[
       {t:'Preaching Dashboard',em:'📊',r:'#/preaching',m:'preaching'},
       {t:'Batch Management',em:'🗂',r:'#/batches',m:'preaching'},
       {t:'Contacts & Pipeline',em:'🌱',r:'#/contacts',m:'preaching'},
@@ -6896,7 +6896,7 @@ function mobileNavDropdown(){
       {t:'Classes & Events',em:'✨',r:'#/classes',m:'preaching'},
       {t:'Attendance',em:'✅',r:'#/batch-attendance',m:'preaching'},
     ]},
-    {title:'Devotee Care',items:[
+    {id:'care', title:'Devotee Care', em:'❤️', hasActive:careRoutes.includes(route), items:[
       {t:'Care Dashboard',em:'📊',r:'#/care',m:'care'},
       {t:'Friends & Groups',em:'👥',r:'#/groups',m:'care'},
       {t:'Sadhana & Swabhav',em:'📿',r:'#/sadhana',m:'care'},
@@ -6912,10 +6912,32 @@ function mobileNavDropdown(){
     {t:'Notifications',em:'🔔',r:'#/notifications'},
     {t:'Administration',em:'⚙️',r:'#/admin',m:'admin'},
   ];
+  const chevronSvg=`<svg class="mnav-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>`;
+
   return `<div class="mobile-nav-dropdown">
     ${mainItems.filter(i=>!i.m||can(i.m)).map(i=>`<a href="${i.r}" class="${i.on?'on':''}" data-act="mobile-nav-go" data-r="${i.r}"><span>${i.em}</span>${i.t}</a>`).join('')}
-    ${sections.map(s=>`<div class="mnav-section">${s.title}</div><div class="mnav-sub">${s.items.filter(i=>!i.m||can(i.m)).map(i=>`<a href="${i.r}" data-act="mobile-nav-go" data-r="${i.r}"><span>${i.em}</span>${i.t}</a>`).join('')}</div>`).join('')}
-    <div class="mnav-section">More</div>
+    ${sections.map(s=>{
+      const validItems=s.items.filter(i=>!i.m||can(i.m));
+      if(!validItems.length) return '';
+      const isOpen=APP.mobileNavExpanded===s.id;
+      return `<div class="mnav-section mnav-accordion-header ${isOpen?'open':''} ${s.hasActive?'has-active':''}" data-act="toggle-mnav-section" data-sec="${s.id}" role="button" aria-expanded="${isOpen}">
+        <div class="mnav-sec-left">
+          <span style="font-size:13px">${s.em}</span>
+          <span>${s.title}</span>
+        </div>
+        <div class="mnav-sec-right">
+          ${s.hasActive?`<span class="mnav-active-dot" title="Active section"></span>`:''}
+          ${chevronSvg}
+        </div>
+      </div>
+      <div class="mnav-sub mnav-sub-collapsible ${isOpen?'open':''}" data-sec="${s.id}">
+        ${validItems.map(i=>{
+          const isChildOn=(APP.route===i.r)||(i.r!=='#/'&&APP.route.startsWith(i.r+'/'));
+          return `<a href="${i.r}" class="${isChildOn?'on':''}" data-act="mobile-nav-go" data-r="${i.r}"><span>${i.em}</span>${i.t}</a>`;
+        }).join('')}
+      </div>`;
+    }).join('')}
+    <div class="mnav-section" style="margin-top:4px">More</div>
     ${bottomItems.filter(i=>!i.m||can(i.m)).map(i=>`<a href="${i.r}" class="${i.on?'on':''}" data-act="mobile-nav-go" data-r="${i.r}"><span>${i.em}</span>${i.t}</a>`).join('')}
     <div style="border-top:1px solid var(--line);margin:8px 0;padding-top:8px;display:flex;align-items:center;gap:8px">
       <button class="icon-btn" data-act="account" style="border:none">${av(nameOf(APP.user.devotee),'s')}</button>
@@ -24963,6 +24985,7 @@ document.addEventListener('click',e=>{
   case 'toggle-mobile-nav':{stop();
     if(APP.mobileNavOpen){
       const mn=document.querySelector('.mobile-nav-dropdown');
+      APP.mobileNavExpanded=null;
       if(mn){
         mn.classList.add('closing');
         setTimeout(()=>{APP.mobileNavOpen=false;render();}, 170);
@@ -24970,11 +24993,14 @@ document.addEventListener('click',e=>{
         APP.mobileNavOpen=false;render();
       }
     } else {
-      APP.mobileNavOpen=true;render();
+      APP.mobileNavOpen=true;
+      APP.mobileNavExpanded=null;
+      render();
     }
     break}
   case 'close-mobile-nav':{stop();
     const mn=document.querySelector('.mobile-nav-dropdown');
+    APP.mobileNavExpanded=null;
     if(mn){
       mn.classList.add('closing');
       setTimeout(()=>{APP.mobileNavOpen=false;render();}, 170);
@@ -24982,7 +25008,12 @@ document.addEventListener('click',e=>{
       APP.mobileNavOpen=false;render();
     }
     break}
-  case 'mobile-nav-go':{stop();APP.mobileNavOpen=false;go(t.dataset.r||t.getAttribute('href'));break}
+  case 'toggle-mnav-section':{stop();
+    const sec=t.dataset.sec;
+    APP.mobileNavExpanded=(APP.mobileNavExpanded===sec)?null:sec;
+    render();
+    break}
+  case 'mobile-nav-go':{stop();APP.mobileNavOpen=false;APP.mobileNavExpanded=null;go(t.dataset.r||t.getAttribute('href'));break}
   case 'open-mobile-today':{stop();APP.mobileTodayOpen=true;document.body.classList.add('mobile-today-open');render();break}
   case 'close-mobile-today':{stop();closeMobileToday();break}
   case 'open-today-item':{
