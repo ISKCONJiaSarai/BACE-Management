@@ -2469,6 +2469,19 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-off
 .top-nav-amb-btn:hover{background:var(--surface-2);color:var(--accent);border-color:rgba(245,158,11,0.4);transform:scale(1.06)}
 .top-nav-amb-btn.playing{background:#f59e0b!important;color:#fff!important;border-color:#d97706!important;box-shadow:0 2px 8px rgba(245,158,11,0.4)!important}
 .top-nav-amb-btn.playing:hover{background:#d97706!important;transform:scale(1.06)}
+.mobile-amb-btn{display:none}
+@media(max-width:1080px){
+  .mobile-amb-btn{
+    display:inline-flex!important;align-items:center;justify-content:center;
+    width:36px;height:36px;min-width:36px;margin:0 2px 0 0;
+    border-radius:10px;border:1px solid var(--line);background:var(--surface);
+    color:var(--ink-2);cursor:pointer;transition:all .2s;flex:none;
+  }
+  .mobile-amb-btn:hover{background:var(--surface-2);transform:scale(1.05)}
+}
+@media(max-width:480px){
+  .mobile-amb-btn{width:32px;height:32px;min-width:32px;border-radius:8px;margin:0 1px 0 0}
+}
 
 .nectar-card-wrapper{transition:box-shadow .25s ease, transform .25s ease}
 .nectar-quote-box{animation:nectarFadeSlide .4s cubic-bezier(0.16, 1, 0.3, 1)}
@@ -4511,11 +4524,12 @@ function navItem(i,pill){
 function sidebar(){
   return '';
 }
-function topNavMusicBtn() {
+function topNavMusicBtn(isMobile = false) {
   const isP = typeof BACE_AMB !== 'undefined' && BACE_AMB.playing;
-  const playSvg = '<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style="margin-left:1.5px"><path d="M8 5v14l11-7z"/></svg>';
-  const pauseSvg = '<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/></svg>';
-  return `<button class="top-nav-amb-btn ${isP ? 'playing' : ''}" id="topNavAmbPlayBtn" data-act="toggle-ambience" title="${isP ? 'Pause Kirtan' : 'Play Kirtan'}" aria-label="Toggle Kirtan Music">
+  const playSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="margin-left:1.5px"><path d="M8 5v14l11-7z"/></svg>';
+  const pauseSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/></svg>';
+  const cls = isMobile ? 'top-nav-amb-btn mobile-amb-btn' : 'top-nav-amb-btn desktop-amb-btn';
+  return `<button class="${cls} ${isP ? 'playing' : ''}" data-act="toggle-ambience" title="${isP ? 'Pause Kirtan' : 'Play Kirtan'}" aria-label="Toggle Kirtan Music">
     ${isP ? pauseSvg : playSvg}
   </button>`;
 }
@@ -4614,6 +4628,7 @@ function appHeader(){
     </nav>
     <div class="header-controls">
       <div class="searchbox" style="margin:0">${ic('search')}<input type="search" placeholder="Search…" value="${esc(APP.search)}" data-act="global-search" aria-label="Global search"></div>
+      ${topNavMusicBtn(true)}
       <button class="theme-toggle" data-act="toggle-theme" title="Toggle theme">${APP.theme==='dark'?sunSvg:moonSvg}</button>
       <button class="icon-btn" data-act="go" data-r="#/messages" title="Messages">${ic('chat')}${unreadMsgs()?`<i class="dot">${unreadMsgs()}</i>`:''}</button>
       <button class="icon-btn" data-act="notifications" title="Notifications">${ic('bell')}${unread?`<i class="dot">${unread}</i>`:''}</button>
@@ -5844,13 +5859,16 @@ function updateAmbienceUI() {
     if (BACE_AMB.playing) btn.classList.add('pri');
     else btn.classList.remove('pri');
   }
-  if (topNavBtn) {
-    const playSvg = '<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style="margin-left:1.5px"><path d="M8 5v14l11-7z"/></svg>';
-    const pauseSvg = '<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/></svg>';
-    topNavBtn.innerHTML = BACE_AMB.playing ? pauseSvg : playSvg;
-    topNavBtn.title = BACE_AMB.playing ? 'Pause Kirtan' : 'Play Kirtan';
-    if (BACE_AMB.playing) topNavBtn.classList.add('playing');
-    else topNavBtn.classList.remove('playing');
+  const topNavBtns = document.querySelectorAll('.top-nav-amb-btn');
+  if (topNavBtns && topNavBtns.length) {
+    const playSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="margin-left:1.5px"><path d="M8 5v14l11-7z"/></svg>';
+    const pauseSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/></svg>';
+    topNavBtns.forEach(btn => {
+      btn.innerHTML = BACE_AMB.playing ? pauseSvg : playSvg;
+      btn.title = BACE_AMB.playing ? 'Pause Kirtan' : 'Play Kirtan';
+      if (BACE_AMB.playing) btn.classList.add('playing');
+      else btn.classList.remove('playing');
+    });
   }
   if (desc) {
     desc.textContent = cur.title;
