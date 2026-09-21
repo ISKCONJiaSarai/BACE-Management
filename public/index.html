@@ -766,9 +766,36 @@ body.mobile-today-open{
 .shell.sb-closed .main{margin-left:0}
 /* Legacy topbar hidden — replaced by app-header */
 .topbar{display:none!important}
+/* ========== GLOBAL BREADCRUMBS BAR (Directly below header throughout website) ========== */
+.global-breadcrumbs-bar{
+  width:100%;
+  box-sizing:border-box;
+  padding:10px 28px 9px 28px;
+  background:var(--surface);
+  border-bottom:1px solid var(--line);
+  display:flex;
+  align-items:center;
+  min-height:44px;
+  position:sticky;
+  top:var(--header-h);
+  z-index:95;
+  backdrop-filter:blur(16px) saturate(1.4);
+  -webkit-backdrop-filter:blur(16px) saturate(1.4);
+  transition:background .2s, border-color .2s;
+}
+.global-breadcrumbs-inner{
+  width:100%;
+  display:flex;
+  align-items:center;
+  overflow-x:auto;
+  scrollbar-width:none;
+}
+.global-breadcrumbs-inner::-webkit-scrollbar{
+  display:none;
+}
 .crumbs{
   font-size:12.5px;color:var(--ink-3);display:flex;gap:6px;align-items:center;
-  min-width:0;flex-wrap:wrap;padding:0 0 14px;margin:0;
+  min-width:0;flex-wrap:nowrap;padding:0;margin:0;
 }
 .crumbs .crumb-btn{
   display:inline-flex;align-items:center;gap:6px;
@@ -780,6 +807,8 @@ body.mobile-today-open{
   transition:all .18s cubic-bezier(0.16,1,0.3,1);
   user-select:none;
   line-height:1.3;
+  white-space:nowrap;
+  flex-shrink:0;
 }
 .crumbs .crumb-btn:hover{
   background:var(--surface-2);color:var(--ink);
@@ -800,7 +829,7 @@ body.mobile-today-open{
   color:var(--accent);
 }
 .crumbs .crumb-btn.crumb-leaf{
-  background:var(--surface);
+  background:var(--surface-2);
   color:var(--ink);
   border-color:var(--line);
   font-weight:700;
@@ -810,7 +839,29 @@ body.mobile-today-open{
   background:var(--surface-2);
 }
 .crumbs .crumb-sep{
-  color:var(--ink-3);opacity:0.4;font-size:13px;user-select:none;display:inline-flex;align-items:center;
+  color:var(--ink-3);opacity:0.4;font-size:13px;user-select:none;display:inline-flex;align-items:center;flex-shrink:0;margin:0 1px;
+}
+@media(max-width:768px){
+  .global-breadcrumbs-bar{
+    padding:8px 14px 7px 14px;
+    min-height:40px;
+  }
+  .crumbs .crumb-btn{
+    padding:4px 10px;
+    font-size:12px;
+    border-radius:8px;
+  }
+}
+@media(max-width:480px){
+  .global-breadcrumbs-bar{
+    padding:6px 10px;
+    min-height:36px;
+  }
+  .crumbs .crumb-btn span{
+    max-width:110px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:inline-block;
+    vertical-align:middle;
+  }
 }
 .searchbox{position:relative;width:min(260px,28vw)}
 .searchbox input{
@@ -6077,8 +6128,7 @@ function tcrRow(opts={}){
 
 /* ---------- head / section / stat ---------- */
 function head(eyebrow,title,sub,actions='',extraClass=''){
-  const crumbs = (typeof renderBreadcrumbs === 'function') ? renderBreadcrumbs() : '';
-  return `<div class="page-head ${extraClass}">${crumbs}<div><div class="eyebrow">${esc(eyebrow)}</div><h1>${esc(title)}</h1>${sub?`<p class="sub">${esc(sub)}</p>`:''}</div>
+  return `<div class="page-head ${extraClass}"><div><div class="eyebrow">${esc(eyebrow)}</div><h1>${esc(title)}</h1>${sub?`<p class="sub">${esc(sub)}</p>`:''}</div>
   <div class="actions">${actions}</div></div>`;
 }
 function section(title,body,right=''){
@@ -23658,10 +23708,19 @@ function render(){
   const layoutClass=`app-layout ${panelCollapsed || !isPinned ? 'panel-collapsed' : 'panel-pinned'}`;
   const isRouteChange = APP.lastRenderedRoute !== APP.route;
   APP.lastRenderedRoute = APP.route;
-  const viewClass = isRouteChange ? 'view route-enter' : 'view';
+  const breadcrumbBar = (typeof renderBreadcrumbs === 'function')
+    ? `<div class="global-breadcrumbs-bar" id="globalBreadcrumbsBar">
+        <div class="global-breadcrumbs-inner">
+          ${renderBreadcrumbs()}
+        </div>
+      </div>`
+    : '';
   app.innerHTML=`${appHeader()}
     <div class="${layoutClass}">
-      <div class="main"><div class="${viewClass}">${body}</div></div>
+      <div class="main">
+        ${breadcrumbBar}
+        <div class="${viewClass}">${body}</div>
+      </div>
       ${globalTodayPanel()}
     </div>
     ${botnav()}${fab()}${modalHTML()}${mobileTodayDrawer()}
