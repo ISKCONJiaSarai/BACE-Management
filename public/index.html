@@ -1455,11 +1455,17 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
 @keyframes slide{from{transform:translateX(32px);opacity:0}to{transform:none;opacity:1}}
 @keyframes slideOut{to{transform:translateX(100%);opacity:0}}
 @media(max-width:620px){
-  .modal{border-radius:24px 24px 0 0;max-height:94vh;width:100%;animation:sheetUp .24s cubic-bezier(0.16,1,0.3,1)}
+  .modal{border-radius:24px 24px 0 0;max-height:94vh;width:100%;animation:sheetUp .24s cubic-bezier(0.16,1,0.3,1);touch-action:pan-y}
+  .modal::before{
+    content:'';display:block;width:38px;height:4.5px;border-radius:4px;
+    background:var(--line-2);margin:10px auto 4px;flex-shrink:0;cursor:grab;
+  }
+  .modal-h{padding:11px 18px!important}
   .scrim.closing .modal{animation:sheetDown .18s cubic-bezier(0.4,0,1,1) forwards!important}
   .scrim{padding:0;place-items:end center}
 }
 @keyframes sheetDown{to{transform:translateY(100%)}}
+
 
 /* ---------- tabs ---------- */
 .tabs{display:flex;gap:4px;border-bottom:1.5px solid var(--line);overflow-x:auto;margin-bottom:18px}
@@ -6998,6 +7004,26 @@ function closeMobileToday(){
     render();
   }
 }
+function closeModalWithAnim(cb){
+  if(typeof APP !== 'undefined' && APP.accountsState){
+    APP.accountsState.activeModal = null;
+    APP.accountsState.editingExpense = null;
+    APP.accountsState.editingBudgetDept = null;
+  }
+  const modalWrap = document.querySelector('.scrim, .drawer-wrap');
+  if(modalWrap && !modalWrap.classList.contains('closing')){
+    modalWrap.classList.add('closing');
+    setTimeout(()=>{
+      APP.modal='';APP.customModalHtml='';APP.fabOpen=false;
+      if(typeof cb === 'function') cb();
+      render();
+    }, 180);
+  } else {
+    APP.modal='';APP.customModalHtml='';APP.fabOpen=false;
+    if(typeof cb === 'function') cb();
+    render();
+  }
+}
 function mobileTodayDrawer(){
   if(!APP.mobileTodayOpen)return '';
   const t=iso(TODAY);
@@ -7135,7 +7161,7 @@ function botnav(){
   }).join('')}</nav>`;
 }
 function fab(){
-  const acts=[['Assign seva','📋','open-assign','assign'],['Schedule class','🗓️','open-schedule','preaching'],['Create event / camp','✨','open-schedule-event','preaching'],['Add devotee','👥','add-devotee','directory'],
+  const acts=[['Assign seva','📋','open-assign','assign'],['Schedule class','🗓️','open-schedule','preaching'],['Create event / camp','✨','open-schedule-event','preaching'],['Add to calendar','📅','open-calendar-program','preaching'],['Add devotee','👥','add-devotee','directory'],
    ['Add contact','🌱','add-contact','preaching'],['Mark attendance','✅','go-attendance','batch-attendance'],
    ['Create follow-up','⏰','add-followup','preaching'],['Create group','🫂','add-group','care'],
    ['New message','💬','go-messages','messages'],['Submit report','📄','add-report','reports']].filter(a=>can(a[3]));
