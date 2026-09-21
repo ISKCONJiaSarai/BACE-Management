@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -1341,6 +1341,19 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
 }
 @media(max-width:520px){
   .morning-view-btn-group button{padding:6px 2px !important;font-size:11px !important}
+}
+
+/* Morning period filter toolbar (weekly/monthly select dropdowns) */
+.morning-period-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.morning-period-toolbar select{flex:1 1 160px;min-width:0}
+.morning-period-toolbar>div{flex:1 1 200px;min-width:0}
+/* Morning date picker row */
+.morning-exact-date-picker{display:flex;align-items:center;gap:6px;flex-wrap:wrap;width:100%}
+@media(max-width:640px){
+  .morning-period-toolbar{flex-direction:column;align-items:stretch}
+  .morning-period-toolbar select,.morning-period-toolbar>div{flex:none;width:100%}
+  .morning-exact-date-picker{flex-direction:column;align-items:stretch}
+  .morning-exact-date-picker input,.morning-exact-date-picker select{width:100%}
 }
 
 /* Responsive Accounts & Budgets KPI Grid */
@@ -9615,46 +9628,46 @@ function deptDashboardBody(dp){
     ${stat('Budget used',m.util+'%',money(dp.budget.spent)+' of '+money(dp.budget.allocated),{em:'🧾',r:'#/reports'})}</div>
    ${teamSection({incharge:dp.incharge,coordinator:dp.head,volunteers:(dp.volunteers||[]),canEdit:ownsDept(dp.id),editAct:'edit-dept',editId:dp.id})}
    <div class="grid g-2-1" style="margin-bottom:15px">
-    ${section("📅 Today's activities",today.length?`<div class="tbl-wrap">${actTable(today)}</div>`
+    ${collSection('dept-today-'+dp.id,"📅 Today's activities",today.length?`<div class="tbl-wrap">${actTable(today)}</div>`
       :emptyState('Nothing scheduled today','No activities on the roster for today in this department.',ownsDept(dp.id)?`<button class="btn pri" data-act="open-assign" data-type="Seva" data-dept="${dp.id}">Assign seva</button>`:''),
-      ownsDept(dp.id)?`<button class="btn sm pri" data-act="open-assign" data-type="Seva" data-dept="${dp.id}">${ic('plus')}Assign seva</button>`:'')}
+      ownsDept(dp.id)?`<button class="btn sm pri" data-act="open-assign" data-type="Seva" data-dept="${dp.id}">${ic('plus')}Assign seva</button>`:'',true)}
     <div style="display:flex;flex-direction:column;gap:15px">
-      ${section('📄 Weekly report',rep?`<div class="card-b"><div class="note" style="border-left-color:var(--amber)">The report for ${esc(rep.period)} has not been submitted.</div>
+      ${collSection('dept-report-'+dp.id,'📄 Weekly report',rep?`<div class="card-b"><div class="note" style="border-left-color:var(--amber)">The report for ${esc(rep.period)} has not been submitted.</div>
         <button class="btn pri block" style="margin-top:12px" data-act="add-report" data-id="${dp.id}">${ic('doc')}Submit report</button></div>`
         :`<div class="card-b"><div class="note" style="border-left-color:var(--green)">This week's report is submitted. Reports run ${esc(dp.reportFreq.toLowerCase())}.</div>
-          <button class="btn block" style="margin-top:12px" data-act="go" data-r="#/reports">View report history</button></div>`)}
-      ${section('🎯 Open action items',actions.length?`<div class="list">${actions.slice(0,5).map(t=>`<div class="li click" data-act="open-activity" data-id="${t.id}">
+          <button class="btn block" style="margin-top:12px" data-act="go" data-r="#/reports">View report history</button></div>`,'',true)}
+      ${collSection('dept-actions-'+dp.id,'🎯 Open action items',actions.length?`<div class="list">${actions.slice(0,5).map(t=>`<div class="li click" data-act="open-activity" data-id="${t.id}">
         <span class="grow"><span class="t">${esc(t.name)}</span><span class="d">${esc(nameOf(t.responsible))} · due ${relD(t.due)}</span></span>${sbadge(t.priority)}</div>`).join('')}</div>`
-        :emptyState('No open action items','Everything in this department is closed out.','','calm'))}
+        :emptyState('No open action items','Everything in this department is closed out.','','calm'),'',true)}
     </div></div>
    <div class="grid g-2-1" style="margin-bottom:15px">
-    ${section('📊 Monthly trend',`<div class="card-b">${lineChart(trend,{unit:'%',color:'var(--saffron)'})}</div>`)}
-    ${section('🔍 Service performance',`<div class="card-b">
+    ${collSection('dept-trend-'+dp.id,'📊 Monthly trend',`<div class="card-b">${lineChart(trend,{unit:'%',color:'var(--saffron)'})}</div>`,'',true)}
+    ${collSection('dept-perf-'+dp.id,'🔍 Service performance',`<div class="card-b">
       <div class="list" style="border:1px solid var(--line);border-radius:12px">
         <button class="li click" data-act="drill-dept-list" data-id="${dp.id}" data-kind="Completed"><span class="grow"><span class="t">Completed</span></span><b>${m.done}</b>${ic('arrow')}</button>
         <button class="li click" data-act="drill-dept-list" data-id="${dp.id}" data-kind="Missed"><span class="grow"><span class="t">Missed</span></span><b>${m.missed}</b>${ic('arrow')}</button>
         <button class="li click" data-act="drill-dept-list" data-id="${dp.id}" data-kind="Pending"><span class="grow"><span class="t">Pending</span></span><b>${m.pending}</b>${ic('arrow')}</button>
         <button class="li click" data-act="drill-dept-list" data-id="${dp.id}" data-kind="Another"><span class="grow"><span class="t">Completed by another devotee</span></span><b>${m.byAnother}</b>${ic('arrow')}</button>
-      </div><div class="tiny" style="margin-top:9px">Every number opens the underlying records.</div></div>`)}</div>
+      </div><div class="tiny" style="margin-top:9px">Every number opens the underlying records.</div></div>`,'',true)}</div>
    ${dp.module?deptModule(dp):''}
    <div class="grid g-2-1" style="margin-bottom:15px">
-    ${section('👥 Volunteer performance',members.length?`<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Volunteer</th><th>Role</th><th>Assigned</th><th>Completed</th><th>Attendance</th><th>Status</th></tr></thead><tbody>
+    ${collSection('dept-vols-'+dp.id,'👥 Volunteer performance',members.length?`<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Volunteer</th><th>Role</th><th>Assigned</th><th>Completed</th><th>Attendance</th><th>Status</th></tr></thead><tbody>
       ${members.map(mm=>{const d=dv(mm.devotee);const asg=DB.assignments.filter(x=>x.devotee===d.id&&acts.some(a=>a.id===x.activity));
         return `<tr class="click" data-act="open-devotee" data-id="${d.id}"><td data-l="Volunteer"><div class="who">${av(d.name)}<b>${esc(d.name)}</b></div></td>
         <td data-l="Role">${esc(mm.role)}</td><td data-l="Assigned">${asg.length}</td><td data-l="Completed">${asg.filter(x=>x.state.startsWith('Completed')).length}</td>
         <td data-l="Attendance"><div style="min-width:88px">${prog(d.attendancePct)}<span class="tiny">${d.attendancePct}%</span></div></td>
         <td data-l="Status">${sbadge(d.status)}</td></tr>`}).join('')}</tbody></table></div>`
       :emptyState('No volunteers yet','Add volunteers so seva can be allocated.',''),
-      ownsDept(dp.id)?`<button class="btn sm" data-act="add-dept-member" data-id="${dp.id}">${ic('plus')}Add volunteer</button>`:'')}
+      ownsDept(dp.id)?`<button class="btn sm" data-act="add-dept-member" data-id="${dp.id}">${ic('plus')}Add volunteer</button>`:'',true)}
     <div style="display:flex;flex-direction:column;gap:15px">
-      ${section('🧾 Budget',`<div class="card-b">${budgetBlock(dp.budget)}
-        ${ownsDept(dp.id)?`<button class="btn block" style="margin-top:12px" data-act="edit-budget" data-kind="dept" data-id="${dp.id}">${ic('edit')}Update budget</button>`:''}</div>`)}
-      ${section('📘 SOP',`<div class="card-b"><b>${esc(sop.name)}</b>
+      ${collSection('dept-budget-'+dp.id,'🧾 Budget',`<div class="card-b">${budgetBlock(dp.budget)}
+        ${ownsDept(dp.id)?`<button class="btn block" style="margin-top:12px" data-act="edit-budget" data-kind="dept" data-id="${dp.id}">${ic('edit')}Update budget</button>`:''}</div>`,'',true)}
+      ${collSection('dept-sop-'+dp.id,'📘 SOP',`<div class="card-b"><b>${esc(sop.name)}</b>
         <div class="tiny" style="margin:4px 0 10px">${esc(sop.version)} · updated ${fmtD(sop.updated)} · ${esc(nameOf(sop.responsible))}</div>
         ${prog(pct(sop.checklist.filter(c=>c.done).length,sop.checklist.length),'var(--teal)')}
-        <button class="btn block" style="margin-top:12px" data-act="open-sop" data-id="${sop.id}">Open SOP & checklist</button></div>`)}
+        <button class="btn block" style="margin-top:12px" data-act="open-sop" data-id="${sop.id}">Open SOP & checklist</button></div>`,'',false)}
     </div></div>
-   ${section('📅 Upcoming activities',upcoming.length?`<div class="tbl-wrap">${actTable(upcoming.slice(0,10))}</div>`:emptyState('Nothing upcoming','Schedule the next rota.',''))}`;
+   ${collSection('dept-upcoming-'+dp.id,'📅 Upcoming activities',upcoming.length?`<div class="tbl-wrap">${actTable(upcoming.slice(0,10))}</div>`:emptyState('Nothing upcoming','Schedule the next rota.',''),'',false)}`;
 }
 /* department-specific modules from the blueprint */
 function deptModule(dp){
