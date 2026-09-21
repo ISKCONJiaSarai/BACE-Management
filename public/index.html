@@ -843,10 +843,10 @@ input,select,textarea{font-family:inherit;font-size:14px;color:var(--ink);backgr
 .hero h1{font-size:32px;color:#FFF;font-weight:800;letter-spacing:-.025em;text-shadow:0 2px 8px rgba(0,0,0,0.25)}
 .hero p{color:#E0E7FF;margin:7px 0 0;font-size:14.5px;max-width:62ch;line-height:1.55;font-weight:500}
 .hero .quote{
-  font-family:var(--f-script);font-style:normal;color:#FDE68A;margin-top:14px;font-size:22px;font-weight:600;
-  line-height:1.35;text-shadow:0 2px 6px rgba(0,0,0,0.3);letter-spacing:0.02em;display:flex;align-items:center;gap:8px;
+  font-family:var(--f-script);font-style:normal;color:#FDE68A;margin-top:14px;font-size:26px;font-weight:600;
+  line-height:1.35;text-shadow:0 2px 6px rgba(0,0,0,0.3);letter-spacing:0.02em;display:flex;align-items:flex-start;gap:8px;
 }
-.hero .quote:before{content:"✨";font-size:16px}
+.hero .quote:before{content:"✨";font-size:18px;margin-top:2px;flex-shrink:0}
 .hero-header{position:relative;z-index:2;max-width:calc(100% - 200px)}
 .hero-bottom{position:relative;margin-top:20px;z-index:2}
 .hero-art-col{position:absolute;right:0;top:-80px;bottom:0;width:175px;display:flex;align-items:center;justify-content:center;pointer-events:none}
@@ -904,8 +904,8 @@ input,select,textarea{font-family:inherit;font-size:14px;color:var(--ink);backgr
   .hero-header{max-width:100%!important}
   .hero h1{font-size:18px!important;line-height:1.25!important;margin:0!important}
   .hero p{font-size:12px!important;margin:3px 0 0!important;line-height:1.4!important}
-  .hero .quote{font-size:14px!important;line-height:1.35!important;margin-top:8px!important;gap:6px!important}
-  .hero .quote:before{font-size:13px!important}
+  .hero .quote{font-size:18px!important;line-height:1.35!important;margin-top:8px!important;gap:6px!important;align-items:flex-start!important}
+  .hero .quote:before{font-size:15px!important;margin-top:1px!important;flex-shrink:0!important}
   .hero-bottom{display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:space-between!important;gap:10px!important;margin-top:10px!important;position:relative!important}
   .hero-bottom .hstats{display:flex!important;flex-direction:column!important;flex:0 0 auto!important;min-width:0!important;width:auto!important;max-width:min(195px, 58%)!important;gap:5px!important;margin:0!important}
   .hero .hstat{display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:space-between!important;padding:4px 8px!important;min-height:28px!important;height:28px!important;border-radius:8px!important;gap:5px!important;width:100%!important;box-sizing:border-box!important}
@@ -2167,13 +2167,16 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
     line-height:1.4!important;
   }
   .hero .quote{
-    font-size:14px!important;
+    font-size:18px!important;
     line-height:1.35!important;
     margin-top:8px!important;
     gap:6px!important;
+    align-items:flex-start!important;
   }
   .hero .quote:before{
-    font-size:13px!important;
+    font-size:15px!important;
+    margin-top:1px!important;
+    flex-shrink:0!important;
   }
 
   /* Bottom area: Cards placed on left stacked one below another, ISKCON logo on the right */
