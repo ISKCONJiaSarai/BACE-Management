@@ -6148,9 +6148,13 @@ async function shareMorningAttendanceReport(){
 /* ── Mobile Sticky Footer ── */
 function mobileStickyFooter(buttons=[]){
   if(!buttons.length) return '';
-  return `<div class="mobile-sticky-footer">${buttons.map(b =>
-    `<button class="btn${b.pri?' pri':''}${b.danger?' danger':''}" data-act="${esc(b.act||'')}" data-id="${esc(b.id||'')}" data-arg="${esc(b.arg||'')}">${b.icon?`<span>${b.icon}</span>`:''}${esc(b.label||'')}</button>`
-  ).join('')}</div>`;
+  return `<div class="mobile-sticky-footer">${buttons.map(b => {
+    let extra = '';
+    if(b.type) extra += ` data-type="${esc(b.type)}"`;
+    if(b.dept) extra += ` data-dept="${esc(b.dept)}"`;
+    if(b.extra) extra += ` ${b.extra}`;
+    return `<button class="btn${b.pri?' pri':''}${b.danger?' danger':''}" data-act="${esc(b.act||'')}" data-id="${esc(b.id||'')}" data-arg="${esc(b.arg||'')}"${extra}>${b.icon?`<span>${b.icon}</span>`:''}${esc(b.label||'')}</button>`;
+  }).join('')}</div>`;
 }
 
 /* ── Mobile Tab Bar ── */
@@ -9777,7 +9781,12 @@ function viewDept(id){
     `${ownsDept(dp.id)?`<button class="btn" data-act="edit-dept" data-id="${dp.id}">${ic('edit')}Edit</button>
       <button class="btn" data-act="dept-report-range" data-id="${dp.id}">📄 Reports</button>
       <button class="btn pri" data-act="open-assign" data-type="Seva" data-dept="${dp.id}">${ic('plus')}Assign seva</button>`:''}`)+
-   deptDashboardBody(dp);
+   deptDashboardBody(dp)+
+   (ownsDept(dp.id)?mobileStickyFooter([
+     { act: 'open-assign', type: 'Seva', dept: dp.id, label: 'Assign Seva', pri: true, icon: '➕ ' },
+     { act: 'dept-report-range', id: dp.id, label: 'Reports', icon: '📄 ' },
+     { act: 'edit-dept', id: dp.id, label: 'Edit', icon: '✏️ ' }
+   ]):'');
 }
 
 /* =========================================================================
