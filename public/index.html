@@ -3943,6 +3943,102 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-off
     margin-top:0!important;
     border-top:none!important;
   }
+/* ── Phase 7: Preaching Funnel & Batch Management Mobile Ergonomics ── */
+.funnel-mob-scroll{display:none}
+.mob-batch-list{display:none}
+@media(max-width:768px){
+  .funnel-bars-desktop{display:none!important}
+  .funnel-mob-scroll{
+    display:flex!important;
+    gap:9px;
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    padding:4px 4px 10px;
+    scroll-snap-type:x mandatory;
+  }
+  .funnel-mob-scroll::-webkit-scrollbar{
+    height:4px;
+  }
+  .funnel-mob-scroll::-webkit-scrollbar-thumb{
+    background:var(--line-2);
+    border-radius:4px;
+  }
+  .funnel-mob-card{
+    scroll-snap-align:start;
+    min-width:128px;
+    max-width:145px;
+    flex:0 0 auto;
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:10px 10px 8px;
+    box-sizing:border-box;
+    cursor:pointer;
+    transition:transform .12s ease, background .12s ease;
+  }
+  .funnel-mob-card:active{
+    transform:scale(0.97);
+    background:var(--surface-2);
+  }
+  .funnel-mob-card .fmc-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:6px;
+  }
+  .funnel-mob-card .fmc-step{
+    font-size:10px;
+    font-weight:700;
+    color:var(--ink-3);
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+  }
+  .funnel-mob-card .fmc-conv{
+    font-size:11px;
+    font-weight:700;
+  }
+  .funnel-mob-card .fmc-val{
+    font-size:22px;
+    font-weight:800;
+    font-family:var(--f-head);
+    color:var(--ink);
+    line-height:1.1;
+  }
+  .funnel-mob-card .fmc-lbl{
+    font-size:12px;
+    font-weight:600;
+    color:var(--ink-2);
+    margin-top:4px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .funnel-mob-card .fmc-sub{
+    margin-top:3px;
+    font-size:10px;
+    color:var(--ink-3);
+  }
+
+  /* Batch Management Mobile Swipe List */
+  .desktop-batch-grid{display:none!important}
+  .mob-batch-list{display:flex!important;flex-direction:column;gap:8px;margin-bottom:14px}
+  .batch-mob-row{
+    display:flex;align-items:center;gap:11px;padding:11px 13px;
+    background:var(--surface);border:1px solid var(--line-2);border-radius:12px;
+    cursor:pointer;width:100%;box-sizing:border-box;
+    text-decoration:none;color:inherit;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .batch-mob-row:active{background:var(--surface-2)}
+  .bmr-av{
+    width:38px;height:38px;border-radius:10px;background:var(--indigo-soft, rgba(99,102,241,.12));
+    color:var(--indigo);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;
+  }
+  .bmr-main{flex:1;min-width:0}
+  .bmr-name{font-weight:700;font-size:13.5px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.25}
+  .bmr-sub{font-size:11.5px;color:var(--ink-3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .bmr-right{display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0}
+  .bmr-stat{font-size:12.5px;font-weight:700;font-family:var(--f-head);color:var(--ink)}
 }
 
 </style>
@@ -6293,11 +6389,10 @@ function donut(value,label,color='var(--accent)',tip){
 function funnel(rows, batchId = ''){
   const topVal = Number(rows[0]?.v) || 1;
   const max = Math.max(...rows.map(r => Number(r.v) || 0), 1);
-  return `<div class="chart funnel-wrap" style="display:flex;flex-direction:column;gap:6px">${rows.map((r,i)=>{
+  const desktopBars = `<div class="chart funnel-wrap funnel-bars-desktop" style="display:flex;flex-direction:column;gap:6px">${rows.map((r,i)=>{
     const val = Number(r.v) || 0;
     const wpc = Math.min(100, Math.max(14, Math.round((val / max) * 100)));
     const prev = i > 0 ? (Number(rows[i-1].v) || 0) : val;
-    // Conversion relative to the total base (Registered / top of funnel)
     const conv = topVal > 0 ? Math.min(100, Math.round((val / topVal) * 100)) : 0;
     const stepConv = (i > 0 && prev > 0) ? Math.min(100, Math.round((val / prev) * 100)) : 100;
     const bid = batchId || r.bid || '';
@@ -6309,6 +6404,30 @@ function funnel(rows, batchId = ''){
       <div class="funnel-lbl">${esc(r.l)}</div>
       <div class="funnel-bar-box" style="flex:1;min-width:0"><div class="funnel-bar" style="height:29px;width:${wpc}%;background:${r.color||'var(--indigo)'};opacity:${1-i*.06};border-radius:7px;display:flex;align-items:center;padding-left:10px;color:#fff;font-size:12.5px;font-weight:600">${val}</div></div>
       <div class="funnel-conv" style="text-align:right;font-weight:600;color:${i && conv < 35 ? 'var(--danger)' : (i && conv < 60 ? 'var(--mustard)' : 'var(--ink-2)')}">${i ? conv + '%' : ''}</div></div>`}).join('')}</div>`;
+
+  const mobileCards = `<div class="funnel-mob-scroll">${rows.map((r,i)=>{
+    const val = Number(r.v) || 0;
+    const prev = i > 0 ? (Number(rows[i-1].v) || 0) : val;
+    const conv = topVal > 0 ? Math.min(100, Math.round((val / topVal) * 100)) : 0;
+    const stepConv = (i > 0 && prev > 0) ? Math.min(100, Math.round((val / prev) * 100)) : 100;
+    const bid = batchId || r.bid || '';
+    const clickAttr = bid 
+      ? `data-act="funnel-drill" data-bid="${bid}" data-stage="${r.key || i}"`
+      : (r.r ? `data-act="drill" data-r="${r.r}"` : '');
+    const tipText = r.tip || `${r.l}: ${val} (${conv}% of total registered)`;
+    const convColor = i === 0 ? 'var(--accent)' : (conv < 35 ? 'var(--danger)' : (conv < 60 ? 'var(--mustard)' : 'var(--green)'));
+    return `<div class="funnel-mob-card" style="border-top:3px solid ${r.color||'var(--indigo)'}" ${tipAttr(tipText)} ${clickAttr}>
+      <div class="fmc-top">
+        <span class="fmc-step">Stage ${i+1}</span>
+        ${i > 0 ? `<span class="fmc-conv" style="color:${convColor}">${conv}%</span>` : `<span class="fmc-conv" style="color:var(--ink-3)">100%</span>`}
+      </div>
+      <div class="fmc-val">${val}</div>
+      <div class="fmc-lbl">${esc(r.l)}</div>
+      ${i > 0 ? `<div class="fmc-sub">${stepConv}% step</div>` : '<div class="fmc-sub">Top of funnel</div>'}
+    </div>`;
+  }).join('')}</div>`;
+
+  return desktopBars + mobileCards;
 }
 function budgetBlock(b,label='Budget'){
   const util=pct(b.spent,b.allocated);
