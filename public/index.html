@@ -1695,10 +1695,11 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
 .countdown{font-family:var(--f-head);font-size:22px;margin-top:12px}
 
 /* fab + bottom nav */
-.fab{position:fixed;right:22px;bottom:22px;z-index:40;width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,var(--saffron),var(--saffron-2));color:#fff;display:grid;place-items:center;box-shadow:0 4px 16px rgba(224,96,18,.35);transition:transform .2s,box-shadow .2s}
+.fab{position:fixed;right:22px;bottom:22px;z-index:85;width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,var(--saffron),var(--saffron-2));color:#fff;display:grid;place-items:center;box-shadow:0 4px 16px rgba(224,96,18,.35);transition:transform .2s,box-shadow .2s}
 .fab:hover{transform:scale(1.08);box-shadow:0 6px 24px rgba(224,96,18,.4)}
 .fab svg{width:22px;height:22px}
-.fab-menu{position:fixed;right:22px;bottom:86px;z-index:40;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-l);box-shadow:var(--sh-3);padding:7px;width:240px;animation:pop .16s ease-out}
+.fab-scrim{position:fixed;inset:0;z-index:84;background:transparent;-webkit-tap-highlight-color:transparent;cursor:default}
+.fab-menu{position:fixed;right:22px;bottom:86px;z-index:85;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-l);box-shadow:var(--sh-3);padding:7px;width:240px;animation:pop .16s ease-out}
 .fab-menu button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:9px 10px;border-radius:9px;font-size:13.5px}
 .fab-menu button:hover{background:var(--surface-2)}
 .botnav{display:none}
@@ -7132,7 +7133,7 @@ function fab(){
    ['Create follow-up','⏰','add-followup','preaching'],['Create group','🫂','add-group','care'],
    ['New message','💬','go-messages','messages'],['Submit report','📄','add-report','reports']].filter(a=>can(a[3]));
   if(!acts.length)return'';
-  return `${APP.fabOpen?`<div class="fab-menu">${acts.map(a=>`<button data-act="${a[2]}"><span style="font-size:15px">${a[1]}</span>${a[0]}</button>`).join('')}</div>`:''}
+  return `${APP.fabOpen?`<div class="fab-scrim" data-act="close-fab" aria-label="Close quick actions"></div><div class="fab-menu" role="menu">${acts.map(a=>`<button data-act="${a[2]}" role="menuitem"><span style="font-size:15px">${a[1]}</span>${a[0]}</button>`).join('')}</div>`:''}
    <button class="fab" data-act="fab" aria-label="Quick actions">${APP.fabOpen?ic('x'):ic('plus')}</button>`;
 }
 
@@ -24722,6 +24723,7 @@ document.addEventListener('click',e=>{
   case 'tab':APP.tab[t.dataset.k]=t.dataset.v;render();break;
   case 'page':APP.page[t.dataset.t]=+t.dataset.p;render();break;
   case 'fab':APP.fabOpen=!APP.fabOpen;render();break;
+  case 'close-fab':APP.fabOpen=false;render();break;
   case 'notifications':APP.modal='notif';render();break;
   case 'close-scrim':{
     // Close if clicked an explicit close button OR if clicking directly on the backdrop scrim
