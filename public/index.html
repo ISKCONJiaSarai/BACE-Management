@@ -3947,6 +3947,7 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-off
     margin-top:0!important;
     border-top:none!important;
   }
+}
 /* ── Phase 7: Preaching Funnel & Batch Management Mobile Ergonomics ── */
 .funnel-mob-scroll{display:none}
 .mob-batch-list{display:none}
@@ -4153,7 +4154,13 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-off
   0%{left:-45%}
   100%{left:100%}
 }
-[data-theme="dark"] .app-splash-screen,
+[data-theme="dark"] .app-splash-screen{background:#090D16!important}
+[data-theme="dark"] .splash-title{color:#F8FAFC!important}
+[data-theme="dark"] .splash-location{color:#FF7A00!important}
+[data-theme="dark"] .splash-tagline{color:#94A3B8!important}
+[data-theme="dark"] .splash-loader-track{background:#1E293B!important}
+[data-theme="dark"] .splash-maha-mantra{color:#F59E0B!important}
+
 @media (prefers-color-scheme: dark){
   .app-splash-screen{background:#090D16}
   .splash-title{color:#F8FAFC}
@@ -4167,10 +4174,10 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-off
 </head>
 <body>
 <div id="app">
-  <div class="app-splash-screen" id="appSplashScreen">
-    <div class="splash-card">
-      <div class="splash-logo-wrap">
-        <img src="/icon-512.png" alt="ISKCON BACE Jia Sarai Logo" class="splash-logo-img">
+  <div class="app-splash-screen" id="appSplashScreen" style="position:fixed;inset:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#FAF8F5;z-index:999999;">
+    <div class="splash-card" style="display:flex;flex-direction:column;align-items:center;text-align:center;padding:24px;max-width:340px;width:100%;">
+      <div class="splash-logo-wrap" style="width:88px;height:88px;border-radius:22px;background:linear-gradient(135deg,#FF6600 0%,#EA580C 100%);display:flex;align-items:center;justify-content:center;padding:8px;box-shadow:0 12px 32px rgba(234,88,12,0.35);margin-bottom:16px;">
+        <img src="/icon-512.png" alt="ISKCON BACE Jia Sarai Logo" class="splash-logo-img" width="72" height="72" style="width:72px;height:72px;max-width:72px;max-height:72px;object-fit:contain;display:block;">
       </div>
       <div class="splash-title">ISKCON BACE</div>
       <div class="splash-location">
