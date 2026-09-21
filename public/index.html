@@ -2401,6 +2401,34 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
 [data-theme="dark"] .pillar-preach{background:linear-gradient(135deg,rgba(99,102,241,.14) 0%,rgba(99,102,241,.06) 100%)}
 [data-theme="dark"] .pillar-care{background:linear-gradient(135deg,rgba(16,185,129,.14) 0%,rgba(16,185,129,.06) 100%)}
 
+/* Expandable pillar styling */
+.pillar-header-meta{display:flex;align-items:center;gap:7px}
+.pillar-expand-indicator{
+  display:none; /* Hidden on desktop */
+  width:26px;height:26px;border-radius:50%;
+  background:rgba(255,255,255,0.85);
+  border:1px solid rgba(0,0,0,0.06);
+  box-shadow:0 1.5px 5px rgba(0,0,0,0.06);
+  align-items:center;justify-content:center;
+  color:var(--ink-2);
+  transition:transform .36s cubic-bezier(0.34, 1.56, 0.64, 1), background .2s ease, color .2s ease, box-shadow .2s ease;
+  flex-shrink:0;
+}
+.pillar-chevron-icon{
+  transition:transform .36s cubic-bezier(0.34, 1.56, 0.64, 1);
+  display:block;
+}
+.pillar-collapsible-wrapper{
+  display:block;
+}
+.pillar-collapsible-inner{
+  overflow:visible;
+  min-height:0;
+}
+.pillar-compressed-hint{
+  display:none;
+}
+
 /* 4-column layout: 3 compact pillar blocks + 1:1 square calendar widget to their right */
 .pillar-calendar-row{display:grid;grid-template-columns:repeat(3, minmax(0, 0.9fr)) minmax(320px, 1.3fr);gap:13px;align-items:stretch}
 .pillar-calendar-row > .dash-cal-col{min-width:0;display:flex;flex-direction:column}
@@ -2417,6 +2445,115 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
   .pillar-calendar-row{grid-template-columns:1fr}
   .pillar-calendar-row > .dash-cal-col{grid-column:auto}
   .pillar-calendar-row > .dash-cal-col .card{aspect-ratio:auto;max-width:100%}
+
+  /* Mobile Expandable Pillars: Sleek Compressed Look + Silky 60fps Smooth Expansion */
+  .pillar-card{
+    cursor:pointer;
+    user-select:none;
+    -webkit-tap-highlight-color:transparent;
+    transition:box-shadow .24s ease, transform .2s cubic-bezier(0.16, 1, 0.3, 1), border-color .24s ease;
+    border-radius:18px!important;
+  }
+  .pillar-card:active{
+    transform:scale(0.992);
+  }
+  .pillar-card-top{
+    cursor:pointer;
+    position:relative;
+    z-index:2;
+  }
+  .pillar-card-sub{
+    margin:0 0 4px;
+    transition:margin .25s ease;
+  }
+  .pillar-card.is-expanded .pillar-card-sub{
+    margin:0 0 10px;
+  }
+  .pillar-expand-indicator{
+    display:inline-flex;
+  }
+  .pillar-card.is-expanded .pillar-chevron-icon{
+    transform:rotate(180deg);
+  }
+  .pillar-card.is-expanded .pillar-expand-indicator{
+    background:rgba(15,23,42,0.92);
+    color:#fff;
+    box-shadow:0 3px 8px rgba(0,0,0,0.18);
+  }
+  [data-theme="dark"] .pillar-expand-indicator{
+    background:rgba(255,255,255,0.12);
+    border-color:rgba(255,255,255,0.15);
+    color:var(--ink);
+  }
+  [data-theme="dark"] .pillar-card.is-expanded .pillar-expand-indicator{
+    background:#fff;
+    color:#0F172A;
+  }
+
+  /* GPU-Accelerated CSS Grid Height Expansion */
+  .pillar-collapsible-wrapper{
+    display:grid;
+    grid-template-rows:0fr;
+    transition:grid-template-rows .38s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .pillar-card.is-expanded .pillar-collapsible-wrapper{
+    grid-template-rows:1fr;
+  }
+  .pillar-collapsible-inner{
+    overflow:hidden;
+    min-height:0;
+    opacity:0;
+    transform:translateY(-8px);
+    transition:opacity .28s cubic-bezier(0.16, 1, 0.3, 1), transform .35s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .pillar-card.is-expanded .pillar-collapsible-inner{
+    opacity:1;
+    transform:translateY(0);
+    margin-top:6px;
+  }
+
+  /* Staggered Item Cascading Animation */
+  .pillar-card.is-expanded .pillar-item{
+    animation:pillarItemEntrance .34s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  }
+  .pillar-card.is-expanded .pillar-item:nth-child(1){animation-delay:.02s}
+  .pillar-card.is-expanded .pillar-item:nth-child(2){animation-delay:.05s}
+  .pillar-card.is-expanded .pillar-item:nth-child(3){animation-delay:.08s}
+  .pillar-card.is-expanded .pillar-item:nth-child(4){animation-delay:.11s}
+  .pillar-card.is-expanded .pillar-item:nth-child(5){animation-delay:.14s}
+  .pillar-card.is-expanded .pillar-item:nth-child(6){animation-delay:.17s}
+
+  @keyframes pillarItemEntrance{
+    from{
+      opacity:0;
+      transform:translateY(-8px) scale(0.985);
+    }
+    to{
+      opacity:1;
+      transform:translateY(0) scale(1);
+    }
+  }
+
+  /* Compressed Hint Row */
+  .pillar-compressed-hint{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    font-size:10.5px;
+    font-weight:600;
+    color:var(--ink-3);
+    margin-top:6px;
+    padding-top:6px;
+    border-top:1px dashed rgba(0,0,0,0.08);
+    letter-spacing:0.2px;
+    transition:all .25s ease;
+  }
+  [data-theme="dark"] .pillar-compressed-hint{
+    border-top-color:rgba(255,255,255,0.08);
+  }
+  .pillar-card.is-expanded .pillar-compressed-hint{
+    display:none;
+  }
 }
 
 /* ========== DARK MODE OVERRIDES ========== */
@@ -6135,66 +6272,93 @@ function prabhupadaNectarCard(){
   `;
 }
 
+function togglePillarCard(key, cardEl){
+  const card = cardEl || document.querySelector(`.pillar-card[data-pillar="${key}"]`);
+  if(!card) return;
+  const isNowOpen = !card.classList.contains('is-expanded');
+  card.classList.toggle('is-expanded', isNowOpen);
+  APP.expandedPillars = APP.expandedPillars || {};
+  APP.expandedPillars[key] = isNowOpen;
+}
+
 function pillarCardMgmt(){
   const s=STATS();
-  return `<div class="card pillar-card pillar-mgmt">
+  const isOpen = !!(APP.expandedPillars && APP.expandedPillars.mgmt);
+  return `<div class="card pillar-card pillar-mgmt ${isOpen ? 'is-expanded' : ''}" data-pillar="mgmt">
     <div class="pillar-card-bg">🛕</div>
     <div class="card-b">
-      <div class="pillar-card-header">
-        <div class="pillar-card-icon" style="background:linear-gradient(135deg,#EA580C,#C2410C);box-shadow:0 4px 12px rgba(234,88,12,.25)">🛕</div>
-        <span class="pillar-badge" style="background:rgba(234,88,12,0.12);color:#C2410C">${s.depts} Depts</span>
+      <div class="pillar-card-top" data-act="toggle-pillar" data-pillar="mgmt">
+        <div class="pillar-card-header">
+          <div class="pillar-card-icon" style="background:linear-gradient(135deg,#EA580C,#C2410C);box-shadow:0 4px 12px rgba(234,88,12,.25)">🛕</div>
+          <div class="pillar-header-meta">
+            <span class="pillar-badge" style="background:rgba(234,88,12,0.12);color:#C2410C">${s.depts} Depts</span>
+            <div class="pillar-expand-indicator" title="Tap to expand">
+              <svg class="pillar-chevron-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </div>
+          </div>
+        </div>
+        <div class="pillar-card-title">BACE Management</div>
+        <div class="pillar-card-sub">Operations, Seva rosters &amp; temple administration</div>
+        <div class="pillar-compressed-hint">
+          <span>⚡ 6 quick links</span>
+          <span style="display:flex;align-items:center;gap:3px">Tap to expand <span style="font-size:11px">▾</span></span>
+        </div>
       </div>
-      <div class="pillar-card-title">BACE Management</div>
-      <div class="pillar-card-sub">Operations, Seva rosters &amp; temple administration</div>
-      <div class="pillar-items-list">
-        <a class="pillar-item" href="#/mgmt">
-          <span class="pillar-item-icon">⚠️</span>
-          <div class="pillar-item-info">
-            <div class="pillar-item-title">Management dashboard</div>
-            <div class="pillar-item-sub">Operations &amp; daily oversight</div>
+      <div class="pillar-collapsible-wrapper">
+        <div class="pillar-collapsible-inner">
+          <div class="pillar-items-list">
+            <a class="pillar-item" href="#/mgmt">
+              <span class="pillar-item-icon">⚠️</span>
+              <div class="pillar-item-info">
+                <div class="pillar-item-title">Management dashboard</div>
+                <div class="pillar-item-sub">Operations &amp; daily oversight</div>
+              </div>
+              <span class="pillar-item-arrow">›</span>
+            </a>
+            <a class="pillar-item" href="#/attendance">
+              <span class="pillar-item-icon">🌐</span>
+              <div class="pillar-item-info">
+                <div class="pillar-item-title">BACE pillars</div>
+                <div class="pillar-item-sub">Foundation to healthy growth</div>
+              </div>
+              <span class="pillar-item-arrow">›</span>
+            </a>
+            <a class="pillar-item" href="#/depts">
+              <span class="pillar-item-icon">🏛️</span>
+              <div class="pillar-item-info">
+                <div class="pillar-item-title">Departments</div>
+                <div class="pillar-item-sub">${s.depts} active departments</div>
+              </div>
+              <span class="pillar-item-arrow">›</span>
+            </a>
+            <a class="pillar-item" href="#/accounts">
+              <span class="pillar-item-icon">💰</span>
+              <div class="pillar-item-info">
+                <div class="pillar-item-title">Accounts</div>
+                <div class="pillar-item-sub">Budgets, ledgers &amp; vouchers</div>
+              </div>
+              <span class="pillar-item-arrow">›</span>
+            </a>
+            <a class="pillar-item" href="#/assign">
+              <span class="pillar-item-icon">📋</span>
+              <div class="pillar-item-info">
+                <div class="pillar-item-title">Assign seva</div>
+                <div class="pillar-item-sub">${s.scheduled} scheduled activities</div>
+              </div>
+              <span class="pillar-item-arrow">›</span>
+            </a>
+            <a class="pillar-item" href="#/sops">
+              <span class="pillar-item-icon">📘</span>
+              <div class="pillar-item-info">
+                <div class="pillar-item-title">SOPs &amp; standards</div>
+                <div class="pillar-item-sub">Procedures &amp; quality guidelines</div>
+              </div>
+              <span class="pillar-item-arrow">›</span>
+            </a>
           </div>
-          <span class="pillar-item-arrow">›</span>
-        </a>
-        <a class="pillar-item" href="#/attendance">
-          <span class="pillar-item-icon">🌐</span>
-          <div class="pillar-item-info">
-            <div class="pillar-item-title">BACE pillars</div>
-            <div class="pillar-item-sub">Foundation to healthy growth</div>
-          </div>
-          <span class="pillar-item-arrow">›</span>
-        </a>
-        <a class="pillar-item" href="#/depts">
-          <span class="pillar-item-icon">🏛️</span>
-          <div class="pillar-item-info">
-            <div class="pillar-item-title">Departments</div>
-            <div class="pillar-item-sub">${s.depts} active departments</div>
-          </div>
-          <span class="pillar-item-arrow">›</span>
-        </a>
-        <a class="pillar-item" href="#/accounts">
-          <span class="pillar-item-icon">💰</span>
-          <div class="pillar-item-info">
-            <div class="pillar-item-title">Accounts</div>
-            <div class="pillar-item-sub">Budgets, ledgers &amp; vouchers</div>
-          </div>
-          <span class="pillar-item-arrow">›</span>
-        </a>
-        <a class="pillar-item" href="#/assign">
-          <span class="pillar-item-icon">📋</span>
-          <div class="pillar-item-info">
-            <div class="pillar-item-title">Assign seva</div>
-            <div class="pillar-item-sub">${s.scheduled} scheduled activities</div>
-          </div>
-          <span class="pillar-item-arrow">›</span>
-        </a>
-        <a class="pillar-item" href="#/sops">
-          <span class="pillar-item-icon">📘</span>
-          <div class="pillar-item-info">
-            <div class="pillar-item-title">SOPs &amp; standards</div>
-            <div class="pillar-item-sub">Procedures &amp; quality guidelines</div>
-          </div>
-          <span class="pillar-item-arrow">›</span>
-        </a>
+        </div>
       </div>
     </div>
   </div>`;
@@ -6202,64 +6366,82 @@ function pillarCardMgmt(){
 
 function pillarCardPreach(){
   const s=STATS(), batchesCount=activeBatches().length;
-  return `<div class="card pillar-card pillar-preach">
+  const isOpen = !!(APP.expandedPillars && APP.expandedPillars.preach);
+  return `<div class="card pillar-card pillar-preach ${isOpen ? 'is-expanded' : ''}" data-pillar="preach">
     <div class="pillar-card-bg">📖</div>
     <div class="card-b">
-      <div class="pillar-card-header">
-        <div class="pillar-card-icon" style="background:linear-gradient(135deg,#6366F1,#4338CA);box-shadow:0 4px 12px rgba(99,102,241,.25)">📖</div>
-        <span class="pillar-badge" style="background:rgba(99,102,241,0.12);color:#4338CA">${batchesCount} Batches</span>
+      <div class="pillar-card-top" data-act="toggle-pillar" data-pillar="preach">
+        <div class="pillar-card-header">
+          <div class="pillar-card-icon" style="background:linear-gradient(135deg,#6366F1,#4338CA);box-shadow:0 4px 12px rgba(99,102,241,.25)">📖</div>
+          <div class="pillar-header-meta">
+            <span class="pillar-badge" style="background:rgba(99,102,241,0.12);color:#4338CA">${batchesCount} Batches</span>
+            <div class="pillar-expand-indicator" title="Tap to expand">
+              <svg class="pillar-chevron-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </div>
+          </div>
+        </div>
+        <div class="pillar-card-title">BACE Preaching</div>
+        <div class="pillar-card-sub">Youth outreach, courses &amp; new seekers</div>
+        <div class="pillar-compressed-hint">
+          <span>📖 6 quick links</span>
+          <span style="display:flex;align-items:center;gap:3px">Tap to expand <span style="font-size:11px">▾</span></span>
+        </div>
       </div>
-      <div class="pillar-card-title">BACE Preaching</div>
-      <div class="pillar-card-sub">Youth outreach, courses &amp; new seekers</div>
-      <div class="pillar-items-list">
-        <a class="pillar-item" href="#/preaching">
-          <span class="pillar-item-icon">📖</span>
-          <div class="pillar-item-info">
-            <div class="pillar-item-title">Preaching dashboard</div>
-            <div class="pillar-item-sub">Outreach pipeline &amp; funnel</div>
+      <div class="pillar-collapsible-wrapper">
+        <div class="pillar-collapsible-inner">
+          <div class="pillar-items-list">
+            <a class="pillar-item" href="#/preaching">
+              <span class="pillar-item-icon">📖</span>
+              <div class="pillar-item-info">
+                <div class="pillar-item-title">Preaching dashboard</div>
+                <div class="pillar-item-sub">Outreach pipeline &amp; funnel</div>
+              </div>
+              <span class="pillar-item-arrow">›</span>
+            </a>
+            <a class="pillar-item" href="#/batches">
+              <span class="pillar-item-icon">🎓</span>
+              <div class="pillar-item-info">
+                <div class="pillar-item-title">Batches</div>
+                <div class="pillar-item-sub">${batchesCount} active preaching batches</div>
+              </div>
+              <span class="pillar-item-arrow">›</span>
+            </a>
+            <a class="pillar-item" href="#/contacts">
+              <span class="pillar-item-icon">👥</span>
+              <div class="pillar-item-info">
+                <div class="pillar-item-title">Contacts pipeline</div>
+                <div class="pillar-item-sub">${s.contacts} contacts registered</div>
+              </div>
+              <span class="pillar-item-arrow">›</span>
+            </a>
+            <a class="pillar-item" href="#/followups">
+              <span class="pillar-item-icon">📞</span>
+              <div class="pillar-item-info">
+                <div class="pillar-item-title">Calling &amp; follow-ups</div>
+                <div class="pillar-item-sub">${s.fuToday} calls due today</div>
+              </div>
+              <span class="pillar-item-arrow">›</span>
+            </a>
+            <a class="pillar-item" href="#/classes">
+              <span class="pillar-item-icon">✨</span>
+              <div class="pillar-item-info">
+                <div class="pillar-item-title">Classes &amp; courses</div>
+                <div class="pillar-item-sub">Schedules, venues &amp; topics</div>
+              </div>
+              <span class="pillar-item-arrow">›</span>
+            </a>
+            <a class="pillar-item" href="#/batch-attendance">
+              <span class="pillar-item-icon">✅</span>
+              <div class="pillar-item-info">
+                <div class="pillar-item-title">Batch attendance</div>
+                <div class="pillar-item-sub">Session roll call &amp; logs</div>
+              </div>
+              <span class="pillar-item-arrow">›</span>
+            </a>
           </div>
-          <span class="pillar-item-arrow">›</span>
-        </a>
-        <a class="pillar-item" href="#/batches">
-          <span class="pillar-item-icon">🎓</span>
-          <div class="pillar-item-info">
-            <div class="pillar-item-title">Batches</div>
-            <div class="pillar-item-sub">${batchesCount} active preaching batches</div>
-          </div>
-          <span class="pillar-item-arrow">›</span>
-        </a>
-        <a class="pillar-item" href="#/contacts">
-          <span class="pillar-item-icon">👥</span>
-          <div class="pillar-item-info">
-            <div class="pillar-item-title">Contacts pipeline</div>
-            <div class="pillar-item-sub">${s.contacts} contacts registered</div>
-          </div>
-          <span class="pillar-item-arrow">›</span>
-        </a>
-        <a class="pillar-item" href="#/followups">
-          <span class="pillar-item-icon">📞</span>
-          <div class="pillar-item-info">
-            <div class="pillar-item-title">Calling &amp; follow-ups</div>
-            <div class="pillar-item-sub">${s.fuToday} calls due today</div>
-          </div>
-          <span class="pillar-item-arrow">›</span>
-        </a>
-        <a class="pillar-item" href="#/classes">
-          <span class="pillar-item-icon">✨</span>
-          <div class="pillar-item-info">
-            <div class="pillar-item-title">Classes &amp; courses</div>
-            <div class="pillar-item-sub">Schedules, venues &amp; topics</div>
-          </div>
-          <span class="pillar-item-arrow">›</span>
-        </a>
-        <a class="pillar-item" href="#/batch-attendance">
-          <span class="pillar-item-icon">✅</span>
-          <div class="pillar-item-info">
-            <div class="pillar-item-title">Batch attendance</div>
-            <div class="pillar-item-sub">Session roll call &amp; logs</div>
-          </div>
-          <span class="pillar-item-arrow">›</span>
-        </a>
+        </div>
       </div>
     </div>
   </div>`;
@@ -6267,64 +6449,82 @@ function pillarCardPreach(){
 
 function pillarCardCare(){
   const s=STATS();
-  return `<div class="card pillar-card pillar-care">
+  const isOpen = !!(APP.expandedPillars && APP.expandedPillars.care);
+  return `<div class="card pillar-card pillar-care ${isOpen ? 'is-expanded' : ''}" data-pillar="care">
     <div class="pillar-card-bg">❤️</div>
     <div class="card-b">
-      <div class="pillar-card-header">
-        <div class="pillar-card-icon" style="background:linear-gradient(135deg,#10B981,#059669);box-shadow:0 4px 12px rgba(16,185,129,.25)">❤️</div>
-        <span class="pillar-badge" style="background:rgba(16,185,129,0.12);color:#059669">${s.groups} Groups</span>
+      <div class="pillar-card-top" data-act="toggle-pillar" data-pillar="care">
+        <div class="pillar-card-header">
+          <div class="pillar-card-icon" style="background:linear-gradient(135deg,#10B981,#059669);box-shadow:0 4px 12px rgba(16,185,129,.25)">❤️</div>
+          <div class="pillar-header-meta">
+            <span class="pillar-badge" style="background:rgba(16,185,129,0.12);color:#059669">${s.groups} Groups</span>
+            <div class="pillar-expand-indicator" title="Tap to expand">
+              <svg class="pillar-chevron-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </div>
+          </div>
+        </div>
+        <div class="pillar-card-title">Devotee Care</div>
+        <div class="pillar-card-sub">Mentorship, sadhana &amp; community bonding</div>
+        <div class="pillar-compressed-hint">
+          <span>❤️ 6 quick links</span>
+          <span style="display:flex;align-items:center;gap:3px">Tap to expand <span style="font-size:11px">▾</span></span>
+        </div>
       </div>
-      <div class="pillar-card-title">Devotee Care</div>
-      <div class="pillar-card-sub">Mentorship, sadhana &amp; community bonding</div>
-      <div class="pillar-items-list">
-        <a class="pillar-item" href="#/care">
-          <span class="pillar-item-icon">❤️</span>
-          <div class="pillar-item-info">
-            <div class="pillar-item-title">Care dashboard</div>
-            <div class="pillar-item-sub">Emotional &amp; spiritual welfare</div>
+      <div class="pillar-collapsible-wrapper">
+        <div class="pillar-collapsible-inner">
+          <div class="pillar-items-list">
+            <a class="pillar-item" href="#/care">
+              <span class="pillar-item-icon">❤️</span>
+              <div class="pillar-item-info">
+                <div class="pillar-item-title">Care dashboard</div>
+                <div class="pillar-item-sub">Emotional &amp; spiritual welfare</div>
+              </div>
+              <span class="pillar-item-arrow">›</span>
+            </a>
+            <a class="pillar-item" href="#/groups">
+              <span class="pillar-item-icon">👥</span>
+              <div class="pillar-item-info">
+                <div class="pillar-item-title">Friends &amp; Groups</div>
+                <div class="pillar-item-sub">${s.groups} groups · circles &amp; pairing</div>
+              </div>
+              <span class="pillar-item-arrow">›</span>
+            </a>
+            <a class="pillar-item" href="#/sadhana">
+              <span class="pillar-item-icon">📿</span>
+              <div class="pillar-item-info">
+                <div class="pillar-item-title">Sadhana &amp; Swabhav</div>
+                <div class="pillar-item-sub">Japa, reading &amp; seva matching</div>
+              </div>
+              <span class="pillar-item-arrow">›</span>
+            </a>
+            <a class="pillar-item" href="#/facilitators">
+              <span class="pillar-item-icon">🧑‍🏫</span>
+              <div class="pillar-item-info">
+                <div class="pillar-item-title">Facilitators</div>
+                <div class="pillar-item-sub">${s.facilitators} active mentors</div>
+              </div>
+              <span class="pillar-item-arrow">›</span>
+            </a>
+            <a class="pillar-item" href="#/camps">
+              <span class="pillar-item-icon">🏕️</span>
+              <div class="pillar-item-info">
+                <div class="pillar-item-title">Camps &amp; Outings</div>
+                <div class="pillar-item-sub">Spiritual retreats &amp; visits</div>
+              </div>
+              <span class="pillar-item-arrow">›</span>
+            </a>
+            <a class="pillar-item" href="#/meetings">
+              <span class="pillar-item-icon">🔒</span>
+              <div class="pillar-item-info">
+                <div class="pillar-item-title">Meetings &amp; follow-ups</div>
+                <div class="pillar-item-sub">Confidential 1-on-1s &amp; check-ins</div>
+              </div>
+              <span class="pillar-item-arrow">›</span>
+            </a>
           </div>
-          <span class="pillar-item-arrow">›</span>
-        </a>
-        <a class="pillar-item" href="#/groups">
-          <span class="pillar-item-icon">👥</span>
-          <div class="pillar-item-info">
-            <div class="pillar-item-title">Friends &amp; Groups</div>
-            <div class="pillar-item-sub">${s.groups} groups · circles &amp; pairing</div>
-          </div>
-          <span class="pillar-item-arrow">›</span>
-        </a>
-        <a class="pillar-item" href="#/sadhana">
-          <span class="pillar-item-icon">📿</span>
-          <div class="pillar-item-info">
-            <div class="pillar-item-title">Sadhana &amp; Swabhav</div>
-            <div class="pillar-item-sub">Japa, reading &amp; seva matching</div>
-          </div>
-          <span class="pillar-item-arrow">›</span>
-        </a>
-        <a class="pillar-item" href="#/facilitators">
-          <span class="pillar-item-icon">🧑‍🏫</span>
-          <div class="pillar-item-info">
-            <div class="pillar-item-title">Facilitators</div>
-            <div class="pillar-item-sub">${s.facilitators} active mentors</div>
-          </div>
-          <span class="pillar-item-arrow">›</span>
-        </a>
-        <a class="pillar-item" href="#/camps">
-          <span class="pillar-item-icon">🏕️</span>
-          <div class="pillar-item-info">
-            <div class="pillar-item-title">Camps &amp; Outings</div>
-            <div class="pillar-item-sub">Spiritual retreats &amp; visits</div>
-          </div>
-          <span class="pillar-item-arrow">›</span>
-        </a>
-        <a class="pillar-item" href="#/meetings">
-          <span class="pillar-item-icon">🔒</span>
-          <div class="pillar-item-info">
-            <div class="pillar-item-title">Meetings &amp; follow-ups</div>
-            <div class="pillar-item-sub">Confidential 1-on-1s &amp; check-ins</div>
-          </div>
-          <span class="pillar-item-arrow">›</span>
-        </a>
+        </div>
       </div>
     </div>
   </div>`;
@@ -22082,6 +22282,38 @@ document.addEventListener('click',e=>{
     });
   }
 
+  // Handle pillar items navigation directly
+  const pillarItem = e.target.closest('.pillar-item');
+  if(pillarItem){
+    const href = pillarItem.getAttribute('href');
+    if(href && href.startsWith('#/')){
+      e.preventDefault();
+      go(href);
+      return;
+    }
+  }
+
+  // Handle expandable pillar cards toggle on mobile
+  const pillarTop = e.target.closest('[data-act="toggle-pillar"]') || e.target.closest('.pillar-card-top');
+  if(pillarTop){
+    const card = pillarTop.closest('.pillar-card');
+    if(card){
+      const pKey = card.dataset.pillar || pillarTop.dataset.pillar;
+      if(pKey){
+        togglePillarCard(pKey, card);
+        return;
+      }
+    }
+  }
+  const collapsedPillar = e.target.closest('.pillar-card:not(.is-expanded)');
+  if(collapsedPillar && window.innerWidth <= 820){
+    const pKey = collapsedPillar.dataset.pillar;
+    if(pKey){
+      togglePillarCard(pKey, collapsedPillar);
+      return;
+    }
+  }
+
   const t=e.target.closest('[data-act]');
   const link=e.target.closest('a[href^="#/"]');
   if(link&&!t){e.preventDefault();go(link.getAttribute('href'));return}
@@ -22093,6 +22325,11 @@ document.addEventListener('click',e=>{
     e.preventDefault();go(t.getAttribute('href'));return}
   const stop=()=>{e.preventDefault();e.stopPropagation()};
   switch(a){
+   case 'toggle-pillar':{
+     const pKey=t.dataset.pillar;
+     const card=t.closest('.pillar-card');
+     if(pKey&&card) togglePillarCard(pKey,card);
+     break}
    case 'ms-toggle-item':{
      updateMultiSelectUI(t.dataset.name);
      break}
