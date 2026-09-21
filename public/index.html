@@ -92,7 +92,7 @@ body{
   transition:background .3s,color .3s;
 }
 .shell,.view{max-width:100%;width:100%;overflow-x:hidden}
-.main{max-width:100%;min-width:0;overflow-x:hidden}
+.main{max-width:100%;min-width:0}
 h1,h2,h3,h4{font-family:var(--f-head);font-weight:700;letter-spacing:-.02em;margin:0}
 h1{font-size:28px;line-height:1.2}
 h2{font-size:20px;letter-spacing:-.015em}
@@ -778,11 +778,8 @@ body.mobile-today-open{
   display:flex;
   align-items:center;
   min-height:44px;
-  position:sticky;
-  top:var(--header-h);
-  z-index:95;
-  backdrop-filter:blur(16px) saturate(1.4);
-  -webkit-backdrop-filter:blur(16px) saturate(1.4);
+  position:relative;
+  z-index:15;
   transition:background .2s, border-color .2s;
 }
 .global-breadcrumbs-inner{
@@ -9254,8 +9251,7 @@ function viewDevotee(id){
      <button class="btn pri" data-act="toast" data-msg="Note saved">Save note</button>
      <div style="height:15px"></div><div class="note">${esc(d.swabhav.nature)} by nature — suggested engagement: ${esc(d.swabhav.suggested)}. Interests: ${esc(d.swabhav.interests.join(', '))}.</div></div>`)
   }[tab];
-  return `<a class="btn ghost sm" href="#/devotees" style="margin-bottom:10px">${ic('back')}Devotee directory</a>
-   <div class="card pad" style="margin-bottom:16px;display:flex;gap:18px;align-items:center;flex-wrap:wrap">
+  return `<div class="card pad" style="margin-bottom:16px;display:flex;gap:18px;align-items:center;flex-wrap:wrap">
     ${av(d.name,'l')}
     <div style="min-width:190px"><h1 style="font-size:23px">${esc(d.name)}</h1>
       <div class="tiny" style="margin-top:4px">${esc(d.occupation)} · ${esc(d.org)} · joined ${fmtD(d.joined)}</div>
@@ -9641,8 +9637,7 @@ function prasadamBlock(a){
 function viewDept(id){
   const dp=dept(id);if(!dp)return emptyState('Department not found','','<a class="btn" href="#/depts">Back to departments</a>');
   APP.crumbLeaf=dp.name;
-  return `<a class="btn ghost sm" href="#/depts" style="margin-bottom:10px">${ic('back')}Departments</a>`+
-   head(dp.icon+' Department',dp.name,`${dp.desc} · head ${nameOf(dp.head)} · ${dp.status}`,
+  return head(dp.icon+' Department',dp.name,`${dp.desc} · head ${nameOf(dp.head)} · ${dp.status}`,
     `${ownsDept(dp.id)?`<button class="btn" data-act="edit-dept" data-id="${dp.id}">${ic('edit')}Edit</button>
       <button class="btn" data-act="dept-report-range" data-id="${dp.id}">📄 Reports</button>
       <button class="btn pri" data-act="open-assign" data-type="Seva" data-dept="${dp.id}">${ic('plus')}Assign seva</button>`:''}`)+
@@ -18782,8 +18777,7 @@ function batchDashboardBody(b){
 function viewBatch(id){
   const b=batch(id);if(!b)return emptyState('Batch not found','','<a class="btn" href="#/batches">Back to batches</a>');
   APP.crumbLeaf=b.name;
-  return `<a class="btn ghost sm" href="#/batches" style="margin-bottom:10px">${ic('back')}All batches</a>`+
-   head('📖 Level '+b.level+' batch',b.name,`${b.desc} · ${b.freq} on ${b.day} at ${b.time} · coordinator ${nameOf(b.coordinator)}`,
+  return head('📖 Level '+b.level+' batch',b.name,`${b.desc} · ${b.freq} on ${b.day} at ${b.time} · coordinator ${nameOf(b.coordinator)}`,
     ownsBatch(b.id)?`
       ${canImportCsv(b.id)?`<button class="btn" data-act="open-import-csv" data-batch="${b.id}" style="margin-right:6px">${ic('upload')}Import CSV</button>`:''}
       <button class="btn" data-act="edit-batch" data-id="${b.id}">${ic('edit')}Edit batch</button>
@@ -20903,8 +20897,7 @@ function viewGroups(){
 function viewGroup(id){
   const g=group(id);if(!g)return emptyState('Group not found','','<a class="btn" href="#/groups">Back to groups</a>');
   APP.crumbLeaf=g.name;
-  return `<a class="btn ghost sm" href="#/groups" style="margin-bottom:10px">${ic('back')}All groups</a>`+
-   head('🫂 Care group',g.name,`${g.desc} · ${g.freq} on ${g.day} at ${g.time} · ${g.place}`,
+  return head('🫂 Care group',g.name,`${g.desc} · ${g.freq} on ${g.day} at ${g.time} · ${g.place}`,
     can('care')?`<button class="btn" data-act="edit-group" data-id="${g.id}">${ic('edit')}Edit group</button>
      <button class="btn pri" data-act="group-add-member" data-id="${g.id}">${ic('plus')}Add member</button>`:'')+
   `<div class="grid g4" style="margin-bottom:15px">
