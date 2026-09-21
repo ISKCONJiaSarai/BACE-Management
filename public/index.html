@@ -24932,6 +24932,8 @@ try {
       const email = (u.email || '').toLowerCase().trim();
       const isBace = isBaceAdminEmail(email);
       const isSurya = isSuryaEmail(email);
+      const counsellorInfo = getCounsellorInfo(email);
+      const isCounsellor = !!counsellorInfo || u.role === 'counsellor';
 
       if (isBace) {
         DB.devotees = DB.devotees.filter(x => !isBaceAdminEmail(x.email) && x.appointment !== 'System Administrator' && x.appointment !== 'BACE Administrator' && x.name !== 'ISKCON BACE Admin');
@@ -24952,7 +24954,7 @@ try {
         let appointment = 'Devotee';
 
         if (isCounsellor) {
-          spiritualName = counsellorInfo.name;
+          spiritualName = counsellorInfo ? counsellorInfo.name : (u.name || 'Counsellor');
           effectiveRole = 'counsellor';
           appointment = 'Counsellor';
         } else if (isSurya) {
@@ -24968,9 +24970,9 @@ try {
           else if (effectiveRole === 'admin') effectiveRole = 'devotee';
         }
 
-        const savedApproval = u.approvalStatus || ((isSurya || isCounsellor) ? 'approved' : 'pending_profile');
-        const savedProfileCompleted = u.profileCompleted !== undefined ? !!u.profileCompleted : ((isSurya || isCounsellor) ? true : false);
-        const isActuallyApproved = isSurya || isCounsellor || savedApproval === 'approved';
+        const savedApproval = u.approvalStatus || ((isSurya || isCounsellor || isBace) ? 'approved' : 'pending_profile');
+        const savedProfileCompleted = u.profileCompleted !== undefined ? !!u.profileCompleted : ((isSurya || isCounsellor || isBace) ? true : false);
+        const isActuallyApproved = isSurya || isCounsellor || isBace || savedApproval === 'approved';
 
         if (!d) {
           d = normalizeDevotee({
@@ -25034,42 +25036,60 @@ if (bootParams.get('attBatch')) APP.filters.attBatch = bootParams.get('attBatch'
 if (bootParams.get('attClass')) APP.filters.attClass = bootParams.get('attClass');
 async function verifyUserSessionFromServer(){
   const token = localStorage.getItem('bace_token');
-  if (!token || !APP.user) return;
-  const curEmail = (APP.user.email || '').toLowerCase().trim();
-  if (isBaceAdminEmail(curEmail) || isSuryaEmail(curEmail) || isCounsellorEmail(curEmail)) return;
+  if (!token) return;
   try {
     const res = await fetch('/api/auth/me', {
       headers: { 'Authorization': 'Bearer ' + token }
     });
     if (!res.ok) {
-      if (res.status === 401) {
-        localStorage.removeItem('bace_token');
-        localStorage.removeItem('bace_user');
-        APP.user = null;
-        render();
-      }
+      // Do not clear local session on network glitch or reload; user remains logged in unless explicitly signing out!
       return;
     }
     const data = await res.json();
     if (data.success && data.user) {
       const u = data.user;
+      const email = (u.email || '').toLowerCase().trim();
+      const isBace = isBaceAdminEmail(email);
+      const isSurya = isSuryaEmail(email);
+      const counsellorInfo = getCounsellorInfo(email);
+      const isCounsellor = !!counsellorInfo || u.role === 'counsellor';
+      const d = DB.devotees.find(x => x.id === u.devotee || (x.email && x.email.toLowerCase() === email));
+      const spiritualName = isCounsellor ? (counsellorInfo ? counsellorInfo.name : 'Counsellor') : (isSurya ? 'Surya Narayana Das' : (d?.name || u.name || 'Devotee'));
+      const effectiveRole = isCounsellor ? 'counsellor' : (isSurya ? 'area_leader' : (isBace ? 'admin' : (u.role || 'devotee')));
+      const isActuallyApproved = isSurya || isCounsellor || isBace || u.approvalStatus === 'approved';
+
+      if (!APP.user) {
+        APP.user = {
+          id: u.id,
+          devotee: d ? d.id : u.devotee,
+          role: effectiveRole,
+          email: u.email,
+          name: spiritualName,
+          avatar: u.avatar || '',
+          approvalStatus: isActuallyApproved ? 'approved' : u.approvalStatus,
+          profileCompleted: isActuallyApproved ? true : !!u.profileCompleted
+        };
+        localStorage.setItem('bace_user', JSON.stringify(APP.user));
+        render();
+        return;
+      }
+
       let changed = false;
-      if (APP.user.approvalStatus !== u.approvalStatus) {
+      if (APP.user.approvalStatus !== u.approvalStatus && !isSurya && !isCounsellor && !isBace) {
         APP.user.approvalStatus = u.approvalStatus;
         changed = true;
       }
-      if (APP.user.profileCompleted !== u.profileCompleted) {
+      if (APP.user.profileCompleted !== u.profileCompleted && !isSurya && !isCounsellor && !isBace) {
         APP.user.profileCompleted = !!u.profileCompleted;
         changed = true;
       }
-      if (u.role && APP.user.role !== u.role) {
-        APP.user.role = u.role;
+      if (u.role && APP.user.role !== effectiveRole) {
+        APP.user.role = effectiveRole;
         APP.user.appointment = u.appointment || '';
         changed = true;
       }
       if (changed) {
         localStorage.setItem('bace_user', JSON.stringify(APP.user));
-        // Preserve user navigation state
         render();
       }
     }

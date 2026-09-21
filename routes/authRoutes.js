@@ -254,7 +254,7 @@ router.post('/google', async (req, res) => {
     // 5. Generate application JWT
     stage = 'generate_session_token';
     const jwtSecret = process.env.JWT_SECRET || 'bace_jwt_secret_dev_2026';
-    const jwtExpire = process.env.JWT_EXPIRE || '30d';
+    const jwtExpire = process.env.JWT_EXPIRE || '365d';
 
     const appToken = jwt.sign(
       {
