@@ -284,43 +284,42 @@ input,select,textarea{font-family:inherit;font-size:14px;color:var(--ink);backgr
   .header-mobile-menu{width:32px;height:32px;border-radius:8px}
 }
 
-/* Mobile nav dropdown */
+/* Mobile nav dropdown — Android Notification Shade style */
 .mobile-nav-dropdown{
   position:fixed;top:var(--header-h);left:0;right:0;z-index:490;
   background:var(--surface);
-  background:color-mix(in srgb, var(--surface) 95%, transparent);
-  backdrop-filter:blur(28px) saturate(1.8);-webkit-backdrop-filter:blur(28px) saturate(1.8);
+  background:color-mix(in srgb, var(--surface) 96%, transparent);
+  backdrop-filter:blur(30px) saturate(1.9);-webkit-backdrop-filter:blur(30px) saturate(1.9);
   border-bottom:1px solid var(--line);
-  border-radius:0 0 22px 22px;
-  box-shadow:0 24px 50px -10px rgba(0,0,0,0.28), 0 6px 18px rgba(0,0,0,0.06);
+  border-radius:0 0 28px 28px;
+  box-shadow:0 28px 60px -10px rgba(0,0,0,0.34), 0 10px 24px -5px rgba(0,0,0,0.12), inset 0 -1px 0 rgba(255,255,255,0.08);
   padding:8px 12px 14px;display:flex;flex-direction:column;gap:3px;
-  animation:mnavSlideDown .42s cubic-bezier(.16,1,.3,1) forwards;
-  max-height:calc(100vh - var(--header-h) - 18px);overflow-y:auto;
+  animation:mnavSlideDown .36s cubic-bezier(.16,1,.3,1) forwards;
+  max-height:calc(100vh - var(--header-h) - 16px);overflow-y:auto;
   overscroll-behavior-y:contain;
   -webkit-overflow-scrolling:touch;
   touch-action:pan-y;
   will-change:transform, opacity;
 }
-.mobile-nav-dropdown.closing{animation:mnavSlideUp .32s cubic-bezier(0.4,0,0.2,1) forwards!important;pointer-events:none}
+.mobile-nav-dropdown.closing{animation:mnavSlideUp .28s cubic-bezier(0.4,0,0.2,1) forwards!important;pointer-events:none}
 @keyframes mnavSlideDown{
-  0%{opacity:0;transform:translate3d(0, -32px, 0) scaleY(0.96);transform-origin:top center;filter:blur(6px)}
-  60%{opacity:0.95;filter:blur(0px)}
-  100%{opacity:1;transform:translate3d(0, 0, 0) scaleY(1);filter:blur(0px)}
+  0%{opacity:0;transform:translate3d(0, -100%, 0)}
+  100%{opacity:1;transform:translate3d(0, 0, 0)}
 }
 @keyframes mnavSlideUp{
-  0%{opacity:1;transform:translate3d(0, 0, 0) scaleY(1);filter:blur(0px)}
-  100%{opacity:0;transform:translate3d(0, -28px, 0) scaleY(0.96);transform-origin:top center;filter:blur(4px)}
+  0%{opacity:1;transform:translate3d(0, 0, 0)}
+  100%{opacity:0;transform:translate3d(0, -100%, 0)}
 }
 .mnav-swipe-bar{
   display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:5px;padding:12px 0 6px;margin-top:6px;cursor:pointer;
-  touch-action:none;user-select:none;border-radius:12px;
+  gap:5px;padding:12px 0 8px;margin-top:6px;cursor:grab;
+  touch-action:none;user-select:none;border-radius:14px;
   transition:all .18s ease;
 }
-.mnav-swipe-bar:active{background:var(--surface-2, rgba(0,0,0,0.04))}
+.mnav-swipe-bar:active{background:var(--surface-2, rgba(0,0,0,0.05));cursor:grabbing}
 .mnav-swipe-pill{
-  width:42px;height:4.5px;border-radius:4px;
-  background:var(--line-2, #cbd5e1);transition:all .2s ease;
+  width:48px;height:5px;border-radius:10px;
+  background:var(--line-2, #cbd5e1);transition:all .2s cubic-bezier(0.16,1,0.3,1);
 }
 .mnav-swipe-text{
   font-size:11px;color:var(--ink-3);font-weight:600;letter-spacing:0.02em;
@@ -330,7 +329,7 @@ input,select,textarea{font-family:inherit;font-size:14px;color:var(--ink);backgr
   display:inline-block;transition:transform .2s ease;
 }
 .mnav-swipe-bar:hover .mnav-swipe-pill,.mnav-swipe-bar:active .mnav-swipe-pill{
-  background:var(--accent);width:50px;
+  background:var(--accent);width:56px;transform:scaleY(1.2);
 }
 .mnav-swipe-bar:hover .mnav-swipe-text,.mnav-swipe-bar:active .mnav-swipe-text{
   color:var(--accent);
@@ -338,14 +337,15 @@ input,select,textarea{font-family:inherit;font-size:14px;color:var(--ink);backgr
 .mnav-swipe-bar:hover .mnav-swipe-arrow,.mnav-swipe-bar:active .mnav-swipe-arrow{
   transform:translateY(-2px);
 }
-.mobile-nav-dropdown a{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;font-size:14px;font-weight:500;color:var(--ink-2);transition:all .15s ease}
+.mobile-nav-dropdown a{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;font-size:14px;font-weight:500;color:var(--ink-2);transition:all .15s ease}
 .mobile-nav-dropdown a:hover,.mobile-nav-dropdown a.on{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.mobile-nav-dropdown a:active{transform:scale(0.98);background:var(--surface-2)}
 .mobile-nav-dropdown .mnav-section{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3);padding:12px 14px 4px}
 .mobile-nav-dropdown .mnav-section.mnav-accordion-header{
   display:flex;align-items:center;justify-content:space-between;
-  padding:10px 14px;margin:3px 0 1px 0;border-radius:10px;
+  padding:10px 14px;margin:3px 0 1px 0;border-radius:12px;
   cursor:pointer;-webkit-tap-highlight-color:transparent;user-select:none;
-  transition:all .18s ease;font-size:11.5px;
+  transition:all .2s cubic-bezier(0.16,1,0.3,1);font-size:11.5px;
 }
 .mobile-nav-dropdown .mnav-section.mnav-accordion-header:hover,
 .mobile-nav-dropdown .mnav-section.mnav-accordion-header:active{
@@ -365,11 +365,11 @@ input,select,textarea{font-family:inherit;font-size:14px;color:var(--ink);backgr
 .mnav-sec-left{display:flex;align-items:center;gap:8px}
 .mnav-sec-right{display:flex;align-items:center;gap:8px}
 .mnav-active-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 5px var(--accent);flex-shrink:0}
-.mnav-chevron{color:var(--ink-3);transition:transform .24s cubic-bezier(0.16,1,0.3,1), color .2s ease;flex-shrink:0}
+.mnav-chevron{color:var(--ink-3);transition:transform .28s cubic-bezier(0.16,1,0.3,1), color .2s ease;flex-shrink:0}
 .mnav-accordion-header.open .mnav-chevron{transform:rotate(180deg);color:var(--accent)}
 .mnav-sub.mnav-sub-collapsible{
   max-height:0;overflow:hidden;opacity:0;visibility:hidden;
-  transition:max-height .26s cubic-bezier(0.16,1,0.3,1), opacity .2s ease, visibility .26s ease;
+  transition:max-height .28s cubic-bezier(0.16,1,0.3,1), opacity .22s ease, visibility .28s ease, margin .22s ease;
   display:flex;flex-direction:column;gap:1px;
 }
 .mnav-sub.mnav-sub-collapsible.open{
@@ -6913,7 +6913,23 @@ function appHeader(){
       <button class="icon-btn" data-act="account" title="Account" style="border:none;background:none">${av(nameOf(APP.user.devotee),'s')}</button>
     </div>
     <button class="header-mobile-menu ${APP.mobileNavOpen ? 'open' : ''}" data-act="toggle-mobile-nav" title="Menu" aria-label="${APP.mobileNavOpen ? 'Close Menu' : 'Open Menu'}">${APP.mobileNavOpen ? ic('x') : ic('menu')}</button>
-  </header>${APP.mobileNavOpen?mobileNavDropdown():''}`;
+  </header><div id="mobileNavHost">${APP.mobileNavOpen?mobileNavDropdown():''}</div>`;
+}
+
+function openMobileNav(){
+  const host = document.getElementById('mobileNavHost');
+  const btn = document.querySelector('.header-mobile-menu');
+  APP.mobileNavOpen = true;
+  APP.mobileNavExpanded = null;
+  if(btn){
+    btn.classList.add('open');
+    btn.setAttribute('aria-label', 'Close Menu');
+    btn.innerHTML = ic('x');
+  }
+  if(host){
+    host.innerHTML = mobileNavDropdown();
+    initMobileNavGestures();
+  }
 }
 
 function closeMobileNav(cb){
@@ -6923,19 +6939,34 @@ function closeMobileNav(cb){
   }
   const mn = document.getElementById('mobileNavDropdown') || document.querySelector('.mobile-nav-dropdown');
   const scrim = document.querySelector('.mobile-scrim');
+  const btn = document.querySelector('.header-mobile-menu');
   APP.mobileNavExpanded = null;
+  APP.mobileNavOpen = false;
+  if(btn){
+    btn.classList.remove('open');
+    btn.setAttribute('aria-label', 'Open Menu');
+    btn.innerHTML = ic('menu');
+  }
   if(mn){
     mn.classList.add('closing');
     if(scrim) scrim.classList.add('closing');
     setTimeout(()=>{
-      APP.mobileNavOpen = false;
-      render();
+      const host = document.getElementById('mobileNavHost');
+      if(host) host.innerHTML = '';
       if(typeof cb === 'function') cb();
-    }, 300);
+    }, 280);
   } else {
-    APP.mobileNavOpen = false;
-    render();
+    const host = document.getElementById('mobileNavHost');
+    if(host) host.innerHTML = '';
     if(typeof cb === 'function') cb();
+  }
+}
+
+function toggleMobileNav(){
+  if(APP.mobileNavOpen){
+    closeMobileNav();
+  } else {
+    openMobileNav();
   }
 }
 
@@ -6945,99 +6976,107 @@ function initMobileNavGestures(){
   const scrim = document.querySelector('.mobile-scrim');
   const swipeBar = mn.querySelector('.mnav-swipe-bar');
 
-  let startY = 0, startX = 0, deltaY = 0, deltaX = 0, startTime = 0;
-  let isTracking = false, canSwipeUp = false, hasMoved = false;
+  let startY = 0, startX = 0, lastY = 0, startTime = 0;
+  let isDragging = false, canDrag = false;
 
-  const onTouchStart = (e) => {
-    if(e.touches && e.touches.length > 1) return;
-    const pt = e.touches ? e.touches[0] : e;
-    startY = pt.clientY;
-    startX = pt.clientX;
+  const onStart = (clientY, clientX, target) => {
+    startY = clientY;
+    startX = clientX;
+    lastY = clientY;
     startTime = Date.now();
-    deltaY = 0;
-    deltaX = 0;
-    hasMoved = false;
-    isTracking = true;
+    isDragging = false;
 
-    // Allowed to swipe up if touch started on swipeBar, user bar at bottom, or if container is at top
-    const isTargetSwipeBar = swipeBar && (swipeBar === e.target || swipeBar.contains(e.target));
-    canSwipeUp = isTargetSwipeBar || mn.scrollTop <= 4;
+    // Direct drag if touch started on swipeBar, user footer, or container scrolled to top
+    const onSwipeBar = swipeBar && (swipeBar === target || swipeBar.contains(target));
+    const onFooter = target.closest && target.closest('.mnav-user-footer');
+    canDrag = onSwipeBar || onFooter || mn.scrollTop <= 2;
   };
 
-  const onTouchMove = (e) => {
-    if(!isTracking) return;
-    const pt = e.touches ? e.touches[0] : e;
-    deltaY = pt.clientY - startY;
-    deltaX = pt.clientX - startX;
+  const onMove = (clientY, clientX, e) => {
+    lastY = clientY;
+    const dy = clientY - startY;
+    const dx = clientX - startX;
 
-    // Only handle vertical upward motion (swiping towards top)
-    if(deltaY < -4 && Math.abs(deltaY) > Math.abs(deltaX)) {
-      if(canSwipeUp || mn.scrollTop <= 0) {
-        hasMoved = true;
-        if(e.cancelable && (canSwipeUp || mn.scrollTop <= 0)) {
-          e.preventDefault();
-        }
-        mn.style.transition = 'none';
-        mn.style.transform = `translate3d(0, ${deltaY}px, 0)`;
-        const ratio = Math.max(0, 1 - Math.abs(deltaY) / 260);
-        mn.style.opacity = `${ratio}`;
-        if(scrim) {
-          scrim.style.transition = 'none';
-          scrim.style.opacity = `${Math.max(0, 1 - Math.abs(deltaY) / 360)}`;
-        }
+    // Check if user is swiping upward
+    if(!isDragging) {
+      if(dy < -4 && (canDrag || mn.scrollTop <= 0) && Math.abs(dy) > Math.abs(dx)) {
+        isDragging = true;
+      }
+    }
+
+    if(isDragging) {
+      if(e && e.cancelable) e.preventDefault();
+      // Move along 1:1 with finger touch up when closing (Android shade physics)
+      const clampedDy = Math.min(0, dy);
+      mn.style.transition = 'none';
+      mn.style.transform = `translate3d(0, ${clampedDy}px, 0)`;
+
+      // Scrim fades proportionally as shade slides up
+      const h = mn.offsetHeight || 420;
+      const progress = Math.max(0, 1 + clampedDy / (h * 0.75));
+      if(scrim) {
+        scrim.style.transition = 'none';
+        scrim.style.opacity = progress.toFixed(3);
       }
     }
   };
 
-  const onTouchEnd = () => {
-    if(!isTracking) return;
-    isTracking = false;
-    if(!hasMoved && deltaY >= 0) return;
+  const onEnd = () => {
+    if(!isDragging) return;
+    isDragging = false;
+    const dy = lastY - startY;
+    const dt = Math.max(Date.now() - startTime, 1);
+    const velocity = -dy / dt; // upward velocity in px/ms
 
-    const elapsed = Math.max(Date.now() - startTime, 1);
-    const velocity = -deltaY / elapsed; // px per ms
-
-    if(deltaY < -45 || (deltaY < -20 && velocity > 0.35)) {
-      // Completed swipe up
-      mn.style.transition = 'transform 0.28s cubic-bezier(0.2, 0.9, 0.3, 1), opacity 0.25s ease';
+    if(dy < -50 || (dy < -15 && velocity > 0.28)) {
+      // Completed upward swipe to close
+      mn.style.transition = 'transform 0.26s cubic-bezier(0.2, 0.9, 0.3, 1), opacity 0.22s ease';
       mn.style.transform = 'translate3d(0, -100%, 0)';
       mn.style.opacity = '0';
       if(scrim) {
-        scrim.style.transition = 'opacity 0.25s ease';
+        scrim.style.transition = 'opacity 0.24s ease';
         scrim.style.opacity = '0';
       }
       setTimeout(() => {
         closeMobileNav();
-      }, 280);
+      }, 260);
     } else {
-      // Snap back smoothly
-      mn.style.transition = 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease';
+      // Snap back down smoothly like an Android notification shade
+      mn.style.transition = 'transform 0.34s cubic-bezier(0.18, 0.9, 0.32, 1.2), opacity 0.2s ease';
       mn.style.transform = 'translate3d(0, 0, 0)';
       mn.style.opacity = '1';
       if(scrim) {
-        scrim.style.transition = 'opacity 0.3s ease';
+        scrim.style.transition = 'opacity 0.2s ease';
         scrim.style.opacity = '1';
       }
     }
   };
 
-  mn.addEventListener('touchstart', onTouchStart, { passive: false });
-  mn.addEventListener('touchmove', onTouchMove, { passive: false });
-  mn.addEventListener('touchend', onTouchEnd, { passive: true });
-  mn.addEventListener('touchcancel', onTouchEnd, { passive: true });
+  mn.addEventListener('touchstart', e => {
+    if(e.touches.length === 1) onStart(e.touches[0].clientY, e.touches[0].clientX, e.target);
+  }, { passive: true });
 
-  // Also support dragging on swipeBar via mouse
+  mn.addEventListener('touchmove', e => {
+    if(e.touches.length === 1) onMove(e.touches[0].clientY, e.touches[0].clientX, e);
+  }, { passive: false });
+
+  mn.addEventListener('touchend', onEnd, { passive: true });
+  mn.addEventListener('touchcancel', onEnd, { passive: true });
+
+  // Mouse drag support for desktop/emulator preview
   if(swipeBar) {
-    swipeBar.addEventListener('mousedown', (e) => {
-      onTouchStart(e);
-      const onMouseMove = (ev) => onTouchMove(ev);
-      const onMouseUp = () => {
-        document.removeEventListener('mousemove', onMouseMove);
-        document.removeEventListener('mouseup', onMouseUp);
-        onTouchEnd();
+    swipeBar.addEventListener('mousedown', e => {
+      if(e.button !== 0) return;
+      onStart(e.clientY, e.clientX, e.target);
+      isDragging = true;
+      const moveHandler = ev => onMove(ev.clientY, ev.clientX, ev);
+      const upHandler = () => {
+        document.removeEventListener('mousemove', moveHandler);
+        document.removeEventListener('mouseup', upHandler);
+        onEnd();
       };
-      document.addEventListener('mousemove', onMouseMove);
-      document.addEventListener('mouseup', onMouseUp);
+      document.addEventListener('mousemove', moveHandler);
+      document.addEventListener('mouseup', upHandler);
     });
   }
 }
@@ -7112,7 +7151,7 @@ function mobileNavDropdown(){
     }).join('')}
     <div class="mnav-section" style="margin-top:4px">More</div>
     ${bottomItems.filter(i=>!i.m||can(i.m)).map(i=>`<a href="${i.r}" class="${i.on?'on':''}" data-act="mobile-nav-go" data-r="${i.r}"><span>${i.em}</span>${i.t}</a>`).join('')}
-    <div style="border-top:1px solid var(--line);margin:8px 0 4px;padding-top:8px;display:flex;align-items:center;gap:8px">
+    <div class="mnav-user-footer" style="border-top:1px solid var(--line);margin:8px 0 4px;padding-top:8px;display:flex;align-items:center;gap:8px">
       <button class="icon-btn" data-act="account" style="border:none">${av(nameOf(APP.user.devotee),'s')}</button>
       <div style="flex:1;min-width:0"><div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(devoteeDisplayName(APP.user.devotee))}</div><div style="font-size:11px;color:var(--ink-3)">${esc(devoteePositionTitle(APP.user.devotee, APP.user.role))}</div></div>
       <button class="btn sm danger" data-act="logout">${ic('logout')} Sign out</button>
@@ -25163,21 +25202,36 @@ document.addEventListener('click',e=>{
     setTodayPanelOpen(false);
     break}
   case 'toggle-mobile-nav':{stop();
-    if(APP.mobileNavOpen){
-      closeMobileNav();
-    } else {
-      APP.mobileNavOpen=true;
-      APP.mobileNavExpanded=null;
-      render();
-    }
+    toggleMobileNav();
     break}
   case 'close-mobile-nav':{stop();
     closeMobileNav();
     break}
   case 'toggle-mnav-section':{stop();
-    const sec=t.dataset.sec;
-    APP.mobileNavExpanded=(APP.mobileNavExpanded===sec)?null:sec;
-    render();
+    const sec = t.closest('.mnav-accordion-header')?.dataset.sec || t.dataset.sec;
+    if(!sec) break;
+    const mn = document.getElementById('mobileNavDropdown');
+    if(!mn) break;
+    const header = mn.querySelector(`.mnav-accordion-header[data-sec="${sec}"]`);
+    const sub = mn.querySelector(`.mnav-sub-collapsible[data-sec="${sec}"]`);
+    const isCurrentlyOpen = header && header.classList.contains('open');
+
+    mn.querySelectorAll('.mnav-accordion-header').forEach(h => {
+      h.classList.remove('open');
+      h.setAttribute('aria-expanded', 'false');
+    });
+    mn.querySelectorAll('.mnav-sub-collapsible').forEach(s => {
+      s.classList.remove('open');
+    });
+
+    if(!isCurrentlyOpen && header && sub) {
+      header.classList.add('open');
+      header.setAttribute('aria-expanded', 'true');
+      sub.classList.add('open');
+      APP.mobileNavExpanded = sec;
+    } else {
+      APP.mobileNavExpanded = null;
+    }
     break}
   case 'mobile-nav-go':{stop();
     const dest = t.dataset.r||t.getAttribute('href');
