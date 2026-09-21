@@ -3763,6 +3763,48 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-off
     justify-content:center!important;
     border-radius:8px!important;
   }
+
+  /* ── Devotee Directory Ultra-Compact Mobile Card Layout ── */
+  .tbl-dev tr{
+    display:flex!important;
+    flex-wrap:wrap!important;
+    align-items:center!important;
+    padding:10px 12px!important;
+    border-radius:12px!important;
+    gap:4px 8px!important;
+  }
+  .tbl-dev td:first-child{
+    width:100%!important;
+    border-bottom:none!important;
+    padding-bottom:2px!important;
+    margin-bottom:0!important;
+  }
+  .tbl-dev td:first-child .who{
+    width:100%!important;
+  }
+  .tbl-dev td:before{
+    display:none!important;
+  }
+  .tbl-dev td[data-l="Status"],
+  .tbl-dev td[data-l="Level / batch"],
+  .tbl-dev td[data-l="Attendance"]{
+    display:inline-flex!important;
+    padding:0!important;
+    margin:0!important;
+    font-size:11px!important;
+  }
+  .tbl-dev td[data-l="Gender"],
+  .tbl-dev td[data-l="Department"],
+  .tbl-dev td[data-l="Care group"],
+  .tbl-dev td[data-l="Facilitator"]{
+    display:none!important;
+  }
+  .tbl-dev td[data-l="Actions"]{
+    margin-left:auto!important;
+    padding-top:0!important;
+    margin-top:0!important;
+    border-top:none!important;
+  }
 }
 
 </style>
@@ -5710,7 +5752,7 @@ function openDetailSheet({title='', body='', footerBtns=[], onClose=null}={}){
   closeDetailSheet();
   const id = 'ds_' + Math.random().toString(36).slice(2,8);
   const footer = footerBtns.length
-    ? `<div class="detail-sheet-footer">${footerBtns.map(b=>`<button class="btn${b.pri?' pri':''}" data-act="${esc(b.act||'')}" data-id="${esc(b.id||'')}" data-arg="${esc(b.arg||'')}">${esc(b.label||b.text||'')}</button>`).join('')}</div>`
+    ? `<div class="detail-sheet-footer">${footerBtns.map(b=>`<button class="btn${b.pri?' pri':''}" data-act="${esc(b.act||'')}" data-id="${esc(b.id||'')}" data-arg="${esc(b.arg||'')}" data-r="${esc(b.r||b.arg||'')}">${esc(b.label||b.text||'')}</button>`).join('')}</div>`
     : '';
   const html = `<div class="detail-sheet-wrap" id="${id}" data-act="close-detail-sheet">
     <div class="detail-sheet" id="${id}_sheet">
@@ -5751,6 +5793,77 @@ function openDetailSheet({title='', body='', footerBtns=[], onClose=null}={}){
 function closeDetailSheet(cb){
   document.querySelectorAll('.detail-sheet-wrap').forEach(el => el.remove());
   if(typeof cb === 'function') cb();
+}
+
+/* ── Devotee Quick Detail Bottom Sheet (Phase 3) ── */
+function openDevoteeDetailSheet(id){
+  const d = dv(id);
+  if(!d) return;
+  const cleanPhone = (d.phone||'').replace(/\D/g,'').slice(-10);
+  const att = getDevoteeRealAttendance(d);
+  const rKeys = devoteeRoles(d);
+  const roleBadges = rKeys.map(rk=>{
+    const ro = ROLES[rk]||ROLES.devotee;
+    return `<span class="badge ${rk==='area_leader'?'b-gold':rk==='admin'?'b-ink':rk==='devotee'?'b-grey':'b-saffron'}" style="font-size:10.5px;padding:2px 6px">${ro.emoji} ${esc(ro.name)}</span>`;
+  }).join(' ');
+
+  const body = `
+    <div style="display:flex;gap:14px;align-items:center;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--line)">
+      ${av(d.name, 'm')}
+      <div style="min-width:0;flex:1">
+        <div style="font-weight:700;font-size:16px;color:var(--ink);line-height:1.2">${esc(d.name)}</div>
+        <div style="font-size:12px;color:var(--ink-2);margin-top:3px">${esc(d.occupation||d.highestEducation||'BACE')} · ${esc(d.org||'Jia Sarai')}</div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:6px">
+          ${sbadge(d.status)}
+          ${roleBadges}
+        </div>
+      </div>
+    </div>
+
+    ${cleanPhone.length >= 10 ? `
+      <div style="display:flex;gap:8px;margin-bottom:14px">
+        <a href="tel:+91${cleanPhone}" class="btn sm" style="flex:1;justify-content:center;background:rgba(16,185,129,0.08);color:#059669;border-color:rgba(16,185,129,0.25);font-weight:600;text-decoration:none;min-height:38px;display:inline-flex;align-items:center;gap:5px">📞 Call</a>
+        <a href="https://wa.me/91${cleanPhone}" target="_blank" rel="noopener" class="btn sm" style="flex:1;justify-content:center;background:rgba(16,185,129,0.08);color:#059669;border-color:rgba(16,185,129,0.25);font-weight:600;text-decoration:none;min-height:38px;display:inline-flex;align-items:center;gap:5px">💬 WhatsApp</a>
+      </div>
+    ` : ''}
+
+    <dl class="kv" style="grid-template-columns:96px 1fr;font-size:12.5px;gap:8px 12px;margin:0 0 16px 0">
+      <dt style="color:var(--ink-3)">Batch / Stage</dt>
+      <dd style="margin:0;font-weight:600">${d.batch && batch(d.batch) ? `📖 L${d.level||1} · ${esc(batch(d.batch).name)}` : '<span style="color:var(--ink-3)">No batch</span>'}</dd>
+      
+      <dt style="color:var(--ink-3)">Department</dt>
+      <dd style="margin:0;font-weight:600">${d.dept && dept(d.dept) ? `🛕 ${esc(dept(d.dept).name)}` : '<span style="color:var(--ink-3)">Unallocated</span>'}</dd>
+      
+      <dt style="color:var(--ink-3)">Facilitator</dt>
+      <dd style="margin:0">${d.facilitator ? `🤝 ${esc(nameOf(d.facilitator))}` : '<span style="color:var(--ink-3)">None</span>'}</dd>
+      
+      <dt style="color:var(--ink-3)">Care Group</dt>
+      <dd style="margin:0">${d.careGroup && group(d.careGroup) ? `❤️ ${esc(group(d.careGroup).name)}` : '<span style="color:var(--ink-3)">None</span>'}</dd>
+
+      <dt style="color:var(--ink-3)">Attendance</dt>
+      <dd style="margin:0">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="prog" style="flex:1;height:8px;background:var(--line-2);border-radius:4px">
+            <i style="width:${att.overall}%;background:${att.overall>=75?'var(--green)':'var(--saffron)'}"></i>
+          </div>
+          <span style="font-weight:700;font-size:12px">${att.overall}%</span>
+        </div>
+      </dd>
+    </dl>
+  `;
+
+  const footerBtns = [
+    { act: 'open-devotee-profile-from-sheet', id: d.id, label: 'View Full Profile →', pri: true }
+  ];
+  if (can('directory')) {
+    footerBtns.unshift({ act: 'edit-devotee', id: d.id, label: 'Edit' });
+  }
+
+  openDetailSheet({
+    title: 'Devotee Overview',
+    body,
+    footerBtns
+  });
 }
 
 /* ── Mobile Sticky Footer ── */
@@ -5925,7 +6038,7 @@ function dataTable({id,cols,rows,onRow,per=10,toolbar='',empty,exportName}){
   const hasWidths=cols.some(c=>c.w);
   const colgroup=hasWidths?`<colgroup>${cols.map(c=>`<col${c.w?` style="width:${c.w}"`:''}>`).join('')}</colgroup>`:'';
   return `<div class="card">${t}
-   <div class="tbl-wrap"><table class="tbl">${colgroup}<thead><tr>${cols.map(c=>`<th>${c.h}</th>`).join('')}</tr></thead>
+   <div class="tbl-wrap" id="tbl-wrap-${id}"><table class="tbl tbl-${id}">${colgroup}<thead><tr>${cols.map(c=>`<th>${c.h}</th>`).join('')}</tr></thead>
    <tbody>${slice.map(r=>`<tr class="${onRow?'click':''}" ${onRow?`data-act="${onRow}" data-id="${r.id}"`:''}>${cols.map(c=>`<td data-l="${esc(c.label || (typeof c.h==='string'?c.h.replace(/<[^>]*>/g,'').trim():''))}">${c.c(r)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>
    <div class="tbl-foot"><span>${rows.length} record${rows.length!==1?'s':''} · page ${p} of ${pages}</span>
      ${exportName?`<button class="btn sm" data-act="export-table" data-t="${id}">${ic('download')}CSV</button>`:''}
@@ -23978,8 +24091,29 @@ document.addEventListener('click',e=>{
     exportBatchMonthlyReportPDF(bid);
     break;
   }
-  case 'open-devotee':stop();go('#/devotee/'+id);break;
-  case 'open-devotee-row':stop();go('#/devotee/'+(t.dataset.id||''));break;
+  case 'open-devotee':stop();{
+    const dId = id || t.dataset.id || '';
+    if(window.innerWidth <= 640 && dId && !t.closest('.detail-sheet')){
+      openDevoteeDetailSheet(dId);
+    } else {
+      go('#/devotee/'+dId);
+    }
+    break;
+  }
+  case 'open-devotee-row':stop();{
+    const dId = t.dataset.id || id || '';
+    if(window.innerWidth <= 640 && dId && !t.closest('.detail-sheet')){
+      openDevoteeDetailSheet(dId);
+    } else {
+      go('#/devotee/'+dId);
+    }
+    break;
+  }
+  case 'open-devotee-profile-from-sheet':stop();{
+    closeDetailSheet();
+    go('#/devotee/'+id);
+    break;
+  }
   case 'delete-devotee':{stop();const dId=t.dataset.id||id;APP.deleteDevoteeTarget=dId;APP.modal='delete-devotee-modal';render();break}
   case 'confirm-delete-devotee':{stop();const dId=t.dataset.id||APP.deleteDevoteeTarget;deleteDevoteeAction(dId);break}
   case 'open-import-csv':{stop();
