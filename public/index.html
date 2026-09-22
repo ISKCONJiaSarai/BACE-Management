@@ -1568,6 +1568,15 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
 .tabs button.on{color:var(--ink);border-bottom-color:var(--accent);font-weight:700}
 .tabs button:hover{color:var(--ink);background:rgba(255,102,0,0.03)}
 
+/* ---------- devotee dashboard ---------- */
+.dev-dash-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;margin-top:14px}
+@media(max-width:900px){.dev-dash-grid{grid-template-columns:1fr;gap:14px}}
+.dev-dash-card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px 20px;box-shadow:0 1px 4px rgba(0,0,0,0.03);display:flex;flex-direction:column;transition:all .2s ease}
+.dev-dash-card:hover{border-color:var(--line-2);box-shadow:0 6px 18px rgba(0,0,0,0.05)}
+.dev-dash-card-header{margin-bottom:14px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.dev-dash-card-title{font-size:15px;font-weight:700;color:var(--ink);font-family:var(--f-head);display:flex;align-items:center;gap:8px}
+.dev-dash-card-sub{font-size:12px;color:var(--ink-3);margin-top:3px}
+
 /* ---------- kanban ---------- */
 .kanban{display:flex;gap:14px;overflow-x:auto;padding-bottom:14px}
 .kcol{min-width:256px;width:256px;flex:none;background:var(--paper-2);border-radius:var(--r-l);padding:12px;border:1px solid var(--line)}
@@ -9240,6 +9249,320 @@ function funnelRows(){
 }
 
 /* =========================================================================
+   DEVOTEE DASHBOARD CHARTS & ANALYTICS
+   ========================================================================= */
+function devoteePieChart(slices, { size = 190, innerRadius = 52 } = {}) {
+  const total = slices.reduce((sum, s) => sum + s.value, 0);
+  if (!total) {
+    return `<div style="text-align:center;padding:24px;color:var(--ink-3)">No devotee data to display</div>`;
+  }
+  const cx = size / 2;
+  const cy = size / 2;
+  const r = (size - 16) / 2;
+
+  const activeSlices = slices.filter(s => s.value > 0);
+  let paths = '';
+
+  if (activeSlices.length === 1) {
+    const sole = activeSlices[0];
+    const strokeWidth = r - innerRadius;
+    const midR = innerRadius + strokeWidth / 2;
+    paths = `<circle cx="${cx}" cy="${cy}" r="${midR}" fill="none" stroke="${sole.color}" stroke-width="${strokeWidth}"/>`;
+  } else {
+    let currentAngle = -Math.PI / 2;
+    paths = slices.map(s => {
+      if (s.value === 0) return '';
+      const sliceAngle = (s.value / total) * 2 * Math.PI;
+      const endAngle = currentAngle + sliceAngle;
+
+      const x1 = cx + r * Math.cos(currentAngle);
+      const y1 = cy + r * Math.sin(currentAngle);
+      const x2 = cx + r * Math.cos(endAngle);
+      const y2 = cy + r * Math.sin(endAngle);
+
+      const ix1 = cx + innerRadius * Math.cos(endAngle);
+      const iy1 = cy + innerRadius * Math.sin(endAngle);
+      const ix2 = cx + innerRadius * Math.cos(currentAngle);
+      const iy2 = cy + innerRadius * Math.sin(currentAngle);
+
+      const largeArcFlag = sliceAngle > Math.PI ? 1 : 0;
+
+      const d = [
+        `M ${x1.toFixed(2)} ${y1.toFixed(2)}`,
+        `A ${r.toFixed(2)} ${r.toFixed(2)} 0 ${largeArcFlag} 1 ${x2.toFixed(2)} ${y2.toFixed(2)}`,
+        `L ${ix1.toFixed(2)} ${iy1.toFixed(2)}`,
+        `A ${innerRadius.toFixed(2)} ${innerRadius.toFixed(2)} 0 ${largeArcFlag} 0 ${ix2.toFixed(2)} ${iy2.toFixed(2)}`,
+        'Z'
+      ].join(' ');
+
+      currentAngle = endAngle;
+      const pct = Math.round((s.value / total) * 100);
+      return `<path d="${d}" fill="${s.color}" opacity="0.94"
+        style="transition:opacity .2s ease;cursor:pointer"
+        title="${esc(s.label)}: ${s.value} devotees (${pct}%)"
+        onmouseover="this.style.opacity='1'"
+        onmouseout="this.style.opacity='0.94'"/>`;
+    }).join('');
+  }
+
+  return `<div style="display:flex;align-items:center;justify-content:center;gap:18px;flex-wrap:wrap;width:100%">
+    <div style="position:relative;width:${size}px;height:${size}px;flex-shrink:0">
+      <svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" style="overflow:visible">
+        ${paths}
+      </svg>
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none">
+        <span style="font-size:22px;font-weight:800;font-family:var(--f-head);color:var(--ink)">${total}</span>
+        <span style="font-size:10px;color:var(--ink-3);font-weight:700;text-transform:uppercase;letter-spacing:0.04em">Devotees</span>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:7px;min-width:170px;flex:1">
+      ${slices.map(s => {
+        const pct = total ? Math.round((s.value / total) * 100) : 0;
+        return `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px">
+          <div style="display:flex;align-items:center;gap:7px;min-width:0">
+            <span style="width:10px;height:10px;border-radius:3px;background:${s.color};flex-shrink:0"></span>
+            <span style="color:var(--ink-2);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(s.label)}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:5px;flex-shrink:0">
+            <b style="font-family:var(--f-head);color:var(--ink)">${s.value}</b>
+            <span style="font-size:10.5px;color:var(--ink-3);min-width:30px;text-align:right">(${pct}%)</span>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+  </div>`;
+}
+
+function devoteeAttendanceBarChart(tiers) {
+  const max = Math.max(...tiers.map(t => t.count), 1);
+  return `<div style="display:flex;flex-direction:column;gap:12px;width:100%">
+    ${tiers.map(t => {
+      const pct = t.total ? Math.round((t.count / t.total) * 100) : 0;
+      const barW = Math.max(3, Math.round((t.count / max) * 100));
+      return `<div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;font-size:12.5px">
+          <div style="display:flex;align-items:center;gap:7px">
+            <span style="width:9px;height:9px;border-radius:50%;background:${t.color}"></span>
+            <span style="font-weight:600;color:var(--ink)">${esc(t.label)}</span>
+            <span style="font-size:11px;color:var(--ink-3)">(${esc(t.range)})</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <b style="font-family:var(--f-head);color:var(--ink)">${t.count}</b>
+            <span style="font-size:11px;color:var(--ink-3)">(${pct}%)</span>
+          </div>
+        </div>
+        <div style="height:9px;background:var(--surface-2);border-radius:6px;overflow:hidden">
+          <div style="height:100%;width:${barW}%;background:${t.color};border-radius:6px;transition:width .4s ease"></div>
+        </div>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+function devoteeProgressRings(metrics) {
+  return `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:12px;width:100%">
+    ${metrics.map(m => {
+      const r = 34;
+      const circ = 2 * Math.PI * r;
+      const strokePct = Math.min(100, Math.max(0, m.pct));
+      const offset = circ - (strokePct / 100) * circ;
+      return `<div style="display:flex;flex-direction:column;align-items:center;text-align:center;padding:12px 6px;background:var(--surface);border:1px solid var(--line);border-radius:14px">
+        <div style="position:relative;width:80px;height:80px;margin-bottom:8px">
+          <svg viewBox="0 0 80 80" width="80" height="80" style="transform:rotate(-90deg)">
+            <circle cx="40" cy="40" r="${r}" fill="none" stroke="var(--surface-2)" stroke-width="7"/>
+            <circle cx="40" cy="40" r="${r}" fill="none" stroke="${m.color}" stroke-width="7" stroke-linecap="round"
+              stroke-dasharray="${circ}" stroke-dashoffset="${offset}" style="transition:stroke-dashoffset .5s ease"/>
+          </svg>
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+            <span style="font-size:15px;font-weight:800;font-family:var(--f-head);color:var(--ink)">${m.pct}%</span>
+          </div>
+        </div>
+        <div style="font-size:11.5px;font-weight:700;color:var(--ink);margin-bottom:2px;line-height:1.2">${esc(m.label)}</div>
+        <div style="font-size:10.5px;color:var(--ink-3)">${m.count} / ${m.total} devotees</div>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+function devoteeDeptBarChart(deptData) {
+  if(!deptData.length){
+    return `<div style="text-align:center;padding:20px;color:var(--ink-3)">No department assignments recorded yet</div>`;
+  }
+  const max = Math.max(...deptData.map(d => d.count), 1);
+  return `<div style="display:flex;flex-direction:column;gap:10px;width:100%">
+    ${deptData.map(d => {
+      const barW = Math.max(4, Math.round((d.count / max) * 100));
+      return `<div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;font-size:12.5px">
+          <span style="font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(d.name)}</span>
+          <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+            <b style="font-family:var(--f-head);color:var(--ink)">${d.count}</b>
+            <span style="font-size:11px;color:var(--ink-3)">devotees</span>
+          </div>
+        </div>
+        <div style="height:8px;background:var(--surface-2);border-radius:5px;overflow:hidden">
+          <div style="height:100%;width:${barW}%;background:${d.color || 'var(--accent)'};border-radius:5px;transition:width .4s ease"></div>
+        </div>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+function viewDevoteeDashboard(devotees){
+  if(!devotees || !devotees.length){
+    return emptyState('No devotee data', 'No devotees match the selected filters.', '<button class="btn" data-act="clear-dev-filters">Clear filters</button>');
+  }
+
+  // 1. Chanting Rounds calculation
+  let r16Plus = 0, r8to15 = 0, r4to7 = 0, r1to3 = 0, r0 = 0;
+  let totalRounds = 0;
+  devotees.forEach(d => {
+    const sLog = (DB.sadhana || []).find(s => s.devotee === d.id || s.devotee === d.name);
+    const r = Number(d.sadhana?.rounds ?? (sLog ? sLog.rounds : 0));
+    totalRounds += r;
+    if (r >= 16) r16Plus++;
+    else if (r >= 8) r8to15++;
+    else if (r >= 4) r4to7++;
+    else if (r >= 1) r1to3++;
+    else r0++;
+  });
+  const avgRounds = devotees.length ? (totalRounds / devotees.length).toFixed(1) : 0;
+
+  // 2. Attendance health calculation
+  let attHigh = 0, attReg = 0, attMid = 0, attLow = 0;
+  let totalAtt = 0;
+  devotees.forEach(d => {
+    const att = getDevoteeRealAttendance(d).overall || 0;
+    totalAtt += att;
+    if (att >= 80) attHigh++;
+    else if (att >= 60) attReg++;
+    else if (att >= 40) attMid++;
+    else attLow++;
+  });
+  const avgAtt = devotees.length ? Math.round(totalAtt / devotees.length) : 0;
+
+  // 3. Progress milestone calculations
+  const activeInCare = devotees.filter(d => d.careGroup && d.careGroup !== 'none').length;
+  const activeInDept = devotees.filter(d => d.dept && d.dept !== 'none').length;
+  const regularAtt = attHigh + attReg;
+
+  // 4. Department engagement
+  const depts = activeDepts();
+  const deptCounts = depts.map(dp => {
+    const count = devotees.filter(d => d.dept === dp.id).length;
+    return { name: dp.name, count, id: dp.id };
+  }).filter(dp => dp.count > 0).sort((a, b) => b.count - a.count);
+
+  const unassignedDept = devotees.filter(d => !d.dept || d.dept === 'none').length;
+  if (unassignedDept > 0) {
+    deptCounts.push({ name: 'Unassigned / General', count: unassignedDept, id: 'none', color: 'var(--ink-3)' });
+  }
+
+  const deptPalette = ['#FF6600', '#3B82F6', '#10B981', '#8B5CF6', '#F59E0B', '#06B6D4', '#EC4899', '#6366F1'];
+  const formattedDeptData = deptCounts.slice(0, 7).map((d, i) => ({
+    ...d,
+    color: d.color || deptPalette[i % deptPalette.length]
+  }));
+
+  const pieSlices = [
+    { label: '16+ Rounds (Standard)', value: r16Plus, color: '#10B981' },
+    { label: '8–15 Rounds (Growing)', value: r8to15, color: '#6366F1' },
+    { label: '4–7 Rounds (Practicing)', value: r4to7, color: '#F59E0B' },
+    { label: '1–3 Rounds (Introductory)', value: r1to3, color: '#06B6D4' },
+    { label: '0 / Not Chanting', value: r0, color: '#94A3B8' }
+  ];
+
+  const attTiers = [
+    { label: 'Pillars', range: '≥ 80%', count: attHigh, total: devotees.length, color: '#10B981' },
+    { label: 'Regular Attendees', range: '60% – 79%', count: attReg, total: devotees.length, color: '#3B82F6' },
+    { label: 'Developing', range: '40% – 59%', count: attMid, total: devotees.length, color: '#F59E0B' },
+    { label: 'Needs Follow-up', range: '< 40%', count: attLow, total: devotees.length, color: '#EF4444' }
+  ];
+
+  const progressGauges = [
+    { label: '16 Rounds Standard', count: r16Plus, total: devotees.length, pct: devotees.length ? Math.round((r16Plus / devotees.length) * 100) : 0, color: '#10B981' },
+    { label: 'Regular Attendance', count: regularAtt, total: devotees.length, pct: devotees.length ? Math.round((regularAtt / devotees.length) * 100) : 0, color: '#3B82F6' },
+    { label: 'Care Group Connected', count: activeInCare, total: devotees.length, pct: devotees.length ? Math.round((activeInCare / devotees.length) * 100) : 0, color: '#8B5CF6' },
+    { label: 'Active Dept Seva', count: activeInDept, total: devotees.length, pct: devotees.length ? Math.round((activeInDept / devotees.length) * 100) : 0, color: '#F97316' }
+  ];
+
+  return `
+    <div class="stats" style="margin-bottom:18px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))">
+      ${stat('Total Devotees', devotees.length, 'In community directory', { em: '👥', color: 'var(--ink)' })}
+      ${stat('Chanting 16 Rounds', r16Plus, `${devotees.length ? Math.round((r16Plus / devotees.length) * 100) : 0}% of community`, { em: '📿', color: '#10B981' })}
+      ${stat('Avg Attendance', `${avgAtt}%`, 'Overall community rate', { em: '📈', color: '#3B82F6' })}
+      ${stat('Active in Seva', activeInDept, `${devotees.length ? Math.round((activeInDept / devotees.length) * 100) : 0}% in departments`, { em: '🛕', color: '#F97316' })}
+    </div>
+
+    <div class="dev-dash-grid">
+      <!-- GRAPH 1: PIE CHART (Chanting Rounds) -->
+      <div class="dev-dash-card">
+        <div class="dev-dash-card-header">
+          <div>
+            <div class="dev-dash-card-title"><span>📿</span> Chanting Rounds (Japa Sadhana)</div>
+            <div class="dev-dash-card-sub">Number of devotees vs daily rounds chanted (Community avg: <b>${avgRounds} rounds</b>)</div>
+          </div>
+          <span class="badge sm" style="background:rgba(16,185,129,0.1);color:#10B981;font-weight:700">Pie Chart</span>
+        </div>
+        <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:6px 0">
+          ${devoteePieChart(pieSlices, { size: 185, innerRadius: 50 })}
+        </div>
+      </div>
+
+      <!-- GRAPH 2: BAR CHART (Attendance Performance) -->
+      <div class="dev-dash-card">
+        <div class="dev-dash-card-header">
+          <div>
+            <div class="dev-dash-card-title"><span>📈</span> Attendance Performance Tiers</div>
+            <div class="dev-dash-card-sub">Devotees grouped by overall class & seva attendance health</div>
+          </div>
+          <span class="badge sm" style="background:rgba(59,130,246,0.1);color:#3B82F6;font-weight:700">Bar Chart</span>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;justify-content:center">
+          ${devoteeAttendanceBarChart(attTiers)}
+        </div>
+      </div>
+
+      <!-- GRAPH 3: PROGRESS GAUGES (Core Milestones) -->
+      <div class="dev-dash-card">
+        <div class="dev-dash-card-header">
+          <div>
+            <div class="dev-dash-card-title"><span>🎯</span> Spiritual Sadhana & Milestone Progress</div>
+            <div class="dev-dash-card-sub">Community achievement rates across core sadhana benchmarks</div>
+          </div>
+          <span class="badge sm" style="background:rgba(139,92,246,0.1);color:#8B5CF6;font-weight:700">Progress Rings</span>
+        </div>
+        <div style="flex:1;display:flex;align-items:center">
+          ${devoteeProgressRings(progressGauges)}
+        </div>
+      </div>
+
+      <!-- GRAPH 4: HORIZONTAL DISTRIBUTION BAR (Department Seva) -->
+      <div class="dev-dash-card">
+        <div class="dev-dash-card-header">
+          <div>
+            <div class="dev-dash-card-title"><span>🏢</span> Department & Seva Distribution</div>
+            <div class="dev-dash-card-sub">Active devotee workforce distributed across departments</div>
+          </div>
+          <span class="badge sm" style="background:rgba(249,115,22,0.1);color:#F97316;font-weight:700">Distribution Bar</span>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;justify-content:center">
+          ${devoteeDeptBarChart(formattedDeptData)}
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:20px;padding:14px 18px;background:var(--surface);border:1px solid var(--line);border-radius:14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+      <div style="font-size:13px;color:var(--ink-2)">
+        Showing analytics for <b>${devotees.length} devotees</b>. Want to browse or edit individual profiles?
+      </div>
+      <button class="btn sm" data-act="tab" data-k="devoteeView" data-v="list" style="display:inline-flex;align-items:center;gap:6px">
+        ${ic('people')} View Devotees Directory
+      </button>
+    </div>`;
+}
+
+/* =========================================================================
    DEVOTEE DIRECTORY + PROFILE
    ========================================================================= */
 function viewDevotees(){
@@ -9436,10 +9759,39 @@ function viewDevotees(){
     return `<div class="dev-mob-list" id="dev-mob-list">${items}${foot}</div>`;
   };
 
-   return head('👥 One devotee, one record','Devotee directory',
-     `${rows.length} devotee${rows.length!==1?'s':''} matching filters — searchable by everyone with an operational role; sensitive care information stays restricted`,
-     `${canImportCsv()?`<button class="btn" data-act="open-import-csv" style="margin-right:8px">${ic('upload')}Import CSV</button>`:''}<button class="btn pri" data-act="add-devotee">${ic('plus')}Add devotee</button>`)+
-    (scoped?`<div class="note" style="margin-bottom:14px">You can search and view the whole community directory. You can only <b>edit</b> people inside your own ${APP.user.role==='dept_head'?'department':APP.user.role==='preaching_coord'?'batch':'care list'}.</div>`:'')+
+   const currentTab = APP.tab?.devoteeView || 'list';
+
+   const viewTabs = `
+     <div class="tabs" style="margin-bottom:16px">
+       <button class="${currentTab==='list'?'on':''}" data-act="tab" data-k="devoteeView" data-v="list" style="display:inline-flex;align-items:center;gap:6px">
+         <span>👥 Devotees List</span>
+         <span class="badge sm" style="background:var(--accent-soft);color:var(--accent);font-weight:700">${rows.length}</span>
+       </button>
+       <button class="${currentTab==='dashboard'?'on':''}" data-act="tab" data-k="devoteeView" data-v="dashboard" style="display:inline-flex;align-items:center;gap:6px">
+         <span>📊 Devotee Dashboard</span>
+         <span class="badge sm" style="background:rgba(16,185,129,0.12);color:#10B981;font-weight:700">Analytics</span>
+       </button>
+     </div>`;
+
+   const topActions = `
+     ${currentTab === 'list'
+       ? `<button class="btn" data-act="tab" data-k="devoteeView" data-v="dashboard" style="display:inline-flex;align-items:center;gap:5px;margin-right:8px">${ic('chart')} Devotee Dashboard</button>`
+       : `<button class="btn" data-act="tab" data-k="devoteeView" data-v="list" style="display:inline-flex;align-items:center;gap:5px;margin-right:8px">${ic('people')} Devotees List</button>`}
+     ${canImportCsv()?`<button class="btn" data-act="open-import-csv" style="margin-right:8px">${ic('upload')}Import CSV</button>`:''}<button class="btn pri" data-act="add-devotee">${ic('plus')}Add devotee</button>`;
+
+   const pageHead = head('👥 Devotee Community', currentTab === 'dashboard' ? 'Devotee Analytics Dashboard' : 'Devotee directory',
+     currentTab === 'dashboard'
+       ? `Holistic community analytics across japa sadhana, attendance health, spiritual milestones, and department engagement (${rows.length} devotees)`
+       : `${rows.length} devotee${rows.length!==1?'s':''} matching filters — searchable by everyone with an operational role; sensitive care information stays restricted`,
+     topActions);
+
+   const scopedNotice = scoped ? `<div class="note" style="margin-bottom:14px">You can search and view the whole community directory. You can only <b>edit</b> people inside your own ${APP.user.role==='dept_head'?'department':APP.user.role==='preaching_coord'?'batch':'care list'}.</div>` : '';
+
+   if (currentTab === 'dashboard') {
+     return pageHead + viewTabs + scopedNotice + viewDevoteeDashboard(rows);
+   }
+
+   return pageHead + viewTabs + scopedNotice +
     dataTable({id:'dev',exportName:'devotees',toolbar,mobList:devMobList(rows),cols:[
      {
        w:'22%',
