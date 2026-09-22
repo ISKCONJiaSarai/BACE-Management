@@ -7161,131 +7161,107 @@ function initMobileNavGestures(){
   const scrim = document.querySelector('.mobile-scrim');
   const swipeBar = document.getElementById('mnavSwipeBar');
 
-  // --- State ---
+  // ── State ──────────────────────────────────────────────────────────────
   let startY = 0, lastY = 0, startTime = 0;
-  let isDragging = false;
-  let capturedId = null;
-  let fromSwipeBar = false;
-  let frameId = null;
-  let pendingY = null;
+  let isDragging = false, fromSwipeBar = false;
+  let frameId = null, pendingY = null, touchStartY = 0;
 
-  // --- Helpers ---
-  const getNavH = () => mn.offsetHeight || 400;
+  // ── Helpers ──────────────────────────────────────────────────────────────
+  const getNavH = () => mn.getBoundingClientRect().height || 400;
 
-  const applyTransform = (dy) => {
-    // dy > 0 = dragging downward (close direction)
-    // dy < 0 = dragging upward (expand — resist with rubber band)
+  const freezeForDrag = () => {
+    mn.style.animation  = 'none';
+    mn.style.transition = 'none';
+    mn.style.transform  = 'translate3d(0,0,0)';
+    mn.style.opacity    = '1';
+    if(scrim){ scrim.style.animation='none'; scrim.style.transition='none'; scrim.style.opacity='1'; }
+  };
+
+  const applyDrag = (rawDy) => {
+    // Swipe bar: up = close (negative dy = moves toward -100%), down = rubber-band
+    // Body: down = close, up = rubber-band
     let moveY;
-    if(dy >= 0) {
-      moveY = dy; // 1:1 downward
+    if(fromSwipeBar){
+      moveY = rawDy <= 0 ? rawDy : rawDy * 0.1; // up: 1:1 close, down: resist
     } else {
-      moveY = dy * 0.08; // strong rubber-band resistance upward
+      moveY = rawDy >= 0 ? rawDy : rawDy * 0.06; // down: 1:1 close, up: resist
     }
-    const progress = Math.max(0, Math.min(1, 1 - (moveY / getNavH())));
     mn.style.transform = `translate3d(0,${moveY}px,0)`;
+    // Progress: 1 = fully open, 0 = closed
+    const progress = fromSwipeBar
+      ? Math.max(0, Math.min(1, 1 + moveY / getNavH()))  // bar: moving up reduces progress
+      : Math.max(0, Math.min(1, 1 - moveY / getNavH())); // body: moving down reduces progress
     if(scrim) scrim.style.opacity = (progress * 0.85).toFixed(3);
   };
 
-  // rAF-throttled move for silky 60fps
   const scheduleMove = (clientY) => {
     pendingY = clientY;
     if(frameId) return;
     frameId = requestAnimationFrame(() => {
       frameId = null;
       if(!isDragging) return;
-      const dy = pendingY - startY;
       lastY = pendingY;
-      applyTransform(dy);
+      applyDrag(pendingY - startY);
     });
   };
 
-  const startDrag = (clientY, pointerId, isSwipeBar) => {
-    // CRITICAL: Freeze the element at its current painted position BEFORE
-    // removing the animation. If we don't do this, removing the animation
-    // causes it to snap back to the 0% keyframe (translate3d(0,-100%,0)).
-    mn.style.animation = 'none';
-    mn.style.transform = 'translate3d(0,0,0)';
-    mn.style.opacity = '1';
-    if(scrim) {
-      scrim.style.animation = 'none';
-      scrim.style.transition = 'none';
-      scrim.style.opacity = '1';
-    }
-
-    startY = clientY;
-    lastY = clientY;
+  const startDrag = (clientY, isSwipeBar) => {
+    freezeForDrag();
+    startY = clientY; lastY = clientY;
     startTime = Date.now();
-    isDragging = true;
-    fromSwipeBar = !!isSwipeBar;
+    isDragging = true; fromSwipeBar = !!isSwipeBar;
     mn.classList.add('is-dragging');
-    mn.style.transition = 'none';
-    // Pointer capture for smooth tracking even outside element
-    if(pointerId != null && swipeBar && swipeBar.setPointerCapture) {
-      try { swipeBar.setPointerCapture(pointerId); capturedId = pointerId; } catch(e){}
-    }
+    if(swipeBar && isSwipeBar) swipeBar.classList.add('is-dragging');
   };
 
   const endDrag = () => {
     if(!isDragging) return;
     isDragging = false;
-    if(frameId) { cancelAnimationFrame(frameId); frameId = null; }
+    if(frameId){ cancelAnimationFrame(frameId); frameId = null; }
     mn.classList.remove('is-dragging');
-    if(capturedId != null && swipeBar && swipeBar.releasePointerCapture) {
-      try { swipeBar.releasePointerCapture(capturedId); } catch(e){}
-      capturedId = null;
-    }
+    if(swipeBar) swipeBar.classList.remove('is-dragging');
 
-    const dy = lastY - startY;
-    const dt = Math.max(Date.now() - startTime, 1);
-    const velocity = dy / dt; // px/ms, positive = downward
+    const dy  = lastY - startY;
+    const dt  = Math.max(Date.now() - startTime, 1);
+    const vel = dy / dt; // px/ms — negative = upward
 
-    // Simple tap on swipe bar → close
-    const isTap = fromSwipeBar && Math.abs(dy) < 8 && dt < 300;
+    const isTap      = fromSwipeBar && Math.abs(dy) < 10 && dt < 350;
+    const swipedUp   = fromSwipeBar && (dy < -35 || vel < -0.25); // bar swiped up
+    const swipedDown = !fromSwipeBar && (dy > 60 || vel > 0.4);   // body swiped down
+    const shouldClose = isTap || swipedUp || swipedDown;
 
-    // Should close? Threshold or fast flick downward
-    const shouldClose = isTap || dy > 60 || (dy > 20 && velocity > 0.3);
-
-    if(shouldClose) {
-      // Slide up out (to top, since it's a top-anchored shade)
-      const overshoot = Math.max(0, dy); // how far they pulled it
-      const dur = Math.max(180, Math.min(280, 220 - overshoot * 0.4));
+    if(shouldClose){
+      const dur = 210;
       mn.style.transition = `transform ${dur}ms cubic-bezier(0.4,0,1,1), opacity ${dur}ms ease`;
-      mn.style.transform = 'translate3d(0,-100%,0)';
-      mn.style.opacity = '0';
-      if(scrim) {
-        scrim.style.transition = `opacity ${dur}ms ease`;
-        scrim.style.opacity = '0';
-      }
-      setTimeout(() => closeMobileNav(), dur);
+      mn.style.transform  = 'translate3d(0,-100%,0)';
+      mn.style.opacity    = '0';
+      if(scrim){ scrim.style.transition=`opacity ${dur}ms ease`; scrim.style.opacity='0'; }
+      setTimeout(() => closeMobileNav(), dur + 30);
     } else {
-      // Spring back into place with overshoot bounce
-      mn.style.transition = 'transform 0.38s cubic-bezier(0.22,1,0.36,1), opacity 0.22s ease';
-      mn.style.transform = 'translate3d(0,0,0)';
-      mn.style.opacity = '1';
-      if(scrim) {
-        scrim.style.transition = 'opacity 0.3s ease';
-        scrim.style.opacity = '0.85';
-      }
+      mn.style.transition = 'transform 0.36s cubic-bezier(0.22,1,0.36,1), opacity 0.2s ease';
+      mn.style.transform  = 'translate3d(0,0,0)';
+      mn.style.opacity    = '1';
+      if(scrim){ scrim.style.transition='opacity 0.3s ease'; scrim.style.opacity='0.85'; }
     }
   };
 
-  // --- Pointer Events on swipe bar (desktop + touch) ---
-  if(swipeBar) {
-    swipeBar.addEventListener('pointerdown', e => {
-      if(e.button && e.button !== 0) return;
+  // ── Swipe bar touch (touch-action:none in CSS lets us capture all touch events) ──
+  if(swipeBar){
+    swipeBar.addEventListener('touchstart', e => {
+      if(e.touches.length !== 1) return;
+      e.stopPropagation();
+      startDrag(e.touches[0].clientY, true);
+    }, { passive: true });
+    swipeBar.addEventListener('touchmove', e => {
+      if(!isDragging || e.touches.length !== 1) return;
       e.preventDefault();
-      startDrag(e.clientY, e.pointerId, true);
+      scheduleMove(e.touches[0].clientY);
     }, { passive: false });
-    swipeBar.addEventListener('pointermove', e => {
-      if(!isDragging) return;
-      scheduleMove(e.clientY);
-    });
-    swipeBar.addEventListener('pointerup', endDrag);
-    swipeBar.addEventListener('pointercancel', endDrag);
+    swipeBar.addEventListener('touchend',    endDrag, { passive: true });
+    swipeBar.addEventListener('touchcancel', endDrag, { passive: true });
   }
 
-  // --- Touch Events on the whole drawer (for swipe-down-to-close from top) ---
-  let touchStartY = 0;
+  // ── Drawer body: downward-only drag when at scroll top ─────────────────────
   mn.addEventListener('touchstart', e => {
     if(isDragging || e.touches.length !== 1) return;
     touchStartY = e.touches[0].clientY;
@@ -7294,23 +7270,25 @@ function initMobileNavGestures(){
   mn.addEventListener('touchmove', e => {
     if(e.touches.length !== 1) return;
     const pt = e.touches[0];
-    if(!isDragging) {
+    if(!isDragging){
       const dy = pt.clientY - touchStartY;
-      const onFooter = pt.target?.closest?.('.mnav-user-footer, .mnav-swipe-bar');
-      // Initiate drag if: swiping down from near top, or swipe down from footer
-      if((mn.scrollTop <= 1 || onFooter) && dy > 6) {
-        startDrag(pt.clientY, null, false);
-        startY = touchStartY; // use original touch start
+      if(mn.scrollTop <= 2 && dy > 12){
+        startDrag(touchStartY, false);
+        lastY = pt.clientY;
       }
     }
-    if(isDragging) {
+    if(isDragging && !fromSwipeBar){
       if(e.cancelable) e.preventDefault();
       scheduleMove(pt.clientY);
     }
   }, { passive: false });
 
-  mn.addEventListener('touchend', endDrag, { passive: true });
-  mn.addEventListener('touchcancel', endDrag, { passive: true });
+  mn.addEventListener('touchend', () => {
+    if(isDragging && !fromSwipeBar) endDrag();
+  }, { passive: true });
+  mn.addEventListener('touchcancel', () => {
+    if(isDragging && !fromSwipeBar) endDrag();
+  }, { passive: true });
 }
 
 function mobileNavDropdown(){
