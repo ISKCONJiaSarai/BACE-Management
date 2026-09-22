@@ -284,113 +284,224 @@ input,select,textarea{font-family:inherit;font-size:14px;color:var(--ink);backgr
   .header-mobile-menu{width:32px;height:32px;border-radius:8px}
 }
 
-/* Mobile nav dropdown — Android Notification Shade style */
+/* =====================================================================
+   MOBILE NAV — True Android Notification Shade
+   ===================================================================== */
 .mobile-nav-dropdown{
-  position:fixed;top:var(--header-h);left:0;right:0;z-index:490;
-  background:var(--surface);
-  background:color-mix(in srgb, var(--surface) 96%, transparent);
-  backdrop-filter:blur(30px) saturate(1.9);-webkit-backdrop-filter:blur(30px) saturate(1.9);
-  border-bottom:1px solid var(--line);
+  position:fixed;
+  top:var(--header-h);left:0;right:0;
+  z-index:490;
+  /* Layered glass background */
+  background:color-mix(in srgb, var(--surface) 94%, transparent);
+  backdrop-filter:blur(32px) saturate(2) brightness(1.04);
+  -webkit-backdrop-filter:blur(32px) saturate(2) brightness(1.04);
+  border-bottom:1.5px solid color-mix(in srgb, var(--line) 60%, transparent);
   border-radius:0 0 28px 28px;
-  box-shadow:0 28px 60px -10px rgba(0,0,0,0.34), 0 10px 24px -5px rgba(0,0,0,0.12), inset 0 -1px 0 rgba(255,255,255,0.08);
-  padding:8px 12px 14px;display:flex;flex-direction:column;gap:3px;
-  animation:mnavSlideDown .36s cubic-bezier(.16,1,.3,1) forwards;
-  max-height:calc(100vh - var(--header-h) - 16px);overflow-y:auto;
-  overscroll-behavior-y:contain;
+  box-shadow:
+    0 32px 64px -12px rgba(0,0,0,0.38),
+    0 12px 28px -6px rgba(0,0,0,0.16),
+    inset 0 1px 0 rgba(255,255,255,0.12),
+    inset 0 -1px 0 rgba(255,255,255,0.06);
+  padding:6px 10px 0;
+  display:flex;flex-direction:column;gap:2px;
+  /* Initial state — slides in from above */
+  transform:translate3d(0,-100%,0);
+  opacity:0;
+  animation:mnavShadeOpen .38s cubic-bezier(0.22,1,0.36,1) forwards;
+  max-height:calc(100svh - var(--header-h) - 12px);
+  overflow-y:auto;overflow-x:hidden;
+  overscroll-behavior:contain;
   -webkit-overflow-scrolling:touch;
   touch-action:pan-y;
-  will-change:transform, opacity;
+  will-change:transform,opacity;
+  scroll-behavior:smooth;
 }
-.mobile-nav-dropdown.closing{animation:mnavSlideUp .28s cubic-bezier(0.4,0,0.2,1) forwards!important;pointer-events:none}
-@keyframes mnavSlideDown{
-  0%{opacity:0;transform:translate3d(0, -100%, 0)}
-  100%{opacity:1;transform:translate3d(0, 0, 0)}
+[data-theme="dark"] .mobile-nav-dropdown{
+  background:color-mix(in srgb, #0f172a 92%, transparent);
+  border-bottom-color:rgba(255,255,255,0.08);
+  box-shadow:
+    0 32px 64px -12px rgba(0,0,0,0.65),
+    0 12px 28px -6px rgba(0,0,0,0.4),
+    inset 0 1px 0 rgba(255,255,255,0.06);
 }
-@keyframes mnavSlideUp{
-  0%{opacity:1;transform:translate3d(0, 0, 0)}
-  100%{opacity:0;transform:translate3d(0, -100%, 0)}
+/* Slide-in — spring physics matching Android shade */
+@keyframes mnavShadeOpen{
+  0%  {opacity:0;transform:translate3d(0,-100%,0)}
+  60% {opacity:1;transform:translate3d(0,3px,0)}
+  78% {transform:translate3d(0,-1.5px,0)}
+  100%{opacity:1;transform:translate3d(0,0,0)}
 }
-.mnav-swipe-bar{
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:6px;padding:14px 16px 12px;margin-top:4px;cursor:grab;
-  touch-action:none;-webkit-touch-callout:none;user-select:none;-webkit-user-select:none;
-  border-radius:18px;position:relative;
-  transition:background .18s ease;
+/* Slide-out */
+@keyframes mnavShadeClose{
+  0%  {opacity:1;transform:translate3d(0,0,0)}
+  100%{opacity:0;transform:translate3d(0,-100%,0)}
 }
-.mnav-swipe-bar:active, .mnav-swipe-bar.is-dragging{
-  background:var(--surface-2, rgba(0,0,0,0.06));cursor:grabbing;
-}
-.mnav-swipe-pill{
-  width:52px;height:5.5px;border-radius:12px;
-  background:var(--line-2, #cbd5e1);
-  transition:width .2s cubic-bezier(0.16,1,0.3,1), background .2s ease, transform .2s ease;
+.mobile-nav-dropdown.closing{
+  animation:mnavShadeClose .26s cubic-bezier(0.4,0,1,1) forwards !important;
   pointer-events:none;
-}
-.mnav-swipe-text{
-  font-size:11px;color:var(--ink-3);font-weight:600;letter-spacing:0.02em;
-  display:flex;align-items:center;gap:4px;transition:color .18s ease;
-  pointer-events:none;
-}
-.mnav-swipe-arrow{
-  display:inline-block;transition:transform .2s ease;
-}
-.mnav-swipe-bar:hover .mnav-swipe-pill,
-.mnav-swipe-bar:active .mnav-swipe-pill,
-.mnav-swipe-bar.is-dragging .mnav-swipe-pill{
-  background:var(--accent);width:64px;height:6px;transform:scaleY(1.15);
-}
-.mnav-swipe-bar:hover .mnav-swipe-text,
-.mnav-swipe-bar:active .mnav-swipe-text,
-.mnav-swipe-bar.is-dragging .mnav-swipe-text{
-  color:var(--accent);
-}
-.mnav-swipe-bar:hover .mnav-swipe-arrow,
-.mnav-swipe-bar:active .mnav-swipe-arrow,
-.mnav-swipe-bar.is-dragging .mnav-swipe-arrow{
-  transform:translateY(-2px);
 }
 .mobile-nav-dropdown.is-dragging{
+  animation:none !important;
   user-select:none;-webkit-user-select:none;
 }
-.mobile-nav-dropdown a{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;font-size:14px;font-weight:500;color:var(--ink-2);transition:all .15s ease}
-.mobile-nav-dropdown a:hover,.mobile-nav-dropdown a.on{background:var(--accent-soft);color:var(--accent);font-weight:600}
-.mobile-nav-dropdown a:active{transform:scale(0.98);background:var(--surface-2)}
-.mobile-nav-dropdown .mnav-section{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3);padding:12px 14px 4px}
+
+/* ---- Nav links ---- */
+.mobile-nav-dropdown a{
+  display:flex;align-items:center;gap:11px;
+  padding:11px 14px;border-radius:14px;
+  font-size:14.5px;font-weight:500;color:var(--ink-2);
+  text-decoration:none;
+  /* GPU-accelerated transform + opacity only — NO background flicker */
+  transition:transform .12s ease, opacity .12s ease, color .15s ease, background .15s ease;
+  -webkit-tap-highlight-color:transparent;
+  position:relative;
+}
+.mobile-nav-dropdown a::after{
+  content:'';position:absolute;inset:0;border-radius:14px;
+  background:var(--accent);opacity:0;
+  transition:opacity .12s ease;
+  pointer-events:none;
+}
+.mobile-nav-dropdown a:active{transform:scale(0.97);opacity:0.85}
+.mobile-nav-dropdown a.on{
+  background:var(--accent-soft);
+  color:var(--accent);font-weight:700;
+}
+.mobile-nav-dropdown a:not(.on):hover{
+  background:var(--surface-2);color:var(--ink);
+}
+
+/* ---- Section labels & accordion headers ---- */
+.mobile-nav-dropdown .mnav-section{
+  font-size:10.5px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.07em;color:var(--ink-3);
+  padding:12px 14px 3px;
+}
 .mobile-nav-dropdown .mnav-section.mnav-accordion-header{
   display:flex;align-items:center;justify-content:space-between;
-  padding:10px 14px;margin:3px 0 1px 0;border-radius:12px;
-  cursor:pointer;-webkit-tap-highlight-color:transparent;user-select:none;
-  transition:all .2s cubic-bezier(0.16,1,0.3,1);font-size:11.5px;
+  padding:10px 14px;
+  margin:2px 0;
+  border-radius:14px;
+  cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+  user-select:none;
+  /* ONLY transform+color for smoothness — NO layout change */
+  transition:background .18s ease, color .18s ease, transform .1s ease;
+  font-size:12px;font-weight:700;
+  will-change:transform;
+}
+.mobile-nav-dropdown .mnav-section.mnav-accordion-header:active{
+  transform:scale(0.98);
 }
 .mobile-nav-dropdown .mnav-section.mnav-accordion-header:hover,
-.mobile-nav-dropdown .mnav-section.mnav-accordion-header:active{
-  background:var(--surface-2, rgba(0,0,0,0.04));color:var(--ink);
+.mobile-nav-dropdown .mnav-section.mnav-accordion-header:focus-visible{
+  background:var(--surface-2,rgba(0,0,0,0.04));color:var(--ink);
 }
-[data-theme="dark"] .mobile-nav-dropdown .mnav-section.mnav-accordion-header:hover,
-[data-theme="dark"] .mobile-nav-dropdown .mnav-section.mnav-accordion-header:active{
+[data-theme="dark"] .mobile-nav-dropdown .mnav-section.mnav-accordion-header:hover{
   background:rgba(255,255,255,0.06);color:var(--ink);
 }
 .mobile-nav-dropdown .mnav-section.mnav-accordion-header.open{
   color:var(--accent);
-  background:var(--accent-soft, rgba(255,102,0,0.08));
+  background:var(--accent-soft,rgba(255,102,0,0.08));
 }
 .mobile-nav-dropdown .mnav-section.mnav-accordion-header.has-active:not(.open){
   color:var(--ink-2);
 }
-.mnav-sec-left{display:flex;align-items:center;gap:8px}
-.mnav-sec-right{display:flex;align-items:center;gap:8px}
-.mnav-active-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 5px var(--accent);flex-shrink:0}
-.mnav-chevron{color:var(--ink-3);transition:transform .28s cubic-bezier(0.16,1,0.3,1), color .2s ease;flex-shrink:0}
-.mnav-accordion-header.open .mnav-chevron{transform:rotate(180deg);color:var(--accent)}
+
+/* ---- Accordion chevron ---- */
+.mnav-sec-left{display:flex;align-items:center;gap:9px}
+.mnav-sec-right{display:flex;align-items:center;gap:7px}
+.mnav-active-dot{
+  width:6px;height:6px;border-radius:50%;
+  background:var(--accent);box-shadow:0 0 6px var(--accent);flex-shrink:0;
+}
+.mnav-chevron{
+  color:var(--ink-3);flex-shrink:0;
+  transition:transform .3s cubic-bezier(0.22,1,0.36,1), color .2s ease;
+}
+.mnav-accordion-header.open .mnav-chevron{
+  transform:rotate(180deg);color:var(--accent);
+}
+
+/* ---- Sub-menu: CSS Grid trick — smooth height with NO max-height jump ---- */
 .mnav-sub.mnav-sub-collapsible{
-  max-height:0;overflow:hidden;opacity:0;visibility:hidden;
-  transition:max-height .28s cubic-bezier(0.16,1,0.3,1), opacity .22s ease, visibility .28s ease, margin .22s ease;
+  display:grid;
+  grid-template-rows:0fr;
+  /* transition only grid-template-rows and opacity — zero layout thrash */
+  transition:
+    grid-template-rows .3s cubic-bezier(0.22,1,0.36,1),
+    opacity .25s ease;
+  opacity:0;
+}
+.mnav-sub.mnav-sub-collapsible > .mnav-sub-inner{
+  overflow:hidden;
   display:flex;flex-direction:column;gap:1px;
 }
 .mnav-sub.mnav-sub-collapsible.open{
-  max-height:500px;opacity:1;visibility:visible;margin-bottom:6px;
+  grid-template-rows:1fr;
+  opacity:1;
+  margin-bottom:4px;
 }
-.mobile-nav-dropdown .mnav-sub a{padding-left:28px;font-size:13.5px}
+.mobile-nav-dropdown .mnav-sub a{
+  padding-left:30px;font-size:13.5px;padding-top:9px;padding-bottom:9px;
+}
+
+/* ---- Divider ---- */
+.mnav-divider{
+  height:1px;background:var(--line);margin:6px 10px;border-radius:2px;
+  opacity:0.55;
+}
+
+/* =====================================================================
+   SWIPE HANDLE — Pill + hint
+   ===================================================================== */
+.mnav-swipe-bar{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:6px;padding:14px 16px 16px;margin-top:6px;
+  cursor:grab;
+  touch-action:none;
+  -webkit-touch-callout:none;user-select:none;-webkit-user-select:none;
+  border-radius:0 0 28px 28px;
+  transition:background .18s ease;
+}
+.mnav-swipe-bar:active,.mnav-swipe-bar.is-dragging{
+  cursor:grabbing;
+  background:color-mix(in srgb,var(--surface-2,rgba(0,0,0,0.06)) 80%,transparent);
+}
+.mnav-swipe-pill{
+  width:44px;height:5px;border-radius:99px;
+  background:var(--line,#cbd5e1);
+  transition:width .22s cubic-bezier(0.22,1,0.36,1), height .22s ease, background .2s ease;
+  pointer-events:none;
+}
+.mnav-swipe-text{
+  font-size:11px;color:var(--ink-3);font-weight:600;letter-spacing:0.04em;
+  display:flex;align-items:center;gap:5px;
+  transition:color .18s ease,opacity .18s ease;
+  pointer-events:none;
+  opacity:0.7;
+}
+.mnav-swipe-arrow{
+  display:inline-block;
+  transition:transform .22s cubic-bezier(0.22,1,0.36,1);
+  font-size:12px;line-height:1;
+}
+/* Hover/active states */
+.mnav-swipe-bar:hover .mnav-swipe-pill,
+.mnav-swipe-bar:active .mnav-swipe-pill,
+.mnav-swipe-bar.is-dragging .mnav-swipe-pill{
+  background:var(--accent);width:62px;height:6px;
+}
+.mnav-swipe-bar:hover .mnav-swipe-text,
+.mnav-swipe-bar:active .mnav-swipe-text,
+.mnav-swipe-bar.is-dragging .mnav-swipe-text{
+  color:var(--accent);opacity:1;
+}
+.mnav-swipe-bar:hover .mnav-swipe-arrow,
+.mnav-swipe-bar:active .mnav-swipe-arrow,
+.mnav-swipe-bar.is-dragging .mnav-swipe-arrow{
+  transform:translateY(-3px);
+}
 
 /* ========== GLOBAL TODAY PANEL (GLASSMORPHISM & DYNAMICS) ========== */
 .today-panel{
@@ -989,13 +1100,20 @@ body.mobile-today-open{
 .mobile-scrim{
   position:fixed;
   inset:0;
-  background:rgba(15,23,42,0.65);
-  backdrop-filter:blur(8px);
-  -webkit-backdrop-filter:blur(8px);
+  background:rgba(10,16,34,0.58);
+  backdrop-filter:blur(6px) saturate(1.3);
+  -webkit-backdrop-filter:blur(6px) saturate(1.3);
   z-index:480;
-  animation:fadeIn .38s cubic-bezier(.16,1,.3,1) forwards;
+  opacity:0;
+  animation:mnavScrimIn .32s cubic-bezier(0.22,1,0.36,1) forwards;
+  will-change:opacity;
 }
-.mobile-scrim.closing{animation:fadeOut .3s cubic-bezier(0.4,0,0.2,1) forwards!important;pointer-events:none}
+.mobile-scrim.closing{
+  animation:mnavScrimOut .24s cubic-bezier(0.4,0,1,1) forwards !important;
+  pointer-events:none;
+}
+@keyframes mnavScrimIn{from{opacity:0}to{opacity:1}}
+@keyframes mnavScrimOut{from{opacity:1}to{opacity:0}}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 @keyframes fadeOut{to{opacity:0}}
 @keyframes drop{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
@@ -7012,7 +7130,7 @@ function closeMobileNav(cb){
     if(typeof cb === 'function') cb();
     return;
   }
-  const mn = document.getElementById('mobileNavDropdown') || document.querySelector('.mobile-nav-dropdown');
+  const mn = document.getElementById('mobileNavDropdown');
   const scrim = document.querySelector('.mobile-scrim');
   const btn = document.querySelector('.header-mobile-menu');
   APP.mobileNavExpanded = null;
@@ -7029,7 +7147,7 @@ function closeMobileNav(cb){
       const host = document.getElementById('mobileNavHost');
       if(host) host.innerHTML = '';
       if(typeof cb === 'function') cb();
-    }, 280);
+    }, 270); // matches mnavShadeClose .26s
   } else {
     const host = document.getElementById('mobileNavHost');
     if(host) host.innerHTML = '';
@@ -7046,172 +7164,150 @@ function toggleMobileNav(){
 }
 
 function initMobileNavGestures(){
-  const mn = document.getElementById('mobileNavDropdown') || document.querySelector('.mobile-nav-dropdown');
+  const mn = document.getElementById('mobileNavDropdown');
   if(!mn) return;
   const scrim = document.querySelector('.mobile-scrim');
-  const swipeBar = mn.querySelector('.mnav-swipe-bar');
+  const swipeBar = document.getElementById('mnavSwipeBar');
 
-  let startY = 0, currentY = 0, startTime = 0;
-  let isDragging = false, capturedPointerId = null;
-  let isFromSwipeBar = false;
+  // --- State ---
+  let startY = 0, lastY = 0, startTime = 0;
+  let isDragging = false;
+  let capturedId = null;
+  let fromSwipeBar = false;
+  let frameId = null;
+  let pendingY = null;
 
-  const startDrag = (clientY, pointerId, fromSwipeBar) => {
-    startY = clientY;
-    currentY = clientY;
-    startTime = Date.now();
-    isDragging = true;
-    isFromSwipeBar = !!fromSwipeBar;
+  // --- Helpers ---
+  const getNavH = () => mn.offsetHeight || 400;
 
-    mn.classList.add('is-dragging');
-    if(swipeBar) swipeBar.classList.add('is-dragging');
-    mn.style.transition = 'none';
-    if(scrim) scrim.style.transition = 'none';
-
-    if(pointerId != null && swipeBar && swipeBar.setPointerCapture) {
-      try {
-        swipeBar.setPointerCapture(pointerId);
-        capturedPointerId = pointerId;
-      } catch(err) {}
+  const applyTransform = (dy) => {
+    // dy > 0 = dragging downward (close direction)
+    // dy < 0 = dragging upward (expand — resist with rubber band)
+    let moveY;
+    if(dy >= 0) {
+      moveY = dy; // 1:1 downward
+    } else {
+      moveY = dy * 0.08; // strong rubber-band resistance upward
     }
+    const progress = Math.max(0, Math.min(1, 1 - (moveY / getNavH())));
+    mn.style.transform = `translate3d(0,${moveY}px,0)`;
+    if(scrim) scrim.style.opacity = (progress * 0.85).toFixed(3);
   };
 
-  const moveDrag = (clientY, e) => {
-    if(!isDragging) return;
-    if(e && e.cancelable) e.preventDefault();
-    currentY = clientY;
-    const dy = clientY - startY;
+  // rAF-throttled move for silky 60fps
+  const scheduleMove = (clientY) => {
+    pendingY = clientY;
+    if(frameId) return;
+    frameId = requestAnimationFrame(() => {
+      frameId = null;
+      if(!isDragging) return;
+      const dy = pendingY - startY;
+      lastY = pendingY;
+      applyTransform(dy);
+    });
+  };
 
-    // Directly move along finger touch (up and down)
-    let moveY = 0;
-    if(dy <= 0) {
-      moveY = dy; // Direct 1:1 tracking upward
-    } else {
-      // Direct tracking downward with natural elasticity
-      moveY = Math.min(160, dy * 0.72);
-    }
-
-    mn.style.transform = `translate3d(0, ${moveY}px, 0)`;
-
-    // Scrim responds dynamically
-    if(scrim) {
-      const h = mn.offsetHeight || 420;
-      if(dy <= 0) {
-        const progress = Math.max(0, 1 + dy / (h * 0.8));
-        scrim.style.opacity = progress.toFixed(3);
-      } else {
-        scrim.style.opacity = '1';
-      }
+  const startDrag = (clientY, pointerId, isSwipeBar) => {
+    startY = clientY;
+    lastY = clientY;
+    startTime = Date.now();
+    isDragging = true;
+    fromSwipeBar = !!isSwipeBar;
+    mn.classList.add('is-dragging');
+    mn.style.transition = 'none';
+    if(scrim) { scrim.style.transition = 'none'; scrim.style.animation = 'none'; }
+    // Pointer capture for smooth tracking even outside element
+    if(pointerId != null && swipeBar && swipeBar.setPointerCapture) {
+      try { swipeBar.setPointerCapture(pointerId); capturedId = pointerId; } catch(e){}
     }
   };
 
   const endDrag = () => {
     if(!isDragging) return;
     isDragging = false;
+    if(frameId) { cancelAnimationFrame(frameId); frameId = null; }
     mn.classList.remove('is-dragging');
-    if(swipeBar) {
-      swipeBar.classList.remove('is-dragging');
-      if(capturedPointerId != null && swipeBar.releasePointerCapture) {
-        try {
-          swipeBar.releasePointerCapture(capturedPointerId);
-        } catch(err) {}
-        capturedPointerId = null;
-      }
+    if(capturedId != null && swipeBar && swipeBar.releasePointerCapture) {
+      try { swipeBar.releasePointerCapture(capturedId); } catch(e){}
+      capturedId = null;
     }
 
-    const dy = currentY - startY;
-    const elapsed = Math.max(Date.now() - startTime, 1);
-    const velocity = -dy / elapsed; // upward velocity in px/ms
+    const dy = lastY - startY;
+    const dt = Math.max(Date.now() - startTime, 1);
+    const velocity = dy / dt; // px/ms, positive = downward
 
-    // If it was a simple tap directly on the swipe bar: close it
-    if(isFromSwipeBar && Math.abs(dy) < 6 && elapsed < 280) {
-      mn.style.transition = 'transform 0.24s cubic-bezier(0.2, 0.9, 0.3, 1), opacity 0.2s ease';
-      mn.style.transform = 'translate3d(0, -100%, 0)';
+    // Simple tap on swipe bar → close
+    const isTap = fromSwipeBar && Math.abs(dy) < 8 && dt < 300;
+
+    // Should close? Threshold or fast flick downward
+    const shouldClose = isTap || dy > 60 || (dy > 20 && velocity > 0.3);
+
+    if(shouldClose) {
+      // Slide up out (to top, since it's a top-anchored shade)
+      const overshoot = Math.max(0, dy); // how far they pulled it
+      const dur = Math.max(180, Math.min(280, 220 - overshoot * 0.4));
+      mn.style.transition = `transform ${dur}ms cubic-bezier(0.4,0,1,1), opacity ${dur}ms ease`;
+      mn.style.transform = 'translate3d(0,-100%,0)';
       mn.style.opacity = '0';
       if(scrim) {
-        scrim.style.transition = 'opacity 0.22s ease';
+        scrim.style.transition = `opacity ${dur}ms ease`;
         scrim.style.opacity = '0';
       }
-      setTimeout(() => {
-        closeMobileNav();
-      }, 240);
-      return;
-    }
-
-    // Upward drag past threshold or quick upward flick
-    if(dy < -50 || (dy < -15 && velocity > 0.25)) {
-      mn.style.transition = 'transform 0.24s cubic-bezier(0.2, 0.9, 0.3, 1), opacity 0.2s ease';
-      mn.style.transform = 'translate3d(0, -100%, 0)';
-      mn.style.opacity = '0';
-      if(scrim) {
-        scrim.style.transition = 'opacity 0.22s ease';
-        scrim.style.opacity = '0';
-      }
-      setTimeout(() => {
-        closeMobileNav();
-      }, 240);
+      setTimeout(() => closeMobileNav(), dur);
     } else {
-      // Spring back down smoothly into place (Android spring physics)
-      mn.style.transition = 'transform 0.32s cubic-bezier(0.175, 0.885, 0.32, 1.25), opacity 0.2s ease';
-      mn.style.transform = 'translate3d(0, 0, 0)';
+      // Spring back into place with overshoot bounce
+      mn.style.transition = 'transform 0.38s cubic-bezier(0.22,1,0.36,1), opacity 0.22s ease';
+      mn.style.transform = 'translate3d(0,0,0)';
       mn.style.opacity = '1';
       if(scrim) {
-        scrim.style.transition = 'opacity 0.2s ease';
-        scrim.style.opacity = '1';
+        scrim.style.transition = 'opacity 0.3s ease';
+        scrim.style.opacity = '0.85';
       }
     }
   };
 
-  // Direct Pointer Events on the swipe bar / small line (immediate tracking, touch or mouse)
+  // --- Pointer Events on swipe bar (desktop + touch) ---
   if(swipeBar) {
     swipeBar.addEventListener('pointerdown', e => {
       if(e.button && e.button !== 0) return;
+      e.preventDefault();
       startDrag(e.clientY, e.pointerId, true);
-    });
+    }, { passive: false });
     swipeBar.addEventListener('pointermove', e => {
-      moveDrag(e.clientY, e);
+      if(!isDragging) return;
+      scheduleMove(e.clientY);
     });
-    swipeBar.addEventListener('pointerup', () => {
-      endDrag();
-    });
-    swipeBar.addEventListener('pointercancel', () => {
-      endDrag();
-    });
+    swipeBar.addEventListener('pointerup', endDrag);
+    swipeBar.addEventListener('pointercancel', endDrag);
   }
 
-  // Also support touch dragging across bottom footer and when container is scrolled to top
+  // --- Touch Events on the whole drawer (for swipe-down-to-close from top) ---
+  let touchStartY = 0;
   mn.addEventListener('touchstart', e => {
-    if(e.touches.length !== 1) return;
-    if(isDragging) return;
-    const pt = e.touches[0];
-    const onFooter = pt.target && pt.target.closest && pt.target.closest('.mnav-user-footer');
-    if(onFooter || mn.scrollTop <= 2) {
-      startY = pt.clientY;
-      currentY = pt.clientY;
-      startTime = Date.now();
-    }
+    if(isDragging || e.touches.length !== 1) return;
+    touchStartY = e.touches[0].clientY;
   }, { passive: true });
 
   mn.addEventListener('touchmove', e => {
     if(e.touches.length !== 1) return;
     const pt = e.touches[0];
     if(!isDragging) {
-      const dy = pt.clientY - startY;
-      const onFooter = pt.target && pt.target.closest && pt.target.closest('.mnav-user-footer');
-      if((onFooter || mn.scrollTop <= 0) && Math.abs(dy) > 4) {
+      const dy = pt.clientY - touchStartY;
+      const onFooter = pt.target?.closest?.('.mnav-user-footer, .mnav-swipe-bar');
+      // Initiate drag if: swiping down from near top, or swipe down from footer
+      if((mn.scrollTop <= 1 || onFooter) && dy > 6) {
         startDrag(pt.clientY, null, false);
+        startY = touchStartY; // use original touch start
       }
     }
     if(isDragging) {
-      moveDrag(pt.clientY, e);
+      if(e.cancelable) e.preventDefault();
+      scheduleMove(pt.clientY);
     }
   }, { passive: false });
 
-  mn.addEventListener('touchend', () => {
-    endDrag();
-  }, { passive: true });
-  mn.addEventListener('touchcancel', () => {
-    endDrag();
-  }, { passive: true });
+  mn.addEventListener('touchend', endDrag, { passive: true });
+  mn.addEventListener('touchcancel', endDrag, { passive: true });
 }
 
 function mobileNavDropdown(){
@@ -7259,15 +7355,18 @@ function mobileNavDropdown(){
   ];
   const chevronSvg=`<svg class="mnav-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>`;
 
-  return `<div class="mobile-nav-dropdown" id="mobileNavDropdown">
-    ${mainItems.filter(i=>!i.m||can(i.m)).map(i=>`<a href="${i.r}" class="${i.on?'on':''}" data-act="mobile-nav-go" data-r="${i.r}"><span>${i.em}</span>${i.t}</a>`).join('')}
+  return `<div class="mobile-nav-dropdown" id="mobileNavDropdown" role="dialog" aria-label="Navigation Menu">
+    <div style="padding:4px 2px 6px">
+      ${mainItems.filter(i=>!i.m||can(i.m)).map(i=>`<a href="${i.r}" class="${i.on?'on':''}" data-act="mobile-nav-go" data-r="${i.r}"><span style="font-size:15px;line-height:1;width:22px;text-align:center;flex-shrink:0">${i.em}</span><span>${i.t}</span></a>`).join('')}
+    </div>
+    <div class="mnav-divider"></div>
     ${sections.map(s=>{
       const validItems=s.items.filter(i=>!i.m||can(i.m));
       if(!validItems.length) return '';
       const isOpen=APP.mobileNavExpanded===s.id;
-      return `<div class="mnav-section mnav-accordion-header ${isOpen?'open':''} ${s.hasActive?'has-active':''}" data-act="toggle-mnav-section" data-sec="${s.id}" role="button" aria-expanded="${isOpen}">
+      return `<div class="mnav-section mnav-accordion-header ${isOpen?'open':''} ${s.hasActive?'has-active':''}" data-act="toggle-mnav-section" data-sec="${s.id}" role="button" aria-expanded="${isOpen}" tabindex="0">
         <div class="mnav-sec-left">
-          <span style="font-size:13px">${s.em}</span>
+          <span style="font-size:14px;line-height:1;width:22px;text-align:center">${s.em}</span>
           <span>${s.title}</span>
         </div>
         <div class="mnav-sec-right">
@@ -7275,24 +7374,33 @@ function mobileNavDropdown(){
           ${chevronSvg}
         </div>
       </div>
-      <div class="mnav-sub mnav-sub-collapsible ${isOpen?'open':''}" data-sec="${s.id}">
-        ${validItems.map(i=>{
-          const isChildOn=(APP.route===i.r)||(i.r!=='#/'&&APP.route.startsWith(i.r+'/'));
-          return `<a href="${i.r}" class="${isChildOn?'on':''}" data-act="mobile-nav-go" data-r="${i.r}"><span>${i.em}</span>${i.t}</a>`;
-        }).join('')}
+      <div class="mnav-sub mnav-sub-collapsible ${isOpen?'open':''}" data-sec="${s.id}" aria-hidden="${!isOpen}">
+        <div class="mnav-sub-inner">
+          ${validItems.map(i=>{
+            const isChildOn=(APP.route===i.r)||(i.r!=='#/'&&APP.route.startsWith(i.r+'/'));
+            return `<a href="${i.r}" class="${isChildOn?'on':''}" data-act="mobile-nav-go" data-r="${i.r}"><span style="font-size:14px;line-height:1;width:22px;text-align:center;flex-shrink:0">${i.em}</span><span>${i.t}</span></a>`;
+          }).join('')}
+        </div>
       </div>`;
     }).join('')}
-    <div class="mnav-section" style="margin-top:4px">More</div>
-    ${bottomItems.filter(i=>!i.m||can(i.m)).map(i=>`<a href="${i.r}" class="${i.on?'on':''}" data-act="mobile-nav-go" data-r="${i.r}"><span>${i.em}</span>${i.t}</a>`).join('')}
-    <div class="mnav-user-footer" style="border-top:1px solid var(--line);margin:8px 0 4px;padding-top:8px;display:flex;align-items:center;gap:8px">
-      <button class="icon-btn" data-act="account" style="border:none">${av(nameOf(APP.user.devotee),'s')}</button>
-      <div style="flex:1;min-width:0"><div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(devoteeDisplayName(APP.user.devotee))}</div><div style="font-size:11px;color:var(--ink-3)">${esc(devoteePositionTitle(APP.user.devotee, APP.user.role))}</div></div>
-      <button class="btn sm danger" data-act="logout">${ic('logout')} Sign out</button>
+    <div class="mnav-divider" style="margin-top:8px"></div>
+    <div style="padding:4px 2px 0">
+      <div class="mnav-section" style="padding-top:8px;padding-bottom:4px">More</div>
+      ${bottomItems.filter(i=>!i.m||can(i.m)).map(i=>`<a href="${i.r}" class="${i.on?'on':''}" data-act="mobile-nav-go" data-r="${i.r}"><span style="font-size:15px;line-height:1;width:22px;text-align:center;flex-shrink:0">${i.em}</span><span>${i.t}</span></a>`).join('')}
     </div>
-    <div class="mnav-swipe-bar" data-act="close-mobile-nav" role="button" aria-label="Swipe up or tap to close menu" title="Swipe up to close">
+    <div class="mnav-divider" style="margin-top:8px"></div>
+    <div class="mnav-user-footer" style="padding:10px 14px 12px;display:flex;align-items:center;gap:10px">
+      <button class="icon-btn" data-act="account" style="border:none;flex-shrink:0">${av(nameOf(APP.user.devotee),'s')}</button>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:700;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(devoteeDisplayName(APP.user.devotee))}</div>
+        <div style="font-size:11px;color:var(--ink-3);margin-top:1px">${esc(devoteePositionTitle(APP.user.devotee, APP.user.role))}</div>
+      </div>
+      <button class="btn sm danger" data-act="logout" style="flex-shrink:0">${ic('logout')} Sign out</button>
+    </div>
+    <div class="mnav-swipe-bar" id="mnavSwipeBar" role="button" aria-label="Swipe up or tap to close menu" title="Swipe up to close">
       <div class="mnav-swipe-pill"></div>
       <div class="mnav-swipe-text">
-        <span class="mnav-swipe-arrow">⌃</span> Swipe up or tap to close
+        <span class="mnav-swipe-arrow">↑</span> Swipe up to close
       </div>
     </div>
   </div><div class="mobile-scrim" data-act="close-mobile-nav" style="z-index:480"></div>`;
@@ -25870,13 +25978,21 @@ document.addEventListener('click',e=>{
     });
     mn.querySelectorAll('.mnav-sub-collapsible').forEach(s => {
       s.classList.remove('open');
+      s.setAttribute('aria-hidden', 'true');
     });
 
     if(!isCurrentlyOpen && header && sub) {
       header.classList.add('open');
       header.setAttribute('aria-expanded', 'true');
       sub.classList.add('open');
+      sub.setAttribute('aria-hidden', 'false');
       APP.mobileNavExpanded = sec;
+      // Scroll the newly opened section into view smoothly
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          sub.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 50);
+      });
     } else {
       APP.mobileNavExpanded = null;
     }
