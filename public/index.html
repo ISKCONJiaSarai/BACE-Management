@@ -3236,35 +3236,35 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
     0 18px 36px -4px rgba(15,23,42,0.12),
     0 28px 56px -8px rgba(0,0,0,0.08);
 }
-.pillar-card .card-b{padding:16px 15px 14px!important;position:relative;z-index:1;text-align:left}
-.pillar-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
-.pillar-card-title{font-size:16px;font-weight:700;color:var(--ink);margin:0 0 2px;line-height:1.25;text-align:left;letter-spacing:-0.01em}
-.pillar-card-sub{font-size:11px;color:var(--ink-3);margin:0 0 10px;line-height:1.35;text-align:left}
-.pillar-card-bg{position:absolute;top:-20px;right:-20px;font-size:80px;opacity:.08;pointer-events:none;line-height:1}
+.pillar-card .card-b{padding:12px 14px 10px!important;position:relative;z-index:1;text-align:left}
+.pillar-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.pillar-card-title{font-size:15px;font-weight:700;color:var(--ink);margin:0 0 2px;line-height:1.2;text-align:left;letter-spacing:-0.01em}
+.pillar-card-sub{font-size:10.5px;color:var(--ink-3);margin:0 0 6px;line-height:1.3;text-align:left}
+.pillar-card-bg{position:absolute!important;top:-12px!important;right:-10px!important;font-size:64px!important;opacity:.06!important;pointer-events:none!important;line-height:1!important;z-index:0!important;margin:0!important;padding:0!important}
 .pillar-card-icon{
-  width:38px;height:38px;border-radius:12px;display:grid;place-items:center;font-size:18px;color:#fff;
+  width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font-size:16px;color:#fff;
   box-shadow:0 1px 2px rgba(255,255,255,0.4) inset, 0 -2px 0 rgba(0,0,0,0.15) inset, 0 4px 12px rgba(0,0,0,0.18);
   transition:transform .2s ease;
 }
 .pillar-card:hover .pillar-card-icon{transform:scale(1.06)}
 .pillar-badge{
-  font-size:11px;font-weight:700;padding:3.5px 11px;border-radius:20px;white-space:nowrap;letter-spacing:0.2px;
+  font-size:10.5px;font-weight:700;padding:2.5px 9px;border-radius:20px;white-space:nowrap;letter-spacing:0.2px;
   backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
   box-shadow:0 1px 2px rgba(255,255,255,0.9) inset, 0 1.5px 4px rgba(0,0,0,0.06);
   border:1px solid rgba(255,255,255,0.6);
 }
 
 /* 3D Glassy Inner Item Boxes */
-.pillar-items-list{display:flex;flex-direction:column;gap:7px}
+.pillar-items-list{display:flex;flex-direction:column;gap:5px}
 .pillar-item{
-  display:flex;align-items:center;justify-content:flex-start;gap:10px;
-  padding:8px 11px;
+  display:flex;align-items:center;justify-content:flex-start;gap:9px;
+  padding:6px 10px;
   background:linear-gradient(135deg, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.72) 100%);
   backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
   border:1px solid rgba(255,255,255,0.9);
   border-top-color:rgba(255,255,255,1);
   border-bottom-color:rgba(203,213,225,0.55);
-  border-radius:12px;
+  border-radius:10px;
   text-decoration:none;
   transition:all .2s cubic-bezier(0.16,1,0.3,1);
   color:var(--ink);
@@ -3487,14 +3487,15 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
     z-index:2;
   }
   .pillar-card-sub{
-    margin:0 0 4px;
+    margin:0 0 2px;
     transition:margin .25s ease;
   }
   .pillar-card.is-expanded .pillar-card-sub{
-    margin:0 0 10px;
+    margin:0 0 6px;
   }
   .pillar-expand-indicator{
     display:inline-flex;
+    width:23px;height:23px;
   }
   .pillar-card.is-expanded .pillar-chevron-icon{
     transform:rotate(180deg);
@@ -3563,11 +3564,11 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
     display:flex;
     align-items:center;
     justify-content:space-between;
-    font-size:10.5px;
+    font-size:10px;
     font-weight:600;
     color:var(--ink-3);
-    margin-top:6px;
-    padding-top:6px;
+    margin-top:4px;
+    padding-top:4px;
     border-top:1px dashed rgba(0,0,0,0.08);
     letter-spacing:0.2px;
     transition:all .25s ease;
@@ -5621,10 +5622,25 @@ a.card:hover, button.card:hover, .card.hoverable:hover {
 }
 
 /* ── Ensure content inside cards sits above the glass sheen ::before overlay ── */
-.card > *, .stat > *, .dev-kpi-card > *, .dev-dash-card > *,
+.card > *:not(.pillar-card-bg), .stat > *, .dev-kpi-card > *, .dev-dash-card > *,
 .kcard > *, .tp-item > *, .org-node > *, .login-card > * {
   position: relative;
   z-index: 1;
+}
+
+/* Ensure background icon stays absolute and never adds height or top space */
+.card > .pillar-card-bg,
+.pillar-card .pillar-card-bg {
+  position: absolute !important;
+  top: -12px !important;
+  right: -10px !important;
+  font-size: 64px !important;
+  opacity: .06 !important;
+  pointer-events: none !important;
+  line-height: 1 !important;
+  z-index: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
 /* ── Smooth transition for all glassy elements ── */
