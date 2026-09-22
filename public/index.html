@@ -7117,7 +7117,7 @@ function openMobileNav(){
   }
 }
 
-function closeMobileNav(cb){
+function closeMobileNav(cb, skipAnim){
   if(!APP.mobileNavOpen) {
     if(typeof cb === 'function') cb();
     return;
@@ -7132,18 +7132,19 @@ function closeMobileNav(cb){
     btn.setAttribute('aria-label', 'Open Menu');
     btn.innerHTML = ic('menu');
   }
-  if(mn){
-    mn.classList.add('closing');
-    if(scrim) scrim.classList.add('closing');
-    setTimeout(()=>{
-      const host = document.getElementById('mobileNavHost');
-      if(host) host.innerHTML = '';
-      if(typeof cb === 'function') cb();
-    }, 250); // matches mnavShadeClose .24s
-  } else {
+  const cleanup = () => {
     const host = document.getElementById('mobileNavHost');
     if(host) host.innerHTML = '';
     if(typeof cb === 'function') cb();
+  };
+  if(mn && !skipAnim){
+    // Normal close (button tap) — play the CSS slide-out animation
+    mn.classList.add('closing');
+    if(scrim) scrim.classList.add('closing');
+    setTimeout(cleanup, 250);
+  } else {
+    // Skip animation — element already animated away by gesture
+    cleanup();
   }
 }
 
@@ -7236,7 +7237,8 @@ function initMobileNavGestures(){
       mn.style.transform  = 'translate3d(0,-100%,0)';
       mn.style.opacity    = '0';
       if(scrim){ scrim.style.transition=`opacity ${dur}ms ease`; scrim.style.opacity='0'; }
-      setTimeout(() => closeMobileNav(), dur + 30);
+      // After animation finishes, do DOM cleanup ONLY — no second CSS animation
+      setTimeout(() => closeMobileNav(null, true), dur + 30);
     } else {
       mn.style.transition = 'transform 0.36s cubic-bezier(0.22,1,0.36,1), opacity 0.2s ease';
       mn.style.transform  = 'translate3d(0,0,0)';
