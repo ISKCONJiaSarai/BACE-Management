@@ -1569,13 +1569,60 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
 .tabs button:hover{color:var(--ink);background:rgba(255,102,0,0.03)}
 
 /* ---------- devotee dashboard ---------- */
-.dev-dash-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;margin-top:14px}
-@media(max-width:900px){.dev-dash-grid{grid-template-columns:1fr;gap:14px}}
-.dev-dash-card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px 20px;box-shadow:0 1px 4px rgba(0,0,0,0.03);display:flex;flex-direction:column;transition:all .2s ease}
-.dev-dash-card:hover{border-color:var(--line-2);box-shadow:0 6px 18px rgba(0,0,0,0.05)}
-.dev-dash-card-header{margin-bottom:14px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
-.dev-dash-card-title{font-size:15px;font-weight:700;color:var(--ink);font-family:var(--f-head);display:flex;align-items:center;gap:8px}
+.dev-kpi-row{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:14px;
+  margin-bottom:20px;
+  width:100%;
+}
+@media(max-width:1020px){
+  .dev-kpi-row{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+}
+@media(max-width:520px){
+  .dev-kpi-row{grid-template-columns:1fr;gap:10px}
+}
+.dev-kpi-card{
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:16px 18px;
+  box-shadow:0 1px 3px rgba(0,0,0,0.03);
+  position:relative;
+  overflow:hidden;
+  cursor:pointer;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  transition:transform .22s cubic-bezier(0.16,1,0.3,1),box-shadow .22s cubic-bezier(0.16,1,0.3,1),border-color .2s ease;
+  user-select:none;
+}
+.dev-kpi-card:hover{
+  transform:translateY(-3px);
+  border-color:var(--accent);
+  box-shadow:0 10px 25px -4px rgba(255,102,0,0.14), 0 4px 10px -2px rgba(0,0,0,0.04);
+}
+.dev-kpi-card:active{transform:scale(0.985)}
+.dev-kpi-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.dev-kpi-label{font-size:12.5px;font-weight:600;color:var(--ink-2);display:flex;align-items:center;gap:6px}
+.dev-kpi-icon{font-size:16px;display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:8px;background:var(--surface-2);flex-shrink:0}
+.dev-kpi-val{font-family:var(--f-head);font-size:30px;font-weight:800;color:var(--ink);line-height:1.1;margin:10px 0 4px;letter-spacing:-0.02em}
+.dev-kpi-sub{font-size:11.5px;color:var(--ink-3);display:flex;align-items:center;justify-content:space-between;gap:4px}
+.dev-kpi-badge{font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:12px}
+
+.dev-dash-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;margin-top:4px}
+@media(max-width:960px){.dev-dash-grid{grid-template-columns:1fr;gap:16px}}
+.dev-dash-card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:20px 22px;box-shadow:0 1px 4px rgba(0,0,0,0.03);display:flex;flex-direction:column;transition:all .22s cubic-bezier(0.16,1,0.3,1)}
+.dev-dash-card:hover{border-color:var(--line-2);box-shadow:0 8px 24px rgba(0,0,0,0.06)}
+.dev-dash-card-header{margin-bottom:16px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.dev-dash-card-title{font-size:15.5px;font-weight:700;color:var(--ink);font-family:var(--f-head);display:flex;align-items:center;gap:8px}
 .dev-dash-card-sub{font-size:12px;color:var(--ink-3);margin-top:3px}
+
+.dash-click-row{padding:7px 10px;border-radius:12px;margin:0 -8px;transition:background .15s ease,transform .15s ease;cursor:pointer;user-select:none}
+.dash-click-row:hover{background:var(--surface-2);transform:translateX(3px)}
+.dash-click-row:active{transform:scale(0.99)}
+.dash-bar-bg{height:9px;background:var(--surface-2);border-radius:6px;overflow:hidden;position:relative}
+.dash-bar-fill{height:100%;border-radius:6px;transition:width .5s cubic-bezier(0.16,1,0.3,1)}
 
 /* ---------- kanban ---------- */
 .kanban{display:flex;gap:14px;overflow-x:auto;padding-bottom:14px}
@@ -4253,8 +4300,9 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-off
   animation:splashBar 1.4s ease-in-out infinite;
 }
 .splash-maha-mantra{
-  margin-top:20px;font-family:"Caveat","Brush Script MT",cursive;
-  font-size:16px;color:#B45309;font-weight:600;opacity:0.92;
+  margin-top:16px;font-family:"Caveat","Brush Script MT",cursive;
+  font-size:16.5px;color:#B45309;font-weight:600;opacity:0.95;
+  line-height:1.42;text-align:center;letter-spacing:0.02em;
 }
 @keyframes splashPulse{
   0%{transform:scale(1);box-shadow:0 10px 28px rgba(234,88,12,0.3)}
@@ -4297,7 +4345,10 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-off
       <div class="splash-loader-track">
         <div class="splash-loader-bar"></div>
       </div>
-      <div class="splash-maha-mantra">Hare Krishna Hare Krishna · Krishna Krishna Hare Hare</div>
+      <div class="splash-maha-mantra">
+        Hare Krishna Hare Krishna · Krishna Krishna Hare Hare<br>
+        Hare Rama Hare Rama · Rama Rama Hare Hare
+      </div>
     </div>
   </div>
 </div>
@@ -9251,7 +9302,25 @@ function funnelRows(){
 /* =========================================================================
    DEVOTEE DASHBOARD CHARTS & ANALYTICS
    ========================================================================= */
-function devoteePieChart(slices, { size = 190, innerRadius = 52 } = {}) {
+function classifyDevoteeLocation(d) {
+  const loc = ((d.residence || '') + ' ' + (d.address || '')).toLowerCase().trim();
+  if (loc.includes('bace') || loc.includes('ashram')) return 'BACE Residents';
+  if (loc.includes('jia sarai') || loc.includes('jiasarai')) return 'Jia Sarai Local';
+  if (loc.includes('iit') || loc.includes('ber sarai') || loc.includes('katwaria') || loc.includes('munirka') || loc.includes('hauz khas') || loc.includes('green park') || loc.includes('adchini') || loc.includes('south delhi')) return 'Nearby South Delhi';
+  if (loc.includes('delhi') || loc.includes('ncr') || loc.includes('noida') || loc.includes('gurgaon') || loc.includes('gurugram') || loc.includes('faridabad') || loc.includes('ghaziabad')) return 'Wider Delhi NCR';
+  return 'Outside Delhi / Native';
+}
+
+function classifyDevoteeDemographics(d) {
+  const org = ((d.org || '') + ' ' + (d.highestEducation || '') + ' ' + (d.occupation || '') + ' ' + (d.presentStudiesOrJob || '')).toLowerCase().trim();
+  if (org.includes('iit') || org.includes('indian institute of technology')) return 'IIT Delhi';
+  if (org.includes('jnu') || org.includes('jawaharlal nehru') || org.includes('du') || org.includes('delhi university')) return 'JNU & Delhi Universities';
+  if (org.includes('job') || org.includes('software') || org.includes('engineer') || org.includes('analyst') || org.includes('working') || org.includes('corporate') || org.includes('consultant') || org.includes('pvt') || org.includes('ltd') || org.includes('manager')) return 'Working Professionals';
+  if (org.includes('college') || org.includes('b.tech') || org.includes('m.tech') || org.includes('student') || org.includes('phd') || org.includes('scholar') || org.includes('studies')) return 'College Students & Scholars';
+  return 'Dedicated Ashram & Community';
+}
+
+function devoteePieChart(slices, { size = 185, innerRadius = 50 } = {}) {
   const total = slices.reduce((sum, s) => sum + s.value, 0);
   if (!total) {
     return `<div style="text-align:center;padding:24px;color:var(--ink-3)">No devotee data to display</div>`;
@@ -9267,7 +9336,8 @@ function devoteePieChart(slices, { size = 190, innerRadius = 52 } = {}) {
     const sole = activeSlices[0];
     const strokeWidth = r - innerRadius;
     const midR = innerRadius + strokeWidth / 2;
-    paths = `<circle cx="${cx}" cy="${cy}" r="${midR}" fill="none" stroke="${sole.color}" stroke-width="${strokeWidth}"/>`;
+    paths = `<circle cx="${cx}" cy="${cy}" r="${midR}" fill="none" stroke="${sole.color}" stroke-width="${strokeWidth}"
+      data-act="dash-filter-devotees" data-filter-key="rounds" data-filter-val="${sole.valKey||''}" style="cursor:pointer" title="Click to filter"/>`;
   } else {
     let currentAngle = -Math.PI / 2;
     paths = slices.map(s => {
@@ -9298,10 +9368,11 @@ function devoteePieChart(slices, { size = 190, innerRadius = 52 } = {}) {
       currentAngle = endAngle;
       const pct = Math.round((s.value / total) * 100);
       return `<path d="${d}" fill="${s.color}" opacity="0.94"
-        style="transition:opacity .2s ease;cursor:pointer"
-        title="${esc(s.label)}: ${s.value} devotees (${pct}%)"
-        onmouseover="this.style.opacity='1'"
-        onmouseout="this.style.opacity='0.94'"/>`;
+        data-act="dash-filter-devotees" data-filter-key="rounds" data-filter-val="${s.valKey||''}"
+        style="transition:all .2s ease;cursor:pointer"
+        title="${esc(s.label)}: ${s.value} devotees (${pct}%) — Click to filter"
+        onmouseover="this.style.opacity='1';this.style.transform='scale(1.03)';this.style.transformOrigin='${cx}px ${cy}px'"
+        onmouseout="this.style.opacity='0.94';this.style.transform='scale(1)'"/>`;
     }).join('');
   }
 
@@ -9315,17 +9386,19 @@ function devoteePieChart(slices, { size = 190, innerRadius = 52 } = {}) {
         <span style="font-size:10px;color:var(--ink-3);font-weight:700;text-transform:uppercase;letter-spacing:0.04em">Devotees</span>
       </div>
     </div>
-    <div style="display:flex;flex-direction:column;gap:7px;min-width:170px;flex:1">
+    <div style="display:flex;flex-direction:column;gap:5px;min-width:170px;flex:1">
       ${slices.map(s => {
         const pct = total ? Math.round((s.value / total) * 100) : 0;
-        return `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px">
-          <div style="display:flex;align-items:center;gap:7px;min-width:0">
-            <span style="width:10px;height:10px;border-radius:3px;background:${s.color};flex-shrink:0"></span>
-            <span style="color:var(--ink-2);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(s.label)}</span>
-          </div>
-          <div style="display:flex;align-items:center;gap:5px;flex-shrink:0">
-            <b style="font-family:var(--f-head);color:var(--ink)">${s.value}</b>
-            <span style="font-size:10.5px;color:var(--ink-3);min-width:30px;text-align:right">(${pct}%)</span>
+        return `<div class="dash-click-row" data-act="dash-filter-devotees" data-filter-key="rounds" data-filter-val="${s.valKey||''}" title="Click to filter ${esc(s.label)}">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px">
+            <div style="display:flex;align-items:center;gap:7px;min-width:0">
+              <span style="width:10px;height:10px;border-radius:3px;background:${s.color};flex-shrink:0"></span>
+              <span style="color:var(--ink-2);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(s.label)}</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:5px;flex-shrink:0">
+              <b style="font-family:var(--f-head);color:var(--ink)">${s.value}</b>
+              <span style="font-size:10.5px;color:var(--ink-3);min-width:30px;text-align:right">(${pct}%)</span>
+            </div>
           </div>
         </div>`;
       }).join('')}
@@ -9333,75 +9406,51 @@ function devoteePieChart(slices, { size = 190, innerRadius = 52 } = {}) {
   </div>`;
 }
 
-function devoteeAttendanceBarChart(tiers) {
-  const max = Math.max(...tiers.map(t => t.count), 1);
-  return `<div style="display:flex;flex-direction:column;gap:12px;width:100%">
-    ${tiers.map(t => {
-      const pct = t.total ? Math.round((t.count / t.total) * 100) : 0;
-      const barW = Math.max(3, Math.round((t.count / max) * 100));
-      return `<div>
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;font-size:12.5px">
-          <div style="display:flex;align-items:center;gap:7px">
-            <span style="width:9px;height:9px;border-radius:50%;background:${t.color}"></span>
-            <span style="font-weight:600;color:var(--ink)">${esc(t.label)}</span>
-            <span style="font-size:11px;color:var(--ink-3)">(${esc(t.range)})</span>
+function devoteeHorizontalBars(items, { filterKey = 'q' } = {}) {
+  const max = Math.max(...items.map(i => i.count), 1);
+  return `<div style="display:flex;flex-direction:column;gap:8px;width:100%">
+    ${items.map(it => {
+      const pct = it.total ? Math.round((it.count / it.total) * 100) : 0;
+      const barW = Math.max(3, Math.round((it.count / max) * 100));
+      return `<div class="dash-click-row" data-act="dash-filter-devotees" data-filter-key="${filterKey}" data-filter-val="${esc(it.valKey || it.label)}" title="Click to filter by ${esc(it.label)}">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;font-size:12.5px">
+          <div style="display:flex;align-items:center;gap:7px;min-width:0">
+            <span style="width:8px;height:8px;border-radius:50%;background:${it.color};flex-shrink:0"></span>
+            <span style="font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(it.label)}</span>
+            ${it.sub ? `<span style="font-size:11px;color:var(--ink-3)">(${esc(it.sub)})</span>` : ''}
           </div>
-          <div style="display:flex;align-items:center;gap:6px">
-            <b style="font-family:var(--f-head);color:var(--ink)">${t.count}</b>
+          <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+            <b style="font-family:var(--f-head);color:var(--ink)">${it.count}</b>
+            ${it.total ? `<span style="font-size:11px;color:var(--ink-3);min-width:32px;text-align:right">(${pct}%)</span>` : ''}
+          </div>
+        </div>
+        <div class="dash-bar-bg">
+          <div class="dash-bar-fill" style="width:${barW}%;background:${it.color}"></div>
+        </div>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+function devoteeProgressionLadder(levels) {
+  const max = Math.max(...levels.map(l => l.count), 1);
+  return `<div style="display:flex;flex-direction:column;gap:9px;width:100%">
+    ${levels.map(l => {
+      const pct = l.total ? Math.round((l.count / l.total) * 100) : 0;
+      const barW = Math.max(4, Math.round((l.count / max) * 100));
+      return `<div class="dash-click-row" data-act="dash-filter-devotees" data-filter-key="level" data-filter-val="${l.levelKey}" title="Click to filter devotees in ${esc(l.title)}">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;font-size:12.5px">
+          <div style="display:flex;align-items:center;gap:8px;min-width:0">
+            <span class="badge sm" style="background:${l.badgeBg};color:${l.color};font-weight:800;font-size:10.5px">${esc(l.tag)}</span>
+            <span style="font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(l.title)}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+            <b style="font-family:var(--f-head);color:var(--ink)">${l.count}</b>
             <span style="font-size:11px;color:var(--ink-3)">(${pct}%)</span>
           </div>
         </div>
-        <div style="height:9px;background:var(--surface-2);border-radius:6px;overflow:hidden">
-          <div style="height:100%;width:${barW}%;background:${t.color};border-radius:6px;transition:width .4s ease"></div>
-        </div>
-      </div>`;
-    }).join('')}
-  </div>`;
-}
-
-function devoteeProgressRings(metrics) {
-  return `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:12px;width:100%">
-    ${metrics.map(m => {
-      const r = 34;
-      const circ = 2 * Math.PI * r;
-      const strokePct = Math.min(100, Math.max(0, m.pct));
-      const offset = circ - (strokePct / 100) * circ;
-      return `<div style="display:flex;flex-direction:column;align-items:center;text-align:center;padding:12px 6px;background:var(--surface);border:1px solid var(--line);border-radius:14px">
-        <div style="position:relative;width:80px;height:80px;margin-bottom:8px">
-          <svg viewBox="0 0 80 80" width="80" height="80" style="transform:rotate(-90deg)">
-            <circle cx="40" cy="40" r="${r}" fill="none" stroke="var(--surface-2)" stroke-width="7"/>
-            <circle cx="40" cy="40" r="${r}" fill="none" stroke="${m.color}" stroke-width="7" stroke-linecap="round"
-              stroke-dasharray="${circ}" stroke-dashoffset="${offset}" style="transition:stroke-dashoffset .5s ease"/>
-          </svg>
-          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
-            <span style="font-size:15px;font-weight:800;font-family:var(--f-head);color:var(--ink)">${m.pct}%</span>
-          </div>
-        </div>
-        <div style="font-size:11.5px;font-weight:700;color:var(--ink);margin-bottom:2px;line-height:1.2">${esc(m.label)}</div>
-        <div style="font-size:10.5px;color:var(--ink-3)">${m.count} / ${m.total} devotees</div>
-      </div>`;
-    }).join('')}
-  </div>`;
-}
-
-function devoteeDeptBarChart(deptData) {
-  if(!deptData.length){
-    return `<div style="text-align:center;padding:20px;color:var(--ink-3)">No department assignments recorded yet</div>`;
-  }
-  const max = Math.max(...deptData.map(d => d.count), 1);
-  return `<div style="display:flex;flex-direction:column;gap:10px;width:100%">
-    ${deptData.map(d => {
-      const barW = Math.max(4, Math.round((d.count / max) * 100));
-      return `<div>
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;font-size:12.5px">
-          <span style="font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(d.name)}</span>
-          <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
-            <b style="font-family:var(--f-head);color:var(--ink)">${d.count}</b>
-            <span style="font-size:11px;color:var(--ink-3)">devotees</span>
-          </div>
-        </div>
-        <div style="height:8px;background:var(--surface-2);border-radius:5px;overflow:hidden">
-          <div style="height:100%;width:${barW}%;background:${d.color || 'var(--accent)'};border-radius:5px;transition:width .4s ease"></div>
+        <div class="dash-bar-bg">
+          <div class="dash-bar-fill" style="width:${barW}%;background:${l.color}"></div>
         </div>
       </div>`;
     }).join('')}
@@ -9410,7 +9459,7 @@ function devoteeDeptBarChart(deptData) {
 
 function viewDevoteeDashboard(devotees){
   if(!devotees || !devotees.length){
-    return emptyState('No devotee data', 'No devotees match the selected filters.', '<button class="btn" data-act="clear-dev-filters">Clear filters</button>');
+    return emptyState('No devotee data', 'No devotees match the selected filters.', '<button class="btn" data-act="dash-filter-devotees" data-filter-key="all">Clear filters</button>');
   }
 
   // 1. Chanting Rounds calculation
@@ -9418,7 +9467,7 @@ function viewDevoteeDashboard(devotees){
   let totalRounds = 0;
   devotees.forEach(d => {
     const sLog = (DB.sadhana || []).find(s => s.devotee === d.id || s.devotee === d.name);
-    const r = Number(d.sadhana?.rounds ?? (sLog ? sLog.rounds : 0));
+    const r = Number(d.sadhana?.rounds ?? (sLog ? sLog.rounds : (d.rounds ?? 0)));
     totalRounds += r;
     if (r >= 16) r16Plus++;
     else if (r >= 8) r8to15++;
@@ -9428,7 +9477,26 @@ function viewDevoteeDashboard(devotees){
   });
   const avgRounds = devotees.length ? (totalRounds / devotees.length).toFixed(1) : 0;
 
-  // 2. Attendance health calculation
+  // 2. Residence & Location Breakdown
+  let locBace = 0, locJiaSarai = 0, locNearby = 0, locNcr = 0, locOutside = 0;
+  devotees.forEach(d => {
+    const loc = classifyDevoteeLocation(d);
+    if (loc === 'BACE Residents') locBace++;
+    else if (loc === 'Jia Sarai Local') locJiaSarai++;
+    else if (loc === 'Nearby South Delhi') locNearby++;
+    else if (loc === 'Wider Delhi NCR') locNcr++;
+    else locOutside++;
+  });
+
+  const locationItems = [
+    { label: 'BACE Residents', sub: 'Ashram', count: locBace, total: devotees.length, color: '#FF6600', valKey: 'BACE Residents' },
+    { label: 'Jia Sarai Local', sub: 'Village', count: locJiaSarai, total: devotees.length, color: '#10B981', valKey: 'Jia Sarai Local' },
+    { label: 'Nearby South Delhi', sub: 'IIT / Ber Sarai / Munirka', count: locNearby, total: devotees.length, color: '#3B82F6', valKey: 'Nearby South Delhi' },
+    { label: 'Wider Delhi NCR', sub: 'Delhi / NCR', count: locNcr, total: devotees.length, color: '#8B5CF6', valKey: 'Wider Delhi NCR' },
+    { label: 'Outside Delhi / Native', sub: 'Native towns', count: locOutside, total: devotees.length, color: '#64748B', valKey: 'Outside Delhi / Native' }
+  ];
+
+  // 3. Attendance health calculation
   let attHigh = 0, attReg = 0, attMid = 0, attLow = 0;
   let totalAtt = 0;
   devotees.forEach(d => {
@@ -9441,123 +9509,221 @@ function viewDevoteeDashboard(devotees){
   });
   const avgAtt = devotees.length ? Math.round(totalAtt / devotees.length) : 0;
 
-  // 3. Progress milestone calculations
-  const activeInCare = devotees.filter(d => d.careGroup && d.careGroup !== 'none').length;
-  const activeInDept = devotees.filter(d => d.dept && d.dept !== 'none').length;
-  const regularAtt = attHigh + attReg;
+  const attTiers = [
+    { label: 'Pillars', sub: '≥ 80%', count: attHigh, total: devotees.length, color: '#10B981', valKey: 'high' },
+    { label: 'Regular Attendees', sub: '60% – 79%', count: attReg, total: devotees.length, color: '#3B82F6', valKey: 'mid' },
+    { label: 'Developing Seekers', sub: '40% – 59%', count: attMid, total: devotees.length, color: '#F59E0B', valKey: 'low' },
+    { label: 'Needs Care & Follow-up', sub: '< 40%', count: attLow, total: devotees.length, color: '#EF4444', valKey: 'critical' }
+  ];
 
-  // 4. Department engagement
+  // 4. Spiritual Level Progression Ladder
+  let lvl3 = 0, lvl2 = 0, lvl1 = 0, lvl0 = 0;
+  devotees.forEach(d => {
+    const l = Number(d.level) || 0;
+    if (l >= 3) lvl3++;
+    else if (l === 2) lvl2++;
+    else if (l === 1) lvl1++;
+    else lvl0++;
+  });
+
+  const levelLadder = [
+    { tag: 'L3+', title: 'Senior Mentors & Preachers', count: lvl3, total: devotees.length, color: '#8B5CF6', badgeBg: 'rgba(139,92,246,0.12)', levelKey: '3' },
+    { tag: 'L2', title: 'Committed Sadhana Practitioners', count: lvl2, total: devotees.length, color: '#0D9488', badgeBg: 'rgba(13,148,136,0.12)', levelKey: '2' },
+    { tag: 'L1', title: 'Intermediate Seekers (Systematic Gita)', count: lvl1, total: devotees.length, color: '#3B82F6', badgeBg: 'rgba(59,130,246,0.12)', levelKey: '1' },
+    { tag: 'L0', title: 'New Connects & Open Seekers', count: lvl0, total: devotees.length, color: '#F59E0B', badgeBg: 'rgba(245,158,11,0.12)', levelKey: '0' }
+  ];
+
+  // 5. Demographics (College / Campus / Work)
+  let demoIit = 0, demoJnu = 0, demoWork = 0, demoCollege = 0, demoAshram = 0;
+  devotees.forEach(d => {
+    const dm = classifyDevoteeDemographics(d);
+    if (dm === 'IIT Delhi') demoIit++;
+    else if (dm === 'JNU & Delhi Universities') demoJnu++;
+    else if (dm === 'Working Professionals') demoWork++;
+    else if (dm === 'College Students & Scholars') demoCollege++;
+    else demoAshram++;
+  });
+
+  const demoItems = [
+    { label: 'IIT Delhi Scholars & Students', sub: 'B.Tech / M.Tech / PhD', count: demoIit, total: devotees.length, color: '#FF6600', valKey: 'IIT Delhi' },
+    { label: 'Working Professionals', sub: 'Tech & Corporate', count: demoWork, total: devotees.length, color: '#10B981', valKey: 'Working Professionals' },
+    { label: 'JNU & Delhi Universities', sub: 'Scholars', count: demoJnu, total: devotees.length, color: '#3B82F6', valKey: 'JNU & Delhi Universities' },
+    { label: 'College Students & Scholars', sub: 'Universities', count: demoCollege, total: devotees.length, color: '#8B5CF6', valKey: 'College Students & Scholars' },
+    { label: 'Ashram & Community Staff', sub: 'Full-time', count: demoAshram, total: devotees.length, color: '#64748B', valKey: 'Dedicated Ashram & Community' }
+  ];
+
+  // 6. Department / Seva Distribution
   const depts = activeDepts();
   const deptCounts = depts.map(dp => {
     const count = devotees.filter(d => d.dept === dp.id).length;
-    return { name: dp.name, count, id: dp.id };
+    return { label: dp.name, count, total: devotees.length, valKey: dp.id, id: dp.id };
   }).filter(dp => dp.count > 0).sort((a, b) => b.count - a.count);
 
   const unassignedDept = devotees.filter(d => !d.dept || d.dept === 'none').length;
   if (unassignedDept > 0) {
-    deptCounts.push({ name: 'Unassigned / General', count: unassignedDept, id: 'none', color: 'var(--ink-3)' });
+    deptCounts.push({ label: 'General / Unassigned Seva', count: unassignedDept, total: devotees.length, valKey: 'none', id: 'none', color: 'var(--ink-3)' });
   }
 
   const deptPalette = ['#FF6600', '#3B82F6', '#10B981', '#8B5CF6', '#F59E0B', '#06B6D4', '#EC4899', '#6366F1'];
-  const formattedDeptData = deptCounts.slice(0, 7).map((d, i) => ({
+  const formattedDeptData = deptCounts.slice(0, 6).map((d, i) => ({
     ...d,
     color: d.color || deptPalette[i % deptPalette.length]
   }));
 
   const pieSlices = [
-    { label: '16+ Rounds (Standard)', value: r16Plus, color: '#10B981' },
-    { label: '8–15 Rounds (Growing)', value: r8to15, color: '#6366F1' },
-    { label: '4–7 Rounds (Practicing)', value: r4to7, color: '#F59E0B' },
-    { label: '1–3 Rounds (Introductory)', value: r1to3, color: '#06B6D4' },
-    { label: '0 / Not Chanting', value: r0, color: '#94A3B8' }
-  ];
-
-  const attTiers = [
-    { label: 'Pillars', range: '≥ 80%', count: attHigh, total: devotees.length, color: '#10B981' },
-    { label: 'Regular Attendees', range: '60% – 79%', count: attReg, total: devotees.length, color: '#3B82F6' },
-    { label: 'Developing', range: '40% – 59%', count: attMid, total: devotees.length, color: '#F59E0B' },
-    { label: 'Needs Follow-up', range: '< 40%', count: attLow, total: devotees.length, color: '#EF4444' }
-  ];
-
-  const progressGauges = [
-    { label: '16 Rounds Standard', count: r16Plus, total: devotees.length, pct: devotees.length ? Math.round((r16Plus / devotees.length) * 100) : 0, color: '#10B981' },
-    { label: 'Regular Attendance', count: regularAtt, total: devotees.length, pct: devotees.length ? Math.round((regularAtt / devotees.length) * 100) : 0, color: '#3B82F6' },
-    { label: 'Care Group Connected', count: activeInCare, total: devotees.length, pct: devotees.length ? Math.round((activeInCare / devotees.length) * 100) : 0, color: '#8B5CF6' },
-    { label: 'Active Dept Seva', count: activeInDept, total: devotees.length, pct: devotees.length ? Math.round((activeInDept / devotees.length) * 100) : 0, color: '#F97316' }
+    { label: '16+ Rounds (Fixed)', value: r16Plus, color: '#10B981', valKey: '16' },
+    { label: '8–15 Rounds (Advancing)', value: r8to15, color: '#6366F1', valKey: '8' },
+    { label: '4–7 Rounds (Practicing)', value: r4to7, color: '#F59E0B', valKey: '4' },
+    { label: '1–3 Rounds (Introductory)', value: r1to3, color: '#06B6D4', valKey: '1' },
+    { label: '0 / Exploring', value: r0, color: '#94A3B8', valKey: '0' }
   ];
 
   return `
-    <div class="stats" style="margin-bottom:18px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))">
-      ${stat('Total Devotees', devotees.length, 'In community directory', { em: '👥', color: 'var(--ink)' })}
-      ${stat('Chanting 16 Rounds', r16Plus, `${devotees.length ? Math.round((r16Plus / devotees.length) * 100) : 0}% of community`, { em: '📿', color: '#10B981' })}
-      ${stat('Avg Attendance', `${avgAtt}%`, 'Overall community rate', { em: '📈', color: '#3B82F6' })}
-      ${stat('Active in Seva', activeInDept, `${devotees.length ? Math.round((activeInDept / devotees.length) * 100) : 0}% in departments`, { em: '🛕', color: '#F97316' })}
+    <!-- Top KPI Cards: Placed One Beside Another in a Single Line -->
+    <div class="dev-kpi-row">
+      <div class="dev-kpi-card" data-act="dash-filter-devotees" data-filter-key="all" title="Click to view all devotees in directory">
+        <div class="dev-kpi-top">
+          <span class="dev-kpi-label">Total Devotees</span>
+          <span class="dev-kpi-icon">👥</span>
+        </div>
+        <div class="dev-kpi-val">${devotees.length}</div>
+        <div class="dev-kpi-sub">
+          <span>In community directory</span>
+          <span class="dev-kpi-badge" style="background:var(--surface-2);color:var(--ink-2)">View all ›</span>
+        </div>
+      </div>
+
+      <div class="dev-kpi-card" data-act="dash-filter-devotees" data-filter-key="rounds" data-filter-val="16" title="Click to filter devotees chanting 16 rounds">
+        <div class="dev-kpi-top">
+          <span class="dev-kpi-label">16+ Rounds Fixed</span>
+          <span class="dev-kpi-icon" style="color:#10B981;background:rgba(16,185,129,0.1)">📿</span>
+        </div>
+        <div class="dev-kpi-val" style="color:#10B981">${r16Plus}</div>
+        <div class="dev-kpi-sub">
+          <span>${devotees.length ? Math.round((r16Plus / devotees.length) * 100) : 0}% of community</span>
+          <span class="dev-kpi-badge" style="background:rgba(16,185,129,0.12);color:#10B981">Filter ›</span>
+        </div>
+      </div>
+
+      <div class="dev-kpi-card" data-act="dash-filter-devotees" data-filter-key="residence" data-filter-val="BACE Residents" title="Click to view devotees residing in BACE Ashram">
+        <div class="dev-kpi-top">
+          <span class="dev-kpi-label">BACE Residents</span>
+          <span class="dev-kpi-icon" style="color:#FF6600;background:rgba(255,102,0,0.1)">🛕</span>
+        </div>
+        <div class="dev-kpi-val" style="color:#FF6600">${locBace}</div>
+        <div class="dev-kpi-sub">
+          <span>Ashram residents & sevaks</span>
+          <span class="dev-kpi-badge" style="background:rgba(255,102,0,0.12);color:#FF6600">Filter ›</span>
+        </div>
+      </div>
+
+      <div class="dev-kpi-card" data-act="dash-filter-devotees" data-filter-key="attendance" data-filter-val="high" title="Click to view devotees with ≥80% attendance">
+        <div class="dev-kpi-top">
+          <span class="dev-kpi-label">Avg Attendance</span>
+          <span class="dev-kpi-icon" style="color:#3B82F6;background:rgba(59,130,246,0.1)">📈</span>
+        </div>
+        <div class="dev-kpi-val" style="color:#3B82F6">${avgAtt}%</div>
+        <div class="dev-kpi-sub">
+          <span>${attHigh} pillars (≥80%)</span>
+          <span class="dev-kpi-badge" style="background:rgba(59,130,246,0.12);color:#3B82F6">Pillars ›</span>
+        </div>
+      </div>
     </div>
 
+    <!-- 6 Rich, Non-Repetitive, Animative & Clickable Graphs -->
     <div class="dev-dash-grid">
       <!-- GRAPH 1: PIE CHART (Chanting Rounds) -->
       <div class="dev-dash-card">
         <div class="dev-dash-card-header">
           <div>
             <div class="dev-dash-card-title"><span>📿</span> Chanting Rounds (Japa Sadhana)</div>
-            <div class="dev-dash-card-sub">Number of devotees vs daily rounds chanted (Community avg: <b>${avgRounds} rounds</b>)</div>
+            <div class="dev-dash-card-sub">Devotees vs daily rounds chanted (Community avg: <b>${avgRounds} rounds/day</b>)</div>
           </div>
           <span class="badge sm" style="background:rgba(16,185,129,0.1);color:#10B981;font-weight:700">Pie Chart</span>
         </div>
-        <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:6px 0">
-          ${devoteePieChart(pieSlices, { size: 185, innerRadius: 50 })}
+        <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:4px 0">
+          ${devoteePieChart(pieSlices, { size: 180, innerRadius: 48 })}
         </div>
       </div>
 
-      <!-- GRAPH 2: BAR CHART (Attendance Performance) -->
+      <!-- GRAPH 2: GEOGRAPHY & RESIDENCE (BACE vs Local vs Nearby) -->
+      <div class="dev-dash-card">
+        <div class="dev-dash-card-header">
+          <div>
+            <div class="dev-dash-card-title"><span>📍</span> Residence & Geographical Presence</div>
+            <div class="dev-dash-card-sub">Devotees stationed in BACE Ashram, Jia Sarai, nearby campuses & NCR</div>
+          </div>
+          <span class="badge sm" style="background:rgba(255,102,0,0.1);color:#FF6600;font-weight:700">Locations</span>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;justify-content:center">
+          ${devoteeHorizontalBars(locationItems, { filterKey: 'residence' })}
+        </div>
+      </div>
+
+      <!-- GRAPH 3: SPIRITUAL PROGRESSION LADDER (Levels 0 to 3+) -->
+      <div class="dev-dash-card">
+        <div class="dev-dash-card-header">
+          <div>
+            <div class="dev-dash-card-title"><span>🎓</span> Spiritual Level & Course Progression</div>
+            <div class="dev-dash-card-sub">Growth ladder from open connects to dedicated senior mentors</div>
+          </div>
+          <span class="badge sm" style="background:rgba(139,92,246,0.1);color:#8B5CF6;font-weight:700">Growth Ladder</span>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;justify-content:center">
+          ${devoteeProgressionLadder(levelLadder)}
+        </div>
+      </div>
+
+      <!-- GRAPH 4: ATTENDANCE HEALTH TIERS -->
       <div class="dev-dash-card">
         <div class="dev-dash-card-header">
           <div>
             <div class="dev-dash-card-title"><span>📈</span> Attendance Performance Tiers</div>
-            <div class="dev-dash-card-sub">Devotees grouped by overall class & seva attendance health</div>
+            <div class="dev-dash-card-sub">Real community participation across morning & evening programs</div>
           </div>
-          <span class="badge sm" style="background:rgba(59,130,246,0.1);color:#3B82F6;font-weight:700">Bar Chart</span>
+          <span class="badge sm" style="background:rgba(59,130,246,0.1);color:#3B82F6;font-weight:700">Attendance</span>
         </div>
         <div style="flex:1;display:flex;flex-direction:column;justify-content:center">
-          ${devoteeAttendanceBarChart(attTiers)}
+          ${devoteeHorizontalBars(attTiers, { filterKey: 'attendance' })}
         </div>
       </div>
 
-      <!-- GRAPH 3: PROGRESS GAUGES (Core Milestones) -->
+      <!-- GRAPH 5: CAMPUS & PROFESSIONAL DEMOGRAPHICS -->
       <div class="dev-dash-card">
         <div class="dev-dash-card-header">
           <div>
-            <div class="dev-dash-card-title"><span>🎯</span> Spiritual Sadhana & Milestone Progress</div>
-            <div class="dev-dash-card-sub">Community achievement rates across core sadhana benchmarks</div>
+            <div class="dev-dash-card-title"><span>🏛️</span> College & Professional Background</div>
+            <div class="dev-dash-card-sub">Scholarly background from IIT Delhi, JNU, working engineers & youth</div>
           </div>
-          <span class="badge sm" style="background:rgba(139,92,246,0.1);color:#8B5CF6;font-weight:700">Progress Rings</span>
+          <span class="badge sm" style="background:rgba(16,185,129,0.1);color:#10B981;font-weight:700">Demographics</span>
         </div>
-        <div style="flex:1;display:flex;align-items:center">
-          ${devoteeProgressRings(progressGauges)}
+        <div style="flex:1;display:flex;flex-direction:column;justify-content:center">
+          ${devoteeHorizontalBars(demoItems, { filterKey: 'org' })}
         </div>
       </div>
 
-      <!-- GRAPH 4: HORIZONTAL DISTRIBUTION BAR (Department Seva) -->
+      <!-- GRAPH 6: DEPARTMENT & SEVA ENGAGEMENT -->
       <div class="dev-dash-card">
         <div class="dev-dash-card-header">
           <div>
-            <div class="dev-dash-card-title"><span>🏢</span> Department & Seva Distribution</div>
-            <div class="dev-dash-card-sub">Active devotee workforce distributed across departments</div>
+            <div class="dev-dash-card-title"><span>🛕</span> Department & Seva Workforce</div>
+            <div class="dev-dash-card-sub">Active volunteer engagement across temple & BACE seva departments</div>
           </div>
-          <span class="badge sm" style="background:rgba(249,115,22,0.1);color:#F97316;font-weight:700">Distribution Bar</span>
+          <span class="badge sm" style="background:rgba(236,72,153,0.1);color:#EC4899;font-weight:700">Seva Allocation</span>
         </div>
         <div style="flex:1;display:flex;flex-direction:column;justify-content:center">
-          ${devoteeDeptBarChart(formattedDeptData)}
+          ${devoteeHorizontalBars(formattedDeptData, { filterKey: 'dept' })}
         </div>
       </div>
     </div>
 
-    <div style="margin-top:20px;padding:14px 18px;background:var(--surface);border:1px solid var(--line);border-radius:14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
-      <div style="font-size:13px;color:var(--ink-2)">
-        Showing analytics for <b>${devotees.length} devotees</b>. Want to browse or edit individual profiles?
+    <div style="margin-top:22px;padding:16px 20px;background:var(--surface);border:1px solid var(--line);border-radius:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+      <div style="font-size:13px;color:var(--ink-2);display:flex;align-items:center;gap:8px">
+        <span>💡</span>
+        <span>Every card and bar above is <b>clickable</b>. Click any metric to instantly filter the Devotees Directory!</span>
       </div>
       <button class="btn sm" data-act="tab" data-k="devoteeView" data-v="list" style="display:inline-flex;align-items:center;gap:6px">
-        ${ic('people')} View Devotees Directory
+        ${ic('people')} Open Devotees Directory
       </button>
     </div>`;
 }
@@ -9627,6 +9793,21 @@ function viewDevotees(){
       if(f.attendance==='critical'&&att >= 30) return false;
     }
     if(f.swabhav&&(d.swabhav?.nature!==f.swabhav))return false;
+    if(f.roundsBucket){
+      const sLog = (DB.sadhana || []).find(s => s.devotee === d.id || s.devotee === d.name);
+      const r = Number(d.sadhana?.rounds ?? (sLog ? sLog.rounds : (d.rounds ?? 0)));
+      if(f.roundsBucket === '16' && r < 16) return false;
+      if(f.roundsBucket === '8' && (r < 8 || r >= 16)) return false;
+      if(f.roundsBucket === '4' && (r < 4 || r >= 8)) return false;
+      if(f.roundsBucket === '1' && (r < 1 || r >= 4)) return false;
+      if(f.roundsBucket === '0' && r > 0) return false;
+    }
+    if(f.residenceBucket){
+      if(classifyDevoteeLocation(d) !== f.residenceBucket) return false;
+    }
+    if(f.orgBucket){
+      if(classifyDevoteeDemographics(d) !== f.orgBucket) return false;
+    }
     return true;
   });
 
@@ -9657,6 +9838,9 @@ function viewDevotees(){
   if(f.facilitator) activeFilterCount++;
   if(f.skill) activeFilterCount++;
   if(f.attendance) activeFilterCount++;
+  if(f.roundsBucket) activeFilterCount++;
+  if(f.residenceBucket) activeFilterCount++;
+  if(f.orgBucket) activeFilterCount++;
   if(f.sort && f.sort !== 'name_asc') activeFilterCount++;
 
   const mobFilterOpen = APP.mobFilterOpen ?? false;
@@ -9700,7 +9884,12 @@ function viewDevotees(){
         ${mobSelect('skill', f.skill, SKILLS.map(s=>[s,s]), 'Skill')}
         ${activeFilterCount>0?'<div class="mob-filter-grid-reset" style="grid-column:1/-1;display:flex;justify-content:flex-end"><button data-act="clear-dev-filters" style="font-size:12px;color:var(--danger);background:none;border:none;padding:4px 2px;cursor:pointer;font-weight:600">✕ Clear all</button></div>':''}
       </div>
-    </div>`;
+    </div>
+    ${(f.roundsBucket || f.residenceBucket || f.orgBucket) ? `
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px;padding:8px 14px;background:var(--accent-soft);border:1px solid rgba(255,102,0,0.2);border-radius:10px;font-size:12.5px;color:var(--ink)">
+        <span>🎯 Active Dashboard Filter: <b>${esc(f.roundsBucket ? (f.roundsBucket === '16' ? '16+ Rounds Fixed' : (f.roundsBucket === '0' ? '0 / Exploring Rounds' : f.roundsBucket + '–' + (Number(f.roundsBucket)===8?'15':Number(f.roundsBucket)===4?'7':'3') + ' Rounds')) : (f.residenceBucket || f.orgBucket))}</b> (${rows.length} devotees matching)</span>
+        <button class="btn sm" data-act="clear-dev-filters" style="padding:2px 8px;font-size:11.5px;color:var(--danger);background:rgba(220,53,69,0.08);border-color:rgba(220,53,69,0.25)">✕ Clear Filter</button>
+      </div>` : ''}`;
 
   const colSelect = (key, currentVal, opts, defaultLabel, isSort = false) => {
     const isFiltered = !!currentVal && currentVal !== 'name_asc';
@@ -25242,6 +25431,40 @@ document.addEventListener('click',e=>{
    case 'ms-toggle-item':{
      updateMultiSelectUI(t.dataset.name);
      break}
+   case 'dash-filter-devotees':{
+     stop();
+     const fKey = t.dataset.filterKey;
+     const fVal = t.dataset.filterVal;
+     if(!APP.filters) APP.filters = {};
+     APP.filters.dev = {
+       q: '', status: '', gender: '', dept: '', batch: '', level: '',
+       careGroup: '', facilitator: '', skill: '', attendance: '', swabhav: '',
+       sort: 'name_asc', roundsBucket: '', residenceBucket: '', orgBucket: ''
+     };
+
+     if(fKey === 'all') {
+       // View all devotees
+     } else if(fKey === 'rounds') {
+       APP.filters.dev.roundsBucket = fVal;
+       APP.filters.dev.sort = 'sadhana_desc';
+     } else if(fKey === 'residence') {
+       APP.filters.dev.residenceBucket = fVal;
+     } else if(fKey === 'attendance') {
+       APP.filters.dev.attendance = fVal;
+     } else if(fKey === 'level') {
+       APP.filters.dev.level = fVal;
+     } else if(fKey === 'dept') {
+       APP.filters.dev.dept = fVal;
+     } else if(fKey === 'org') {
+       APP.filters.dev.orgBucket = fVal;
+     } else if(fKey === 'q') {
+       APP.filters.dev.q = fVal;
+     }
+
+     if(!APP.tab) APP.tab = {};
+     APP.tab.devoteeView = 'list';
+     render();
+     break}
 
   /* ---- Phase 1: Collapsible, Detail Sheet, Mob Tabs ---- */
   case 'toggle-collapsible':stop();{
@@ -25556,7 +25779,7 @@ document.addEventListener('click',e=>{
     break;}
   case 'download-csv-template':{stop();downloadDevoteeCsvTemplate();break;}
   case 'confirm-import-csv':{stop();executeDevoteeCsvImport();break;}
-  case 'clear-dev-filters':{stop();APP.filters.dev={q:'',role:'',status:'',dept:'',batch:'',careGroup:'',skill:'',attendance:'',sort:'name_asc'};APP.page.dev=1;toast('Filters reset');render();break}
+  case 'clear-dev-filters':{stop();APP.filters.dev={q:'',role:'',status:'',gender:'',dept:'',batch:'',level:'',careGroup:'',facilitator:'',skill:'',attendance:'',swabhav:'',sort:'name_asc',roundsBucket:'',residenceBucket:'',orgBucket:''};APP.page.dev=1;toast('Filters reset');render();break}
   case 'bm-sort':{stop();
     const col=t.dataset.col;
     const bmf=APP.batchMemFilter||(APP.batchMemFilter={q:'',status:'',att:'',rounds:'',facilitator:'',sortCol:'name',sortDir:'asc'});
