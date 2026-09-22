@@ -5595,7 +5595,7 @@ a.card:hover, button.card:hover, .card.hoverable:hover {
 }
 
 /* ── .btn — general buttons with glass effect ── */
-.btn:not(.pri):not(.ghost):not(.danger) {
+.btn:not(.pri):not(.ghost):not(.danger):not(.danger-solid):not([data-act="confirm-delete-devotee"]) {
   background: linear-gradient(145deg, rgba(255,255,255,0.92) 0%, rgba(248,250,252,0.78) 100%) !important;
   backdrop-filter: blur(8px) !important;
   -webkit-backdrop-filter: blur(8px) !important;
@@ -5608,7 +5608,7 @@ a.card:hover, button.card:hover, .card.hoverable:hover {
     0 2px 4px -1px rgba(15,23,42,0.06),
     0 4px 10px -2px rgba(15,23,42,0.04) !important;
 }
-.btn:not(.pri):not(.ghost):not(.danger):hover {
+.btn:not(.pri):not(.ghost):not(.danger):not(.danger-solid):not([data-act="confirm-delete-devotee"]):hover {
   box-shadow:
     0 1px 0 rgba(255,255,255,1) inset,
     0 -1.5px 0 rgba(15,23,42,0.07) inset,
@@ -5617,7 +5617,7 @@ a.card:hover, button.card:hover, .card.hoverable:hover {
   border-color: rgba(203,213,225,0.90) !important;
   transform: translateY(-1.5px) !important;
 }
-[data-theme="dark"] .btn:not(.pri):not(.ghost):not(.danger) {
+[data-theme="dark"] .btn:not(.pri):not(.ghost):not(.danger):not(.danger-solid):not([data-act="confirm-delete-devotee"]) {
   background: linear-gradient(145deg, rgba(30,41,59,0.85) 0%, rgba(21,29,47,0.75) 100%) !important;
   border: 1.5px solid rgba(255,255,255,0.12) !important;
   border-top-color: rgba(255,255,255,0.20) !important;
@@ -5628,7 +5628,7 @@ a.card:hover, button.card:hover, .card.hoverable:hover {
     0 3px 8px rgba(0,0,0,0.30),
     0 6px 16px rgba(0,0,0,0.24) !important;
 }
-[data-theme="dark"] .btn:not(.pri):not(.ghost):not(.danger):hover {
+[data-theme="dark"] .btn:not(.pri):not(.ghost):not(.danger):not(.danger-solid):not([data-act="confirm-delete-devotee"]):hover {
   box-shadow:
     0 1px 0 rgba(255,255,255,0.20) inset,
     0 -1.5px 0 rgba(0,0,0,0.50) inset,
@@ -5664,6 +5664,40 @@ a.card:hover, button.card:hover, .card.hoverable:hover {
   box-shadow:
     0 0 0 rgba(255,180,100,0) inset,
     0 2px 4px rgba(234,88,12,0.20) !important;
+}
+
+/* ── .btn.danger-solid — Solid red destructive action buttons ── */
+.btn.danger-solid,
+button[data-act="confirm-delete-devotee"] {
+  background: linear-gradient(145deg, #EF4444 0%, #DC2626 55%, #B91C1C 100%) !important;
+  color: #FFFFFF !important;
+  border: 1.5px solid rgba(220,38,38,0.7) !important;
+  border-top-color: rgba(254,202,202,0.85) !important;
+  border-bottom-color: rgba(153,27,27,0.8) !important;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.3) inset,
+    0 -1.5px 0 rgba(0,0,0,0.2) inset,
+    0 4px 14px rgba(220,38,38,0.42),
+    0 10px 24px rgba(220,38,38,0.22) !important;
+  font-weight: 700 !important;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.35) !important;
+  cursor: pointer !important;
+}
+.btn.danger-solid:hover,
+button[data-act="confirm-delete-devotee"]:hover {
+  background: linear-gradient(145deg, #F87171 0%, #EF4444 55%, #DC2626 100%) !important;
+  color: #FFFFFF !important;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.4) inset,
+    0 -2px 0 rgba(153,27,27,0.3) inset,
+    0 6px 18px rgba(220,38,38,0.52),
+    0 16px 32px rgba(220,38,38,0.28) !important;
+  transform: translateY(-1.5px) !important;
+}
+.btn.danger-solid:active,
+button[data-act="confirm-delete-devotee"]:active {
+  transform: translateY(1px) scale(0.98) !important;
+  box-shadow: 0 2px 6px rgba(220,38,38,0.3) !important;
 }
 
 /* ── Glass sheen micro-interaction for all card children .card-h ── */
@@ -24333,7 +24367,7 @@ function deleteDevoteeModal(){
     </div>
     <div class="modal-f" style="display:flex;gap:10px;justify-content:flex-end">
       <button class="btn" data-act="close-scrim">Cancel</button>
-      <button class="btn" data-act="confirm-delete-devotee" data-id="${esc(d.id)}" style="background:var(--danger);border-color:var(--danger);color:#fff;font-weight:600">
+      <button class="btn danger-solid" data-act="confirm-delete-devotee" data-id="${esc(d.id)}">
         🗑 Confirm & Delete
       </button>
     </div>
