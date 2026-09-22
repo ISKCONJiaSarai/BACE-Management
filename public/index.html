@@ -5985,18 +5985,17 @@ const getCounsellorInfo = (email) => {
 
 const ACCESS={
   dashboard:'*', calendar:'*', sops:'*', messages:'*', actions:'*', today:'*',
-  // directory: everyone operational can search and view permitted basic info
-  directory:['counsellor','area_leader','coordinator','internal_manager','preaching_manager','care_manager','dept_head','preaching_coord','facilitator','admin'],
-  management:['counsellor','area_leader','coordinator','internal_manager','dept_head','admin'],
+  directory:'*',
+  management:'*',
   manage_departments:['counsellor','coordinator','internal_manager','admin','area_leader'],
-  assign:['counsellor','area_leader','coordinator','internal_manager','preaching_manager','care_manager','dept_head','preaching_coord','admin'],
-  preaching:['counsellor','area_leader','coordinator','preaching_manager','preaching_coord','admin'],
-  'batch-attendance':['counsellor','area_leader','coordinator','preaching_manager','preaching_coord','internal_manager','dept_head','facilitator','admin'],
+  assign:'*',
+  preaching:'*',
+  'batch-attendance':'*',
   manage_batches:['counsellor','coordinator','preaching_manager','admin','area_leader'],
-  care:['counsellor','area_leader','coordinator','care_manager','facilitator','admin'],
+  care:'*',
   care_notes:['counsellor','coordinator','care_manager','facilitator','area_leader','admin'],
-  inventory:['counsellor','area_leader','coordinator','internal_manager','dept_head','admin'],
-  reports:['counsellor','area_leader','coordinator','internal_manager','preaching_manager','care_manager','dept_head','preaching_coord','admin'],
+  inventory:'*',
+  reports:'*',
   admin:['admin','counsellor','area_leader']
 };
 const can=(m,role)=>{
@@ -6056,7 +6055,25 @@ const canDeleteDevotee=()=>{
   const r=APP.user.role||'';
   return r==='admin'||r==='counsellor'||r==='area_leader'||r==='preaching_manager'||r==='coordinator'||isBaceAdminEmail(curEmail)||isSuryaEmail(curEmail)||isCounsellorEmail(curEmail);
 };
-const canAssignRole=()=>canDeleteDevotee();
+const canAssignRole=()=>{
+  if(!APP||!APP.user) return false;
+  const curEmail=(APP.user.email||'').toLowerCase().trim();
+  const r=APP.user.role||'';
+  return r==='admin'||r==='counsellor'||r==='area_leader'||isBaceAdminEmail(curEmail)||isSuryaEmail(curEmail)||isCounsellorEmail(curEmail);
+};
+const canEditDevotee=(devId)=>{
+  if(!APP||!APP.user) return false;
+  const curUser = APP.user;
+  const curEmail = (curUser.email||'').toLowerCase().trim();
+  if(curUser.role === 'admin' || curUser.role === 'counsellor' || curUser.role === 'area_leader' || curUser.role === 'coordinator' || curUser.role === 'preaching_manager' || curUser.role === 'care_manager' || isBaceAdminEmail(curEmail) || isSuryaEmail(curEmail) || isCounsellorEmail(curEmail)) return true;
+  const d = typeof devId === 'object' ? devId : dv(devId);
+  if(!d) return false;
+  if(d.id === curUser.devotee || (d.email && d.email.toLowerCase().trim() === curEmail)) return true;
+  if(d.facilitator === curUser.devotee) return true;
+  if(d.batch && typeof ownsBatch === 'function' && ownsBatch(d.batch)) return true;
+  if(d.dept && typeof ownsDept === 'function' && ownsDept(d.dept)) return true;
+  return false;
+};
 
 /* ---------------- reference data ---------------- */
 // Master department list (blueprint §55). Fully editable at runtime.
@@ -7945,7 +7962,7 @@ function openDevoteeDetailSheet(id){
   const footerBtns = [
     { act: 'open-devotee-profile-from-sheet', id: d.id, label: 'View Full Profile →', pri: true }
   ];
-  if (can('directory')) {
+  if (canEditDevotee(d)) {
     footerBtns.unshift({ act: 'edit-devotee', id: d.id, label: 'Edit Profile' });
   }
 
@@ -10677,126 +10694,13 @@ function viewToday(){
 }
 
 /* =========================================================================
-   ROLE DASHBOARDS
+   ROLE DASHBOARDS (UNIFIED COMMUNITY VIEW FOR ALL ROLES)
    ========================================================================= */
 function viewDashboard(){
-  const r=APP.user.role,s=STATS();
-  const title={counsellor:'Community blocks',area_leader:'Community blocks',coordinator:'Operations overview',internal_manager:'Management overview',
-    preaching_manager:'Preaching overview',care_manager:'Devotee care overview',dept_head:'My department',
-    preaching_coord:'My batch',facilitator:'My devotees',devotee:'My BACE',admin:'System overview'}[r] || 'Community blocks';
-  const roleName=(r==='area_leader'||r==='counsellor')?'ISKCON BACE':(ROLES[r]?ROLES[r].name:'ISKCON BACE');
-  const eyebrowText=(r==='area_leader'||r==='counsellor')?'ISKCON BACE':((ROLES[r]?ROLES[r].emoji+' ':'')+roleName);
-  const headerActions=(r==='area_leader'||r==='counsellor')
-    ? `<div class="dash-header-btn-col"><button class="btn dash-head-btn" data-act="go" data-r="#/org">${ic('layers')}View hierarchy</button><button class="btn pri dash-head-btn" data-act="go" data-r="#/reports">📊 Reports</button></div>`
-    : `<div class="dash-header-btn-col"><button class="btn pri dash-head-btn" data-act="go" data-r="#/reports">📊 Reports</button></div>`;
-  const hd=hero()+head(eyebrowText,title,ROLES[r]?.scope||'',headerActions,'has-dash-actions');
-  if(r==='area_leader'||r==='counsellor')return hd+`${pillarCards(true)}<div style="height:15px"></div>
+  const headerActions = `<div class="dash-header-btn-col"><button class="btn dash-head-btn" data-act="go" data-r="#/org">${ic('layers')}View hierarchy</button><button class="btn pri dash-head-btn" data-act="go" data-r="#/reports">📊 Reports</button></div>`;
+  const hd = hero() + head('ISKCON BACE', 'Community blocks', 'All departments, batches, and care groups across the BACE', headerActions, 'has-dash-actions');
+  return hd + `${pillarCards(true)}<div style="height:15px"></div>
      <div class="grid g2">${insightsCard()}${prabhupadaNectarCard()}</div>`;
-
-  if(r==='coordinator')return hd+`<div class="grid g-1-2" style="margin-bottom:15px">${needsAttention()}
-    ${section('Today across the community',`<div class="grid g4" style="padding:16px 18px">
-      ${stat('Seva today',DB.activities.filter(x=>x.date===iso(TODAY)&&x.type==='Seva').length,'scheduled',{em:'🪔',act:'go',r:'#/today'})}
-      ${stat('Follow-ups due',s.fuToday+s.careToday,'preaching + care',{em:'⏰',act:'go',r:'#/followups'})}
-      ${stat('Action items due',DB.tasks.filter(t=>t.due===iso(TODAY)&&t.status!=='Completed').length,'open',{em:'🎯',act:'go',r:'#/assign'})}
-      ${stat('Events',DB.activities.filter(e=>e.date===iso(TODAY)&&e.type==='Event').length,'on the calendar',{em:'✨',act:'go',r:'#/calendar'})}</div>`,
-      `<a class="btn sm" href="#/today">Today centre</a>`)}</div>
-    ${pillarCards()}<div style="height:15px"></div>
-    <div class="grid g-2-1">
-     ${section('Department completion rate',`<div class="card-b">${barChart(activeDepts().slice(0,9).map(d=>{const m=deptMetrics(d.id);
-       return {l:d.name.split(' ')[0],v:m.completion,unit:'%',color:m.completion<75?'var(--danger)':'var(--saffron)',
-        tip:`${d.name}\nCompleted: ${m.done}\nMissed: ${m.missed}\nPending: ${m.pending}\nCompletion: ${m.completion}%`,r:'#/dept/'+d.id}}),{unit:'%'})}
-       <div class="tiny" style="margin-top:8px">Hover for exact numbers · click a bar to open the department</div></div>`)}
-     ${insightsCard()}</div>`;
-
-  if(r==='internal_manager'){
-    const tot=activeDepts().reduce((a,d)=>{const m=deptMetrics(d.id);a.done+=m.done;a.missed+=m.missed;a.pend+=m.pending;return a},{done:0,missed:0,pend:0});
-    return hd+`<div class="grid g6" style="margin-bottom:15px">
-     ${stat('Departments',s.depts,'all with a named head',{em:'🏛',act:'go',r:'#/depts'})}
-     ${stat('Active volunteers',s.volunteers,'engaged in seva',{em:'🛠',r:'#/assign'})}
-     ${stat('Scheduled',s.scheduled,'activities ahead',{em:'📋',act:'go',r:'#/assign'})}
-     ${stat('Completed',tot.done,`${tot.missed} missed`,{em:'✅',r:'#/depts'})}
-     ${stat('Completion',pct(tot.done,tot.done+tot.missed)+'%','this period',{em:'📈',r:'#/reports'})}
-     ${stat('Unfilled',s.unfilled,'need volunteers',{em:'⚠️',tint:s.unfilled>0,act:'go',r:'#/assign'})}</div>
-     <div class="grid g-2-1" style="margin-bottom:15px">
-      ${section('Department performance',`<div class="card-b">${barChart(activeDepts().slice(0,10).map(d=>{const m=deptMetrics(d.id);
-        return {l:d.name.split(' ')[0],v:m.completion,color:m.completion<75?'var(--danger)':'var(--saffron)',
-         tip:`${d.name}\nCompleted: ${m.done}\nMissed: ${m.missed}\nPending: ${m.pending}\nVolunteers: ${m.volunteers}`,r:'#/dept/'+d.id}}),{unit:'%'})}</div>`,
-        `<a class="btn sm" href="#/depts">All departments</a>`)}
-      ${needsAttention()}</div>
-     ${section('Next seven days',`<div class="tbl-wrap">${actTable(DB.activities.filter(x=>x.date>=iso(TODAY)&&x.date<=iso(dayOff(7))&&x.type!=='Task').slice(0,12))}</div>`,`<a class="btn sm" href="#/assign">Open assign / schedule</a>`)}`;
-  }
-  if(r==='preaching_manager')return hd+`<div class="grid g5" style="margin-bottom:15px">
-     ${stat('New contacts',s.newContacts,'last 30 days',{em:'🌱',act:'go',r:'#/contacts'})}
-     ${stat('Due today',s.fuToday,'follow-ups',{em:'⏰',act:'go',r:'#/followups'})}
-     ${stat('Overdue',s.fuOverdue,'need attention now',{em:'⚠️',tint:1,act:'go',r:'#/followups'})}
-     ${stat('Regular participants',s.regulars,'attending consistently',{em:'📖',r:'#/classes'})}
-     ${stat('In batches',s.lvl.reduce((a,b)=>a+b,0),`${s.lvl.join(' / ')} at L1/L2/L3`,{em:'🎓',act:'go',r:'#/batches'})}</div>
-     <div class="grid g-2-1" style="margin-bottom:15px">
-      ${section('Preaching funnel',`<div class="card-b">${funnelRows()}<div class="tiny" style="margin-top:10px">Click any stage to open that list</div></div>`,`<a class="btn sm" href="#/reports">Reports & analytics</a>`)}
-      ${section('Follow-up load',`<div class="list">
-        ${attnRow('var(--danger)',s.fuOverdue,'overdue','#/followups')}${attnRow('var(--amber)',s.fuToday,'due today','#/followups')}
-        ${attnRow('var(--mustard)',s.fuTomorrow,'due tomorrow','#/followups')}${attnRow('var(--green)',s.fuUpcoming,'upcoming','#/followups')}</div>`)}</div>
-     ${section('Batches',`<div class="tbl-wrap">${batchTable()}</div>`,`<a class="btn sm" href="#/batches">Batch management</a>`)}`;
-
-  if(r==='care_manager')return hd+`<div class="grid g5" style="margin-bottom:15px">
-     ${stat('Devotees covered',s.covered,`of ${s.total} in the community`,{em:'❤️',r:'#/facilitators'})}
-     ${stat('Facilitators',s.facilitators,'active',{em:'🤝',act:'go',r:'#/facilitators'})}
-     ${stat('Care groups',s.groups,'meeting weekly',{em:'👥',act:'go',r:'#/groups'})}
-     ${stat('Follow-ups this week',s.careWeek,'scheduled',{em:'⏰',act:'go',r:'#/care-followups'})}
-     ${stat('Needs attention',s.attention,'flagged by facilitators',{em:'⚠️',tint:1,r:'#/care-followups'})}</div>
-     <div class="grid g-2-1" style="margin-bottom:15px">
-      ${section('Care group attendance',`<div class="card-b">${barChart(DB.careGroups.filter(g=>g.status==='Active').map(g=>({l:g.name.split('·')[1].trim(),v:groupAttendance(g),
-        tip:`${g.name}\nMembers: ${g.members.length}\nAttendance: ${g.attendance}%\nNext meeting: ${fmtD(g.next)}`,r:'#/group/'+g.id})),{horizontal:true,color:'var(--green)',unit:'%'})}</div>`,`<a class="btn sm" href="#/groups">Groups</a>`)}
-      ${section('Requiring personal attention',`<div class="list">${DB.devotees.filter(d=>d.careStatus.emotional!=='Doing well').slice(0,6).map(d=>`
-        <a class="li click" href="#/devotee/${d.id}">${av(d.name)}<span class="grow"><span class="t">${esc(d.name)}</span><span class="d">Facilitator: ${esc(nameOf(d.facilitator))}</span></span>${sbadge(d.careStatus.emotional)}</a>`).join('')}</div>`)}</div>
-     ${section('Spiritual care this month',`<div class="grid g4" style="padding:16px 18px">
-      ${stat('Sadhana reports',DB.sadhana.length,'collected this week',{em:'📿',act:'go',r:'#/sadhana'})}
-      ${stat('Personal meetings',DB.meetings.length,'recorded',{em:'🔒',act:'go',r:'#/meetings'})}
-      ${stat('Care follow-ups',STATS().careWeek,'scheduled this week',{em:'⏰',act:'go',r:'#/meetings'})}
-      ${stat('Camp participation',DB.camps.length,'devotees',{em:'⛺',act:'go',r:'#/camps'})}</div>`)}`;
-
-  if(r==='dept_head'){const dp=dept(APP.user.dept)||activeDepts()[0];return hd+deptDashboardBody(dp)}
-  if(r==='preaching_coord'){const b=batch(APP.user.batch)||DB.batches[0];return hd+batchDashboardBody(b)}
-  if(r==='facilitator'){
-    const mine=DB.devotees.filter(d=>d.facilitator===APP.user.devotee);
-    return hd+`<div class="grid g4" style="margin-bottom:15px">
-      ${stat('My devotees',mine.length,'assigned to me',{em:'🤝',r:'#/groups'})}
-      ${stat('Doing well',mine.filter(d=>d.careStatus.emotional==='Doing well').length,'steady sadhana and seva',{em:'🌸',r:'#/care'})}
-      ${stat('Needs attention',mine.filter(d=>d.careStatus.emotional==='Needs attention').length,'check in this week',{em:'⚠️',tint:1,r:'#/meetings'})}
-      ${stat('Follow-up required',mine.filter(d=>d.careStatus.emotional==='Follow-up required').length,'overdue conversations',{em:'⏰',act:'go',r:'#/meetings'})}</div>
-      ${section('❤️ My devotees',mine.length?`<div class="list">${mine.map(d=>`<a class="li click" href="#/devotee/${d.id}">${av(d.name,'m')}
-        <span class="grow"><span class="t">${esc(d.name)}</span><span class="d">${esc(d.org)} · ${d.sadhana.rounds} rounds · last interaction ${relD(iso(dayOff(-ri(1,14))))}</span></span>
-        ${sbadge(d.careStatus.emotional)}${badge(d.careStatus.spiritual,'teal')}</a>`).join('')}</div>`
-        :emptyState('No devotees assigned','Ask the Devotee Care Manager to assign devotees to you.','','people'),
-        `<a class="btn sm" href="#/care-followups">My follow-ups</a>`)}`;
-  }
-  if(r==='devotee'){
-    const me=dv(APP.user.devotee);
-    const mine=DB.assignments.filter(a=>a.devotee===me.id).map(a=>({a,x:act(a.activity)})).filter(o=>o.x);
-    const up=mine.filter(o=>o.x.date>=iso(TODAY)).sort((a,b)=>a.x.date<b.x.date?-1:1);
-    return hd+`<div class="grid g4" style="margin-bottom:15px">
-      ${stat('My attendance',attFor(me.id)+'%','across all categories',{em:'✅',r:'#/attendance'})}
-      ${stat('My upcoming seva',up.length,'assignments ahead',{em:'🪔',r:'#/today'})}
-      ${stat('My rounds',me.sadhana.rounds,'daily commitment',{em:'📿',r:'#/sadhana'})}
-      ${stat('My action items',DB.tasks.filter(t=>t.responsible===me.id&&t.status!=='Completed').length,'open',{em:'🎯',act:'go',r:'#/assign'})}</div>
-      <div class="grid g-2-1">
-       ${section('🙏 My upcoming seva',up.length?`<div class="list">${up.slice(0,7).map(({a,x})=>`
-         <div class="li"><span class="badge b-saffron">${esc(scopeName(x).split(' ')[0])}</span>
-         <span class="grow"><span class="t">${esc(x.name)}</span><span class="d">${fmtD(x.date)} · ${x.start}–${x.end} · ${esc(x.location)}</span></span>
-         ${sbadge(a.state)}<button class="btn sm pri" data-act="open-complete" data-id="${a.id}">Done ✓</button></div>`).join('')}</div>`
-         :emptyState('No seva scheduled','You have no upcoming assignments.','','calm'))}
-       ${section('My profile',`<div class="card-b"><a class="btn block" href="#/devotee/${me.id}">${ic('user')}Open my profile</a>
-         <div class="kv" style="margin-top:14px"><dt>Department</dt><dd>${esc(dept(me.dept)?.name||'—')}</dd><dt>Batch</dt><dd>${esc(batch(me.batch)?.name||'—')}</dd>
-         <dt>Care group</dt><dd>${esc(group(me.careGroup)?.name||'—')}</dd><dt>Facilitator</dt><dd>${esc(nameOf(me.facilitator))}</dd></div></div>`)}</div>`;
-  }
-  return hd+`<div class="grid g4" style="margin-bottom:15px">
-    ${stat('User accounts',DB.users.length,'across community',{em:'👤',...(can('admin')?{act:'go',r:'#/admin'}:{})})}
-    ${stat('Devotee records',s.total,'single source of truth',{em:'👥',r:'#/devotees'})}
-    ${stat('Audit entries',DB.audit.length,'recent activity',{em:'🛡',r:'#/admin'})}
-    ${stat('Restricted records',DB.meetings.length,'care notes under permission',{em:'🔒',r:'#/meetings'})}</div>
-    ${section('Recent activity',`<div class="list">${DB.audit.slice(0,8).map(a=>`<div class="li">${av(a.user)}
-      <span class="grow"><span class="t">${esc(a.action)}</span><span class="d">${esc(a.record)}</span></span><span class="tiny">${esc(a.at)}</span></div>`).join('')}</div>`,
-      can('admin') ? `<a class="btn sm" href="#/admin">Administration</a>` : '')}`;
 }
 function funnelRows(){
   const s=STATS();
@@ -12113,14 +12017,14 @@ function viewDevotee(id){
       <button class="btn" data-act="dm" data-id="${d.id}">${ic('chat')}Message</button>
       <button class="btn" data-act="add-followup">${ic('clock')}Follow-up</button>
       ${canAssignRole()?`<button class="btn" data-act="assign-role" data-id="${d.id}" title="Assign role from hierarchy">🧭 Assign role</button>`:''}
-      <button class="btn pri" data-act="edit-devotee" data-id="${d.id}">${ic('edit')}Edit profile</button>
+      ${canEditDevotee(d)?`<button class="btn pri" data-act="edit-devotee" data-id="${d.id}">${ic('edit')}Edit profile</button>`:''}
       ${canDeleteDevotee()?`<button class="btn danger" data-act="delete-devotee" data-id="${d.id}" style="color:var(--danger);border-color:rgba(220,53,69,0.3);background:rgba(220,53,69,0.05)">🗑 Delete Devotee Data</button>`:''}
     </div>
    </div>
    <div class="tabs">${tabs.map(t=>`<button class="${t===tab?'on':''}" data-act="tab" data-k="devotee" data-v="${t}">${t}${t==='Care'&&!careOK?' 🔒':''}</button>`).join('')}</div>
    ${body}
    ${mobileStickyFooter([
-     { act: 'edit-devotee', id: d.id, label: 'Edit Profile', pri: true, icon: '✏️ ' },
+     ...(canEditDevotee(d) ? [{ act: 'edit-devotee', id: d.id, label: 'Edit Profile', pri: true, icon: '✏️ ' }] : []),
      { act: 'save-vcard-contact', id: d.id, label: 'Save Contact', icon: '👤 ' },
      { act: 'share-devotee-contact', id: d.id, label: 'Share', icon: '📤 ' }
    ])}`;
@@ -24241,7 +24145,10 @@ function fieldHTML(f){
   return `<div class="field"><label>${esc(f.l)}</label><input type="${f.t}" name="${f.n}" value="${esc(v)}" placeholder="${esc(f.ph||'')}">${f.hint?`<div class="hint">${esc(f.hint)}</div>`:''}</div>`;
 }
 function openForm(title,fields,save,ctx={},sub='',extra=''){
-  APP.fabOpen=false;APP.modal={kind:'form',title,fields,save,ctx,sub,extra};render();
+  APP.fabOpen=false;
+  fields=(fields||[]).filter(Boolean);
+  APP.modal={kind:'form',title,fields,save,ctx,sub,extra};
+  render();
 }
 function formModal(){
   const m=APP.modal;
@@ -25686,7 +25593,7 @@ function openDevoteeForm(id){
     FLD('presentStudiesOrJob','Present studies or job','text',{v:d?.presentStudiesOrJob||'',half:1,ph:'e.g. IITD Mechanical, Software Developer'}),
     FLD('dept','Department','select',{v:d?.dept||'',opts:[['','No department'],...activeDepts().map(x=>[x.id,x.name])],half:1}),
     FLD('careGroup','Care group','select',{v:d?.careGroup||'',opts:[['','No group'],...DB.careGroups.map(x=>[x.id,x.name])],half:1}),
-    FLD('role','Hierarchy Role','select',{v:curRole,opts:roleOpts,half:1}),
+    (canAssignRole() ? FLD('role','Hierarchy Role','select',{v:curRole,opts:roleOpts,half:1}) : null),
     FLD('facilitator','Facilitator','select',{v:d?.facilitator||'',opts:[['','Not assigned'],...getHierarchyFacilitators().map(x=>[x.id,x.name])],half:1}),
     FLD('sadhanaRounds','Sadhana rounds','number',{v:d?.sadhana?.rounds!==undefined?d.sadhana.rounds:16,half:1,ph:'16'}),
     FLD('morningStandardTime','Morning standard time','text',{v:d?.morningStandardTime||'04:30',half:1,ph:'e.g. 04:30, 05:00'}),
@@ -27229,7 +27136,16 @@ document.addEventListener('click',e=>{
     logAudit('Batch report saved',b.name);toast('Report narrative saved');render();break}
   /* ---- devotees ---- */
   case 'add-devotee':openDevoteeForm(null);break;
-  case 'edit-devotee':stop();openDevoteeForm(id);break;
+  case 'edit-devotee':{
+    stop();
+    const devId = id || t.dataset.id;
+    if(devId && typeof canEditDevotee === 'function' && !canEditDevotee(devId)){
+      toast('You can only edit your own profile or devotees under your care.', '🔒');
+      break;
+    }
+    openDevoteeForm(devId);
+    break;
+  }
   case 'assign-role':stop();{
     const d=dv(id);
     if(!d) break;
@@ -27330,7 +27246,7 @@ document.addEventListener('click',e=>{
   }
   case 'save-devotee':{const v=collect(),ctx=APP.modal.ctx;
     if(!v.name.trim()){toast('A devotee needs a name','⚠️');break}
-    const roleKey=v.role||'devotee';
+    const roleKey=v.role || (ctx.id ? devoteeRole(dv(ctx.id)) : 'devotee');
     const roleObj=ROLES[roleKey]||ROLES.devotee;
     const parsedSkills = v.skills ? (Array.isArray(v.skills) ? v.skills : String(v.skills).split(',').map(s=>s.trim()).filter(Boolean)) : ['Preaching'];
     const rounds = v.sadhanaRounds !== undefined && v.sadhanaRounds !== '' ? Number(v.sadhanaRounds) : 16;
