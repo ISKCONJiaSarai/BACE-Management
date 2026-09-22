@@ -7141,7 +7141,21 @@ function getDevoteeRealAttendance(d) {
   const devRecs = (DB.attendance || []).filter(a => a.devotee === d.id || a.devotee === d._id || a.devotee === d.customId || (d.name && a.devotee === d.name));
   const mRecs = devRecs.filter(a => a.category === 'Morning programme' || a.type === 'Morning programme' || String(a.ref).startsWith('mp_'));
 
-  if (mTotal === 0 && mRecs.length > 0) {
+  // Check if morning biometric attendance dataset is active
+  const uploadedSessions = (typeof APP !== 'undefined' && APP.morningData && APP.morningData.availableDates && APP.morningData.availableDates.length) || 0;
+  const isPresentInMorningUpload = (typeof APP !== 'undefined' && APP.morningData) ? (
+    (APP.morningData.weekly?.devStats && APP.morningData.weekly.devStats.some(s => s.id === d.id || (d.name && s.name && matchDevoteeFirstName(s.name, d.name)))) ||
+    (APP.morningData.rows && APP.morningData.rows.some(r => r.devoteeId === d.id || (d.name && r.name && matchDevoteeFirstName(r.name, d.name))))
+  ) : (mPresent > 0);
+
+  if (uploadedSessions > 0 && !isPresentInMorningUpload) {
+    // Devotee not in uploaded biometric morning program data -> set as absent automatically with 0%
+    mTotal = uploadedSessions;
+    mPresent = 0;
+    mOnTime = 0;
+    mLate = 0;
+    mAbsent = uploadedSessions;
+  } else if (mTotal === 0 && mRecs.length > 0) {
     mTotal = mRecs.length;
     mPresent = mRecs.filter(a => ['Present', 'Late', 'On Time', 'Grace'].includes(a.status)).length;
     mOnTime = mRecs.filter(a => ['Present', 'On Time', 'Grace'].includes(a.status)).length;
@@ -7149,8 +7163,8 @@ function getDevoteeRealAttendance(d) {
     mAbsent = mRecs.filter(a => a.status === 'Absent').length;
   }
 
-  const mRate = mTotal > 0 ? (ma.attendanceRate !== undefined && ma.totalSessions > 0 ? ma.attendanceRate : Math.round((mPresent / mTotal) * 100)) : 0;
-  const mPunctuality = mPresent > 0 ? (ma.punctualityRate !== undefined && ma.presentCount > 0 ? ma.punctualityRate : Math.round((mOnTime / mPresent) * 100)) : 0;
+  const mRate = (isPresentInMorningUpload && mTotal > 0) ? (ma.attendanceRate !== undefined && ma.totalSessions > 0 ? ma.attendanceRate : Math.round((mPresent / mTotal) * 100)) : 0;
+  const mPunctuality = (isPresentInMorningUpload && mPresent > 0) ? (ma.punctualityRate !== undefined && ma.presentCount > 0 ? ma.punctualityRate : Math.round((mOnTime / mPresent) * 100)) : 0;
 
   // 2. Deity Services
   if (typeof initDepartmentRosters === 'function') initDepartmentRosters();
@@ -14031,7 +14045,7 @@ function parseMorningCSV(text, specificDate){
     const targetDate = specificDate || (byDatePunches[todayStr] ? todayStr : fileDates[fileDates.length - 1]);
     const availableDates = Array.from(new Set([...fileDates, targetDate, todayStr])).sort();
 
-    // Collect master list of ALL unique devotees appearing anywhere in the uploaded file
+    // Collect master list of ONLY devotees who have punched at least once in the uploaded file
     const masterDevsMap = new Map();
     Object.values(byDatePunches).forEach(dayMap => {
       Object.values(dayMap).forEach(p => {
@@ -14041,21 +14055,6 @@ function parseMorningCSV(text, specificDate){
           masterDevsMap.set(k, d);
         }
       });
-    });
-
-    // Also include all registered active devotees from DB so they appear in daily attendance and connect to real data
-    allDbDevs.forEach(d => {
-      if(!d || !d.name) return;
-      if(d.appointment === 'BACE Administrator' || d.appointment === 'System Administrator') return;
-      if(d.name === 'ISKCON BACE Admin') return;
-      const k = d.id || d.name.toLowerCase().trim();
-      const alreadyHas = masterDevsMap.has(k) || Array.from(masterDevsMap.values()).some(existing => 
-        (existing.id && existing.id === d.id) || 
-        (existing.name && d.name && matchDevoteeFirstName(existing.name, d.name))
-      );
-      if(!alreadyHas){
-        masterDevsMap.set(k, d);
-      }
     });
 
     const masterDevs = Array.from(masterDevsMap.values());
@@ -14611,26 +14610,41 @@ function saveMorningAttendanceToDB(showToast = true){
     });
   });
 
-  // Also update devotees in memory
+  // Also update ALL devotees in memory: those in the uploaded biometric list get their real stats;
+  // those NOT in the uploaded morning list are automatically marked Absent with 0%.
   const allDevStats = (APP.morningData.weekly && APP.morningData.weekly.devStats) || (APP.morningData.monthly && APP.morningData.monthly.devStats) || [];
-  allDevStats.forEach(p => {
-    const dev = dv(p.id) || dv(p.customId) || (DB.devotees || []).find(d => d.name && d.name.toLowerCase().trim() === p.name.toLowerCase().trim());
-    if(dev){
-      if(!dev.morningAttendance) dev.morningAttendance = {};
-      dev.morningAttendance.totalSessions = dates.length;
+  const totalSessions = dates.length || 1;
+
+  (DB.devotees || []).forEach(dev => {
+    const p = allDevStats.find(stat => (stat.id && stat.id === dev.id) || (stat.customId && stat.customId === dev.customId) || (dev.name && stat.name && (dev.name.toLowerCase().trim() === stat.name.toLowerCase().trim() || matchDevoteeFirstName(stat.name, dev.name))));
+    if(!dev.morningAttendance) dev.morningAttendance = {};
+    if(p){
+      dev.morningAttendance.totalSessions = totalSessions;
       dev.morningAttendance.presentCount = p.presentCount;
       dev.morningAttendance.onTimeCount = p.onTimeCount;
       dev.morningAttendance.graceCount = p.graceCount;
       dev.morningAttendance.lateCount = p.lateCount;
-      dev.morningAttendance.absentCount = Math.max(0, dates.length - p.presentCount);
-      dev.morningAttendance.attendanceRate = Math.round((p.presentCount / Math.max(1, dates.length)) * 100);
-      dev.morningAttendance.punctualityRate = p.punctualityRate;
+      dev.morningAttendance.absentCount = Math.max(0, totalSessions - p.presentCount);
+      dev.morningAttendance.attendanceRate = Math.round((p.presentCount / Math.max(1, totalSessions)) * 100);
+      dev.morningAttendance.punctualityRate = p.punctualityRate || 0;
       dev.morningAttendance.lastPunchDate = p.lastPunchDate || dates[dates.length - 1];
       dev.morningAttendance.lastTimeIn = p.lastTimeIn || '—';
       dev.morningAttendance.lastStatus = p.lastStatus || '—';
-      if(!dev.sadhana) dev.sadhana = {};
-      dev.sadhana.morningProgram = dev.morningAttendance.attendanceRate;
+    } else {
+      dev.morningAttendance.totalSessions = totalSessions;
+      dev.morningAttendance.presentCount = 0;
+      dev.morningAttendance.onTimeCount = 0;
+      dev.morningAttendance.graceCount = 0;
+      dev.morningAttendance.lateCount = 0;
+      dev.morningAttendance.absentCount = totalSessions;
+      dev.morningAttendance.attendanceRate = 0;
+      dev.morningAttendance.punctualityRate = 0;
+      dev.morningAttendance.lastPunchDate = null;
+      dev.morningAttendance.lastTimeIn = '—';
+      dev.morningAttendance.lastStatus = 'Absent';
     }
+    if(!dev.sadhana) dev.sadhana = {};
+    dev.sadhana.morningProgram = dev.morningAttendance.attendanceRate;
   });
 
   logAudit('Morning programme attendance', `Recorded morning check-ins across ${dates.length} sessions`);
