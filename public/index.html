@@ -1753,6 +1753,16 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
   animation: none !important;
   transition: none !important;
 }
+@keyframes modalShake{
+  0%,100%{transform:none}
+  20%{transform:scale(1.012) translateY(-2px)}
+  40%{transform:scale(0.99) translateY(2px)}
+  60%{transform:scale(1.008) translateY(-1px)}
+  80%{transform:scale(0.996) translateY(1px)}
+}
+.modal.modal-shake, .drawer.modal-shake, .card.modal-shake{
+  animation:modalShake 0.32s cubic-bezier(0.25, 1, 0.5, 1) !important;
+}
 .scrim.closing{
   animation:fadeOut .18s ease-out forwards!important;
   pointer-events:none;
@@ -12519,7 +12529,7 @@ function assignModal(){
 
   /* ---------------- Schedule Event / Special Programme / Camp View (BACE Preaching) ---------------- */
   if(isEvent){
-    return `<div class="scrim" data-act="close-scrim"><div class="modal wide" data-stop="1">
+    return `<div class="scrim"><div class="modal wide" data-stop="1">
      <div class="modal-h"><h2>✨ Schedule Special Programme / Event / Camp</h2><span class="tiny">Special programmes, seminars, festivals, kirtan, youth camps & multi-day retreats</span>
        <button class="icon-btn" style="margin-left:auto" data-act="close-scrim">${ic('x')}</button></div>
      <div class="modal-b">
@@ -12553,7 +12563,7 @@ function assignModal(){
 
   /* ---------------- Schedule Class View (BACE Preaching) ---------------- */
   if(isClass){
-    return `<div class="scrim" data-act="close-scrim"><div class="modal wide" data-stop="1">
+    return `<div class="scrim"><div class="modal wide" data-stop="1">
      <div class="modal-h"><h2>🗓️ Schedule Class</h2><span class="tiny">Schedule a preaching class or session for a batch</span>
        <button class="icon-btn" style="margin-left:auto" data-act="close-scrim">${ic('x')}</button></div>
      <div class="modal-b">
@@ -12578,7 +12588,7 @@ function assignModal(){
 
   /* ---------------- Task / Action Item View ---------------- */
   if(isTask){
-    return `<div class="scrim" data-act="close-scrim"><div class="modal wide" data-stop="1">
+    return `<div class="scrim"><div class="modal wide" data-stop="1">
      <div class="modal-h"><h2>🎯 New Action Item</h2><span class="tiny">Track an operational task or deliverable</span>
        <button class="icon-btn" style="margin-left:auto" data-act="close-scrim">${ic('x')}</button></div>
      <div class="modal-b">
@@ -12604,7 +12614,7 @@ function assignModal(){
   cands=cands.map(x=>({x,score:(x.dept===d.dept?50:0)+x.attendancePct/3+(x.availability==='Anytime'?6:0)}))
     .sort((a,b)=>b.score-a.score).slice(0,40).map(o=>o.x);
   const rem=Math.max(0,d.need-d.volunteers.length);
-  return `<div class="scrim" data-act="close-scrim"><div class="modal wide" data-stop="1">
+  return `<div class="scrim"><div class="modal wide" data-stop="1">
    <div class="modal-h"><h2>📋 Assign Seva</h2><span class="tiny">Assign devotees and volunteers to department services</span>
      <button class="icon-btn" style="margin-left:auto" data-act="close-scrim">${ic('x')}</button></div>
    <div class="modal-b">
@@ -23185,7 +23195,7 @@ function outingModal(o){
   if(!o) return '';
   const coord = dv(o.coordinator);
   const attendees = (o.attendees || []).map(id => dv(id)).filter(Boolean);
-  return `<div class="scrim" data-act="close-scrim"><div class="modal wide" data-stop="1" style="max-width:700px">
+  return `<div class="scrim"><div class="modal wide" data-stop="1" style="max-width:700px">
     <div class="modal-h">
       <div>
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
@@ -24160,7 +24170,7 @@ function formModal(){
     if(f.half&&m.fields[i+1]&&m.fields[i+1].half){rows.push(`<div class="form-row">${fieldHTML(f)}${fieldHTML(m.fields[i+1])}</div>`);i++}
     else rows.push(fieldHTML(f));
   }
-  return `<div class="scrim" data-act="close-scrim"><div class="modal" data-stop="1">
+  return `<div class="scrim"><div class="modal" data-stop="1">
    <div class="modal-h"><div><h2 style="font-size:18px">${esc(m.title)}</h2>${m.sub?`<div class="tiny">${esc(m.sub)}</div>`:''}</div>
      <button class="icon-btn" style="margin-left:auto" data-act="close-scrim">${ic('x')}</button></div>
    <form class="modal-b" id="modalform" onsubmit="return false">${rows.join('')}</form>
@@ -24186,7 +24196,7 @@ function openPicker({title,sub,items,selected,multi,save,ctx}){
 function pickerModal(){
   const m=APP.modal;
   const list=m.items.filter(i=>!m.q||i.label.toLowerCase().includes(m.q.toLowerCase())||(i.sub||'').toLowerCase().includes(m.q.toLowerCase()));
-  return `<div class="scrim" data-act="close-scrim"><div class="modal" data-stop="1">
+  return `<div class="scrim"><div class="modal" data-stop="1">
    <div class="modal-h"><div><h2 style="font-size:18px">${esc(m.title)}</h2>${m.sub?`<div class="tiny">${esc(m.sub)}</div>`:''}</div>
      <button class="icon-btn" style="margin-left:auto" data-act="close-scrim">${ic('x')}</button></div>
    <div class="modal-b">
@@ -24207,7 +24217,7 @@ const devItems=(filterFn)=>DB.devotees.filter(filterFn||(()=>true)).map(d=>({id:
 /* list drill-down modal */
 function listModal(){
   const m=APP.modal;
-  return `<div class="scrim" data-act="close-scrim"><div class="modal wide" data-stop="1">
+  return `<div class="scrim"><div class="modal wide" data-stop="1">
    <div class="modal-h"><div><h2 style="font-size:18px">${esc(m.title)}</h2>${m.sub?`<div class="tiny">${esc(m.sub)}</div>`:''}</div>
      <button class="icon-btn" style="margin-left:auto" data-act="close-scrim">${ic('x')}</button></div>
    <div class="modal-b">${m.body}</div>
@@ -24219,7 +24229,7 @@ function accountModal(){
   const dName = isBace ? 'BACE Administrator' : devoteeDisplayName(APP.user.devotee);
   const dPos = isBace ? '⚙️ BACE Administrator' : devoteePositionTitle(APP.user.devotee, APP.user.role);
   const me = dv(APP.user.devotee) || {};
-  return `<div class="scrim" data-act="close-scrim"><div class="modal" data-stop="1" style="max-width:420px">
+  return `<div class="scrim"><div class="modal" data-stop="1" style="max-width:420px">
    <div class="modal-h">
      <div>
        <h2 style="font-size:18px">${isBace ? 'System Account' : 'Devotee Account'}</h2>
@@ -24249,7 +24259,7 @@ function deleteDevoteeModal(){
   const id = APP.deleteDevoteeTarget;
   const d = dv(id) || DB.devotees.find(x => x.id === id || x.customId === id);
   if(!d || isBaceAdminEmail(d.email) || d.appointment === 'BACE Administrator' || d.appointment === 'System Administrator' || d.name === 'ISKCON BACE Admin') return '';
-  return `<div class="scrim" data-act="close-scrim"><div class="modal" data-stop="1" style="max-width:440px">
+  return `<div class="scrim"><div class="modal" data-stop="1" style="max-width:440px">
     <div class="modal-h" style="border-bottom:1px solid var(--line)">
       <div style="display:flex;align-items:center;gap:8px">
         <span style="font-size:20px">🗑️</span>
@@ -24789,7 +24799,7 @@ function importCsvModal(){
   const isSuper = curUser.role === 'admin' || curUser.role === 'counsellor' || curUser.role === 'area_leader' || isBaceAdminEmail(curUser.email) || isSuryaEmail(curUser.email) || isCounsellorEmail(curUser.email);
   const myBatches = isSuper ? (DB.batches||[]) : (DB.batches||[]).filter(b => ownsBatch(b.id) || b.coordinator === curUser.devotee || b.coordinator === curUser.id);
 
-  return `<div class="scrim" data-act="close-scrim"><div class="modal" data-stop="1" style="max-width:640px;max-height:90vh;overflow-y:auto">
+  return `<div class="scrim"><div class="modal" data-stop="1" style="max-width:640px;max-height:90vh;overflow-y:auto">
     <div class="modal-h" style="border-bottom:1px solid var(--line);padding:16px 20px">
       <div style="display:flex;align-items:center;gap:10px">
         <span style="font-size:24px">📥</span>
@@ -25265,7 +25275,7 @@ function notifDrawer(){
   const unreadCount = allNotifs.filter(n => !n.read).length;
   const filtered = tab === 'unread' ? allNotifs.filter(n => !n.read) : allNotifs;
 
-  return `<div class="drawer-wrap notif-drawer-wrap" data-act="close-scrim">
+  return `<div class="drawer-wrap notif-drawer-wrap">
     <div class="drawer notif-drawer" data-stop="1">
       <div class="modal-h">
         <div style="display:flex;align-items:center;gap:8px">
@@ -25336,7 +25346,7 @@ function searchModal(){
   const sp=DB.sops.filter(s=>s.name.toLowerCase().includes(q)).slice(0,4);
   const total=dv_.length+ct.length+ac.length+dp.length+bt.length+sp.length;
   const grp=(t,items)=>items.length?`<h3 style="margin:14px 0 7px">${t}</h3><div class="list" style="border:1px solid var(--line);border-radius:12px">${items.join('')}</div>`:'';
-  return `<div class="scrim" data-act="close-scrim"><div class="modal" data-stop="1">
+  return `<div class="scrim"><div class="modal" data-stop="1">
    <div class="modal-h"><div><h2 style="font-size:18px">🔍 Search BACE</h2><div class="tiny">Search devotees, contacts, seva and SOPs</div></div>
      <button class="icon-btn" style="margin-left:auto" data-act="close-scrim">${ic('x')}</button></div>
    <div class="modal-b">
@@ -25379,7 +25389,7 @@ function calendarProgramModal(){
   const d = calProgramDraft();
   const activeCat = CAL_PROGRAM_CATS.find(c => c.key === d.cat) || CAL_PROGRAM_CATS[0];
   
-  return `<div class="scrim" data-act="close-scrim"><div class="modal" data-stop="1" style="max-width:580px">
+  return `<div class="scrim"><div class="modal" data-stop="1" style="max-width:580px">
     <div class="modal-h" style="border-bottom:1px solid var(--line)">
       <div style="display:flex;align-items:center;gap:10px">
         <span style="font-size:22px">📅</span>
@@ -25484,7 +25494,7 @@ function calendarProgramModal(){
 
 function modalHTML(){
   const m=APP.modal;if(!m)return'';
-  if(m==='custom')return `<div class="scrim" data-act="close-scrim">${APP.customModalHtml || ''}</div>`;
+  if(m==='custom')return `<div class="scrim">${APP.customModalHtml || ''}</div>`;
   if(m==='assign')return assignModal();
   if(m==='calendar-program')return calendarProgramModal();
   if(m==='account'||m==='switch')return accountModal();
@@ -26285,6 +26295,26 @@ function refocus(sel,caretEnd=true){
   el.focus();if(caretEnd&&el.setSelectionRange&&el.type!=='date'&&el.type!=='number'){const v=el.value;try{el.setSelectionRange(v.length,v.length)}catch(e){}}
 }
 document.addEventListener('click',e=>{
+  // Modals & Popups: NEVER close when clicking outside the popup box.
+  // Must only close via the top-right cross button or explicit action button.
+  if(APP.modal){
+    const isOutsideClick = e.target.classList.contains('scrim') || 
+                           e.target.classList.contains('drawer-wrap') || 
+                           (e.target.closest('#modal-host, .scrim, .drawer-wrap') && !e.target.closest('.modal, .drawer, .card'));
+    if(isOutsideClick){
+      e.preventDefault();
+      e.stopPropagation();
+      const box = document.querySelector('.modal, .drawer, .scrim > .card');
+      if(box){
+        box.classList.remove('modal-shake');
+        void box.offsetWidth;
+        box.classList.add('modal-shake');
+        setTimeout(() => box.classList.remove('modal-shake'), 340);
+      }
+      return;
+    }
+  }
+
   // Auto-close today panel if open and not pinned when clicking outside
   if(APP.todayPanelOpen&&!APP.todayPinned){
     const isTodayPanelElement=e.target.closest('#todayPanel')||e.target.closest('.today-panel-tab')||e.target.closest('[data-act="toggle-today-panel"]')||e.target.closest('[data-act="toggle-today-pin"]');
@@ -26612,10 +26642,21 @@ document.addEventListener('click',e=>{
   case 'close-fab':APP.fabOpen=false;render();break;
   case 'notifications':APP.modal='notif';render();break;
   case 'close-scrim':{
-    // Close if clicked an explicit close button OR if clicking directly on the backdrop scrim
-    const isBackdropClick = e.target.classList.contains('scrim') || e.target === t;
-    const isExplicitBtn = t.closest('.icon-btn') || t.tagName==='BUTTON' || t.closest('button');
-    if(!isBackdropClick && !isExplicitBtn) break;
+    // Popups must NEVER close when clicking outside the popup box.
+    // Must only close when explicitly clicking the top-right cross button or an action button.
+    const isBackdropClick = e.target.classList.contains('scrim') || e.target.classList.contains('drawer-wrap') || t.classList.contains('scrim') || t.classList.contains('drawer-wrap');
+    const isExplicitBtn = t.closest('.icon-btn') || t.tagName==='BUTTON' || t.closest('button') || t.tagName==='A' || t.closest('a');
+    if(isBackdropClick && !isExplicitBtn){
+      const box = (t.querySelector && t.querySelector('.modal, .drawer, .card')) || document.querySelector('.modal, .drawer, .scrim > .card');
+      if(box){
+        box.classList.remove('modal-shake');
+        void box.offsetWidth;
+        box.classList.add('modal-shake');
+        setTimeout(() => box.classList.remove('modal-shake'), 340);
+      }
+      break;
+    }
+    if(!isExplicitBtn) break;
     if(typeof APP !== 'undefined' && APP.accountsState){
       APP.accountsState.activeModal = null;
       APP.accountsState.editingExpense = null;
