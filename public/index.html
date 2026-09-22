@@ -1749,6 +1749,10 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
   backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
   z-index:1200;display:grid;place-items:center;padding:16px;animation:fade .22s cubic-bezier(0.16,1,0.3,1);
 }
+.scrim.no-anim, .scrim.no-anim .modal, .modal.no-anim, .drawer-wrap.no-anim, .drawer-wrap.no-anim .drawer {
+  animation: none !important;
+  transition: none !important;
+}
 .scrim.closing{
   animation:fadeOut .18s ease-out forwards!important;
   pointer-events:none;
@@ -12643,8 +12647,8 @@ function assignModal(){
         <select data-act="vol-f" data-n="fbatch"><option value="">Any batch</option>${DB.batches.map(b=>`<option value="${b.id}" ${d.fbatch===b.id?'selected':''}>${esc(b.name)}</option>`).join('')}</select>
         <select data-act="vol-f" data-n="fskill"><option value="">Any skill</option>${SKILLS.map(s=>`<option ${d.fskill===s?'selected':''}>${s}</option>`).join('')}</select></div>
       <div class="list" style="border:1px solid var(--line);border-radius:0 0 12px 12px;max-height:230px;overflow:auto">
-        ${cands.length?cands.map(x=>{const sel=d.volunteers.includes(x.id);return `<label class="li" style="cursor:pointer">
-          <input type="checkbox" ${sel?'checked':''} data-act="vol-toggle" data-id="${x.id}" style="width:16px;height:16px;accent-color:var(--accent)">
+        ${cands.length?cands.map(x=>{const sel=d.volunteers.includes(x.id);return `<label class="li" style="cursor:pointer" data-act="vol-toggle" data-id="${x.id}">
+          <input type="checkbox" ${sel?'checked':''} style="pointer-events:none;width:16px;height:16px;accent-color:var(--accent)">
           ${av(x.name)}<span class="grow"><span class="t">${esc(x.name)}</span>
           <span class="d">${esc(dept(x.dept)?.name||'No department')} · ${x.attendancePct}% attendance · ${esc(x.skills.join(', '))}</span></span>
           ${x.dept===d.dept?badge('Department fit','green'):''}</label>`}).join('')
@@ -25800,9 +25804,13 @@ function render(){
   const app=document.getElementById('app');
   if(!APP.user){app.innerHTML=viewLogin();initGoogleAuth();return}
 
-  // Preserve drawer scroll position if side panel is open
+  // Preserve drawer and modal scroll positions if open
   const drawerBody = document.querySelector('.drawer .modal-b');
   const prevDrawerScroll = drawerBody ? drawerBody.scrollTop : 0;
+  const prevModalB = document.querySelector('.modal-b');
+  const prevModalBScroll = prevModalB ? prevModalB.scrollTop : 0;
+  const prevList = document.querySelector('.modal .list');
+  const prevListScroll = prevList ? prevList.scrollTop : 0;
 
   // Gating for unapproved devotees:
   const curDevotee = (APP.user.devotee && dv(APP.user.devotee)) || DB.devotees.find(x => x.email && APP.user.email && x.email.trim().toLowerCase() === APP.user.email.trim().toLowerCase());
@@ -25854,6 +25862,17 @@ function render(){
         </div>
       </div>`
     : '';
+
+  const wasModalOpen = !!document.querySelector('.scrim, .drawer-wrap');
+  let mHtml = modalHTML();
+  if(wasModalOpen && mHtml){
+    mHtml = mHtml.replace(/class="scrim"/g, 'class="scrim no-anim"')
+                 .replace(/class="modal wide"/g, 'class="modal wide no-anim"')
+                 .replace(/class="modal"/g, 'class="modal no-anim"')
+                 .replace(/class="drawer-wrap"/g, 'class="drawer-wrap no-anim"')
+                 .replace(/class="drawer"/g, 'class="drawer no-anim"');
+  }
+
   app.innerHTML=`${appHeader()}
     <div class="${layoutClass}">
       <div class="main">
@@ -25862,12 +25881,20 @@ function render(){
       </div>
       ${globalTodayPanel()}
     </div>
-    ${botnav()}${fab()}${modalHTML()}${mobileTodayDrawer()}
+    ${botnav()}${fab()}<div id="modal-host">${mHtml}</div>${mobileTodayDrawer()}
     <button class="mobile-today-btn" data-act="open-mobile-today">⚡ Today's Updates</button>`;
   document.body.classList.toggle('mobile-today-open', !!APP.mobileTodayOpen);
   const newDrawerBody = document.querySelector('.drawer .modal-b');
   if (newDrawerBody && prevDrawerScroll > 0) {
     newDrawerBody.scrollTop = prevDrawerScroll;
+  }
+  if (prevModalBScroll) {
+    const curModalB = document.querySelector('.modal-b');
+    if (curModalB) curModalB.scrollTop = prevModalBScroll;
+  }
+  if (prevListScroll) {
+    const curList = document.querySelector('.modal .list');
+    if (curList) curList.scrollTop = prevListScroll;
   }
   const cb=document.getElementById('chatbody');if(cb)cb.scrollTop=cb.scrollHeight;
   // Auto-collapse today panel on narrow screens
@@ -25883,6 +25910,53 @@ function render(){
   }
   // Close any stale detail sheets on navigation
   if(isRouteChange) closeDetailSheet();
+}
+
+function renderModalOnly(){
+  const host = document.getElementById('modal-host');
+  if(!host || !APP.modal){
+    render();
+    return;
+  }
+  // Remember scroll positions of modal body and any list
+  const modalB = host.querySelector('.modal-b');
+  const scrollB = modalB ? modalB.scrollTop : 0;
+  const listEl = host.querySelector('.modal .list');
+  const scrollList = listEl ? listEl.scrollTop : 0;
+
+  // Active element to restore focus if needed (e.g. search input)
+  const activeEl = document.activeElement;
+  const activeAct = activeEl ? activeEl.getAttribute('data-act') : null;
+  const activeId = activeEl && activeEl.id ? activeEl.id : null;
+  const selStart = activeEl && typeof activeEl.selectionStart === 'number' ? activeEl.selectionStart : null;
+  const selEnd = activeEl && typeof activeEl.selectionEnd === 'number' ? activeEl.selectionEnd : null;
+
+  let html = modalHTML();
+  if(html){
+    html = html.replace(/class="scrim"/g, 'class="scrim no-anim"')
+               .replace(/class="modal wide"/g, 'class="modal wide no-anim"')
+               .replace(/class="modal"/g, 'class="modal no-anim"')
+               .replace(/class="drawer-wrap"/g, 'class="drawer-wrap no-anim"')
+               .replace(/class="drawer"/g, 'class="drawer no-anim"');
+  }
+  host.innerHTML = html;
+
+  // Restore scroll positions
+  const newModalB = host.querySelector('.modal-b');
+  if(newModalB && scrollB) newModalB.scrollTop = scrollB;
+  const newListEl = host.querySelector('.modal .list');
+  if(newListEl && scrollList) newListEl.scrollTop = scrollList;
+
+  // Restore input focus and cursor
+  let newActive = null;
+  if(activeId) newActive = host.querySelector(`#${activeId}`);
+  if(!newActive && activeAct) newActive = host.querySelector(`[data-act="${activeAct}"]`);
+  if(newActive){
+    newActive.focus();
+    if(selStart !== null && selEnd !== null && typeof newActive.setSelectionRange === 'function'){
+      try { newActive.setSelectionRange(selStart, selEnd); } catch(e){}
+    }
+  }
 }
 function go(r, keepModal = false){
   APP.route=r;
@@ -27588,12 +27662,12 @@ document.addEventListener('click',e=>{
     if(d.type==='Event' && !d.start){ d.start='17:30'; d.end='20:30'; }
     APP.fabOpen=false;APP.modal='assign';render();break}
   case 'draft':{syncAssign();const d=assignDraft();d[t.dataset.n]=t.dataset.v;
-    if(t.dataset.n==='type'&&t.dataset.v==='Class'&&!d.batch)d.batch=activeBatches()[0].id;render();break}
-  case 'need':{syncAssign();const d=assignDraft();d.need=Math.max(1,d.need+ +t.dataset.v);render();break}
+    if(t.dataset.n==='type'&&t.dataset.v==='Class'&&!d.batch)d.batch=activeBatches()[0].id;renderModalOnly();break}
+  case 'need':{syncAssign();const d=assignDraft();d.need=Math.max(1,d.need+ +t.dataset.v);renderModalOnly();break}
   case 'vol-toggle':{syncAssign();const d=assignDraft();
-    d.volunteers=d.volunteers.includes(id)?d.volunteers.filter(x=>x!==id):[...d.volunteers,id];render();break}
-  case 'vol-remove':{syncAssign();const d=assignDraft();d.volunteers=d.volunteers.filter(x=>x!==id);render();break}
-  case 'vol-toggle-custom':{syncAssign();const d=assignDraft();d.showCustom=!d.showCustom;render();
+    d.volunteers=d.volunteers.includes(id)?d.volunteers.filter(x=>x!==id):[...d.volunteers,id];renderModalOnly();break}
+  case 'vol-remove':{syncAssign();const d=assignDraft();d.volunteers=d.volunteers.filter(x=>x!==id);renderModalOnly();break}
+  case 'vol-toggle-custom':{syncAssign();const d=assignDraft();d.showCustom=!d.showCustom;renderModalOnly();
     if(d.showCustom)setTimeout(()=>{const el=document.getElementById('vol-custom-inp');if(el)el.focus()},60);break}
   case 'vol-add-custom':{syncAssign();const d=assignDraft();
     const el=document.getElementById('vol-custom-inp');const name=el?el.value.trim():'';
@@ -27601,10 +27675,10 @@ document.addEventListener('click',e=>{
     const match=DB.devotees.find(x=>x.name.toLowerCase()===name.toLowerCase());
     const val=match?match.id:name;
     if(!d.volunteers.includes(val))d.volunteers.push(val);
-    d.showCustom=false;render();break}
+    d.showCustom=false;renderModalOnly();break}
   case 'draft-item-add':{syncAssign();const d=assignDraft();
-    const el=document.querySelector('[name=newItem]');if(el&&el.value.trim()){d.items.push(el.value.trim());render();refocus('[name=newItem]')}break}
-  case 'draft-item-del':{syncAssign();const d=assignDraft();d.items.splice(+t.dataset.i,1);render();break}
+    const el=document.querySelector('[name=newItem]');if(el&&el.value.trim()){d.items.push(el.value.trim());renderModalOnly();refocus('[name=newItem]')}break}
+  case 'draft-item-del':{syncAssign();const d=assignDraft();d.items.splice(+t.dataset.i,1);renderModalOnly();break}
   case 'save-assign':{syncAssign();const d=assignDraft();
     if(!d.name.trim()){toast(d.type==='Class'?'Please give the class a name / topic':d.type==='Event'?'Please enter the event / programme title':'Please give the seva / service a name','⚠️');break}
     const isTask=d.type==='Task'||d.type==='Responsibility';
@@ -29528,7 +29602,7 @@ case 'range':APP.range[t.dataset.n]=t.value;savePreachingFilters();render();brea
    }
    case 'cal-cat':APP.filters.calCat=t.value;render();break;
 case 'rep-batch':APP.filters.repBatch=t.value;savePreachingFilters();render();break;
-   case 'vol-f':{syncAssign();assignDraft()[t.dataset.n]=t.value;render();break}
+   case 'vol-f':{syncAssign();assignDraft()[t.dataset.n]=t.value;renderModalOnly();break}
    case 'import-csv-file':{
      const file = e.target.files && e.target.files[0];
      if(file) handleDevoteeCsvFile(file);
@@ -29571,7 +29645,7 @@ document.addEventListener('input',e=>{
   const a=t.dataset.act;
   if(a==='f'){const k=t.dataset.k,n=t.dataset.n;APP.filters[k]=APP.filters[k]||{};APP.filters[k][n]=t.value;APP.page[k]=1;
     render();refocus(`[data-act="f"][data-k="${k}"][data-n="${n}"]`);}
-  else if(a==='vol-q'){syncAssign();assignDraft().q=t.value;render();refocus('[data-act="vol-q"]')}
+  else if(a==='vol-q'){syncAssign();assignDraft().q=t.value;renderModalOnly();}
   else if(a==='pick-q'){APP.modal.q=t.value;render();refocus('#pickq')}
   else if(a==='morning-q'){APP.morningSearch=t.value;render();refocus('[data-act="morning-q"]')}
   else if(a==='att-q'){APP.filters.attSearch=t.value;render();refocus('[data-act="att-q"]')}
