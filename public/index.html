@@ -1435,33 +1435,51 @@ body.mobile-today-open{
 .page-head .actions{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
 .dash-header-btn-col{
   display:flex;
-  flex-direction:column;
-  gap:4px;
-  align-items:flex-end;
-  justify-content:center;
+  flex-direction:row;
+  gap:10px;
+  align-items:center;
+  justify-content:flex-end;
 }
 .dash-head-btn{
-  font-size:11px!important;
+  font-size:13.5px!important;
   font-weight:600!important;
-  padding:3px 7px!important;
-  min-height:26px!important;
-  height:26px!important;
-  border-radius:7px!important;
+  padding:8px 18px!important;
+  min-height:38px!important;
+  height:38px!important;
+  border-radius:10px!important;
   white-space:nowrap!important;
-  width:112px!important;
+  width:auto!important;
   box-sizing:border-box!important;
   display:inline-flex!important;
   align-items:center!important;
   justify-content:center!important;
-  gap:4px!important;
-  box-shadow:0 1px 2px rgba(0,0,0,0.04)!important;
+  gap:7px!important;
+  box-shadow:0 1px 3px rgba(0,0,0,0.06)!important;
   flex:none!important;
-  letter-spacing:0.1px!important;
+  letter-spacing:0.15px!important;
+  transition:all .18s cubic-bezier(0.16,1,0.3,1)!important;
 }
 .dash-head-btn svg{
-  width:12px!important;
-  height:12px!important;
+  width:16px!important;
+  height:16px!important;
   flex-shrink:0!important;
+}
+@media(max-width:640px){
+  .dash-header-btn-col{
+    flex-wrap:wrap;
+    gap:6px;
+  }
+  .dash-head-btn{
+    font-size:12px!important;
+    padding:6px 12px!important;
+    min-height:32px!important;
+    height:32px!important;
+    border-radius:8px!important;
+  }
+  .dash-head-btn svg{
+    width:13px!important;
+    height:13px!important;
+  }
 }
 .page-head.has-dash-actions,
 .page-head:has(.dash-header-btn-col){
@@ -3643,9 +3661,37 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-off
   50%{height:18px}
   100%{height:8px}
 }
-[data-act="select-ambience"]{transition:all .18s ease;font-weight:600;border:1px solid rgba(245,158,11,0.35)!important;cursor:pointer}
-[data-act="select-ambience"].on{background:#f59e0b!important;color:#fff!important;border-color:#d97706!important;font-weight:700!important;box-shadow:0 2px 8px rgba(245,158,11,0.4)!important}
-[data-act="select-ambience"]:hover:not(.on){background:rgba(245,158,11,0.15)!important;border-color:#f59e0b!important}
+.ambience-track-btn,
+[data-act="select-ambience"]{
+  transition:all .18s cubic-bezier(0.16,1,0.3,1);
+  font-weight:600;
+  border:1.5px solid var(--line)!important;
+  background:var(--surface)!important;
+  color:var(--ink)!important;
+  cursor:pointer;
+  border-radius:9px!important;
+}
+.ambience-track-btn:hover:not(.on),
+[data-act="select-ambience"]:hover:not(.on){
+  background:var(--surface-2)!important;
+  border-color:var(--accent)!important;
+  color:var(--accent)!important;
+}
+.ambience-track-btn.on,
+[data-act="select-ambience"].on{
+  background:#FFF7ED!important;
+  color:#C2410C!important;
+  border:1.5px solid #EA580C!important;
+  font-weight:700!important;
+  box-shadow:0 2px 8px rgba(234,88,12,0.18)!important;
+}
+[data-theme="dark"] .ambience-track-btn.on,
+[data-theme="dark"] [data-act="select-ambience"].on{
+  background:rgba(249,115,22,0.2)!important;
+  color:#FB923C!important;
+  border-color:#F97316!important;
+  box-shadow:0 2px 8px rgba(0,0,0,0.35)!important;
+}
 .top-nav-amb-btn{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;min-width:28px;margin-left:4px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink-2);cursor:pointer;transition:all .18s cubic-bezier(0.16,1,0.3,1)}
 .top-nav-amb-btn:hover{background:var(--surface-2);color:var(--accent);border-color:rgba(245,158,11,0.4);transform:scale(1.06)}
 .top-nav-amb-btn.playing{background:#f59e0b!important;color:#fff!important;border-color:#d97706!important;box-shadow:0 2px 8px rgba(245,158,11,0.4)!important}
@@ -10132,9 +10178,9 @@ function prabhupadaNectarCard(){
         </div>
 
         <div style="display:flex;align-items:center;gap:6px">
-          <button class="btn sm ${curTrack === 'kirtan' ? 'on' : ''}" data-act="select-ambience" data-track="kirtan" title="Srila Prabhupada Hare Krishna Kirtan">🪕 Kirtan</button>
-          <button class="btn sm ${curTrack === 'japa' ? 'on' : ''}" data-act="select-ambience" data-track="japa" title="Srila Prabhupada Morning Japa">📿 Japa</button>
-          <button class="btn sm ${curTrack === 'govindam' ? 'on' : ''}" data-act="select-ambience" data-track="govindam" title="Sri Brahma Samhita (Govindam)">🪔 Govindam</button>
+          <button class="btn sm ambience-track-btn ${curTrack === 'kirtan' ? 'on' : ''}" data-act="select-ambience" data-track="kirtan" title="Srila Prabhupada Hare Krishna Kirtan">🪕 Kirtan</button>
+          <button class="btn sm ambience-track-btn ${curTrack === 'japa' ? 'on' : ''}" data-act="select-ambience" data-track="japa" title="Srila Prabhupada Morning Japa">📿 Japa</button>
+          <button class="btn sm ambience-track-btn ${curTrack === 'govindam' ? 'on' : ''}" data-act="select-ambience" data-track="govindam" title="Sri Brahma Samhita (Govindam)">🪔 Govindam</button>
 
           <button class="btn sm ${isPlaying ? 'pri' : ''}" data-act="toggle-ambience" id="ambPlayBtn" style="font-weight:700;min-width:74px">
             ${isPlaying ? '⏸ Pause' : '▶ Play'}
@@ -10607,8 +10653,8 @@ function viewDashboard(){
   const roleName=(r==='area_leader'||r==='counsellor')?'ISKCON BACE':(ROLES[r]?ROLES[r].name:'ISKCON BACE');
   const eyebrowText=(r==='area_leader'||r==='counsellor')?'ISKCON BACE':((ROLES[r]?ROLES[r].emoji+' ':'')+roleName);
   const headerActions=(r==='area_leader'||r==='counsellor')
-    ? `<div class="dash-header-btn-col"><button class="btn sm dash-head-btn" data-act="go" data-r="#/org">${ic('layers')}View hierarchy</button><button class="btn sm pri dash-head-btn" data-act="go" data-r="#/reports">📊 Reports</button></div>`
-    : `<div class="dash-header-btn-col"><button class="btn sm pri dash-head-btn" data-act="go" data-r="#/reports">📊 Reports</button></div>`;
+    ? `<div class="dash-header-btn-col"><button class="btn dash-head-btn" data-act="go" data-r="#/org">${ic('layers')}View hierarchy</button><button class="btn pri dash-head-btn" data-act="go" data-r="#/reports">📊 Reports</button></div>`
+    : `<div class="dash-header-btn-col"><button class="btn pri dash-head-btn" data-act="go" data-r="#/reports">📊 Reports</button></div>`;
   const hd=hero()+head(eyebrowText,title,ROLES[r]?.scope||'',headerActions,'has-dash-actions');
   if(r==='area_leader'||r==='counsellor')return hd+`${pillarCards(true)}<div style="height:15px"></div>
      <div class="grid g2">${insightsCard()}${prabhupadaNectarCard()}</div>`;
