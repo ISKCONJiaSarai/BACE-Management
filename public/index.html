@@ -7124,7 +7124,7 @@ const NAV_TOP=[
 const PILLARS=[
  {key:'mgmt',t:'BACE Management',em:'🛕',pill:'var(--saffron)',m:'management',items:[
    {t:'Management dashboard',em:'📊',r:'#/mgmt',m:'management'},
-   {t:'BACE Pillars',em:'🛕',r:'#/attendance',m:'management'},
+   {t:'BACE Pillars',em:'🏛️',r:'#/attendance',m:'management'},
    {t:'Departments',em:'🏢',r:'#/depts',m:'management'},
    {t:'Assign Seva',em:'📋',r:'#/assign',m:'assign'},
    {t:'SOPs & standards',em:'📘',r:'#/sops',m:'sops'}]},
@@ -7217,7 +7217,7 @@ function appHeader(){
     {t:'Devotees',r:'#/devotees',m:'directory'},
     {t:'Management',r:'#/mgmt',m:'management',children:[
       {t:'Management Dashboard',em:'📊',r:'#/mgmt',m:'management'},
-      {t:'BACE Pillars',em:'🛕',r:'#/attendance',m:'management'},
+      {t:'BACE Pillars',em:'🏛️',r:'#/attendance',m:'management'},
       {t:'Departments',em:'🏢',r:'#/depts',m:'management'},
       {t:'Accounts',em:'💰',r:'#/accounts',m:'management'},
       {t:'Assign Seva',em:'📋',r:'#/assign',m:'assign'},
@@ -7519,7 +7519,7 @@ function mobileNavDropdown(){
   const sections=[
     {id:'mgmt', title:'Management', em:'🛕', hasActive:mgmtRoutes.includes(route), items:[
       {t:'Management Dashboard',em:'📊',r:'#/mgmt',m:'management'},
-      {t:'BACE Pillars',em:'🛕',r:'#/attendance',m:'management'},
+      {t:'BACE Pillars',em:'🏛️',r:'#/attendance',m:'management'},
       {t:'Departments',em:'🏢',r:'#/depts',m:'management'},
       {t:'Accounts',em:'💰',r:'#/accounts',m:'management'},
       {t:'Assign Seva',em:'📋',r:'#/assign',m:'assign'},
@@ -9083,7 +9083,7 @@ function pillarCardMgmt(){
               <span class="pillar-item-arrow">›</span>
             </a>
             <a class="pillar-item" href="#/attendance">
-              <span class="pillar-item-icon">🌐</span>
+              <span class="pillar-item-icon">🏛️</span>
               <div class="pillar-item-info">
                 <div class="pillar-item-title">BACE pillars</div>
                 <div class="pillar-item-sub">Foundation to healthy growth</div>
@@ -9091,7 +9091,7 @@ function pillarCardMgmt(){
               <span class="pillar-item-arrow">›</span>
             </a>
             <a class="pillar-item" href="#/depts">
-              <span class="pillar-item-icon">🏛️</span>
+              <span class="pillar-item-icon">🏢</span>
               <div class="pillar-item-info">
                 <div class="pillar-item-title">Departments</div>
                 <div class="pillar-item-sub">${s.depts} active departments</div>
@@ -14007,9 +14007,6 @@ function morningProgramPanel(){
           <button class="btn sm" data-act="trigger-morning-csv" title="Upload a new biometric .txt file">
             ${ic('upload')} Upload New File
           </button>
-          <button class="btn sm ${progTab === 'report' ? 'pri' : ''}" data-act="morning-subtab" data-v="report">
-            📋 Attendance Report
-          </button>
           <button class="btn sm ${progTab === 'progress' ? 'pri' : ''}" data-act="morning-subtab" data-v="progress">
             📈 Devotees Progress (${(monthly.devStats ? monthly.devStats.length : (weekly.devStats ? weekly.devStats.length : (data.rows ? data.rows.length : allDevs.length)))})
           </button>
@@ -14436,6 +14433,7 @@ function morningProgramPanel(){
     <div class="card" style="margin-bottom:16px">
       <div class="card-h" style="border-bottom:1px solid var(--line-2);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
         <div>
+          <button class="btn sm" data-act="morning-subtab" data-v="report" style="margin-bottom:8px;display:inline-flex;align-items:center;gap:6px">← Back to Attendance</button>
           <h3 style="margin:0;display:flex;align-items:center;gap:8px"><span>🏆</span> Devotees Progress & Percentage Growth</h3>
           <span class="tiny" style="color:var(--ink-3)">Tracking Week-over-Week and Month-over-Month attendance growth delta & punctuality improvements</span>
         </div>
@@ -19643,7 +19641,7 @@ function viewAttendance(){
   const tabs = ['Morning programme', 'Deity Department', 'Cleaning', 'Department Matrix'];
   if (!tabs.includes(tab)) tab = 'Morning programme';
 
-  return head('🛕 BACE Pillars', 'Foundation to Healthy Growth', 'Morning program punctuality, Deity & Cleaning rosters, and Department Matrix')+
+  return head('🏛️ BACE Pillars', 'Foundation to Healthy Growth', 'Morning program punctuality, Deity & Cleaning rosters, and Department Matrix')+
    `<div class="tabs">${tabs.map(t => `<button class="${t===tab?'on':''}" data-act="tab" data-k="att" data-v="${t}">${t}</button>`).join('')}</div>`+
    (tab === 'Morning programme' ? morningProgramPanel()
    : tab === 'Deity Department' ? deityDepartmentPanel()
@@ -26805,7 +26803,12 @@ document.addEventListener('click',e=>{
     break;
   }
   case 'morning-subtab':stop();{
-    APP.morningSubTab = t.dataset.v || 'report';
+    const targetTab = t.dataset.v || 'report';
+    if (targetTab === 'progress') {
+      APP.morningSubTab = APP.morningSubTab === 'progress' ? 'report' : 'progress';
+    } else {
+      APP.morningSubTab = targetTab;
+    }
     render();
     break;
   }
