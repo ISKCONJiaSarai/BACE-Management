@@ -14287,24 +14287,27 @@ function computeMorningMetrics(rows, date){
     else buckets[4].count++;
   });
 
+  const met = {
+    total,
+    attended,
+    onTimeCount,
+    graceCount,
+    lateCount,
+    veryLateCount,
+    absentCount,
+    onTimePct,
+    punctualityScore,
+    avgArrivalMin,
+    earliestTime: formatMinutesTime(earliestMin),
+    latestTime: formatMinutesTime(latestMin),
+    avgDiffMin
+  };
+
   return {
     date: date || iso(TODAY),
     rows,
-    metrics: {
-      total,
-      attended,
-      onTimeCount,
-      graceCount,
-      lateCount,
-      veryLateCount,
-      absentCount,
-      onTimePct,
-      punctualityScore,
-      avgArrivalMin,
-      earliestTime: formatMinutesTime(earliestMin),
-      latestTime: formatMinutesTime(latestMin),
-      avgDiffMin
-    },
+    ...met,
+    metrics: met,
     buckets
   };
 }
