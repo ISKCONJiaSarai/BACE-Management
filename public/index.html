@@ -1130,7 +1130,9 @@ body.mobile-today-open{
   background:radial-gradient(circle at 82% 55%, rgba(245,158,11,0.24) 0%, rgba(217,119,6,0.10) 38%, transparent 68%), radial-gradient(circle at 12% 18%, rgba(129,140,248,0.15) 0%, transparent 48%);
   pointer-events:none;
 }
-.hero h1{font-size:30px;color:#FFF;font-weight:800;letter-spacing:-.025em;text-shadow:0 2px 10px rgba(0,0,0,0.35)}
+.hero h1{font-size:30px;color:#FFF;font-weight:800;letter-spacing:-.025em;text-shadow:0 2px 10px rgba(0,0,0,0.35);line-height:1.2}
+.hero-greeting{display:inline}
+.hero-name{display:inline}
 .hero p{color:#E2E8F0;margin:6px 0 0;font-size:14.5px;max-width:62ch;line-height:1.5;font-weight:500}
 .hero .quote{
   font-family:var(--f-script);font-style:normal;color:#FDE68A;margin-top:13px;font-size:25px;font-weight:600;
@@ -1150,9 +1152,9 @@ body.mobile-today-open{
 .hero-art-col .art{position:relative;z-index:1;width:100%;max-height:100%;object-fit:contain;opacity:.75;filter:drop-shadow(0 6px 20px rgba(0,0,0,0.45)) drop-shadow(0 0 14px rgba(245,158,11,0.22));animation:subtleFloat 6s ease-in-out infinite alternate}
 @keyframes subtleFloat{0%{transform:translateY(0) scale(1)}50%{transform:translateY(-5px) scale(1.015)}100%{transform:translateY(0) scale(1)}}
 
-/* Stat cards outside the hero box */
+/* ---------- 3D Glassmorphic Stat Cards (Desktop & Mobile) ---------- */
 .hstats{
-  display:grid;grid-template-columns:repeat(5, minmax(0, 1fr));gap:12px;margin-bottom:22px;position:relative;z-index:2;
+  display:grid;grid-template-columns:repeat(5, minmax(0, 1fr));gap:12px;margin-bottom:24px;position:relative;z-index:2;
 }
 @media(max-width:1300px){
   .hstats{grid-template-columns:repeat(3, minmax(0, 1fr))}
@@ -1161,10 +1163,19 @@ body.mobile-today-open{
   .hstats{grid-template-columns:repeat(2, minmax(0, 1fr))}
 }
 .hstat{
-  background:var(--surface);
-  border:1px solid var(--border);border-left:3.5px solid var(--accent);
-  border-radius:12px;padding:11px 14px;min-width:0;
-  cursor:pointer;transition:all .2s cubic-bezier(0.16,1,0.3,1);box-shadow:var(--shadow-sm);
+  position:relative;
+  background:linear-gradient(135deg, rgba(255, 255, 255, 0.88) 0%, rgba(248, 250, 252, 0.68) 100%);
+  backdrop-filter:blur(16px) saturate(180%);-webkit-backdrop-filter:blur(16px) saturate(180%);
+  border:1px solid rgba(255, 255, 255, 0.85);
+  border-top-color:rgba(255, 255, 255, 0.95);
+  border-bottom-color:rgba(203, 213, 225, 0.65);
+  border-radius:14px;padding:12px 14px;min-width:0;
+  cursor:pointer;transition:all .22s cubic-bezier(0.16,1,0.3,1);
+  box-shadow:
+    0 1px 2px 0 rgba(255, 255, 255, 1) inset,
+    0 -2.5px 0 0 rgba(15, 23, 42, 0.05) inset,
+    0 3px 6px -1px rgba(15, 23, 42, 0.06),
+    0 8px 18px -2px rgba(15, 23, 42, 0.08);
   display:grid;
   grid-template-columns:minmax(0, 1fr) auto auto;
   grid-template-rows:auto auto;
@@ -1172,27 +1183,46 @@ body.mobile-today-open{
     "lbl num arr"
     "foot num arr";
   align-items:center;
-  column-gap:10px;
-  row-gap:4px;
+  column-gap:8px;
+  row-gap:3px;
+  overflow:hidden;
+}
+.hstat::before{
+  content:"";position:absolute;left:0;top:12%;bottom:12%;width:4px;
+  border-radius:0 4px 4px 0;
+  background:linear-gradient(180deg, #F59E0B 0%, #D97706 100%);
+  box-shadow:0 0 8px rgba(245,158,11,0.4);
+  transition:all .2s ease;
+}
+.hstat:first-child::before{
+  background:linear-gradient(180deg, #10B981 0%, #059669 100%);
+  box-shadow:0 0 8px rgba(16,185,129,0.45);
 }
 .hstat:hover{
-  transform:translateY(-2px);
-  box-shadow:var(--shadow-md);
-  border-color:var(--accent);
+  transform:translateY(-3px) scale(1.02);
+  background:linear-gradient(135deg, rgba(255, 255, 255, 0.96) 0%, rgba(255, 255, 255, 0.82) 100%);
+  border-color:rgba(245, 158, 11, 0.5);
+  box-shadow:
+    0 1px 2px 0 rgba(255, 255, 255, 1) inset,
+    0 -2px 0 0 rgba(245, 158, 11, 0.25) inset,
+    0 8px 20px -2px rgba(15, 23, 42, 0.12),
+    0 14px 28px -4px rgba(245, 158, 11, 0.18);
 }
 .hstat:active{
-  transform:scale(0.97)!important;
-  background:var(--surface-2)!important;
+  transform:translateY(1.5px) scale(0.98)!important;
+  box-shadow:0 2px 5px rgba(0,0,0,0.12) inset, 0 1px 2px rgba(0,0,0,0.05)!important;
 }
 .hstat .hstat-lbl{
   grid-area:lbl;
-  font-size:12px;color:var(--ink-2);font-weight:600;letter-spacing:.01em;
+  font-size:12px;color:var(--ink);font-weight:700;letter-spacing:.01em;
   display:flex;align-items:center;gap:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
 .hstat .hstat-ico{
   display:inline-flex;align-items:center;justify-content:center;
   width:22px;height:22px;border-radius:50%;
-  background:var(--surface-2);font-size:12px;flex-shrink:0;
+  background:linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(241, 245, 249, 0.85));
+  box-shadow:0 1px 3px rgba(0,0,0,0.08), inset 0 1px 1px #FFF;
+  font-size:12px;flex-shrink:0;
 }
 .hstat b{
   grid-area:num;
@@ -1206,11 +1236,37 @@ body.mobile-today-open{
   color:var(--ink-3);font-size:14px;font-weight:700;line-height:1;
   transition:transform .2s ease, color .2s ease;margin-left:2px;
 }
-.hstat:hover .hstat-arr{color:var(--accent);transform:translateX(2px)}
+.hstat:hover .hstat-arr{color:var(--accent);transform:translateX(3px)}
 .hstat .hstat-foot{
   grid-area:foot;
-  font-size:11px;color:var(--ink-3);font-weight:500;line-height:1.2;
+  font-size:10.5px;color:var(--ink-2);font-weight:500;line-height:1.2;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+
+/* Dark theme 3D glass card support */
+[data-theme="dark"] .hstat{
+  background:linear-gradient(135deg, rgba(21, 29, 47, 0.82) 0%, rgba(15, 23, 42, 0.72) 100%);
+  border:1px solid rgba(255, 255, 255, 0.12);
+  border-top-color:rgba(255, 255, 255, 0.22);
+  border-bottom-color:rgba(0, 0, 0, 0.45);
+  box-shadow:
+    0 1px 1px 0 rgba(255, 255, 255, 0.12) inset,
+    0 -2.5px 0 0 rgba(0, 0, 0, 0.35) inset,
+    0 4px 10px -1px rgba(0, 0, 0, 0.45),
+    0 10px 22px -3px rgba(0, 0, 0, 0.4);
+}
+[data-theme="dark"] .hstat:hover{
+  background:linear-gradient(135deg, rgba(30, 41, 68, 0.9) 0%, rgba(21, 29, 47, 0.85) 100%);
+  border-color:rgba(245, 158, 11, 0.45);
+  box-shadow:
+    0 1px 1px 0 rgba(255, 255, 255, 0.22) inset,
+    0 -2px 0 0 rgba(245, 158, 11, 0.35) inset,
+    0 8px 20px -2px rgba(0, 0, 0, 0.5),
+    0 0 20px -2px rgba(245, 158, 11, 0.25);
+}
+[data-theme="dark"] .hstat .hstat-ico{
+  background:linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.8));
+  box-shadow:0 1px 3px rgba(0,0,0,0.3), inset 0 1px 1px rgba(255,255,255,0.1);
 }
 
 @media(max-width:768px){
@@ -1230,9 +1286,18 @@ body.mobile-today-open{
     flex:1 1 auto!important;min-width:0!important;position:relative!important;z-index:2!important;
   }
   .hero h1{
-    font-size:16px!important;line-height:1.25!important;margin:0!important;
-    letter-spacing:-0.01em!important;color:#FFF!important;
+    margin:0!important;line-height:1.25!important;
+  }
+  .hero-greeting{
+    display:block!important;font-size:14.5px!important;font-weight:600!important;
+    color:#FDE68A!important;letter-spacing:0.01em!important;margin-bottom:2px!important;
+    text-shadow:0 2px 6px rgba(0,0,0,0.3)!important;
+  }
+  .hero-name{
+    display:block!important;font-size:17.5px!important;font-weight:800!important;
+    color:#FFF!important;letter-spacing:-0.015em!important;line-height:1.2!important;
     text-shadow:0 2px 8px rgba(0,0,0,0.35)!important;
+    white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;
   }
   .hero p{
     font-size:11px!important;margin:2px 0 0!important;line-height:1.35!important;
@@ -1267,19 +1332,25 @@ body.mobile-today-open{
     display:block!important;animation:subtleFloat 6s ease-in-out infinite alternate!important;
   }
 
-  /* Stat cards outside the gradient box in mobile view */
+  /* Stat cards outside the gradient box in mobile view - snug width matching names */
   .hstats{
-    display:grid!important;
-    grid-template-columns:1fr 1fr!important;
-    gap:6px!important;width:100%!important;max-width:100%!important;
-    margin:0 0 16px!important;
+    display:flex!important;
+    flex-wrap:wrap!important;
+    justify-content:center!important;
+    gap:7px!important;
+    width:100%!important;
+    max-width:345px!important;
+    margin:0 auto 16px!important;
   }
-  /* Overall BACE Health (1st button) spans full width as an executive highlight bar */
+  /* BACE Health (1st button) spans full width of the snug container */
   .hstats > .hstat:first-child{
-    grid-column:1 / -1!important;
+    width:100%!important;
+    flex:1 1 100%!important;
     min-height:36px!important;height:36px!important;
-    padding:6px 12px!important;
-    border-left:3.5px solid #10B981!important;
+    padding:5px 12px!important;
+    border-radius:11px!important;
+    display:flex!important;flex-direction:row!important;align-items:center!important;
+    justify-content:space-between!important;
   }
   .hstats > .hstat:first-child .hstat-lbl{
     font-size:11.5px!important;font-weight:700!important;color:var(--ink)!important;
@@ -1292,57 +1363,61 @@ body.mobile-today-open{
   }
   .hstats > .hstat:first-child .hstat-foot{
     display:inline-flex!important;
-    font-size:10px!important;color:var(--ink-2)!important;
-    margin:0 6px!important;white-space:nowrap!important;
+    font-size:9.5px!important;color:var(--ink-2)!important;
+    margin:0 4px!important;white-space:nowrap!important;
   }
 
-  /* Symmetrical 2x2 grid buttons below it */
-  .hstat{
+  /* Symmetrical 2x2 grid buttons below it: Devotees, Batches, Volunteers, Contacts */
+  /* Width snugly matches the length of these names */
+  .hstats > .hstat:not(:first-child){
+    width:calc(50% - 4px)!important;
+    max-width:168px!important;
+    flex:0 1 calc(50% - 4px)!important;
+    min-height:34px!important;height:34px!important;
+    border-radius:10px!important;
+    padding:5px 9px!important;
+    box-sizing:border-box!important;
     display:flex!important;flex-direction:row!important;align-items:center!important;
-    justify-content:space-between!important;padding:6px 10px!important;
-    min-height:34px!important;height:34px!important;border-radius:10px!important;
-    gap:4px!important;width:100%!important;box-sizing:border-box!important;
-    background:var(--surface)!important;
-    border:1px solid var(--border)!important;
-    border-left:3px solid var(--accent)!important;
-    box-shadow:0 1px 4px rgba(0,0,0,0.06)!important;
-    transition:transform .15s ease, background .15s ease, border-color .15s ease!important;
-    -webkit-tap-highlight-color:transparent!important;
+    justify-content:space-between!important;gap:4px!important;
   }
   .hstat:active{
     transform:scale(0.97)!important;
-    background:var(--surface-2)!important;
-    border-color:var(--accent)!important;
   }
   .hstat .hstat-foot{display:none!important}
   .hstat .hstat-lbl{
-    font-size:11px!important;font-weight:600!important;color:var(--ink)!important;
+    font-size:11px!important;font-weight:700!important;color:var(--ink)!important;
     white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;
     flex:1!important;min-width:0!important;display:flex!important;align-items:center!important;
     gap:5px!important;
   }
   .hstat .hstat-ico{
-    width:18px!important;height:18px!important;font-size:11px!important;
-    background:var(--surface-2)!important;border-radius:50%!important;
-    display:inline-flex!important;align-items:center!important;justify-content:center!important;
+    width:18px!important;height:18px!important;font-size:10.5px!important;
+    flex-shrink:0!important;
   }
   .hstat b{
-    font-size:14px!important;font-weight:800!important;color:var(--ink)!important;
+    font-size:13.5px!important;font-weight:800!important;color:var(--ink)!important;
     flex-shrink:0!important;text-align:right!important;padding-left:2px!important;
     line-height:1!important;letter-spacing:-0.01em!important;
   }
   .hstat .hstat-arr{
     display:inline-block!important;font-size:12px!important;
-    color:var(--ink-3)!important;margin-left:2px!important;flex-shrink:0!important;
+    color:var(--ink-3)!important;margin-left:1px!important;flex-shrink:0!important;
   }
 }
 
 @media(min-width:540px) and (max-width:768px){
   .hstats{
+    max-width:100%!important;
+    display:grid!important;
     grid-template-columns:repeat(5, minmax(0, 1fr))!important;
   }
   .hstats > .hstat:first-child{
+    width:auto!important;
     grid-column:auto!important;
+  }
+  .hstats > .hstat:not(:first-child){
+    width:auto!important;
+    max-width:none!important;
   }
   .hstats > .hstat:first-child .hstat-foot{
     display:none!important;
@@ -8305,7 +8380,7 @@ function hero(){
   return `<div class="hero">
    <div class="hero-inner">
      <div class="hero-header">
-       <h1>Hare Krishna, ${esc(displayName)} 🙏</h1>
+       <h1><span class="hero-greeting">Hare Krishna,</span> <span class="hero-name">${esc(displayName)} 🙏</span></h1>
        <p>${esc(ROLES[APP.user.role].name)} · ${fmtLong(iso(TODAY))}</p>
        <div class="quote"><span class="quote-script">${dayQuote}</span></div>
      </div>
@@ -8317,31 +8392,31 @@ function hero(){
   </div>
   <div class="hstats">
     <div class="hstat" data-act="go" data-r="#/attendance" title="Weekly summary: Morning ${avgMorning}%, Deity ${avgDeity}%, Cleaning ${avgCleaning}%">
-      <div class="hstat-lbl"><span class="hstat-ico">🏛️</span> Overall BACE health</div>
+      <div class="hstat-lbl"><span class="hstat-ico">🏛️</span> BACE Health</div>
       <b>${overallBaceHealth}%</b>
       <span class="hstat-arr">›</span>
       <div class="hstat-foot">🌅 ${avgMorning}% · 🛕 ${avgDeity}% · 🧹 ${avgCleaning}%</div>
     </div>
     <div class="hstat" data-act="go" data-r="#/devotees">
-      <div class="hstat-lbl"><span class="hstat-ico">👥</span> Total devotees</div>
+      <div class="hstat-lbl"><span class="hstat-ico">👥</span> Devotees</div>
       <b>${s.total}</b>
       <span class="hstat-arr">›</span>
       <div class="hstat-foot">${s.active} active · ${s.inactive} inactive</div>
     </div>
     <div class="hstat" data-act="go" data-r="#/batches">
-      <div class="hstat-lbl"><span class="hstat-ico">🎓</span> Preaching batches</div>
+      <div class="hstat-lbl"><span class="hstat-ico">🎓</span> Batches</div>
       <b>${actBatches}</b>
       <span class="hstat-arr">›</span>
       <div class="hstat-foot">${(DB.batches||[]).length} batches · ${inBatchesDevs} devotees</div>
     </div>
     <div class="hstat" data-act="go" data-r="#/assign">
-      <div class="hstat-lbl"><span class="hstat-ico">🛠</span> Active volunteers</div>
+      <div class="hstat-lbl"><span class="hstat-ico">🛠</span> Volunteers</div>
       <b>${s.volunteers}</b>
       <span class="hstat-arr">›</span>
       <div class="hstat-foot">across ${s.depts} departments</div>
     </div>
     <div class="hstat" data-act="go" data-r="#/contacts">
-      <div class="hstat-lbl"><span class="hstat-ico">📖</span> Preaching contacts</div>
+      <div class="hstat-lbl"><span class="hstat-ico">📖</span> Contacts</div>
       <b>${s.contacts}</b>
       <span class="hstat-arr">›</span>
       <div class="hstat-foot">${s.newContacts} new this month</div>
