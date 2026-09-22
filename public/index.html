@@ -13960,10 +13960,7 @@ function morningProgramPanel(){
           <button class="btn sm" data-act="trigger-morning-csv" title="Upload a new biometric .txt file">
             ${ic('upload')} Upload New File
           </button>
-          <button class="btn sm ${progTab === 'report' ? 'pri' : ''}" data-act="morning-subtab" data-v="report">
-            📋 Attendance Report
-          </button>
-          <button class="btn sm ${progTab === 'progress' ? 'pri' : ''}" data-act="morning-subtab" data-v="progress">
+          <button class="btn sm ${progTab === 'progress' ? 'pri' : ''}" data-act="morning-subtab" data-v="${progTab === 'progress' ? 'report' : 'progress'}">
             📈 Devotees Progress (${(monthly.devStats ? monthly.devStats.length : (weekly.devStats ? weekly.devStats.length : (data.rows ? data.rows.length : allDevs.length)))})
           </button>
         </div>
