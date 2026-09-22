@@ -14042,6 +14042,22 @@ function parseMorningCSV(text, specificDate){
         }
       });
     });
+
+    // Also include all registered active devotees from DB so they appear in daily attendance and connect to real data
+    allDbDevs.forEach(d => {
+      if(!d || !d.name) return;
+      if(d.appointment === 'BACE Administrator' || d.appointment === 'System Administrator') return;
+      if(d.name === 'ISKCON BACE Admin') return;
+      const k = d.id || d.name.toLowerCase().trim();
+      const alreadyHas = masterDevsMap.has(k) || Array.from(masterDevsMap.values()).some(existing => 
+        (existing.id && existing.id === d.id) || 
+        (existing.name && d.name && matchDevoteeFirstName(existing.name, d.name))
+      );
+      if(!alreadyHas){
+        masterDevsMap.set(k, d);
+      }
+    });
+
     const masterDevs = Array.from(masterDevsMap.values());
 
     // Build rows for ALL available dates ensuring ALL devotees are visible every day
@@ -14234,6 +14250,7 @@ function computeMorningMetrics(rows, date){
   const onTimeCount = rows.filter(r => r.status === 'On Time').length;
   const graceCount = rows.filter(r => r.status === 'Grace').length;
   const lateCount = rows.filter(r => r.status === 'Late').length;
+  const veryLateCount = rows.filter(r => r.status === 'Very late').length;
   const absentCount = rows.filter(r => r.status === 'Absent').length;
   const attended = total - absentCount;
 
@@ -14279,6 +14296,7 @@ function computeMorningMetrics(rows, date){
       onTimeCount,
       graceCount,
       lateCount,
+      veryLateCount,
       absentCount,
       onTimePct,
       punctualityScore,
@@ -14292,7 +14310,7 @@ function computeMorningMetrics(rows, date){
 }
 
 function getSampleMorningData(){
-  const devs = DB.devotees && DB.devotees.length ? DB.devotees : [
+  const devs = DB.devotees && DB.devotees.length ? DB.devotees.filter(d => d.appointment !== 'BACE Administrator' && d.appointment !== 'System Administrator' && d.name !== 'ISKCON BACE Admin') : [
     {id:'d1', name:'Sundar Gopal Das', appointment:'Area Leader'},
     {id:'d2', name:'Surya Kiran', appointment:'BACE Preaching Coordinator'},
     {id:'d3', name:'Radha Raman Das', appointment:'Deity Department Head'},
@@ -14309,7 +14327,7 @@ function getSampleMorningData(){
     ['', '04:30'],      ['04:20', '04:30']
   ];
 
-  const rawRows = devs.slice(0, 14).map((d, i) => {
+  const rawRows = devs.map((d, i) => {
     const t = times[i % times.length];
     return {
       name: d.name,
@@ -15026,7 +15044,29 @@ function morningProgramPanel(){
     </div>`;
   }
 
-  const m = data.metrics || computeMorningMetrics(data.rows || [], data.date || iso(TODAY));
+  const curDate = data.date || iso(TODAY);
+  const dailyBaseRows = (data.byDateRows && data.byDateRows[curDate]) ? data.byDateRows[curDate] : (data.rows || []);
+
+  // Connect and link each daily row with real live DB.devotees
+  dailyBaseRows.forEach(r => {
+    const realDev = (r.devoteeId && dv(r.devoteeId)) || (DB.devotees || []).find(d => d.name && (d.name.toLowerCase().trim() === (r.name||'').toLowerCase().trim() || matchDevoteeFirstName(r.name, d.name)));
+    if(realDev){
+      r.devoteeId = realDev.id;
+      r.name = realDev.name;
+      r.avatarName = realDev.avatarName || realDev.name;
+      r.devoteeInfo = realDev.appointment || (typeof dept === 'function' && dept(realDev.dept)?.name) || (typeof batch === 'function' && batch(realDev.batch)?.name) || 'Devotee';
+      if(realDev.morningStandardTime){
+        r.rawStd = realDev.morningStandardTime;
+        r.standardTime = realDev.morningStandardTime;
+        r.stdMin = parseTimeMinutes(realDev.morningStandardTime);
+        if(r.timeInMin != null){
+          r.diffMin = r.timeInMin - r.stdMin;
+        }
+      }
+    }
+  });
+
+  const m = computeMorningMetrics(dailyBaseRows, curDate);
   const filterSt = APP.morningFilterStatus || '';
   const activeBucket = APP.morningFilterBucket || '';
   const q = (APP.morningSearch || '').toLowerCase().trim();
@@ -15038,14 +15078,20 @@ function morningProgramPanel(){
   const monthly = data.monthly || computePeriodMorningMetrics(data.byDateRows || {}, data.availableDates || [data.date], data.date, 30);
 
   // Filter rows for Today's view
-  let rows = (data.rows || []).filter(r => {
+  let rows = dailyBaseRows.filter(r => {
     if(filterSt){
       if(filterSt === 'Attended'){
         if(r.status === 'Absent') return false;
+      } else if(filterSt === 'On Time'){
+        if(r.status !== 'On Time') return false;
+      } else if(filterSt === 'Grace'){
+        if(r.status !== 'Grace') return false;
       } else if(filterSt === 'Late'){
-        if(r.status !== 'Late' && r.status !== 'Very late') return false;
+        if(r.status !== 'Late') return false;
       } else if(filterSt === 'Very late'){
         if(r.status !== 'Very late') return false;
+      } else if(filterSt === 'Absent'){
+        if(r.status !== 'Absent') return false;
       } else if(r.status !== filterSt){
         return false;
       }
@@ -15053,34 +15099,41 @@ function morningProgramPanel(){
     if(activeBucket){
       if(getRowBucket(r) !== activeBucket) return false;
     }
-    if(q && !r.name.toLowerCase().includes(q) && !(r.devoteeInfo||'').toLowerCase().includes(q)) return false;
+    if(q){
+      const nameMatch = (r.name || '').toLowerCase().includes(q);
+      const infoMatch = (r.devoteeInfo || '').toLowerCase().includes(q);
+      const statusMatch = (r.status || '').toLowerCase().includes(q);
+      const timeMatch = (r.timeIn || '').toLowerCase().includes(q);
+      if(!nameMatch && !infoMatch && !statusMatch && !timeMatch) return false;
+    }
     return true;
   });
 
   const dailySort = APP.morningDailySort || 'punch_asc';
   rows.sort((a, b) => {
-    if(dailySort === 'name_asc') return a.name.localeCompare(b.name);
+    if(dailySort === 'name_asc') return (a.name || '').localeCompare(b.name || '');
+    if(dailySort === 'name_desc') return (b.name || '').localeCompare(a.name || '');
     if(dailySort === 'punch_desc'){
-      if(a.timeInMin == null && b.timeInMin == null) return a.name.localeCompare(b.name);
+      if(a.timeInMin == null && b.timeInMin == null) return (a.name || '').localeCompare(b.name || '');
       if(a.timeInMin == null) return 1;
       if(b.timeInMin == null) return -1;
-      return b.timeInMin - a.timeInMin;
+      return (b.timeInMin - a.timeInMin) || (a.name || '').localeCompare(b.name || '');
     }
     if(dailySort === 'status'){
       const score = st => st === 'On Time' ? 1 : (st === 'Grace' ? 2 : (st === 'Late' ? 3 : (st === 'Very late' ? 4 : 5)));
-      return score(a.status) - score(b.status) || (a.timeInMin || 9999) - (b.timeInMin || 9999);
+      return (score(a.status) - score(b.status)) || ((a.timeInMin || 9999) - (b.timeInMin || 9999)) || (a.name || '').localeCompare(b.name || '');
     }
     if(dailySort === 'absent_first'){
       const isAbsA = a.status === 'Absent' ? 0 : 1;
       const isAbsB = b.status === 'Absent' ? 0 : 1;
       if(isAbsA !== isAbsB) return isAbsA - isAbsB;
-      return a.name.localeCompare(b.name);
+      return ((a.timeInMin || 0) - (b.timeInMin || 0)) || (a.name || '').localeCompare(b.name || '');
     }
     // Default: punch_asc (Earliest punch first, Absents at bottom)
-    if(a.timeInMin == null && b.timeInMin == null) return a.name.localeCompare(b.name);
+    if(a.timeInMin == null && b.timeInMin == null) return (a.name || '').localeCompare(b.name || '');
     if(a.timeInMin == null) return 1;
     if(b.timeInMin == null) return -1;
-    return a.timeInMin - b.timeInMin;
+    return (a.timeInMin - b.timeInMin) || (a.name || '').localeCompare(b.name || '');
   });
 
   // DEVOTEES PROGRESS CALCULATION
@@ -15205,15 +15258,16 @@ function morningProgramPanel(){
           <div class="chips" style="margin:0">
             ${['','Attended','On Time','Grace','Late','Very late','Absent'].map(st => {
               const cnt = !st ? m.total : (st==='Attended'?m.attended : (st==='On Time'?m.onTimeCount : (st==='Grace'?m.graceCount : (st==='Late'?m.lateCount : (st==='Very late'?(m.veryLateCount||0) : m.absentCount)))));
-              return `<button class="chip ${filterSt===st?'on':''}" data-act="morning-filter-status" data-s="${st}" onclick="APP.morningFilterStatus='${st}';APP.morningFilterBucket='';render();" style="font-size:11.5px;padding:3px 9px;cursor:pointer">${st||'All'} (${cnt})</button>`;
+              return `<button class="chip ${filterSt===st?'on':''}" data-act="morning-filter-status" data-s="${st}" style="font-size:11.5px;padding:3px 9px;cursor:pointer">${st||'All'} (${cnt})</button>`;
             }).join('')}
           </div>
-          <select data-act="morning-daily-sort" onchange="APP.morningDailySort=this.value;render();" style="padding:6px 10px;font-size:12px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);cursor:pointer;margin-left:auto">
-            <option value="punch_asc" ${APP.morningDailySort==='punch_asc'||!APP.morningDailySort?'selected':''}>Sort: Earliest Punch First</option>
-            <option value="punch_desc" ${APP.morningDailySort==='punch_desc'?'selected':''}>Sort: Latest Punch First</option>
-            <option value="status" ${APP.morningDailySort==='status'?'selected':''}>Sort: Status (On Time → Absent)</option>
-            <option value="absent_first" ${APP.morningDailySort==='absent_first'?'selected':''}>Sort: Absent First</option>
-            <option value="name_asc" ${APP.morningDailySort==='name_asc'?'selected':''}>Sort: Devotee Name (A → Z)</option>
+          <select data-act="morning-daily-sort" style="padding:6px 10px;font-size:12px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);cursor:pointer;margin-left:auto">
+            <option value="punch_asc" ${dailySort==='punch_asc'?'selected':''}>Sort: Earliest Punch First</option>
+            <option value="punch_desc" ${dailySort==='punch_desc'?'selected':''}>Sort: Latest Punch First</option>
+            <option value="status" ${dailySort==='status'?'selected':''}>Sort: Status (On Time → Absent)</option>
+            <option value="absent_first" ${dailySort==='absent_first'?'selected':''}>Sort: Absent First</option>
+            <option value="name_asc" ${dailySort==='name_asc'?'selected':''}>Sort: Devotee Name (A → Z)</option>
+            <option value="name_desc" ${dailySort==='name_desc'?'selected':''}>Sort: Devotee Name (Z → A)</option>
           </select>
         </div>
 
@@ -15236,7 +15290,7 @@ function morningProgramPanel(){
               </tr>
             </thead>
             <tbody>
-              ${rows.map(r => `<tr>
+              ${rows.length ? rows.map(r => `<tr>
                 <td data-l="Devotee">
                   <div class="who">
                     ${av(r.avatarName || r.name)}
@@ -15268,7 +15322,16 @@ function morningProgramPanel(){
                 <td data-l="Profile">
                   ${r.devoteeId ? `<a class="btn sm" href="#/devotee/${r.devoteeId}">View</a>` : '—'}
                 </td>
-              </tr>`).join('')}
+              </tr>`).join('') : `
+                <tr>
+                  <td colspan="7" style="text-align:center;padding:32px 16px;color:var(--ink-3)">
+                    <div style="font-size:26px;margin-bottom:8px">🔍</div>
+                    <div style="font-weight:700;font-size:13.5px;color:var(--ink)">No devotee check-in records match the current filter</div>
+                    <div style="font-size:12px;margin-top:4px">Try selecting a different status filter or clearing your search.</div>
+                    <button class="btn sm ghost" data-act="morning-clear-filters" style="margin-top:12px;padding:4px 14px">Clear Filters</button>
+                  </td>
+                </tr>
+              `}
             </tbody>
           </table>
         </div>
@@ -15302,7 +15365,7 @@ function morningProgramPanel(){
             <span>🔍 Active Chart Filter:</span>
             <b>${esc(filterSt ? `Status: ${filterSt}` : `Arrival Window: ${activeBucket}`)}</b>
           </div>
-          <button class="btn sm" data-act="morning-clear-filters" onclick="APP.morningFilterStatus='';APP.morningFilterBucket='';render();" style="padding:2px 8px;font-size:11.5px">✕ Show All (${weekly.devStats.length})</button>
+          <button class="btn sm" data-act="morning-clear-filters" style="padding:2px 8px;font-size:11.5px">✕ Show All (${weekly.devStats.length})</button>
         </div>` : ''}
 
         <!-- Filter & Sort Toolbar (Weekly) -->
@@ -15428,7 +15491,7 @@ function morningProgramPanel(){
             <span>🔍 Active Chart Filter:</span>
             <b>${esc(filterSt ? `Status: ${filterSt}` : `Arrival Window: ${activeBucket}`)}</b>
           </div>
-          <button class="btn sm" data-act="morning-clear-filters" onclick="APP.morningFilterStatus='';APP.morningFilterBucket='';render();" style="padding:2px 8px;font-size:11.5px">✕ Show All (${monthly.devStats.length})</button>
+          <button class="btn sm" data-act="morning-clear-filters" style="padding:2px 8px;font-size:11.5px">✕ Show All (${monthly.devStats.length})</button>
         </div>` : ''}
 
         <!-- Filter & Sort Toolbar (Monthly) -->
@@ -20741,6 +20804,10 @@ function viewAttendance(){
   let tab = APP.tab.att || 'Morning programme';
   const tabs = ['Morning programme', 'Deity Department', 'Cleaning', 'Department Matrix'];
   if (!tabs.includes(tab)) tab = 'Morning programme';
+
+  if (tab === 'Morning programme' && !APP.morningData) {
+    loadMorningAttendanceFromBackend();
+  }
 
   return head('🏛️ BACE Pillars', 'Foundation to Healthy Growth', 'Morning program punctuality, Deity & Cleaning rosters, and Department Matrix')+
    `<div class="tabs">${tabs.map(t => `<button class="${t===tab?'on':''}" data-act="tab" data-k="att" data-v="${t}">${t}</button>`).join('')}</div>`+
