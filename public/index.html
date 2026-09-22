@@ -10473,8 +10473,8 @@ function dashboardCalendarWidget(){
       <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--line-2);text-align:left">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
           <span style="font-size:11.5px;font-weight:700;color:var(--ink);display:flex;align-items:center;gap:4px">
-            <span>📅 ${dayName?dayName+', ':''}${fmtLong(selDt)}</span>
-            ${selDt===iso(TODAY)?`<span class="badge sm" style="background:var(--accent-soft);color:var(--accent);font-size:9.5px;padding:1px 5px">Today</span>`:''}
+            <span style="cursor:pointer" data-act="dash-cal-nav" data-d="0" title="Click to view Today">📅 ${dayName?dayName+', ':''}${fmtLong(selDt)}</span>
+            ${selDt===iso(TODAY)?`<span class="badge sm" data-act="dash-cal-nav" data-d="0" role="button" style="background:var(--accent-soft);color:var(--accent);font-size:9.5px;padding:1px 5px;cursor:pointer" title="Currently viewing Today">Today</span>`:''}
           </span>
           <span class="badge sm" style="font-size:9.5px;padding:1px 5px;color:var(--ink-3)">${selActs.length} ${selActs.length===1?'event':'events'}</span>
         </div>
@@ -10490,6 +10490,7 @@ function dashboardCalendarWidget(){
         </div>
       </div>`;
   }
+  const isTodayActive = (offset === 0) && (!APP.filters.dashCalSelectedDate || APP.filters.dashCalSelectedDate === iso(TODAY));
   return section('📅 Calendar',`<div class="card-b">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
       <div style="display:flex;gap:4px">
@@ -10498,9 +10499,9 @@ function dashboardCalendarWidget(){
         <button class="btn sm ${calView==='month'?'pri':''}" data-act="dash-cal-view" data-v="month">Month</button>
       </div>
       <div style="display:flex;gap:4px;align-items:center">
-        <button class="btn sm" data-act="dash-cal-nav" data-d="-1">‹</button>
-        <button class="btn sm" data-act="dash-cal-nav" data-d="0" style="font-size:11px">Today</button>
-        <button class="btn sm" data-act="dash-cal-nav" data-d="1">›</button>
+        <button class="btn sm" data-act="dash-cal-nav" data-d="-1" title="Previous period">‹</button>
+        <button class="btn sm" data-act="dash-cal-nav" data-d="0" style="font-size:11px;font-weight:${isTodayActive?'700':'500'};${isTodayActive?'border-color:var(--accent);color:var(--accent);background:var(--accent-soft)':''}" title="${isTodayActive?'Viewing today':'Jump to Today'}">Today</button>
+        <button class="btn sm" data-act="dash-cal-nav" data-d="1" title="Next period">›</button>
       </div>
     </div>${content}</div>`,`<a class="btn sm" href="#/calendar">Full calendar</a>`);
 }
@@ -26714,8 +26715,25 @@ document.addEventListener('click',e=>{
     }
     break;
   }
-  case 'dash-cal-view':{stop();APP.filters.dashCalView=t.dataset.v;APP.filters.dashCalOff=0;render();break}
-  case 'dash-cal-nav':{stop();const d=parseInt(t.dataset.d,10);if(d===0)APP.filters.dashCalOff=0;else APP.filters.dashCalOff=(APP.filters.dashCalOff||0)+d;render();break}
+  case 'dash-cal-view':{stop();APP.filters.dashCalView=t.dataset.v;APP.filters.dashCalOff=0;APP.filters.dashCalSelectedDate=iso(TODAY);render();break}
+  case 'dash-cal-nav':{
+    stop();
+    if(!APP.filters) APP.filters={};
+    const d=parseInt(t.dataset.d,10);
+    if(d===0){
+      const isAlreadyOnToday = (APP.filters.dashCalOff === 0 || !APP.filters.dashCalOff) &&
+                               (!APP.filters.dashCalSelectedDate || APP.filters.dashCalSelectedDate === iso(TODAY));
+      APP.filters.dashCalOff = 0;
+      APP.filters.dashCalSelectedDate = iso(TODAY);
+      if(isAlreadyOnToday){
+        toast("Today is " + fmtLong(iso(TODAY)), '📅');
+      }
+    } else {
+      APP.filters.dashCalOff=(APP.filters.dashCalOff||0)+d;
+    }
+    render();
+    break;
+  }
   case 'dash-cal-day':{
     stop();
     const dt=t.dataset.d;
