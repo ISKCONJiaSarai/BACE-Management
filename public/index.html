@@ -7,6 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <meta name="theme-color" content="#FF6600">
+<meta name="color-scheme" content="light dark">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -25,6 +26,7 @@
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 :root{
+  color-scheme: light;
   --paper:#F8FAFC; --paper-2:#F1F5F9; --surface:#FFFFFF; --surface-2:#F8FAFC;
   --ink:#0F172A; --ink-2:#334155; --ink-3:#64748B; --line:#E2E8F0; --line-2:#EDF2F7;
   --saffron:#FF6600; --saffron-2:#EA580C; --saffron-soft:#FFF7ED; --saffron-glow:rgba(255,102,0,0.28);
@@ -56,6 +58,7 @@
   --glass-border:rgba(226,232,240,.7);
 }
 [data-theme="dark"]{
+  color-scheme: dark;
   --paper:#090D16; --paper-2:#0F172A; --surface:#151D2F; --surface-2:#1E293B;
   --ink:#F8FAFC; --ink-2:#CBD5E1; --ink-3:#94A3B8; --line:#26354A; --line-2:#1E293B;
   --saffron:#FF7A00; --saffron-2:#EA580C; --saffron-soft:rgba(255,122,0,.15); --saffron-glow:rgba(255,122,0,.35);
@@ -5670,6 +5673,83 @@ a.card:hover, button.card:hover, .card.hoverable:hover {
     transition: none !important;
     animation: none !important;
   }
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
+
+/* =====================================================================
+   SILKY SMOOTH THEME VIEW TRANSITIONS & FALLBACK INTERPOLATION
+   ===================================================================== */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none !important;
+  mix-blend-mode: normal !important;
+  transform-origin: center center;
+}
+::view-transition-old(root) {
+  z-index: 1;
+}
+::view-transition-new(root) {
+  z-index: 99999;
+}
+
+/* Fallback: when View Transitions API is unavailable or reduced motion is active */
+html.theme-transitioning,
+html.theme-transitioning body,
+html.theme-transitioning .app-header,
+html.theme-transitioning .sidebar,
+html.theme-transitioning .today-panel,
+html.theme-transitioning .view,
+html.theme-transitioning .card,
+html.theme-transitioning .stat,
+html.theme-transitioning .botnav,
+html.theme-transitioning .theme-toggle,
+html.theme-transitioning .icon-btn,
+html.theme-transitioning .btn,
+html.theme-transitioning .header-nav-link,
+html.theme-transitioning .header-dropdown-menu,
+html.theme-transitioning input,
+html.theme-transitioning select,
+html.theme-transitioning textarea,
+html.theme-transitioning table.tbl,
+html.theme-transitioning table.tbl tr,
+html.theme-transitioning table.tbl td,
+html.theme-transitioning table.tbl th,
+html.theme-transitioning .pillar-card,
+html.theme-transitioning .pillar-item {
+  transition: background-color 0.36s cubic-bezier(0.16, 1, 0.3, 1),
+              background 0.36s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.36s cubic-bezier(0.16, 1, 0.3, 1),
+              color 0.26s ease,
+              box-shadow 0.36s cubic-bezier(0.16, 1, 0.3, 1),
+              fill 0.26s ease,
+              stroke 0.26s ease !important;
+  transition-delay: 0s !important;
+}
+
+/* Theme toggle button micro-animation & tactile spin */
+.theme-toggle {
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+              background 0.22s ease,
+              border-color 0.22s ease,
+              box-shadow 0.22s ease !important;
+}
+.theme-toggle:active {
+  transform: scale(0.90) !important;
+}
+.theme-toggle svg {
+  width: 17px;
+  height: 17px;
+  transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.25s ease !important;
+  display: block;
+}
+.theme-toggle.is-animating svg {
+  transform: rotate(360deg) scale(0.75);
 }
 
 </style>
@@ -8230,6 +8310,9 @@ function topNavMusicBtn(isMobile = false) {
     ${isP ? pauseSvg : playSvg}
   </button>`;
 }
+const SUN_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`;
+const MOON_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`;
+
 /* ========== NEW APP HEADER (replaces sidebar) ========== */
 function appHeader(){
   const unread=DB.notifications.filter(n=>!n.read).length;
@@ -8263,15 +8346,17 @@ function appHeader(){
     {t:'Calendar',r:'#/calendar',m:'calendar'},
     {t:'Reports',r:'#/reports',m:'reports'},
   ];
-  const route=APP.route.replace(/^#\/?/,'').split('/')[0];
-  const cleanRoute=APP.route.replace(/^#\/?/,'');
+  const currentPillar = typeof pillarOf === 'function' ? pillarOf(APP.route) : '';
+  const cleanRoute=(APP.route||'').replace(/^#\/?/,'');
+  const route=cleanRoute.split('/')[0];
   const mgmtRoutes=['mgmt','depts','dept','assign','attendance','dept-reports','inventory','sops'];
   const preachRoutes=['preaching','batches','batch','contacts','followups','classes','batch-attendance'];
   const careRoutes=['care','friends','groups','group','swabhav','sadhana','facilitators','camps','meetings','care-followups','care-reports'];
   function isActive(r){
-    const seg=r.replace(/^#\//,'');
-    if(seg==='')return route===''||route==='today';
-    if(seg==='devotees')return route==='devotees'||route==='devotee';
+    const seg=r.replace(/^#\/?/,'');
+    if(!seg)return cleanRoute==='';
+    if(cleanRoute===seg)return true;
+    if(cleanRoute.startsWith(seg+'/'))return true;
     if(seg==='mgmt')return mgmtRoutes.includes(route);
     if(seg==='preaching')return preachRoutes.includes(route);
     if(seg==='care')return careRoutes.includes(route);
@@ -8283,8 +8368,8 @@ function appHeader(){
     const seg=r.replace(/^#\/?/,'');
     return cleanRoute===seg || (seg!=='' && cleanRoute.startsWith(seg+'/'));
   }
-  const sunSvg=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`;
-  const moonSvg=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`;
+  const sunSvg=SUN_SVG;
+  const moonSvg=MOON_SVG;
   const navArrowSvg=`<svg class="nav-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>`;
 
   function renderNavItem(i){
@@ -25959,6 +26044,91 @@ async function rejectDevoteeAction(id){
 /* =========================================================================
    EVENT HANDLING
    ========================================================================= */
+function toggleThemeWithAnimation(e, targetBtn){
+  const nextTheme = APP.theme === 'dark' ? 'light' : 'dark';
+  const btns = document.querySelectorAll('.theme-toggle');
+  
+  btns.forEach(b => {
+    b.classList.add('is-animating');
+  });
+
+  const applyNewTheme = () => {
+    APP.theme = nextTheme;
+    try { localStorage.setItem('bace_theme', APP.theme); } catch(err){}
+    document.documentElement.setAttribute('data-theme', APP.theme);
+    document.documentElement.style.colorScheme = APP.theme;
+    
+    const metaTheme = document.querySelector('meta[name="theme-color"]');
+    if(metaTheme){
+      metaTheme.content = APP.theme === 'dark' ? '#090D16' : '#FF6600';
+    }
+
+    btns.forEach(b => {
+      b.innerHTML = APP.theme === 'dark' ? SUN_SVG : MOON_SVG;
+      b.setAttribute('title', APP.theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
+    });
+  };
+
+  const btnEl = targetBtn || document.querySelector('.theme-toggle');
+  const rect = btnEl ? btnEl.getBoundingClientRect() : null;
+  const x = (e && typeof e.clientX === 'number' && e.clientX > 0)
+    ? e.clientX
+    : (rect ? rect.left + rect.width / 2 : window.innerWidth / 2);
+  const y = (e && typeof e.clientY === 'number' && e.clientY > 0)
+    ? e.clientY
+    : (rect ? rect.top + rect.height / 2 : 28);
+
+  const endRadius = Math.hypot(
+    Math.max(x, window.innerWidth - x),
+    Math.max(y, window.innerHeight - y)
+  );
+
+  const reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  if(!document.startViewTransition || reducedMotion){
+    document.documentElement.classList.add('theme-transitioning');
+    applyNewTheme();
+    setTimeout(() => {
+      document.documentElement.classList.remove('theme-transitioning');
+      btns.forEach(b => b.classList.remove('is-animating'));
+    }, 400);
+    return;
+  }
+
+  try {
+    const transition = document.startViewTransition(() => {
+      applyNewTheme();
+    });
+
+    transition.ready.then(() => {
+      const clipPath = [
+        `circle(0px at ${x}px ${y}px)`,
+        `circle(${endRadius}px at ${x}px ${y}px)`
+      ];
+      
+      const anim = document.documentElement.animate(
+        {
+          clipPath: clipPath
+        },
+        {
+          duration: 480,
+          easing: 'cubic-bezier(0.2, 0, 0, 1)',
+          pseudoElement: '::view-transition-new(root)'
+        }
+      );
+      
+      anim.onfinish = () => {
+        btns.forEach(b => b.classList.remove('is-animating'));
+      };
+    }).catch(() => {
+      btns.forEach(b => b.classList.remove('is-animating'));
+    });
+  } catch(err) {
+    applyNewTheme();
+    btns.forEach(b => b.classList.remove('is-animating'));
+  }
+}
+
 function refocus(sel,caretEnd=true){
   const el=document.querySelector(sel);if(!el)return;
   el.focus();if(caretEnd&&el.setSelectionRange&&el.type!=='date'&&el.type!=='number'){const v=el.value;try{el.setSelectionRange(v.length,v.length)}catch(e){}}
@@ -26427,11 +26597,7 @@ document.addEventListener('click',e=>{
     }
     render();break}
   case 'toggle-theme':{stop();
-    APP.theme=APP.theme==='dark'?'light':'dark';
-    localStorage.setItem('bace_theme',APP.theme);
-    document.documentElement.setAttribute('data-theme',APP.theme);
-    const btn=document.querySelector('.theme-toggle');
-    if(btn) btn.innerHTML=APP.theme==='dark'?'☀️':'🌙';
+    toggleThemeWithAnimation(e, t);
     break}
   case 'toggle-today-panel':{stop();
     setTodayPanelOpen(!APP.todayPanelOpen);
