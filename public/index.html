@@ -5461,6 +5461,31 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-off
     text-decoration: none !important;
     white-space: nowrap !important;
   }
+  .lb-card-wrap {
+    border-bottom: 1px solid var(--line-2);
+    transition: background 0.15s ease;
+  }
+  .lb-card-wrap.is-expanded {
+    background: #F8FAFC !important;
+    border-bottom: 1.5px solid var(--line) !important;
+  }
+  .lb-card-wrap.is-expanded .lb-row {
+    border-bottom: none !important;
+    background: #F8FAFC !important;
+  }
+  .lb-expand-indicator {
+    font-size: 9px !important;
+    color: var(--ink-3) !important;
+    cursor: pointer !important;
+    flex-shrink: 0 !important;
+    padding: 2px 4px !important;
+    user-select: none !important;
+  }
+  .lb-dev-details {
+    padding: 6px 12px 12px 14px !important;
+    background: #F8FAFC !important;
+    border-top: 1px dashed var(--line-2) !important;
+  }
 
   /* ── 9. Three-Bucket Summary Bar ── */
   .three-bucket-bar {
@@ -16132,6 +16157,102 @@ function filterAndSortMorningPeriodDevs(devList, q = '', attFilter = '', puncFil
   return list;
 }
 
+window.toggleMorningDevExpand = function(periodKey, devId, evt) {
+  if (evt && evt.target.closest('a, button, input')) return;
+  APP.expandedMorningDevs = APP.expandedMorningDevs || {};
+  const k = periodKey + '_' + devId;
+  APP.expandedMorningDevs[k] = !APP.expandedMorningDevs[k];
+  const isOpen = APP.expandedMorningDevs[k];
+
+  const wrap = document.getElementById('mdev-wrap-' + periodKey + '-' + devId);
+  const detail = document.getElementById('mdev-detail-' + periodKey + '-' + devId);
+  const chev = document.getElementById('mdev-chev-' + periodKey + '-' + devId);
+
+  if (detail) {
+    detail.style.display = isOpen ? 'block' : 'none';
+  }
+  if (wrap) {
+    wrap.classList.toggle('is-expanded', isOpen);
+  }
+  if (chev) {
+    chev.textContent = isOpen ? '▲' : '▼';
+  }
+};
+
+function renderMorningDevoteeMobileRow(d, i, periodKey, totalSessions) {
+  const dotCls = d.attendanceRate >= 80 ? 'green' : d.attendanceRate >= 50 ? 'yellow' : 'red';
+  const barFilled = Math.round((d.attendanceRate / 100) * 5);
+  const bars = Array.from({length:5},(_,bi) => `<div class="lb-bar-block ${bi < barFilled ? 'green-filled' : ''}"></div>`).join('');
+  const pctColor = d.attendanceRate >= 80 ? '#10B981' : d.attendanceRate >= 50 ? '#F59E0B' : '#EF4444';
+  
+  APP.expandedMorningDevs = APP.expandedMorningDevs || {};
+  const isExp = !!APP.expandedMorningDevs[`${periodKey}_${d.devotee.id}`];
+
+  const punches = (d.dailyPunches || []).slice(-7);
+  const punchesHtml = punches.length ? `
+    <div style="margin-top:4px">
+      <div style="font-size:10.5px;font-weight:700;color:var(--ink-3);margin-bottom:4px">📅 Recent Sessions (${punches.length}):</div>
+      <div style="display:flex;gap:5px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:3px">
+        ${punches.map(p => {
+          const isPres = p.status !== 'Absent';
+          const col = p.status === 'On Time' ? '#059669' : (p.status === 'Grace' ? '#D97706' : (p.status === 'Late' ? '#DC2626' : '#64748B'));
+          const bg = p.status === 'On Time' ? '#ECFDF5' : (p.status === 'Grace' ? '#FEF3C7' : (p.status === 'Late' ? '#FEF2F2' : '#F1F5F9'));
+          const dLabel = p.date ? fmtD(p.date) : '';
+          return `<div style="flex:1 0 auto;min-width:64px;background:${bg};border-radius:6px;padding:3px 5px;text-align:center;border:1px solid ${col}26">
+            <div style="font-size:9.5px;color:var(--ink-3);font-weight:600">${dLabel}</div>
+            <div style="font-size:10.5px;font-weight:700;color:${col}">${p.time && p.time !== '—' ? p.time : (isPres ? 'In' : 'Absent')}</div>
+            <div style="font-size:9px;color:${col};font-weight:600">${p.status}</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>` : '';
+
+  return `
+  <div class="lb-card-wrap ${isExp ? 'is-expanded' : ''}" id="mdev-wrap-${periodKey}-${d.devotee.id}">
+    <div class="lb-row" onclick="window.toggleMorningDevExpand('${periodKey}', '${d.devotee.id}', event)">
+      <span class="lb-rank">${i+1}</span>
+      <span class="lb-dot ${dotCls}"></span>
+      <span class="lb-name">
+        ${esc(d.name)}
+        <small>${d.presentCount}/${totalSessions} sessions · ${d.standardTime}</small>
+      </span>
+      <div class="lb-bar-wrap">${bars}</div>
+      <span class="lb-pct" style="color:${pctColor}">${d.attendanceRate}%</span>
+      <span class="lb-icon" title="Punctuality">${d.punctualityRate>=80?'⏱️✅':d.punctualityRate>=50?'⏱️🟡':'⏱️🔴'}</span>
+      <span class="lb-expand-indicator" id="mdev-chev-${periodKey}-${d.devotee.id}">${isExp ? '▲' : '▼'}</span>
+      <a class="lb-action" href="#/devotee/${d.devotee.id}" onclick="event.stopPropagation()" title="View profile">👤</a>
+    </div>
+
+    <!-- EXPANDED DETAILS -->
+    <div class="lb-dev-details" id="mdev-detail-${periodKey}-${d.devotee.id}" style="${isExp ? 'display:block' : 'display:none'}">
+      <!-- Attendance Counts -->
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+        <span style="background:#ECFDF5;color:#065F46;border-radius:12px;padding:2px 8px;font-size:11px;font-weight:600">✅ ${d.onTimeCount} On Time</span>
+        <span style="background:#FEF3C7;color:#92400E;border-radius:12px;padding:2px 8px;font-size:11px;font-weight:600">⏳ ${d.graceCount} Grace</span>
+        <span style="background:#FEE2E2;color:#991B1B;border-radius:12px;padding:2px 8px;font-size:11px;font-weight:600">⚠️ ${d.lateCount} Late</span>
+        <span style="background:#F1F5F9;color:#475569;border-radius:12px;padding:2px 8px;font-size:11px;font-weight:600">❌ ${d.absentCount} Absent</span>
+      </div>
+
+      <!-- Quick Metrics Strip -->
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;font-size:11px;color:var(--ink-2);margin-bottom:8px;padding:6px 8px;background:var(--surface);border-radius:6px;border:1px solid var(--line-2)">
+        <div>🎯 <b>Target:</b> ${d.standardTime}</div>
+        <div>⏱️ <b>Punctuality:</b> <b style="color:${d.punctualityRate>=80?'var(--green)':'var(--mustard)'}">${d.punctualityRate}%</b></div>
+        <div>🏷️ <b>Badge:</b> ${d.statusBadge || 'Regular'}</div>
+        ${d.attendanceGrowthDelta !== undefined ? `<div>📈 <b>Trend:</b> <span style="color:${d.attendanceGrowthDelta>=0?'var(--green)':'var(--danger)'};font-weight:700">${d.attendanceGrowthDelta>=0?'+':''}${d.attendanceGrowthDelta}%</span></div>` : ''}
+      </div>
+
+      <!-- Daily punches -->
+      ${punchesHtml}
+
+      <!-- Bottom action buttons -->
+      <div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-top:8px">
+        <button type="button" class="btn sm" data-act="edit-devotee-morning-std" data-id="${d.devotee.id}" style="padding:4px 9px;font-size:11px;gap:3px">✏️ Edit Target</button>
+        <a class="btn sm pri" href="#/devotee/${d.devotee.id}" style="padding:4px 9px;font-size:11px;gap:3px">👤 Devotee Profile</a>
+      </div>
+    </div>
+  </div>`;
+}
+
 function filterAndSortMorningProgressDevs(devList, q = '', growthFilter = '', punctFilter = '', sortMode = 'growth_desc') {
   let list = (devList || []).slice();
   if (q) {
@@ -16683,24 +16804,7 @@ function morningProgramPanel(){
               .map(({v,label}) => `<button class="lb-chip ${(APP.morningAttFilter||'')=== v?'active':''}" onclick="APP.morningAttFilter='${v}';render();">${label}</button>`).join('')}
           </div>
           <div>
-            ${filterAndSortMorningPeriodDevs(weekly.devStats, q, APP.morningAttFilter, APP.morningPuncFilter, APP.morningSort).map((d, i) => {
-              const dotCls = d.attendanceRate >= 80 ? 'green' : d.attendanceRate >= 50 ? 'yellow' : 'red';
-              const barFilled = Math.round((d.attendanceRate / 100) * 5);
-              const bars = Array.from({length:5},(_,bi) => `<div class="lb-bar-block ${bi < barFilled ? 'green-filled' : ''}"></div>`).join('');
-              const pctColor = d.attendanceRate>=80?'#10B981':d.attendanceRate>=50?'#F59E0B':'#EF4444';
-              return `<div class="lb-row">
-                <span class="lb-rank">${i+1}</span>
-                <span class="lb-dot ${dotCls}"></span>
-                <span class="lb-name">
-                  ${esc(d.name)}
-                  <small>${d.presentCount}/${weekly.totalSessions} sessions · ${d.standardTime}</small>
-                </span>
-                <div class="lb-bar-wrap">${bars}</div>
-                <span class="lb-pct" style="color:${pctColor}">${d.attendanceRate}%</span>
-                <span class="lb-icon" title="Punctuality">${d.punctualityRate>=80?'⏱️✅':d.punctualityRate>=50?'⏱️🟡':'⏱️🔴'}</span>
-                <a class="lb-action" href="#/devotee/${d.devotee.id}">👤</a>
-              </div>`;
-            }).join('')}
+            ${filterAndSortMorningPeriodDevs(weekly.devStats, q, APP.morningAttFilter, APP.morningPuncFilter, APP.morningSort).map((d, i) => renderMorningDevoteeMobileRow(d, i, 'weekly', weekly.totalSessions)).join('')}
           </div>
         </div>
       </div>
@@ -16841,24 +16945,7 @@ function morningProgramPanel(){
               .map(({v,label}) => `<button class="lb-chip ${(APP.morningAttFilter||'')=== v?'active':''}" onclick="APP.morningAttFilter='${v}';render();">${label}</button>`).join('')}
           </div>
           <div>
-            ${filterAndSortMorningPeriodDevs(monthly.devStats, q, APP.morningAttFilter, APP.morningPuncFilter, APP.morningSort).map((d, i) => {
-              const dotCls = d.attendanceRate >= 80 ? 'green' : d.attendanceRate >= 50 ? 'yellow' : 'red';
-              const barFilled = Math.round((d.attendanceRate / 100) * 5);
-              const bars = Array.from({length:5},(_,bi) => `<div class="lb-bar-block ${bi < barFilled ? 'green-filled' : ''}"></div>`).join('');
-              const pctColor = d.attendanceRate>=80?'#10B981':d.attendanceRate>=50?'#F59E0B':'#EF4444';
-              return `<div class="lb-row">
-                <span class="lb-rank">${i+1}</span>
-                <span class="lb-dot ${dotCls}"></span>
-                <span class="lb-name">
-                  ${esc(d.name)}
-                  <small>${d.presentCount}/${monthly.totalSessions} sessions · Att: ${d.attendanceRate}%</small>
-                </span>
-                <div class="lb-bar-wrap">${bars}</div>
-                <span class="lb-pct" style="color:${pctColor}">${d.attendanceRate}%</span>
-                <span class="lb-icon" title="Punctuality">${d.punctualityRate>=80?'⏱️✅':d.punctualityRate>=50?'⏱️🟡':'⏱️🔴'}</span>
-                <a class="lb-action" href="#/devotee/${d.devotee.id}">👤</a>
-              </div>`;
-            }).join('')}
+            ${filterAndSortMorningPeriodDevs(monthly.devStats, q, APP.morningAttFilter, APP.morningPuncFilter, APP.morningSort).map((d, i) => renderMorningDevoteeMobileRow(d, i, 'monthly', monthly.totalSessions)).join('')}
           </div>
         </div>
       </div>
