@@ -16163,7 +16163,8 @@ function morningProgramPanel(){
   const activeBucket = APP.morningFilterBucket || '';
   const q = (APP.morningSearch || '').toLowerCase().trim();
   const reportView = APP.morningReportView || 'today'; // 'today' | 'weekly' | 'monthly'
-  const progTab = APP.morningSubTab || 'report'; // 'report' | 'progress'
+  const morningTab = APP.tab?.morningTab || APP.morningSubTab || 'report'; // 'report' | 'progress'
+  const progTab = morningTab;
 
   const allDevs = (DB && DB.devotees) || [];
   const weekly = data.weekly || computePeriodMorningMetrics(data.byDateRows || {}, data.availableDates || [data.date], data.date, 7);
@@ -16259,6 +16260,18 @@ function morningProgramPanel(){
       </div>
     </div>
 
+    <!-- Tabs: Attendance Report & Devotees Progress (Side-by-side) -->
+    <div class="tabs" style="margin-bottom:16px">
+      <button class="${morningTab==='report'?'on':''}" data-act="tab" data-k="morningTab" data-v="report" style="display:inline-flex;align-items:center;gap:6px">
+        <span>📋 Morning Programme Attendance Report</span>
+      </button>
+      <button class="${morningTab==='progress'?'on':''}" data-act="tab" data-k="morningTab" data-v="progress" style="display:inline-flex;align-items:center;gap:6px">
+        <span>🏆 Devotees Progress &amp; Percentage Growth</span>
+        <span class="badge sm" style="background:var(--accent-soft);color:var(--accent);font-weight:700">${(monthly.devStats ? monthly.devStats.length : (weekly.devStats ? weekly.devStats.length : (data.rows ? data.rows.length : allDevs.length)))}</span>
+      </button>
+    </div>
+
+    ${morningTab === 'report' ? `
     <!-- ATTENDANCE REPORT: TODAY, WEEKLY, AND MONTHLY VIEW -->
     <div class="card" style="margin-bottom:16px">
       <div class="card-h morning-report-header" style="border-bottom:1px solid var(--line-2);padding:12px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
@@ -16784,7 +16797,7 @@ function morningProgramPanel(){
       </div>
       `)}
     </div>
-
+    ` : `
     <!-- DEVOTEES PROGRESS SECTION: WITH WEEK-OVER-WEEK & MONTH-OVER-MONTH PERCENTAGE GROWTH -->
     <div class="card" style="margin-bottom:16px">
       <div class="card-h" style="border-bottom:1px solid var(--line-2);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
@@ -17004,6 +17017,7 @@ function morningProgramPanel(){
         })()}
       </div>
     </div>
+    `}
   </div>`;
 }
 
@@ -29684,6 +29698,8 @@ document.addEventListener('click',e=>{
     break;
   }
   case 'morning-subtab':stop();{
+    if(!APP.tab) APP.tab = {};
+    APP.tab.morningTab = t.dataset.v || 'report';
     APP.morningSubTab = t.dataset.v || 'report';
     render();
     break;
