@@ -5560,6 +5560,37 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-off
   .sd-pills-row { margin-top: 8px !important; gap: 6px !important; flex-wrap: nowrap !important; overflow-x: auto !important; -webkit-overflow-scrolling: touch !important; scrollbar-width: none !important; padding-bottom: 2px !important; }
   .sd-pills-row::-webkit-scrollbar { display: none !important; }
   .sd-pill { padding: 3px 8px !important; font-size: 11px !important; white-space: nowrap !important; flex-shrink: 0 !important; }
+
+  /* Mobile BACE Pillars Top Tabs: All 4 visible without horizontal scroll */
+  .bace-pillars-tabs {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    width: 100% !important;
+    overflow-x: hidden !important;
+    gap: 2px !important;
+    margin-bottom: 14px !important;
+    border-bottom: 1.5px solid var(--line) !important;
+  }
+  .bace-pillars-tabs button {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    padding: 6px 2px 8px !important;
+    font-size: clamp(10px, 2.75vw, 11.5px) !important;
+    font-weight: 500 !important;
+    line-height: 1.2 !important;
+    white-space: normal !important;
+    word-break: normal !important;
+    min-height: 40px !important;
+    border-bottom: 2.5px solid transparent !important;
+    box-sizing: border-box !important;
+  }
+  .bace-pillars-tabs button.on {
+    color: var(--ink) !important;
+    border-bottom-color: var(--accent) !important;
+    font-weight: 700 !important;
+  }
 }
 
 /* Desktop: hide mobile-only elements */
@@ -22350,7 +22381,7 @@ function viewAttendance(){
   }
 
   return head('🏛️ Temple Operations', 'BACE Pillars', 'Morning program punctuality, Deity & Cleaning rosters, and Department Matrix')+
-   `<div class="tabs">${tabs.map(t => `<button class="${t===tab?'on':''}" data-act="tab" data-k="att" data-v="${t}">${t}</button>`).join('')}</div>`+
+   `<div class="tabs bace-pillars-tabs">${tabs.map(t => `<button class="${t===tab?'on':''}" data-act="tab" data-k="att" data-v="${t}">${t}</button>`).join('')}</div>`+
    (tab === 'Morning programme' ? morningProgramPanel()
    : tab === 'Deity Department' ? deityDepartmentPanel()
    : tab === 'Cleaning' ? cleaningDepartmentPanel()
