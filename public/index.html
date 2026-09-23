@@ -1683,6 +1683,8 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
 .morning-view-btn-group{display:inline-flex;border:1.5px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)}
 .morning-report-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .morning-report-subrow{display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap}
+.morning-period-picker{display:inline-flex;align-items:center;gap:6px}
+.morning-period-select{padding:4px 8px;font-size:12px;font-weight:600;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);cursor:pointer}
 .morning-btn-text{display:inline}
 @media(max-width:768px){
   .morning-top-actions{width:100% !important;display:flex !important;gap:6px !important;flex-wrap:wrap !important}
@@ -1700,6 +1702,9 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
   .morning-report-subrow .morning-exact-date-picker button{flex:none !important;width:auto !important;padding:4px 7px !important;font-size:11px !important}
   .morning-report-subrow .morning-exact-date-picker input{flex:1 1 auto !important;min-width:90px !important;max-width:130px !important;width:auto !important;padding:3px 5px !important;font-size:11px !important}
   .morning-report-subrow .morning-exact-date-picker select{display:none !important}
+  .morning-report-subrow .morning-period-picker{display:flex !important;flex-direction:row !important;align-items:center !important;gap:4px !important;flex:1 1 auto !important;min-width:0 !important;width:auto !important}
+  .morning-report-subrow .morning-period-select{flex:1 1 auto !important;min-width:0 !important;max-width:165px !important;width:auto !important;padding:4px 6px !important;font-size:11px !important;text-overflow:ellipsis !important}
+  .morning-report-subrow .morning-period-picker-label span{display:none !important}
   .morning-report-subrow > button,.morning-report-subrow > div > button{flex:none !important;width:auto !important;padding:4px 7px !important;font-size:11px !important;white-space:nowrap !important}
   .morning-btn-text{display:none !important}
   /* Compact Morning Punctuality Breakdown card for mobile */
@@ -9271,14 +9276,29 @@ async function shareMorningAttendanceReport(){
     toast('No morning attendance log loaded to share', '⚠️');
     return;
   }
-  const m = data.metrics || computeMorningMetrics(data.rows || [], data.date || iso(TODAY));
-  const dateStr = fmtExactDate(data.date || iso(TODAY));
-  const reportText = `🌅 *ISKCON BACE Jia Sarai*\n*Morning Programme Attendance Report*\n📅 Date: ${dateStr}\n\n👥 *Total Present:* ${m.totalPresent || 0} / ${m.totalRegistered || (data.rows||[]).length}\n⏰ *On Time (by 04:30):* ${m.onTimeCount || 0}\n⏱️ *Grace (by 05:30):* ${m.graceCount || 0}\n⚠️ *Late (by 06:30):* ${m.lateCount || 0}\n❌ *Absent / Not Marked:* ${m.absentCount || 0}\n📈 *Punctuality Rate:* ${m.punctualityRate || 0}%\n\n_Hare Krishna!_`;
+  const rView = APP.morningReportView || 'today';
+  let reportText = '';
+  let titleStr = '';
+
+  if (rView === 'weekly' && data.weekly) {
+    const w = data.weekly;
+    titleStr = `Morning Attendance Weekly Report (${fmtD(w.startDate)} — ${fmtD(w.endDate)})`;
+    reportText = `🌅 *ISKCON BACE Jia Sarai*\n*Morning Programme Weekly Report*\n🗓️ Period: ${fmtD(w.startDate)} — ${fmtD(w.endDate)} (${w.totalSessions} Sessions)\n\n👥 *Devotees Logged:* ${w.devStats.length}\n✅ *Weekly Attendance:* ${w.avgAttendancePct}% (${w.totalAttended} / ${w.totalPossible})\n⏱️ *Weekly Punctuality:* ${w.avgPunctualityPct}%\n🌟 *Star Sadhakas (≥80%):* ${w.devStats.filter(d=>d.attendanceRate>=80).length}\n\n_Hare Krishna!_`;
+  } else if (rView === 'monthly' && data.monthly) {
+    const mo = data.monthly;
+    titleStr = `Morning Attendance Monthly Report (${fmtD(mo.startDate)} — ${fmtD(mo.endDate)})`;
+    reportText = `🌅 *ISKCON BACE Jia Sarai*\n*Morning Programme Monthly Report*\n📊 Period: ${fmtD(mo.startDate)} — ${fmtD(mo.endDate)} (${mo.totalSessions} Sessions)\n\n👥 *Devotees Logged:* ${mo.devStats.length}\n✅ *Monthly Attendance:* ${mo.avgAttendancePct}% (${mo.totalAttended} / ${mo.totalPossible})\n⏱️ *Monthly Punctuality:* ${mo.avgPunctualityPct}%\n🌟 *Star Sadhakas (≥80%):* ${mo.devStats.filter(d=>d.attendanceRate>=80).length}\n\n_Hare Krishna!_`;
+  } else {
+    const m = data.metrics || computeMorningMetrics(data.rows || [], data.date || iso(TODAY));
+    const dateStr = fmtExactDate(data.date || iso(TODAY));
+    titleStr = `Morning Attendance Report — ${dateStr}`;
+    reportText = `🌅 *ISKCON BACE Jia Sarai*\n*Morning Programme Attendance Report*\n📅 Date: ${dateStr}\n\n👥 *Total Present:* ${m.totalPresent || 0} / ${m.totalRegistered || (data.rows||[]).length}\n⏰ *On Time (by 04:30):* ${m.onTimeCount || 0}\n⏱️ *Grace (by 05:30):* ${m.graceCount || 0}\n⚠️ *Late (by 06:30):* ${m.lateCount || 0}\n❌ *Absent / Not Marked:* ${m.absentCount || 0}\n📈 *Punctuality Rate:* ${m.punctualityRate || 0}%\n\n_Hare Krishna!_`;
+  }
 
   if(navigator.share){
     try {
       await navigator.share({
-        title: `Morning Attendance Report — ${dateStr}`,
+        title: titleStr,
         text: reportText
       });
       return;
@@ -14209,17 +14229,126 @@ function matchDevoteeFirstName(bioName, dbName) {
   return false;
 }
 
-function computePeriodMorningMetrics(byDate, availableDates, targetDate, numDays) {
-  const targetIdx = availableDates.indexOf(targetDate);
-  const endIdx = targetIdx >= 0 ? targetIdx : availableDates.length - 1;
-  const startIdx = Math.max(0, endIdx - numDays + 1);
-  const periodDates = availableDates.slice(startIdx, endIdx + 1);
-  const totalSessions = periodDates.length;
+function getMorningAvailableWeeks(availableDates) {
+  if (!availableDates || !availableDates.length) return [];
+  const sortedDates = availableDates.slice().sort();
+  const weeks = [];
 
-  // Previous period for week-over-week or month-over-month growth comparison
-  const prevEndIdx = startIdx - 1;
-  const prevStartIdx = Math.max(0, prevEndIdx - numDays + 1);
-  const prevPeriodDates = prevEndIdx >= 0 ? availableDates.slice(prevStartIdx, prevEndIdx + 1) : [];
+  // 1. "Latest 7 Sessions" if there are multiple sessions
+  const latest7Dates = sortedDates.slice(Math.max(0, sortedDates.length - 7));
+  const latestLabel = `Latest 7 Sessions (${fmtD(latest7Dates[0])} – ${fmtD(latest7Dates[latest7Dates.length - 1])})`;
+  weeks.push({
+    id: 'latest_7',
+    label: latestLabel,
+    dates: latest7Dates,
+    startDate: latest7Dates[0],
+    endDate: latest7Dates[latest7Dates.length - 1]
+  });
+
+  // 2. Calendar weeks (Monday to Sunday) grouping
+  const weekMap = new Map();
+  sortedDates.forEach(dStr => {
+    const parts = dStr.split('-').map(Number);
+    const d = new Date(parts[0], parts[1] - 1, parts[2]);
+    const day = d.getDay();
+    const diffToMon = (day === 0 ? -6 : 1) - day;
+    const mon = new Date(d);
+    mon.setDate(d.getDate() + diffToMon);
+    const sun = new Date(mon);
+    sun.setDate(mon.getDate() + 6);
+    const monStr = iso(mon);
+    const sunStr = iso(sun);
+    const key = monStr + '_' + sunStr;
+    if (!weekMap.has(key)) {
+      weekMap.set(key, { monStr, sunStr, dates: [] });
+    }
+    weekMap.get(key).dates.push(dStr);
+  });
+
+  const sortedWeekEntries = Array.from(weekMap.entries()).sort((a, b) => b[0].localeCompare(a[0]));
+  sortedWeekEntries.forEach(([key, info]) => {
+    const isSameAsLatest = latest7Dates.length === info.dates.length &&
+      latest7Dates[0] === info.dates[0] &&
+      latest7Dates[latest7Dates.length - 1] === info.dates[info.dates.length - 1];
+    if (isSameAsLatest && weeks.length === 1) {
+      weeks[0].label = `This Week: ${fmtD(info.dates[0])} – ${fmtD(info.dates[info.dates.length - 1])} (${info.dates.length} sess)`;
+      return;
+    }
+    const countSessions = info.dates.length;
+    const label = `${fmtD(info.dates[0])} – ${fmtD(info.dates[info.dates.length - 1])} (${countSessions} sess)`;
+    weeks.push({
+      id: key,
+      label: label,
+      dates: info.dates,
+      startDate: info.dates[0],
+      endDate: info.dates[info.dates.length - 1]
+    });
+  });
+
+  return weeks;
+}
+
+function getMorningAvailableMonths(availableDates) {
+  const sortedDates = (availableDates && availableDates.length ? availableDates.slice().sort() : [iso(typeof TODAY !== 'undefined' ? TODAY : new Date())]);
+  const monthMap = new Map();
+  sortedDates.forEach(dStr => {
+    const ym = dStr.substring(0, 7);
+    if (!monthMap.has(ym)) {
+      monthMap.set(ym, []);
+    }
+    monthMap.get(ym).push(dStr);
+  });
+
+  const now = typeof TODAY !== 'undefined' ? TODAY : new Date();
+  const curYM = iso(now).substring(0, 7);
+  if (!monthMap.has(curYM)) {
+    monthMap.set(curYM, []);
+  }
+
+  const months = [];
+  const sortedYM = Array.from(monthMap.keys()).sort().reverse();
+  const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  sortedYM.forEach((ym, idx) => {
+    const dates = monthMap.get(ym);
+    const [y, m] = ym.split('-').map(Number);
+    const mName = (m >= 1 && m <= 12) ? monthNames[m - 1] : '';
+    const label = `${mName} ${y}${dates.length ? ` (${dates.length} sess)` : ' (0 sess)'}${idx === 0 ? ' · Current' : ''}`;
+    months.push({
+      id: ym,
+      label,
+      dates,
+      year: y,
+      month: m
+    });
+  });
+  return months;
+}
+
+function computePeriodMorningMetrics(byDate, availableDates, targetDate, numDays, customDates = null) {
+  let periodDates;
+  let prevPeriodDates = [];
+
+  if (Array.isArray(customDates) && customDates.length > 0) {
+    periodDates = customDates.slice();
+    const firstDate = periodDates[0];
+    const firstIdx = availableDates.indexOf(firstDate);
+    if (firstIdx > 0) {
+      const pCount = periodDates.length;
+      const prevEnd = firstIdx - 1;
+      const prevStart = Math.max(0, prevEnd - pCount + 1);
+      prevPeriodDates = availableDates.slice(prevStart, prevEnd + 1);
+    }
+  } else {
+    const targetIdx = availableDates.indexOf(targetDate);
+    const endIdx = targetIdx >= 0 ? targetIdx : availableDates.length - 1;
+    const startIdx = Math.max(0, endIdx - numDays + 1);
+    periodDates = availableDates.slice(startIdx, endIdx + 1);
+    const prevEndIdx = startIdx - 1;
+    const prevStartIdx = Math.max(0, prevEndIdx - numDays + 1);
+    prevPeriodDates = prevEndIdx >= 0 ? availableDates.slice(prevStartIdx, prevEndIdx + 1) : [];
+  }
+  const totalSessions = periodDates.length;
 
   // Collect ALL distinct devotees across the entire uploaded dataset so every devotee is visible in daily, weekly & monthly
   const uploadedDevMap = new Map();
@@ -15505,35 +15634,74 @@ function getSampleMorningData(){
     {id:'d7', name:'Govinda Das', appointment:'Volunteer'}
   ];
 
-  const times = [
-    ['04:15', '04:30'], ['04:18', '04:30'], ['04:22', '04:30'], ['04:25', '04:30'],
-    ['04:28', '04:30'], ['04:30', '04:30'], ['04:32', '04:30'], ['04:35', '04:30'],
-    ['04:38', '04:30'], ['04:44', '04:30'], ['04:48', '04:30'], ['05:02', '04:30'],
-    ['', '04:30'],      ['04:20', '04:30']
-  ];
+  // Generate 14 days of realistic sessions for testing weekly & monthly view
+  const availableDates = [];
+  const byDateRows = {};
+  const today = (typeof TODAY !== 'undefined' && TODAY) ? new Date(TODAY) : new Date();
 
-  const rawRows = devs.map((d, i) => {
-    const t = times[i % times.length];
-    return {
-      name: d.name,
-      devoteeId: d.id,
-      avatarName: d.name,
-      devoteeInfo: d.appointment || dept(d.dept)?.name || 'Devotee',
-      rawTimeIn: t[0],
-      rawStd: t[1],
-      timeInMin: parseTimeMinutes(t[0]),
-      stdMin: parseTimeMinutes(t[1]),
-      timeIn: t[0] ? formatMinutesTime(parseTimeMinutes(t[0])) : '—',
-      standardTime: formatMinutesTime(parseTimeMinutes(t[1])),
-      diffMin: t[0] ? parseTimeMinutes(t[0]) - parseTimeMinutes(t[1]) : null,
-      status: !t[0] ? 'Absent' : (parseTimeMinutes(t[0]) <= 270 ? 'On Time' : (parseTimeMinutes(t[0]) <= 280 ? 'Grace' : 'Late')),
-      statusTone: !t[0] ? 'grey' : (parseTimeMinutes(t[0]) <= 270 ? 'green' : (parseTimeMinutes(t[0]) <= 280 ? 'amber' : 'danger')),
-      badgeText: !t[0] ? 'No check-in' : (parseTimeMinutes(t[0]) <= 270 ? (270 - parseTimeMinutes(t[0]) === 0 ? 'Exact time' : `${270 - parseTimeMinutes(t[0])}m early`) : `+${parseTimeMinutes(t[0]) - 270}m late`),
-      date: iso(TODAY)
-    };
-  });
+  for(let dayOffset = 13; dayOffset >= 0; dayOffset--){
+    const dObj = new Date(today);
+    dObj.setDate(dObj.getDate() - dayOffset);
+    const dStr = iso(dObj);
+    availableDates.push(dStr);
 
-  return computeMorningMetrics(rawRows, iso(TODAY));
+    const dayRows = devs.map((d, i) => {
+      const seed = (i * 7 + dayOffset * 3) % 10;
+      let rawTime = '';
+      if (seed === 0) {
+        rawTime = '';
+      } else if (seed <= 4) {
+        const min = 15 + (seed * 3) % 15;
+        rawTime = `04:${String(min).padStart(2, '0')}`;
+      } else if (seed <= 7) {
+        const min = 31 + (seed * 5) % 20;
+        rawTime = `04:${String(min).padStart(2, '0')}`;
+      } else {
+        const min = (seed * 11) % 45;
+        rawTime = `05:${String(min).padStart(2, '0')}`;
+      }
+
+      const tInMin = rawTime ? parseTimeMinutes(rawTime) : null;
+      const stdMin = 270;
+      const st = !rawTime ? 'Absent' : (tInMin <= 270 ? 'On Time' : (tInMin <= 330 ? 'Grace' : 'Late'));
+
+      return {
+        name: d.name,
+        devoteeId: d.id,
+        avatarName: d.name,
+        devoteeInfo: d.appointment || (typeof dept === 'function' ? dept(d.dept)?.name : '') || 'Devotee',
+        rawTimeIn: rawTime,
+        rawStd: '04:30',
+        timeInMin: tInMin,
+        stdMin: stdMin,
+        timeIn: rawTime ? formatMinutesTime(tInMin) : '—',
+        standardTime: '04:30 AM',
+        diffMin: tInMin != null ? tInMin - stdMin : null,
+        status: st,
+        statusTone: !rawTime ? 'grey' : (st === 'On Time' ? 'green' : (st === 'Grace' ? 'amber' : 'danger')),
+        badgeText: !rawTime ? 'No check-in' : (tInMin <= 270 ? (270 - tInMin === 0 ? 'Exact time' : `${270 - tInMin}m early`) : `+${tInMin - 270}m late`),
+        date: dStr
+      };
+    });
+
+    byDateRows[dStr] = dayRows;
+  }
+
+  const curDateStr = iso(today);
+  const curRows = byDateRows[curDateStr] || byDateRows[availableDates[availableDates.length - 1]];
+  const met = computeMorningMetrics(curRows, curDateStr);
+  const weekly = computePeriodMorningMetrics(byDateRows, availableDates, curDateStr, 7);
+  const monthly = computePeriodMorningMetrics(byDateRows, availableDates, curDateStr, 30);
+
+  return {
+    ...met,
+    date: curDateStr,
+    availableDates,
+    byDateRows,
+    rows: curRows,
+    weekly,
+    monthly
+  };
 }
 
 // Merge existing biometric logs with new logs so previous sessions are never lost or cleared
@@ -16371,8 +16539,21 @@ function morningProgramPanel(){
   const progTab = morningTab;
 
   const allDevs = (DB && DB.devotees) || [];
-  const weekly = data.weekly || computePeriodMorningMetrics(data.byDateRows || {}, data.availableDates || [data.date], data.date, 7);
-  const monthly = data.monthly || computePeriodMorningMetrics(data.byDateRows || {}, data.availableDates || [data.date], data.date, 30);
+  const avDates = (data.availableDates && data.availableDates.length) ? data.availableDates : [data.date || iso(TODAY)];
+  const availableWeeks = getMorningAvailableWeeks(avDates);
+  const availableMonths = getMorningAvailableMonths(avDates);
+
+  const selectedWeekId = APP.morningSelectedWeek || (availableWeeks[0] ? availableWeeks[0].id : 'latest_7');
+  const selectedWeek = availableWeeks.find(w => w.id === selectedWeekId) || availableWeeks[0] || { dates: avDates.slice(-7) };
+
+  const selectedMonthId = APP.morningSelectedMonth || (availableMonths[0] ? availableMonths[0].id : (data.date || iso(TODAY)).substring(0, 7));
+  const selectedMonth = availableMonths.find(m => m.id === selectedMonthId) || availableMonths[0] || { id: (data.date || iso(TODAY)).substring(0, 7), dates: avDates };
+
+  const weekly = computePeriodMorningMetrics(data.byDateRows || {}, avDates, null, 7, selectedWeek.dates);
+  const monthly = computePeriodMorningMetrics(data.byDateRows || {}, avDates, null, 30, selectedMonth.dates);
+
+  data.weekly = weekly;
+  data.monthly = monthly;
 
   // Filter rows for Today's view
   let rows = dailyBaseRows.filter(r => {
@@ -16484,7 +16665,7 @@ function morningProgramPanel(){
             <span>📋</span> Morning Programme Attendance Report
           </h3>
           <div class="tiny" style="color:var(--ink-2);margin-top:2px">
-            ${reportView === 'today' ? `Single-day check-ins & punctuality (${fmtExactDate(data.date)})` : (reportView === 'weekly' ? `Last 7 Sessions (${fmtD(weekly.startDate)} – ${fmtD(weekly.endDate)})` : `Last 30 Sessions (${fmtD(monthly.startDate)} – ${fmtD(monthly.endDate)})`)}
+            ${reportView === 'today' ? `Single-day check-ins & punctuality (${fmtExactDate(data.date)})` : (reportView === 'weekly' ? `${weekly.totalSessions} Sessions (${fmtD(weekly.startDate)} – ${fmtD(weekly.endDate)})` : `${monthly.totalSessions} Sessions (${fmtD(monthly.startDate)} – ${fmtD(monthly.endDate)})`)}
           </div>
         </div>
 
@@ -16513,7 +16694,23 @@ function morningProgramPanel(){
               <select data-act="morning-change-date" onchange="if(APP.morningData){ if(APP.morningData.rawBiometricText){ APP.morningData = parseMorningCSV(APP.morningData.rawBiometricText, this.value); } else { APP.morningData.date = this.value; } render(); }" style="padding:4px 8px;font-size:12px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);cursor:pointer;max-width:240px">
                 ${data.availableDates.slice().reverse().map(dt => `<option value="${dt}" ${dt === data.date ? 'selected' : ''}>${fmtExactDate(dt)}${dt === data.availableDates[data.availableDates.length-1] ? ' (Latest)' : ''}</option>`).join('')}
               </select>` : ''}
-            </div>` : ''}
+            </div>` : reportView === 'weekly' ? `
+            <div class="morning-period-picker">
+              <span class="morning-period-picker-label" style="font-size:11.5px;font-weight:600;color:var(--ink-2);display:inline-flex;align-items:center;gap:4px">
+                🗓️ <span>Week:</span>
+              </span>
+              <select class="morning-period-select" id="morning-week-select" onchange="APP.morningSelectedWeek=this.value;render();" style="padding:4px 8px;font-size:12px;font-weight:600;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);cursor:pointer;max-width:240px">
+                ${availableWeeks.map(w => `<option value="${w.id}" ${w.id === selectedWeekId ? 'selected' : ''}>${esc(w.label)}</option>`).join('')}
+              </select>
+            </div>` : `
+            <div class="morning-period-picker">
+              <span class="morning-period-picker-label" style="font-size:11.5px;font-weight:600;color:var(--ink-2);display:inline-flex;align-items:center;gap:4px">
+                📊 <span>Month:</span>
+              </span>
+              <select class="morning-period-select" id="morning-month-select" onchange="APP.morningSelectedMonth=this.value;render();" style="padding:4px 8px;font-size:12px;font-weight:600;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);cursor:pointer;max-width:240px">
+                ${availableMonths.map(m => `<option value="${m.id}" ${m.id === selectedMonthId ? 'selected' : ''}>${esc(m.label)}</option>`).join('')}
+              </select>
+            </div>`}
 
             <button class="btn sm" data-act="share-morning-report" title="Share Morning Program report to WhatsApp / phone apps" style="background:rgba(16,185,129,0.08);color:#059669;border-color:rgba(16,185,129,0.25);font-weight:600;display:inline-flex;align-items:center;gap:4px;padding:5px 9px;font-size:11.5px">
               📤 <span class="morning-btn-text">Share to </span>WhatsApp
