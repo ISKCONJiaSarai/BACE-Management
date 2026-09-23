@@ -1683,16 +1683,27 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
 .morning-top-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .morning-charts-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-bottom:16px}
 .morning-view-btn-group{display:inline-flex;border:1.5px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)}
+.morning-report-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.morning-report-subrow{display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap}
+.morning-btn-text{display:inline}
 @media(max-width:768px){
   .morning-top-actions{width:100% !important;display:flex !important;gap:6px !important;flex-wrap:wrap !important}
   .morning-top-actions .btn{flex:1 1 auto !important;justify-content:center !important;text-align:center !important;padding:7px 10px !important;font-size:12px !important}
   .morning-charts-grid{grid-template-columns:1fr !important}
-  .morning-report-header{flex-direction:column !important;align-items:stretch !important;gap:12px !important}
+  .morning-report-header{flex-direction:column !important;align-items:stretch !important;gap:10px !important}
   .morning-report-controls{width:100% !important;display:flex !important;flex-direction:column !important;align-items:stretch !important;gap:8px !important}
+  /* Row 1 on mobile: View switcher takes full width */
   .morning-view-btn-group{display:flex !important;flex-direction:row !important;width:100% !important;border-radius:10px !important}
   .morning-view-btn-group button{flex:1 1 0 !important;text-align:center !important;padding:7px 4px !important;font-size:11.5px !important;white-space:nowrap !important;border-bottom:none !important;border-right:1px solid var(--line) !important}
   .morning-view-btn-group button:last-child{border-right:none !important}
-  .morning-report-controls select{width:100% !important}
+  /* Row 2 on mobile: Date picker & Actions bar in ONE clean single row */
+  .morning-report-subrow{display:flex !important;flex-direction:row !important;align-items:center !important;justify-content:space-between !important;gap:5px !important;width:100% !important}
+  .morning-report-subrow .morning-exact-date-picker{display:flex !important;flex-direction:row !important;align-items:center !important;gap:4px !important;flex:1 1 auto !important;min-width:0 !important;width:auto !important}
+  .morning-report-subrow .morning-exact-date-picker button{flex:none !important;width:auto !important;padding:4px 7px !important;font-size:11px !important}
+  .morning-report-subrow .morning-exact-date-picker input{flex:1 1 auto !important;min-width:90px !important;max-width:130px !important;width:auto !important;padding:3px 5px !important;font-size:11px !important}
+  .morning-report-subrow .morning-exact-date-picker select{display:none !important}
+  .morning-report-subrow > button,.morning-report-subrow > div > button{flex:none !important;width:auto !important;padding:4px 7px !important;font-size:11px !important;white-space:nowrap !important}
+  .morning-btn-text{display:none !important}
 }
 @media(max-width:520px){
   .morning-view-btn-group button{padding:6px 2px !important;font-size:11px !important}
@@ -1703,12 +1714,10 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
 .morning-period-toolbar select{flex:1 1 160px;min-width:0}
 .morning-period-toolbar>div{flex:1 1 220px;min-width:180px}
 /* Morning date picker row */
-.morning-exact-date-picker{display:flex;align-items:center;gap:6px;flex-wrap:wrap;width:100%}
+.morning-exact-date-picker{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 @media(max-width:640px){
   .morning-period-toolbar{flex-direction:column;align-items:stretch}
   .morning-period-toolbar select,.morning-period-toolbar>div{flex:none !important;width:100% !important;min-width:0 !important}
-  .morning-exact-date-picker{flex-direction:column;align-items:stretch}
-  .morning-exact-date-picker input,.morning-exact-date-picker select{width:100%}
 }
 
 /* Responsive Accounts & Budgets KPI Grid */
@@ -3170,37 +3179,7 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
   .hero-art-col .art{max-width:72px!important;max-height:72px!important}
 }
 
-/* Morning Programme Attendance Report responsiveness */
-@media(max-width:768px){
-  .morning-report-header{
-    flex-direction:column!important;
-    align-items:flex-start!important;
-    gap:12px!important;
-  }
-  .morning-report-controls{
-    width:100%!important;
-    flex-direction:row!important;
-    flex-wrap:wrap!important;
-    gap:8px!important;
-  }
-  .morning-report-controls > div,
-  .morning-report-controls > select,
-  .morning-report-controls > button{
-    flex:1 1 auto!important;
-    text-align:center!important;
-  }
-}
-@media(max-width:560px){
-  .morning-report-controls > div{
-    width:100%!important;
-    display:flex!important;
-  }
-  .morning-report-controls > div button{
-    flex:1!important;
-    padding:6px 6px!important;
-    font-size:11.5px!important;
-  }
-}
+
 
 /* Horizontal scrollable tabs with touch scrolling */
 .tabs{
@@ -16269,10 +16248,7 @@ function morningProgramPanel(){
         </div>
 
         <!-- Today, Weekly, and Monthly View Switcher Controls -->
-        <div class="morning-report-controls" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-          <button class="btn sm" data-act="share-morning-report" title="Share Morning Program report to WhatsApp / phone apps" style="background:rgba(16,185,129,0.08);color:#059669;border-color:rgba(16,185,129,0.25);font-weight:600;display:inline-flex;align-items:center;gap:4px;padding:5px 11px">
-            📤 Share to WhatsApp
-          </button>
+        <div class="morning-report-controls">
           <div class="morning-view-btn-group">
             <button type="button" class="btn sm ${reportView === 'today' ? 'pri' : ''}" data-act="morning-report-view" data-v="today" style="border-radius:0;border:none;padding:5px 12px;font-weight:600" title="${fmtExactDate(data.date)}">
               ${data.date === (typeof TODAY !== 'undefined' ? iso(TODAY) : '') ? "📅 Today's View" : "📅 Daily View"}
@@ -16285,26 +16261,32 @@ function morningProgramPanel(){
             </button>
           </div>
 
-          ${reportView === 'today' ? `
-          <div class="morning-exact-date-picker" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-            <button class="btn sm ${data.date === (typeof TODAY !== 'undefined' ? iso(TODAY) : '') ? 'pri' : ''}" data-act="morning-go-today" title="Jump to Today's date" style="padding:4px 9px;font-size:11.5px;font-weight:600">
-              📅 Today
-            </button>
-            <input type="date" value="${data.date || (typeof TODAY !== 'undefined' ? iso(TODAY) : '')}" data-act="morning-change-date-input" onchange="if(APP.morningData){ if(APP.morningData.rawBiometricText){ APP.morningData = parseMorningCSV(APP.morningData.rawBiometricText, this.value); } else { APP.morningData.date = this.value; } render(); }" title="Pick an exact date" style="padding:4px 8px;font-size:12px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);cursor:pointer">
-            ${data.availableDates && data.availableDates.length > 1 ? `
-            <select data-act="morning-change-date" onchange="if(APP.morningData){ if(APP.morningData.rawBiometricText){ APP.morningData = parseMorningCSV(APP.morningData.rawBiometricText, this.value); } else { APP.morningData.date = this.value; } render(); }" style="padding:4px 8px;font-size:12px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);cursor:pointer;max-width:240px">
-              ${data.availableDates.slice().reverse().map(dt => `<option value="${dt}" ${dt === data.date ? 'selected' : ''}>${fmtExactDate(dt)}${dt === data.availableDates[data.availableDates.length-1] ? ' (Latest)' : ''}</option>`).join('')}
-            </select>` : ''}
-          </div>` : ''}
+          <div class="morning-report-subrow">
+            ${reportView === 'today' ? `
+            <div class="morning-exact-date-picker">
+              <button class="btn sm ${data.date === (typeof TODAY !== 'undefined' ? iso(TODAY) : '') ? 'pri' : ''}" data-act="morning-go-today" title="Jump to Today's date" style="padding:4px 9px;font-size:11.5px;font-weight:600">
+                📅 Today
+              </button>
+              <input type="date" value="${data.date || (typeof TODAY !== 'undefined' ? iso(TODAY) : '')}" data-act="morning-change-date-input" onchange="if(APP.morningData){ if(APP.morningData.rawBiometricText){ APP.morningData = parseMorningCSV(APP.morningData.rawBiometricText, this.value); } else { APP.morningData.date = this.value; } render(); }" title="Pick an exact date" style="padding:4px 8px;font-size:12px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);cursor:pointer">
+              ${data.availableDates && data.availableDates.length > 1 ? `
+              <select data-act="morning-change-date" onchange="if(APP.morningData){ if(APP.morningData.rawBiometricText){ APP.morningData = parseMorningCSV(APP.morningData.rawBiometricText, this.value); } else { APP.morningData.date = this.value; } render(); }" style="padding:4px 8px;font-size:12px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);cursor:pointer;max-width:240px">
+                ${data.availableDates.slice().reverse().map(dt => `<option value="${dt}" ${dt === data.date ? 'selected' : ''}>${fmtExactDate(dt)}${dt === data.availableDates[data.availableDates.length-1] ? ' (Latest)' : ''}</option>`).join('')}
+              </select>` : ''}
+            </div>` : ''}
 
-          ${reportView === 'today' ? `
-          <button class="btn sm" data-act="export-morning-report">${ic('download')} Export CSV</button>
-          ` : `
-          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-            <button class="btn sm pri" data-act="export-morning-period-pdf" data-period="${reportView}" title="Export beautiful printable PDF report">${ic('download')} 📄 Export ${reportView === 'weekly' ? 'Weekly' : 'Monthly'} Report (PDF)</button>
-            <button class="btn sm" data-act="export-morning-period-csv" data-period="${reportView}" title="Export as CSV">${ic('download')} CSV</button>
+            <button class="btn sm" data-act="share-morning-report" title="Share Morning Program report to WhatsApp / phone apps" style="background:rgba(16,185,129,0.08);color:#059669;border-color:rgba(16,185,129,0.25);font-weight:600;display:inline-flex;align-items:center;gap:4px;padding:5px 9px;font-size:11.5px">
+              📤 <span class="morning-btn-text">Share to </span>WhatsApp
+            </button>
+
+            ${reportView === 'today' ? `
+            <button class="btn sm" data-act="export-morning-report" style="padding:5px 9px;font-size:11.5px">${ic('download')} <span class="morning-btn-text">Export </span>CSV</button>
+            ` : `
+            <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+              <button class="btn sm pri" data-act="export-morning-period-pdf" data-period="${reportView}" title="Export beautiful printable PDF report" style="padding:5px 9px;font-size:11.5px">${ic('download')} PDF</button>
+              <button class="btn sm" data-act="export-morning-period-csv" data-period="${reportView}" title="Export as CSV" style="padding:5px 9px;font-size:11.5px">${ic('download')} CSV</button>
+            </div>
+            `}
           </div>
-          `}
         </div>
       </div>
 
