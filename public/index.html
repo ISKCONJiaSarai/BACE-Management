@@ -3202,6 +3202,86 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
   }
 }
 
+/* Horizontal scrollable tabs with touch scrolling */
+.tabs{
+  display:flex!important;
+  gap:6px!important;
+  overflow-x:auto!important;
+  -webkit-overflow-scrolling:touch!important;
+  padding-bottom:4px!important;
+  max-width:100%!important;
+  box-sizing:border-box!important;
+  scrollbar-width:none!important;
+}
+.tabs::-webkit-scrollbar{display:none!important}
+.tabs button{
+  white-space:nowrap!important;
+  flex-shrink:0!important;
+}
+
+/* Roster and Matrix Table Mobile Improvements */
+.roster-table-scroll{
+  overflow-x:auto!important;
+  -webkit-overflow-scrolling:touch!important;
+  max-width:100%!important;
+  box-sizing:border-box!important;
+  border-radius:8px;
+}
+.mobile-swipe-hint{
+  display:none;
+  background:var(--surface-2);
+  color:var(--ink-2);
+  font-size:11.5px;
+  padding:6px 12px;
+  border-bottom:1px solid var(--line);
+  align-items:center;
+  justify-content:space-between;
+}
+@media(max-width:768px){
+  .mobile-swipe-hint{
+    display:flex!important;
+  }
+  .roster-mode-nav{
+    width:100%!important;
+    display:flex!important;
+    flex-wrap:wrap!important;
+    gap:6px!important;
+  }
+  .roster-mode-nav .btn{
+    flex:1 1 calc(50% - 6px)!important;
+    text-align:center!important;
+    justify-content:center!important;
+    padding:6px 8px!important;
+    font-size:12px!important;
+  }
+  .summary-matrix-top-actions{
+    width:100%!important;
+    display:flex!important;
+    flex-wrap:wrap!important;
+    gap:6px!important;
+  }
+  .summary-matrix-top-actions .btn{
+    flex:1 1 calc(50% - 6px)!important;
+    text-align:center!important;
+    justify-content:center!important;
+    padding:6px 8px!important;
+    font-size:12px!important;
+  }
+  .summary-matrix-filters{
+    width:100%!important;
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:stretch!important;
+    gap:6px!important;
+  }
+  .summary-matrix-filters input,
+  .summary-matrix-filters select{
+    width:100%!important;
+    max-width:100%!important;
+    box-sizing:border-box!important;
+  }
+}
+
 @media(max-width:540px){
   /* Funnel chart fluid scaling */
   .funnel-row{gap:8px!important}
@@ -15484,18 +15564,18 @@ function morningProgramPanel(){
         </div>` : ''}
 
         <!-- Filter & Search Toolbar (Daily) -->
-        <div class="toolbar" style="gap:8px;align-items:center;flex-wrap:wrap;padding:0;margin-bottom:12px">
+        <div class="toolbar morning-filter-toolbar" style="gap:8px;align-items:center;flex-wrap:wrap;padding:0;margin-bottom:12px">
           <div style="position:relative;min-width:180px;flex:1 1 200px">
-            <input type="search" placeholder="🔍 Search devotee in report…" value="${esc(APP.morningSearch||'')}" data-act="morning-q" style="width:100%;padding:6px 10px 6px 32px;font-size:12.5px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)">
+            <input type="search" placeholder="Search devotee in report…" value="${esc(APP.morningSearch||'')}" data-act="morning-q" style="width:100%;padding:6px 10px 6px 32px;font-size:12.5px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)">
             <span style="position:absolute;left:10px;top:7px;color:var(--ink-3)">${ic('search')}</span>
           </div>
-          <div class="chips" style="margin:0">
+          <div class="chips morning-chips-wrap" style="margin:0">
             ${['','Attended','On Time','Grace','Late','Very late','Absent'].map(st => {
               const cnt = !st ? m.total : (st==='Attended'?m.attended : (st==='On Time'?m.onTimeCount : (st==='Grace'?m.graceCount : (st==='Late'?m.lateCount : (st==='Very late'?(m.veryLateCount||0) : m.absentCount)))));
               return `<button class="chip ${filterSt===st?'on':''}" data-act="morning-filter-status" data-s="${st}" style="font-size:11.5px;padding:3px 9px;cursor:pointer">${st||'All'} (${cnt})</button>`;
             }).join('')}
           </div>
-          <select data-act="morning-daily-sort" style="padding:6px 10px;font-size:12px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);cursor:pointer;margin-left:auto">
+          <select data-act="morning-daily-sort" class="morning-daily-sort-select" style="padding:6px 10px;font-size:12px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);cursor:pointer;margin-left:auto">
             <option value="punch_asc" ${dailySort==='punch_asc'?'selected':''}>Sort: Earliest Punch First</option>
             <option value="punch_desc" ${dailySort==='punch_desc'?'selected':''}>Sort: Latest Punch First</option>
             <option value="status" ${dailySort==='status'?'selected':''}>Sort: Status (On Time → Absent)</option>
@@ -18347,7 +18427,7 @@ function renderDepartmentRosterPanel(deptKey) {
             Weekly service charts · Database devotee search · Seva completion reports & graphs
           </div>
         </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <div class="roster-mode-nav" style="display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn sm ${viewMode === 'photo' ? 'pri' : ''}" data-act="roster-view-mode" data-dept="${deptKey}" data-m="photo">📋 Today &amp; Tomorrow Chart</button>
           <button class="btn sm ${viewMode === 'weekly' ? 'pri' : ''}" data-act="roster-view-mode" data-dept="${deptKey}" data-m="weekly">📅 Weekly Service Chart</button>
           <button class="btn sm ${viewMode === 'single-day' ? 'pri' : ''}" data-act="roster-view-mode" data-dept="${deptKey}" data-m="single-day">📆 Single Day View</button>
@@ -18376,7 +18456,11 @@ function renderDepartmentRosterPanel(deptKey) {
         </div>
       </div>
 
-      <div class="tbl-wrap" style="overflow-x:auto">
+      <div class="mobile-swipe-hint">
+        <span>👉 <b>Swipe table</b> to view Tomorrow's schedule</span>
+        <span>⟷ Scrollable</span>
+      </div>
+      <div class="tbl-wrap roster-table-scroll" style="overflow-x:auto;-webkit-overflow-scrolling:touch">
         <table style="width:100%;min-width:680px;border-collapse:collapse;text-align:center;font-family:'Inter', sans-serif">
           <thead>
             <tr style="background:#F5A869;border-bottom:2px solid #000;color:#111">
@@ -18529,7 +18613,7 @@ function renderDepartmentRosterPanel(deptKey) {
       </div>
 
       <!-- Service rows -->
-      <div class="tbl-wrap">
+      <div class="tbl-wrap roster-table-scroll" style="overflow-x:auto;-webkit-overflow-scrolling:touch">
         <table class="tbl" id="single-day-tbl-${deptKey}" style="min-width:620px">
           <thead>
             <tr style="background:${isDeity ? '#FFF5EA' : '#F0FDFA'}">
@@ -18597,7 +18681,7 @@ function renderDepartmentRosterPanel(deptKey) {
         </div>
       </div>
 
-      <div class="tbl-wrap">
+      <div class="tbl-wrap roster-table-scroll" style="overflow-x:auto;-webkit-overflow-scrolling:touch">
         <table class="tbl">
           <thead>
             <tr>
@@ -19495,7 +19579,7 @@ function deptAttendanceMatrix(){
             Unified summary matrix across <b>Morning Programme</b>, <b>Deity Department</b>, and <b>Cleaning</b>
           </div>
         </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <div class="summary-matrix-top-actions" style="display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn sm ${period==='weekly'?'pri':''}" data-act="summary-matrix-period" data-period="weekly">📅 Weekly View</button>
           <button class="btn sm ${period==='monthly'?'pri':''}" data-act="summary-matrix-period" data-period="monthly">🗓️ Monthly View</button>
           <button class="btn sm pri" data-act="export-summary-matrix-pdf" style="background:#ea580c;color:white">📄 Export Matrix PDF</button>
@@ -19523,8 +19607,8 @@ function deptAttendanceMatrix(){
             Unified view of morning punctuality, altar worship sevas, and temple cleaning
           </div>
         </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-          <input type="text" id="summary-matrix-search" placeholder="🔍 Filter devotee..." oninput="filterSummaryMatrixTable()" style="padding:6px 10px;font-size:12px;border:1px solid var(--line);border-radius:6px;background:var(--surface);width:145px">
+        <div class="summary-matrix-filters" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <input type="text" id="summary-matrix-search" placeholder="Filter devotee..." oninput="filterSummaryMatrixTable()" style="padding:6px 10px;font-size:12px;border:1px solid var(--line);border-radius:6px;background:var(--surface);width:145px">
           <select id="summary-matrix-dept-filter" onchange="filterSummaryMatrixTable()" style="padding:6px 8px;font-size:12px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink)">
             <option value="all">🏢 All Departments</option>
             <option value="all3">✨ All 3 Depts (All-Rounders)</option>
@@ -19554,7 +19638,7 @@ function deptAttendanceMatrix(){
         </div>
       </div>
 
-      <div class="tbl-wrap">
+      <div class="tbl-wrap roster-table-scroll summary-matrix-table-wrap">
         <table class="tbl" id="summary-matrix-tbl">
           <thead>
             <tr style="background:var(--surface-2)">
@@ -21043,7 +21127,7 @@ function viewAttendance(){
     loadMorningAttendanceFromBackend();
   }
 
-  return head('🏛️ BACE Pillars', 'Foundation to Healthy Growth', 'Morning program punctuality, Deity & Cleaning rosters, and Department Matrix')+
+  return head('🏛️ Temple Operations', 'BACE Pillars', 'Morning program punctuality, Deity & Cleaning rosters, and Department Matrix')+
    `<div class="tabs">${tabs.map(t => `<button class="${t===tab?'on':''}" data-act="tab" data-k="att" data-v="${t}">${t}</button>`).join('')}</div>`+
    (tab === 'Morning programme' ? morningProgramPanel()
    : tab === 'Deity Department' ? deityDepartmentPanel()
@@ -25965,7 +26049,8 @@ function routeView(){
       case 'depts':return guard('management',viewDepts);
       case 'dept':return guard('management',()=>viewDept(arg));
       case 'assign':return guard('assign',viewAssign);
-      case 'attendance':return guard('management',viewAttendance);
+      case 'attendance':
+      case 'att':return guard('management',viewAttendance);
       case 'accounts':return guard('management',viewAccountsPage);
       case 'dept-reports':return guard('reports',viewDeptReports);
       case 'inventory':return guard('inventory',viewInventory);
@@ -30304,6 +30389,12 @@ async function verifyUserSessionFromServer(){
 }
 
 APP.route=location.hash||'#/';
+window.addEventListener('hashchange', () => {
+  const h = location.hash || '#/';
+  if (APP.route !== h) {
+    go(h);
+  }
+});
 loadMorningAttendanceFromBackend();
 loadCampsFromBackend();
 loadOutingsFromBackend();

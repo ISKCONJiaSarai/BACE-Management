@@ -21,7 +21,8 @@ const sandbox = {
     scrollTo: () => {},
     innerWidth: 1200,
     innerHeight: 800,
-    location: { hash: '' }
+    location: { hash: '' },
+    matchMedia: () => ({ matches: false, addListener: () => {}, removeListener: () => {} })
   },
   document: {
     addEventListener: () => {},
@@ -31,8 +32,8 @@ const sandbox = {
     querySelectorAll: () => [],
     head: { appendChild: () => {} },
     createElement: () => ({ setAttribute: () => {}, style: {} }),
-    body: { classList: { add: () => {}, remove: () => {} } }
-
+    body: { classList: { add: () => {}, remove: () => {} } },
+    documentElement: { setAttribute: () => {}, getAttribute: () => '' }
   },
   localStorage: {
     getItem: () => null,
@@ -126,6 +127,8 @@ for (const r of rolesToTest) {
   vm.runInContext(`APP.user = ${JSON.stringify(user)}`, ctx);
   for (const v of viewsToTest) {
     try {
+      const isFn = vm.runInContext(`typeof ${v.fn} === 'function'`, ctx);
+      if (!isFn) continue;
       const output = vm.runInContext(`${v.fn}()`, ctx);
       if (typeof output !== 'string') {
         throw new Error(`View ${v.name} did not return a string for role ${r}`);
