@@ -4791,6 +4791,342 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-off
     border-top:none!important;
   }
 }
+
+/* ── Deity & Cleaning Department Seva Charts: Mobile Compact Table Views ── */
+.roster-weekly-mobile-wrap {
+  display: none !important;
+}
+.roster-weekly-desktop-tbl {
+  display: block !important;
+}
+
+@media(max-width: 768px) {
+  /* Hide swipe cues on mobile when charts fit 100% */
+  .mobile-swipe-hint {
+    display: none !important;
+  }
+
+  /* 1. Today's & Tomorrow's Report Chart (Photo View Mode) */
+  .roster-photo-wrap {
+    overflow-x: hidden !important;
+  }
+  .roster-photo-table {
+    display: table !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    table-layout: fixed !important;
+    border-collapse: collapse !important;
+  }
+  .roster-photo-table thead {
+    display: table-header-group !important;
+  }
+  .roster-photo-table tbody {
+    display: table-row-group !important;
+  }
+  .roster-photo-table tr {
+    display: table-row !important;
+    min-height: 0 !important;
+  }
+  .roster-photo-table th {
+    display: table-cell !important;
+    padding: 7px 3px !important;
+    font-size: 11px !important;
+    line-height: 1.25 !important;
+    box-sizing: border-box !important;
+  }
+  .roster-photo-table td {
+    display: table-cell !important;
+    padding: 6px 3px !important;
+    font-size: 11.5px !important;
+    line-height: 1.25 !important;
+    box-sizing: border-box !important;
+    vertical-align: middle !important;
+  }
+  .roster-photo-table td:before {
+    display: none !important;
+  }
+  .roster-photo-table .col-srv {
+    width: 30% !important;
+  }
+  .roster-photo-table .col-today {
+    width: 35% !important;
+  }
+  .roster-photo-table .col-tmrw {
+    width: 35% !important;
+  }
+  .roster-photo-table .photo-srv-title {
+    font-size: 11.5px !important;
+    font-weight: 700 !important;
+    color: #111 !important;
+    line-height: 1.2 !important;
+    word-break: break-word !important;
+  }
+  .roster-photo-table .photo-srv-time {
+    font-size: 9.5px !important;
+    color: #555 !important;
+    margin-top: 1px !important;
+  }
+  .roster-photo-table .photo-dev-name {
+    font-size: 11.5px !important;
+    font-weight: 700 !important;
+    color: #111 !important;
+    line-height: 1.2 !important;
+    word-break: break-word !important;
+  }
+  .roster-photo-table .photo-status-btn {
+    font-size: 14px !important;
+    padding: 1px 2px !important;
+    line-height: 1 !important;
+  }
+  .roster-photo-table .photo-edit-btn {
+    height: 20px !important;
+    width: 20px !important;
+    padding: 0 !important;
+    font-size: 10px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  /* 2. Daily Seva Chart (Single Day View Mode) */
+  .roster-single-day-wrap {
+    overflow-x: hidden !important;
+  }
+  .roster-single-day-table {
+    display: table !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    table-layout: fixed !important;
+    border-collapse: collapse !important;
+  }
+  .roster-single-day-table thead {
+    display: table-header-group !important;
+  }
+  .roster-single-day-table tbody {
+    display: table-row-group !important;
+  }
+  .roster-single-day-table tr {
+    display: table-row !important;
+    border: none !important;
+    border-bottom: 1px solid var(--line-2) !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+  }
+  .roster-single-day-table th {
+    display: table-cell !important;
+    padding: 7px 4px !important;
+    font-size: 11.5px !important;
+    font-weight: 700 !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+  .roster-single-day-table td {
+    display: table-cell !important;
+    padding: 7px 4px !important;
+    font-size: 12px !important;
+    vertical-align: middle !important;
+    min-width: 0 !important;
+    border: none !important;
+    border-bottom: 1px solid var(--line-2) !important;
+    box-sizing: border-box !important;
+  }
+  .roster-single-day-table td:before {
+    display: none !important;
+  }
+  .roster-single-day-table .col-sd-time {
+    display: none !important;
+  }
+  .roster-single-day-table .col-sd-service {
+    width: 38% !important;
+  }
+  .roster-single-day-table .col-sd-devotee {
+    width: 36% !important;
+  }
+  .roster-single-day-table .col-sd-status {
+    width: 14% !important;
+    text-align: center !important;
+  }
+  .roster-single-day-table .col-sd-actions {
+    width: 12% !important;
+    text-align: center !important;
+  }
+  .roster-single-day-table .sd-srv-name {
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    color: var(--ink) !important;
+    line-height: 1.25 !important;
+    word-break: break-word !important;
+  }
+  .roster-single-day-table .sd-srv-time {
+    font-size: 10px !important;
+    color: var(--ink-3) !important;
+    margin-top: 1px !important;
+  }
+  .roster-single-day-table .sd-dev-name {
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    color: var(--ink) !important;
+    word-break: break-word !important;
+    cursor: pointer !important;
+  }
+  .roster-single-day-table .badge {
+    font-size: 10px !important;
+    padding: 2px 4px !important;
+    white-space: nowrap !important;
+  }
+  .roster-single-day-table .btn.sm {
+    height: 22px !important;
+    padding: 1px 4px !important;
+    font-size: 10.5px !important;
+  }
+
+  /* 3. Weekly Seva Chart (Mobile View Mode) */
+  .roster-weekly-desktop-tbl {
+    display: none !important;
+  }
+  .roster-weekly-mobile-wrap {
+    display: block !important;
+    width: 100% !important;
+  }
+  .weekly-mob-day-nav {
+    margin-bottom: 12px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 8px 10px;
+  }
+  .weekly-day-pills-row {
+    display: flex;
+    gap: 5px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+  }
+  .weekly-day-pills-row::-webkit-scrollbar {
+    display: none;
+  }
+  .weekly-day-pill {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 4px 7px !important;
+    min-width: 42px !important;
+    border-radius: 8px !important;
+    font-size: 11px !important;
+    position: relative !important;
+    flex-shrink: 0 !important;
+    line-height: 1.15 !important;
+  }
+  .weekly-day-pill .d-pill-name {
+    font-size: 9.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  .weekly-day-pill .d-pill-num {
+    font-size: 11.5px;
+    font-weight: 700;
+  }
+  .weekly-day-pill .d-pill-dot {
+    color: var(--saffron);
+    font-size: 8px;
+    line-height: 1;
+    position: absolute;
+    top: 1px;
+    right: 3px;
+  }
+  .weekly-day-pill.pri .d-pill-dot {
+    color: #fff;
+  }
+  .weekly-small-tbl {
+    display: table !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    table-layout: fixed !important;
+    border-collapse: collapse !important;
+  }
+  .weekly-small-tbl thead {
+    display: table-header-group !important;
+  }
+  .weekly-small-tbl tbody {
+    display: table-row-group !important;
+  }
+  .weekly-small-tbl tr {
+    display: table-row !important;
+    border: none !important;
+    border-bottom: 1px solid var(--line-2) !important;
+    background: transparent !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+  }
+  .weekly-small-tbl th {
+    display: table-cell !important;
+    padding: 7px 4px !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    box-sizing: border-box !important;
+  }
+  .weekly-small-tbl td {
+    display: table-cell !important;
+    padding: 6px 4px !important;
+    font-size: 12px !important;
+    box-sizing: border-box !important;
+    vertical-align: middle !important;
+    border: none !important;
+    border-bottom: 1px solid var(--line-2) !important;
+  }
+  .weekly-small-tbl td:before {
+    display: none !important;
+  }
+
+  /* 4. Deity Dressing Schedule Table (Fortnightly) */
+  .deity-dressing-table {
+    display: table !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    table-layout: fixed !important;
+    border-collapse: collapse !important;
+  }
+  .deity-dressing-table thead {
+    display: table-header-group !important;
+  }
+  .deity-dressing-table tbody {
+    display: table-row-group !important;
+  }
+  .deity-dressing-table tr {
+    display: table-row !important;
+    border: none !important;
+    border-bottom: 1px solid var(--line-2) !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    background: transparent !important;
+  }
+  .deity-dressing-table th,
+  .deity-dressing-table td {
+    display: table-cell !important;
+    min-width: 0 !important;
+    padding: 8px 6px !important;
+    box-sizing: border-box !important;
+    vertical-align: middle !important;
+    border: none !important;
+    border-bottom: 1px solid var(--line-2) !important;
+  }
+  .deity-dressing-table td:before {
+    display: none !important;
+  }
+  .deity-dressing-table .col-dress-date {
+    width: 44% !important;
+  }
+  .deity-dressing-table .col-dress-dev {
+    width: 56% !important;
+  }
+}
+
 /* ── Phase 7: Preaching Funnel & Batch Management Mobile Ergonomics ── */
 .funnel-mob-scroll{display:none}
 .mob-batch-list{display:none}
@@ -18157,11 +18493,11 @@ function renderDeityDressingScheduleCard() {
 
       <!-- Dressing Schedule Table (Strictly 2 Columns: Date & Day, Responsible Devotee) -->
       <div class="tbl-wrap">
-        <table class="tbl">
+        <table class="tbl deity-dressing-table" style="width:100%">
           <thead>
             <tr>
-              <th style="width:40%;min-width:180px">Date & Day</th>
-              <th style="width:60%;min-width:240px">Responsible Devotee</th>
+              <th class="col-dress-date" style="width:40%;min-width:180px">Date & Day</th>
+              <th class="col-dress-dev" style="width:60%;min-width:240px">Responsible Devotee</th>
             </tr>
           </thead>
           <tbody>
@@ -18414,6 +18750,8 @@ function renderDepartmentRosterPanel(deptKey) {
 
   // 7 Days list for weekly table (Monday to Sunday)
   const days = getWeekDays(TODAY).map(iso);
+  APP.mobileWeeklyDay = APP.mobileWeeklyDay || {};
+  const activeWeeklyDay = APP.mobileWeeklyDay[deptKey] || todayStr;
 
   return `<div>
     <!-- Action Banner & Mode Navigation -->
@@ -18460,15 +18798,15 @@ function renderDepartmentRosterPanel(deptKey) {
         <span>👉 <b>Swipe table</b> to view Tomorrow's schedule</span>
         <span>⟷ Scrollable</span>
       </div>
-      <div class="tbl-wrap roster-table-scroll" style="overflow-x:auto;-webkit-overflow-scrolling:touch">
-        <table style="width:100%;min-width:680px;border-collapse:collapse;text-align:center;font-family:'Inter', sans-serif">
+      <div class="tbl-wrap roster-table-scroll roster-photo-wrap" style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+        <table class="roster-photo-table" style="width:100%;border-collapse:collapse;text-align:center;font-family:'Inter', sans-serif">
           <thead>
             <tr style="background:#F5A869;border-bottom:2px solid #000;color:#111">
-              <th style="padding:14px 10px;width:30%;border-right:1.5px solid #000;font-size:16px;font-weight:700">Services</th>
-              <th style="padding:14px 10px;width:35%;border-right:1.5px solid #000;font-size:16px;font-weight:700">
+              <th class="col-srv" style="padding:14px 10px;width:30%;border-right:1.5px solid #000;font-size:16px;font-weight:700">Services</th>
+              <th class="col-today" style="padding:14px 10px;width:35%;border-right:1.5px solid #000;font-size:16px;font-weight:700">
                 Today's ${isDeity ? 'Deity' : 'Cleaning'} services<br>report (${fullDayName(todayStr)}, ${fmtD(todayStr)})
               </th>
-              <th style="padding:14px 10px;width:35%;font-size:16px;font-weight:700">
+              <th class="col-tmrw" style="padding:14px 10px;width:35%;font-size:16px;font-weight:700">
                 Tomorrow ${isDeity ? 'Deity' : 'Cleaning'}<br>services chart (${fullDayName(tomorrowStr)}, ${fmtD(tomorrowStr)})
               </th>
             </tr>
@@ -18479,32 +18817,32 @@ function renderDepartmentRosterPanel(deptKey) {
               const tmSlot = getRosterSlot(roster, tomorrowStr, s.id);
               return `<tr style="border-bottom:1.5px solid #000;min-height:56px">
                 <!-- Services Column (Pale Golden Yellow #FFE5A3) -->
-                <td style="background:#FFE5A3;padding:12px 10px;border-right:1.5px solid #000;font-weight:600;font-size:14.5px;color:#111;text-align:center">
-                  <div>${esc(s.name)}</div>
-                  <div style="font-size:11px;color:#555;margin-top:2px;font-weight:normal">${s.time}</div>
+                <td class="col-srv" style="background:#FFE5A3;padding:12px 10px;border-right:1.5px solid #000;font-weight:600;font-size:14.5px;color:#111;text-align:center">
+                  <div class="photo-srv-title">${esc(s.name)}</div>
+                  <div class="photo-srv-time" style="font-size:11px;color:#555;margin-top:2px;font-weight:normal">${s.time}</div>
                 </td>
 
                 <!-- Today's Report Column (Pale Lavender #E5DCF7) -->
-                <td style="background:#E5DCF7;padding:10px 12px;border-right:1.5px solid #000;color:#111;text-align:center">
-                  <div style="display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap">
-                    <span style="font-weight:700;font-size:14.5px;cursor:pointer" data-act="edit-roster-slot" data-dept="${deptKey}" data-dt="${todayStr}" data-s="${s.id}" data-src="today" title="Click to edit devotees">
+                <td class="col-today" style="background:#E5DCF7;padding:10px 12px;border-right:1.5px solid #000;color:#111;text-align:center">
+                  <div style="display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap">
+                    <span class="photo-dev-name" style="font-weight:700;font-size:14.5px;cursor:pointer" data-act="edit-roster-slot" data-dept="${deptKey}" data-dt="${todayStr}" data-s="${s.id}" data-src="today" title="Click to edit devotees">
                       ${esc(tSlot.devotees || 'Unassigned')}
                     </span>
                     <!-- One click toggle: Tick ✅ or Cross ❌ -->
-                    <button type="button" style="border:none;background:transparent;cursor:pointer;font-size:17px;padding:2px 4px" data-act="toggle-roster-status" data-dept="${deptKey}" data-dt="${todayStr}" data-s="${s.id}" title="Click to toggle Done/Missed">
+                    <button type="button" class="photo-status-btn" style="border:none;background:transparent;cursor:pointer;font-size:17px;padding:2px 4px" data-act="toggle-roster-status" data-dept="${deptKey}" data-dt="${todayStr}" data-s="${s.id}" title="Click to toggle Done/Missed">
                       ${tSlot.status === 'done' ? '✅' : (tSlot.status === 'missed' ? '❌' : '⏳')}
                     </button>
-                    <button class="btn sm icon-only" data-act="edit-roster-slot" data-dept="${deptKey}" data-dt="${todayStr}" data-s="${s.id}" data-src="today" style="padding:2px 6px;height:24px;font-size:11px" title="Edit slot details">✏️</button>
+                    <button class="btn sm icon-only photo-edit-btn" data-act="edit-roster-slot" data-dept="${deptKey}" data-dt="${todayStr}" data-s="${s.id}" data-src="today" style="padding:2px 6px;height:24px;font-size:11px" title="Edit slot details">✏️</button>
                   </div>
                 </td>
 
                 <!-- Tomorrow's Chart Column (Pale Lavender #E5DCF7) -->
-                <td style="background:#E5DCF7;padding:10px 12px;color:#111;text-align:center">
-                  <div style="display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap">
-                    <span style="font-size:14.5px;cursor:pointer" data-act="edit-roster-slot" data-dept="${deptKey}" data-dt="${tomorrowStr}" data-s="${s.id}" data-src="tomorrow" title="Click to edit devotees">
+                <td class="col-tmrw" style="background:#E5DCF7;padding:10px 12px;color:#111;text-align:center">
+                  <div style="display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap">
+                    <span class="photo-dev-name" style="font-size:14.5px;cursor:pointer" data-act="edit-roster-slot" data-dept="${deptKey}" data-dt="${tomorrowStr}" data-s="${s.id}" data-src="tomorrow" title="Click to edit devotees">
                       ${esc(tmSlot.devotees || 'Unassigned')}
                     </span>
-                    <button class="btn sm icon-only" data-act="edit-roster-slot" data-dept="${deptKey}" data-dt="${tomorrowStr}" data-s="${s.id}" data-src="tomorrow" style="padding:2px 6px;height:24px;font-size:11px" title="Edit slot details">✏️</button>
+                    <button class="btn sm icon-only photo-edit-btn" data-act="edit-roster-slot" data-dept="${deptKey}" data-dt="${tomorrowStr}" data-s="${s.id}" data-src="tomorrow" style="padding:2px 6px;height:24px;font-size:11px" title="Edit slot details">✏️</button>
                   </div>
                 </td>
               </tr>`;
@@ -18613,15 +18951,15 @@ function renderDepartmentRosterPanel(deptKey) {
       </div>
 
       <!-- Service rows -->
-      <div class="tbl-wrap roster-table-scroll" style="overflow-x:auto;-webkit-overflow-scrolling:touch">
-        <table class="tbl" id="single-day-tbl-${deptKey}" style="min-width:620px">
+      <div class="tbl-wrap roster-table-scroll roster-single-day-wrap" style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+        <table class="tbl roster-single-day-table" id="single-day-tbl-${deptKey}" style="width:100%">
           <thead>
             <tr style="background:${isDeity ? '#FFF5EA' : '#F0FDFA'}">
-              <th style="min-width:180px">Service</th>
-              <th style="min-width:90px;text-align:center">Time</th>
-              <th style="min-width:180px">Assigned Devotee(s)</th>
-              <th style="min-width:100px;text-align:center">Status</th>
-              <th style="min-width:110px;text-align:center">Actions</th>
+              <th class="col-sd-service" style="min-width:180px">Service</th>
+              <th class="col-sd-time" style="min-width:90px;text-align:center">Time</th>
+              <th class="col-sd-devotee" style="min-width:180px">Assigned Devotee(s)</th>
+              <th class="col-sd-status" style="min-width:100px;text-align:center">Status</th>
+              <th class="col-sd-actions" style="min-width:110px;text-align:center">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -18639,23 +18977,23 @@ function renderDepartmentRosterPanel(deptKey) {
               const rowBg = isDone ? 'rgba(5,150,105,0.04)' : (isMissed ? 'rgba(220,38,38,0.04)' : 'transparent');
               const isSubService = isDeity && (s.isSub || s.id === 'd4' || s.id === 'd5');
               return `<tr data-status="${statusLabel}" data-time="${esc(s.time)}" data-service="${esc(s.name.toLowerCase())}" data-devotee="${esc(devText.toLowerCase())}" style="background:${rowBg};${isHidden ? 'display:none;' : ''}">
-                <td data-l="Service">
-                  <div style="font-weight:700;font-size:13.5px;display:flex;align-items:center;gap:6px">
+                <td class="col-sd-service" data-l="Service">
+                  <div class="sd-srv-name" style="font-weight:700;font-size:13.5px;display:flex;align-items:center;gap:6px">
                     ${isSubService ? '<span style="color:var(--saffron);font-weight:bold">↳</span>' : ''}
                     <span>${esc(s.name)}</span>
                   </div>
-                  ${isSubService ? '<div class="tiny" style="color:#b45309;font-style:italic">Deity Worship Sub-category</div>' : (s.time ? `<div class="tiny" style="color:var(--ink-3)">${s.time}</div>` : '')}
+                  ${isSubService ? '<div class="tiny" style="color:#b45309;font-style:italic">Deity Worship Sub-category</div>' : (s.time ? `<div class="tiny sd-srv-time" style="color:var(--ink-3)">${s.time}</div>` : '')}
                 </td>
-                <td data-l="Time" style="text-align:center;font-size:13px;color:var(--ink-2);font-weight:600">${s.time || '—'}</td>
-                <td data-l="Assigned Devotee">
-                  <span style="font-weight:600;font-size:13.5px;cursor:pointer" data-act="edit-roster-slot" data-dept="${deptKey}" data-dt="${sdDate}" data-s="${s.id}" data-src="single-day" title="Click to edit">${esc(devText)}</span>
+                <td class="col-sd-time" data-l="Time" style="text-align:center;font-size:13px;color:var(--ink-2);font-weight:600">${s.time || '—'}</td>
+                <td class="col-sd-devotee" data-l="Assigned Devotee">
+                  <span class="sd-dev-name" style="font-weight:600;font-size:13.5px;cursor:pointer" data-act="edit-roster-slot" data-dept="${deptKey}" data-dt="${sdDate}" data-s="${s.id}" data-src="single-day" title="Click to edit">${esc(devText)}</span>
                 </td>
-                <td data-l="Status" style="text-align:center">
+                <td class="col-sd-status" data-l="Status" style="text-align:center">
                   ${statusBadge}
                 </td>
-                <td data-l="Actions" style="text-align:center">
+                <td class="col-sd-actions" data-l="Actions" style="text-align:center">
                   <div style="display:flex;align-items:center;justify-content:center;gap:6px">
-                    <button class="btn sm icon-only" style="height:26px;padding:2px 7px;font-size:12px" data-act="edit-roster-slot" data-dept="${deptKey}" data-dt="${sdDate}" data-s="${s.id}" data-src="single-day" title="Edit devotee assignment">✏️ Edit</button>
+                    <button class="btn sm icon-only" style="height:26px;padding:2px 7px;font-size:12px" data-act="edit-roster-slot" data-dept="${deptKey}" data-dt="${sdDate}" data-s="${s.id}" data-src="single-day" title="Edit devotee assignment">✏️</button>
                     <button class="btn sm icon-only" style="height:26px;padding:2px 7px;font-size:12px;background:${isDone?'rgba(5,150,105,0.1)':''};color:${isDone?'var(--green)':''}" data-act="toggle-roster-status" data-dept="${deptKey}" data-dt="${sdDate}" data-s="${s.id}" title="Toggle Done/Missed/Pending">${isDone ? '✅' : (isMissed ? '❌' : '⏳')}</button>
                     ${isMissed || (sl.devotees && sl.devotees.includes('❌')) ? `<button class="btn sm icon-only" style="height:26px;padding:2px 7px;font-size:11px" data-act="open-missed-substitute" data-dept="${deptKey}" data-dt="${sdDate}" data-s="${s.id}" title="Manage substitution">🔄 Sub</button>` : ''}
                   </div>
@@ -18681,7 +19019,8 @@ function renderDepartmentRosterPanel(deptKey) {
         </div>
       </div>
 
-      <div class="tbl-wrap roster-table-scroll" style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+      <!-- Desktop 8-column Weekly Table (Preserved 100% untouched for laptops/desktops) -->
+      <div class="roster-weekly-desktop-tbl tbl-wrap roster-table-scroll" style="overflow-x:auto;-webkit-overflow-scrolling:touch">
         <table class="tbl">
           <thead>
             <tr>
@@ -18698,7 +19037,7 @@ function renderDepartmentRosterPanel(deptKey) {
               const isSub = isDeity && (s.isSub || s.id === 'd4' || s.id === 'd5');
               return `<tr>
               <td data-l="Service">
-                <div style="font-weight:700;font-size:13px;display:flex;align-items:center;gap:5px">
+                <div style="font-weight:700;font-size:13px;display:flex;align-items:gap:5px">
                   ${isSub ? '<span style="color:var(--saffron);font-weight:bold">↳</span>' : ''}
                   <span>${esc(s.name)}</span>
                 </div>
@@ -18717,6 +19056,126 @@ function renderDepartmentRosterPanel(deptKey) {
             }).join('')}
           </tbody>
         </table>
+      </div>
+
+      <!-- Mobile Weekly Compact Small Table (Zero horizontal scroll, readable 12.5px font) -->
+      <div class="roster-weekly-mobile-wrap" style="padding:10px 12px">
+        <!-- Day Selector Pills Bar -->
+        <div class="weekly-mob-day-nav">
+          <div style="font-size:11.5px;font-weight:700;color:var(--ink-2);margin-bottom:6px;display:flex;align-items:center;justify-content:space-between">
+            <span>📅 Select Day of Week:</span>
+            <span style="font-weight:normal;color:var(--ink-3);font-size:10.5px">Tap day to view</span>
+          </div>
+          <div class="weekly-day-pills-row">
+            ${days.map(d => {
+              const isCur = d === todayStr;
+              const isSel = d === activeWeeklyDay;
+              const dShort = fullDayName(d).slice(0, 3);
+              const dObj = parseDate(d);
+              const dayNum = dObj ? dObj.getDate() : '';
+              return `<button type="button" class="btn sm weekly-day-pill${isSel ? ' pri' : ''}${isCur ? ' is-today' : ''}" data-act="set-mobile-weekly-day" data-dept="${deptKey}" data-dt="${d}">
+                <span class="d-pill-name">${dShort}</span>
+                <span class="d-pill-num">${dayNum}</span>
+                ${isCur ? '<span class="d-pill-dot" title="Today">●</span>' : ''}
+              </button>`;
+            }).join('')}
+            <button type="button" class="btn sm weekly-day-pill${activeWeeklyDay === 'all' ? ' pri' : ''}" data-act="set-mobile-weekly-day" data-dept="${deptKey}" data-dt="all">
+              <span class="d-pill-name" style="padding:4px 0">All Days</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Small Table Content -->
+        <div class="weekly-mob-table-container">
+          ${activeWeeklyDay === 'all' ? days.map(d => {
+            const isCur = d === todayStr;
+            const dName = fullDayName(d);
+            return `
+              <div style="margin-bottom:12px;border:1px solid var(--line);border-radius:10px;overflow:hidden">
+                <div style="background:${isCur ? 'var(--saffron-soft)' : (isDeity ? '#FFF5EA' : '#F0FDFA')};padding:7px 10px;font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:space-between;color:var(--ink)">
+                  <span>📅 ${dName}, ${fmtD(d)}</span>
+                  ${isCur ? '<span class="badge" style="background:var(--saffron);color:#fff;font-size:9.5px;padding:1px 6px">Today</span>' : ''}
+                </div>
+                <table class="tbl weekly-small-tbl" style="width:100%;margin:0">
+                  <thead>
+                    <tr style="background:var(--surface-2)">
+                      <th style="width:40%">Service &amp; Time</th>
+                      <th style="width:46%">Assigned Devotee</th>
+                      <th style="width:14%;text-align:center">Edit</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${services.map(s => {
+                      const sl = getRosterSlot(roster, d, s.id);
+                      const isSub = isDeity && (s.isSub || s.id === 'd4' || s.id === 'd5');
+                      const hasDev = sl.devotees && sl.devotees.trim() && sl.devotees !== '—' && sl.devotees !== 'Unassigned';
+                      return `<tr>
+                        <td>
+                          <div style="font-weight:700;font-size:12px;color:var(--ink);line-height:1.2">
+                            ${isSub ? '<span style="color:var(--saffron)">↳ </span>' : ''}${esc(s.name)}
+                          </div>
+                          ${s.time ? `<div style="font-size:10px;color:var(--ink-3);margin-top:2px">${esc(s.time)}</div>` : ''}
+                        </td>
+                        <td>
+                          <span style="font-weight:600;font-size:12px;color:${hasDev ? 'var(--ink)' : 'var(--ink-3)'};word-break:break-word;cursor:pointer" data-act="edit-roster-slot" data-dept="${deptKey}" data-dt="${d}" data-s="${s.id}" data-src="weekly">
+                            ${esc(sl.devotees || 'Unassigned')}
+                          </span>
+                        </td>
+                        <td style="text-align:center">
+                          <button class="btn sm icon-only" style="height:22px;width:22px;padding:0;font-size:10.5px" data-act="edit-roster-slot" data-dept="${deptKey}" data-dt="${d}" data-s="${s.id}" data-src="weekly" title="Edit devotee">✏️</button>
+                        </td>
+                      </tr>`;
+                    }).join('')}
+                  </tbody>
+                </table>
+              </div>
+            `;
+          }).join('') : (() => {
+            const d = activeWeeklyDay;
+            const isCur = d === todayStr;
+            const dName = fullDayName(d);
+            return `
+              <div style="border:1px solid var(--line);border-radius:10px;overflow:hidden">
+                <div style="background:${isCur ? 'var(--saffron-soft)' : (isDeity ? '#FFF5EA' : '#F0FDFA')};padding:8px 12px;font-weight:700;font-size:12.5px;display:flex;align-items:center;justify-content:space-between;color:var(--ink)">
+                  <span>📅 ${dName}, ${fmtD(d)}</span>
+                  ${isCur ? '<span class="badge" style="background:var(--saffron);color:#fff;font-size:9.5px;padding:1px 6px">Today</span>' : ''}
+                </div>
+                <table class="tbl weekly-small-tbl" style="width:100%;margin:0">
+                  <thead>
+                    <tr style="background:var(--surface-2)">
+                      <th style="width:40%">Service &amp; Time</th>
+                      <th style="width:46%">Assigned Devotee</th>
+                      <th style="width:14%;text-align:center">Edit</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${services.map(s => {
+                      const sl = getRosterSlot(roster, d, s.id);
+                      const isSub = isDeity && (s.isSub || s.id === 'd4' || s.id === 'd5');
+                      const hasDev = sl.devotees && sl.devotees.trim() && sl.devotees !== '—' && sl.devotees !== 'Unassigned';
+                      return `<tr>
+                        <td>
+                          <div style="font-weight:700;font-size:12.5px;color:var(--ink);line-height:1.25">
+                            ${isSub ? '<span style="color:var(--saffron)">↳ </span>' : ''}${esc(s.name)}
+                          </div>
+                          ${s.time ? `<div style="font-size:10px;color:var(--ink-3);margin-top:2px">${esc(s.time)}</div>` : ''}
+                        </td>
+                        <td>
+                          <span style="font-weight:600;font-size:12.5px;color:${hasDev ? 'var(--ink)' : 'var(--ink-3)'};word-break:break-word;cursor:pointer" data-act="edit-roster-slot" data-dept="${deptKey}" data-dt="${d}" data-s="${s.id}" data-src="weekly">
+                            ${esc(sl.devotees || 'Unassigned')}
+                          </span>
+                        </td>
+                        <td style="text-align:center">
+                          <button class="btn sm icon-only" style="height:24px;width:24px;padding:0;font-size:11px" data-act="edit-roster-slot" data-dept="${deptKey}" data-dt="${d}" data-s="${s.id}" data-src="weekly" title="Edit devotee">✏️</button>
+                        </td>
+                      </tr>`;
+                    }).join('')}
+                  </tbody>
+                </table>
+              </div>
+            `;
+          })()}
+        </div>
       </div>
       <div class="tbl-foot">
         <span class="tiny">Click any devotee name or pencil to assign responsible devotee(s) for the week.</span>
@@ -28854,6 +29313,14 @@ document.addEventListener('click',e=>{
     if (!APP.weeklyModalData) break;
     const deptK = APP.weeklyModalData.deptKey;
     shareWeeklyChartPhotoDirectly(deptK);
+    break;
+  }
+  case 'set-mobile-weekly-day':stop();{
+    const deptK = t.dataset.dept || 'deity';
+    const dt = t.dataset.dt || 'all';
+    APP.mobileWeeklyDay = APP.mobileWeeklyDay || {};
+    APP.mobileWeeklyDay[deptK] = dt;
+    render();
     break;
   }
   case 'toggle-roster-status':stop();{
