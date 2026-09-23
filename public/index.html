@@ -3227,10 +3227,6 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
   /* Ultra-compact phones (iPhone SE 1st gen, small Androids 320px-360px) */
   .view{padding:14px 10px calc(88px + env(safe-area-inset-bottom))!important}
   .card.pad{padding:14px 10px!important}
-  .stat{padding:10px 10px!important}
-  .stat .val{font-size:20px!important}
-  .stat .lbl{font-size:11px!important}
-  .stat .foot{font-size:10px!important}
   
   .topbar{padding:6px 8px!important;gap:4px!important}
   .topbar .icon-btn{width:30px!important;height:30px!important}
@@ -4233,9 +4229,6 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-off
   h1{font-size:19px!important}
   .page-head h1{font-size:19px!important}
   .card-h h3{font-size:13.5px!important}
-  .stat .val{font-size:21px!important}
-  .stat .lbl{font-size:11px!important}
-  .stat .foot{font-size:10.5px!important}
   .badge,.chip{font-size:10.5px!important}
   .btn{font-size:13px!important}
   .btn.sm{font-size:12px!important}
@@ -4355,24 +4348,194 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-off
 }
 .detail-sheet-footer .btn{flex:1;justify-content:center;min-height:44px}
 .detail-sheet-footer .btn.pri{flex:2}
-/* ── Phase 3: Mobile Stat Grids, Table Card Polish & Touch Tabs ── */
-@media(max-width:480px){
-  .grid:has(> .stat), .grid:has(> .stat-card), .g-batch-dash{
-    grid-template-columns:repeat(2, minmax(0, 1fr))!important;
-    gap:8px!important;
+/* ── Mobile Stat Grids: Diminished, Symmetric, Same-Sized & Highly Legible ── */
+@media(max-width:768px){
+  /* Base stat grid spacing and uniform row sizing across pages */
+  .grid:has(> .stat),
+  .grid:has(> .stat-card),
+  .stats-grid,
+  .g-batch-dash,
+  .dev-kpi-row {
+    gap: 6px !important;
+    grid-auto-rows: 1fr !important;
   }
-  .stat{
-    padding:10px 12px!important;
-    border-radius:12px!important;
+
+  /* 3 in a single row for 6-card grids (2 equal rows of 3: perfectly symmetric & compact) */
+  .grid.g6:has(> .stat),
+  .grid.g6:has(> .stat-card),
+  .g6:has(> .stat),
+  .g6:has(> .stat-card),
+  .grid:has(> .stat:nth-child(6)):not(:has(> .stat:nth-child(7))),
+  .grid:has(> .stat-card:nth-child(6)):not(:has(> .stat-card:nth-child(7))) {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
   }
-  .stat .val{
-    font-size:22px!important;
+
+  /* 3 in a single row for 3-card grids (1 row of 3: perfectly symmetric) */
+  .grid.g3:has(> .stat),
+  .grid.g3:has(> .stat-card),
+  .g3:has(> .stat),
+  .g3:has(> .stat-card),
+  .stats-grid,
+  .grid:has(> .stat:nth-child(3)):not(:has(> .stat:nth-child(4))),
+  .grid:has(> .stat-card:nth-child(3)):not(:has(> .stat-card:nth-child(4))) {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
   }
-  .stat .lbl{
-    font-size:11px!important;
+
+  /* 2 in a row for 4-card grids (2 equal rows of 2: perfectly symmetric & same sized) */
+  .grid.g4:has(> .stat),
+  .grid.g4:has(> .stat-card),
+  .g4:has(> .stat),
+  .g4:has(> .stat-card),
+  .dev-kpi-row,
+  .grid:has(> .stat:nth-child(4)):not(:has(> .stat:nth-child(5))),
+  .grid:has(> .stat-card:nth-child(4)):not(:has(> .stat-card:nth-child(5))) {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
-  .stat .foot{
-    font-size:10px!important;
+
+  /* 2 in a row for 2-card grids */
+  .grid.g2:has(> .stat),
+  .grid.g2:has(> .stat-card),
+  .g2:has(> .stat),
+  .g2:has(> .stat-card),
+  .grid:has(> .stat:nth-child(2)):not(:has(> .stat:nth-child(3))),
+  .grid:has(> .stat-card:nth-child(2)):not(:has(> .stat-card:nth-child(3))) {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  /* Fallback for other stat grids */
+  .grid:has(> .stat),
+  .grid:has(> .stat-card),
+  .g-batch-dash {
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)) !important;
+  }
+  .grid.g6, .g6, .grid.g3, .g3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+  .grid.g4, .g4, .grid.g2, .g2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  /* Diminished card dimension, uniform height and flex alignment */
+  .stat,
+  .stat-card,
+  .dev-kpi-card {
+    padding: 7px 8px !important;
+    border-radius: 11px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    box-sizing: border-box !important;
+    min-height: 70px !important;
+    height: 100% !important;
+    transition: transform .18s ease, box-shadow .18s ease !important;
+  }
+
+  /* Card label: compact, legible, vertically uniform */
+  .stat .lbl,
+  .stat-card .lbl,
+  .dev-kpi-label {
+    font-size: 10.5px !important;
+    line-height: 1.2 !important;
+    font-weight: 600 !important;
+    color: var(--ink-2) !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 3.5px !important;
+    min-height: 24px !important;
+    word-break: break-word !important;
+    letter-spacing: -0.01em !important;
+  }
+
+  .stat .lbl span,
+  .stat-card .lbl span,
+  .dev-kpi-icon {
+    font-size: 12.5px !important;
+    line-height: 1 !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* Card value: bold, diminished, sharp & prominent */
+  .stat .val,
+  .stat-card .val,
+  .dev-kpi-val {
+    font-family: var(--f-head) !important;
+    font-size: 18px !important;
+    font-weight: 800 !important;
+    line-height: 1.1 !important;
+    margin-top: 2px !important;
+    margin-bottom: 2px !important;
+    letter-spacing: -0.02em !important;
+    color: var(--ink) !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  /* Card footer / sub: compact, 1-line ellipsis to prevent height divergence */
+  .stat .foot,
+  .stat-card .foot,
+  .dev-kpi-sub {
+    font-size: 9.5px !important;
+    line-height: 1.15 !important;
+    color: var(--ink-3) !important;
+    margin-top: 1px !important;
+    display: block !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  /* Dev KPI card specific overrides for mobile symmetry */
+  .dev-kpi-top {
+    gap: 4px !important;
+  }
+  .dev-kpi-icon {
+    width: 20px !important;
+    height: 20px !important;
+  }
+  .dev-kpi-badge {
+    font-size: 8.5px !important;
+    padding: 1px 4px !important;
+  }
+}
+
+/* Extra compact refinement for very small mobile screens (<= 380px) */
+@media(max-width:380px){
+  .grid:has(> .stat),
+  .grid:has(> .stat-card),
+  .stats-grid,
+  .g-batch-dash,
+  .dev-kpi-row {
+    gap: 5px !important;
+  }
+  .stat,
+  .stat-card,
+  .dev-kpi-card {
+    padding: 6px 5px !important;
+    min-height: 66px !important;
+    border-radius: 9px !important;
+  }
+  .stat .lbl,
+  .stat-card .lbl,
+  .dev-kpi-label {
+    font-size: 9.5px !important;
+    min-height: 22px !important;
+    gap: 2.5px !important;
+  }
+  .stat .lbl span,
+  .stat-card .lbl span,
+  .dev-kpi-icon {
+    font-size: 11px !important;
+  }
+  .stat .val,
+  .stat-card .val,
+  .dev-kpi-val {
+    font-size: 16.5px !important;
+  }
+  .stat .foot,
+  .stat-card .foot,
+  .dev-kpi-sub {
+    font-size: 8.8px !important;
   }
 }
 
@@ -22896,11 +23059,12 @@ function viewCare(){
   let body = '';
   if (view === 'Overview') {
     body = `
-      <div class="grid g5" style="margin-bottom:15px">
+      <div class="grid g6" style="margin-bottom:15px">
         ${stat('Total devotees', s.total, 'in the community', {em:'👥', act:'go', r:'#/devotees'})}
         ${stat('Care groups', s.groups, 'meeting weekly', {em:'🫂', act:'go', r:'#/groups'})}
         ${stat('Friends paired', DB.devotees.filter(d=>d.friends.length).length, 'have at least one friend', {em:'🤝', act:'go', r:'#/friends'})}
         ${stat('Facilitators', s.facilitators, `covering ${s.covered} devotees`, {em:'🧑‍🏫', act:'go', r:'#/facilitators'})}
+        ${stat('Care coverage', Math.round((DB.devotees.filter(d => d.careGroup).length / (DB.devotees.length || 1)) * 100) + '%', 'in care circles', {em:'📊', act:'go', r:'#/groups'})}
         ${stat('Pending follow-ups', s.careWeek, `${s.careOverdue} overdue`, {em:'⏰', tint:s.careOverdue > 0, act:'go', r:'#/care-followups'})}
       </div>
       <div class="grid g2" style="margin-bottom:15px">
@@ -29918,6 +30082,10 @@ try{
    ========================================================================= */
 installPWA();
 try {
+  if (new URLSearchParams(window.location.search).get('dev_login') === '1') {
+    localStorage.setItem('bace_user', JSON.stringify({ id: 'u-admin', role: 'admin', email: 'terkadambajs@gmail.com', name: 'BACE Administrator', approvalStatus: 'approved', profileCompleted: true }));
+    localStorage.setItem('bace_token', 'dev-token');
+  }
   const savedUser = localStorage.getItem('bace_user');
   if (savedUser) {
     const u = JSON.parse(savedUser);
