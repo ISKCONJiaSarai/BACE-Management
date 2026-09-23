@@ -955,8 +955,6 @@ body.mobile-today-open{
 .shell{min-height:100vh}
 /* Legacy sidebar hidden — replaced by app-header */
 .sidebar{display:none!important}
-.sb-edge-toggle{display:none!important}
-.sb-head,.sb-scroll,.sb-foot,.sb-user,.pillar,.pillar-h,.pillar-body,.nav-sub,.nav-indent{/* kept for compat */}
 .nav-item{display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:9px;color:var(--ink-2);font-size:13px;width:100%;text-align:left;position:relative;transition:all .16s ease}
 .nav-item:hover{background:var(--surface-2);color:var(--ink)}
 
@@ -3997,6 +3995,7 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-off
   .page-head:has(.dash-header-btn-col) p.sub{
     display:-webkit-box!important;
     -webkit-line-clamp:1!important;
+    line-clamp:1!important;
     -webkit-box-orient:vertical!important;
     overflow:hidden!important;
     text-overflow:ellipsis!important;
@@ -6898,6 +6897,35 @@ html.theme-transitioning .pillar-item {
   0% { transform: rotate(0deg) scale(0.7); opacity: 0.5; }
   50% { transform: rotate(180deg) scale(1.18); opacity: 0.9; }
   100% { transform: rotate(360deg) scale(1); opacity: 1; }
+}
+
+/* ── Mobile View: Hide All CSV Export Buttons Across Entire Website (Kept for Laptop/Desktop) ── */
+@media (max-width: 768px) {
+  [data-act="export-table"],
+  [data-act="export-devotees"],
+  [data-act="export-depts"],
+  [data-act="export-morning-report"],
+  [data-act="export-morning-period-csv"],
+  [data-act="export-morning-progress"],
+  [data-act="export-roster-csv"],
+  [data-act="export-devotee-stats-csv"],
+  [data-act="export-summary-matrix-csv"],
+  [data-act="export-matrix"],
+  [data-act="export-reports"],
+  [data-act="export-contacts"],
+  [data-act="export-morning-category-csv"],
+  [data-act="export-funnel-stage"],
+  [data-act="export-batch-report"],
+  [data-act="export-care"],
+  [data-act="export-analytics"],
+  [data-act="export-audit"],
+  [data-act="export-drill"],
+  button[onclick*="exportDepartmentExpensesCSV"],
+  button[onclick*="downloadCSV"],
+  .btn-export-csv,
+  .export-csv-btn {
+    display: none !important;
+  }
 }
 
 </style>
