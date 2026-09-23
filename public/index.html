@@ -16263,10 +16263,10 @@ function morningProgramPanel(){
     <!-- Tabs: Attendance Report & Devotees Progress (Side-by-side) -->
     <div class="tabs" style="margin-bottom:16px">
       <button class="${morningTab==='report'?'on':''}" data-act="tab" data-k="morningTab" data-v="report" style="display:inline-flex;align-items:center;gap:6px">
-        <span>📋 Morning Programme Attendance Report</span>
+        <span>📋 Attendance Report</span>
       </button>
       <button class="${morningTab==='progress'?'on':''}" data-act="tab" data-k="morningTab" data-v="progress" style="display:inline-flex;align-items:center;gap:6px">
-        <span>🏆 Devotees Progress &amp; Percentage Growth</span>
+        <span>🏆 Progress %</span>
         <span class="badge sm" style="background:var(--accent-soft);color:var(--accent);font-weight:700">${(monthly.devStats ? monthly.devStats.length : (weekly.devStats ? weekly.devStats.length : (data.rows ? data.rows.length : allDevs.length)))}</span>
       </button>
     </div>
