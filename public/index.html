@@ -16255,14 +16255,10 @@ function morningProgramPanel(){
           <button class="btn sm" data-act="trigger-morning-csv" title="Upload a new biometric .txt file">
             ${ic('upload')} Upload New File
           </button>
-          <button class="btn sm ${progTab === 'progress' ? 'pri' : ''}" data-act="morning-subtab" data-v="${progTab === 'progress' ? 'report' : 'progress'}">
-            📈 Devotees Progress (${(monthly.devStats ? monthly.devStats.length : (weekly.devStats ? weekly.devStats.length : (data.rows ? data.rows.length : allDevs.length)))})
-          </button>
         </div>
       </div>
     </div>
 
-    ${progTab === 'report' ? `
     <!-- ATTENDANCE REPORT: TODAY, WEEKLY, AND MONTHLY VIEW -->
     <div class="card" style="margin-bottom:16px">
       <div class="card-h morning-report-header" style="border-bottom:1px solid var(--line-2);padding:12px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
@@ -16788,7 +16784,7 @@ function morningProgramPanel(){
       </div>
       `)}
     </div>
-    ` : `
+
     <!-- DEVOTEES PROGRESS SECTION: WITH WEEK-OVER-WEEK & MONTH-OVER-MONTH PERCENTAGE GROWTH -->
     <div class="card" style="margin-bottom:16px">
       <div class="card-h" style="border-bottom:1px solid var(--line-2);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
@@ -17008,7 +17004,6 @@ function morningProgramPanel(){
         })()}
       </div>
     </div>
-    `}
   </div>`;
 }
 
