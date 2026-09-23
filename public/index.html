@@ -5544,6 +5544,22 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-off
   /* Hide the desktop single-day table on mobile */
   .roster-single-day-table { display: none !important; }
   .sd-mobile-rows-wrap { display: block !important; }
+
+  /* Mobile Single Day Card Header: Clean 4-line compression */
+  .sd-main-card-header { padding: 10px 12px !important; }
+  .sd-main-card-header-top { flex-direction: column !important; align-items: stretch !important; gap: 7px !important; }
+  .sd-main-card-title-group { flex-wrap: nowrap !important; gap: 8px !important; }
+  .sd-main-card-title-group > span { font-size: 20px !important; flex-shrink: 0 !important; }
+  .sd-main-card-title-group > div { min-width: 0 !important; }
+  .sd-main-card-title-group div[style*="font-weight:700"] { font-size: 13.5px !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; line-height: 1.25 !important; }
+  .sd-main-card-title-group .tiny { font-size: 11px !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; line-height: 1.25 !important; }
+  .sd-date-picker-wrap { width: 100% !important; gap: 6px !important; flex-wrap: nowrap !important; }
+  .sd-date-picker-wrap label { font-size: 12px !important; white-space: nowrap !important; flex-shrink: 0 !important; }
+  .sd-date-picker-wrap input[type="date"] { flex: 1 1 auto !important; min-width: 0 !important; padding: 4px 6px !important; font-size: 12px !important; height: 32px !important; box-sizing: border-box !important; }
+  .sd-date-picker-wrap button { flex-shrink: 0 !important; padding: 4px 10px !important; font-size: 12px !important; height: 32px !important; white-space: nowrap !important; }
+  .sd-pills-row { margin-top: 8px !important; gap: 6px !important; flex-wrap: nowrap !important; overflow-x: auto !important; -webkit-overflow-scrolling: touch !important; scrollbar-width: none !important; padding-bottom: 2px !important; }
+  .sd-pills-row::-webkit-scrollbar { display: none !important; }
+  .sd-pill { padding: 3px 8px !important; font-size: 11px !important; white-space: nowrap !important; flex-shrink: 0 !important; }
 }
 
 /* Desktop: hide mobile-only elements */
@@ -19562,9 +19578,9 @@ function renderDepartmentRosterPanel(deptKey) {
     <!-- SINGLE DAY VIEW -->
     <div class="card" style="margin-bottom:16px;border:1.5px solid ${isDeity ? 'var(--saffron)' : 'var(--teal)'}">
       <!-- Header: date picker + summary stats -->
-      <div style="background:${isDeity ? '#FFF5EA' : '#F0FDFA'};padding:14px 18px;border-bottom:1.5px solid ${isDeity ? 'var(--saffron)' : 'var(--teal)'}">
-        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
-          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <div class="sd-main-card-header" style="background:${isDeity ? '#FFF5EA' : '#F0FDFA'};padding:14px 18px;border-bottom:1.5px solid ${isDeity ? 'var(--saffron)' : 'var(--teal)'}">
+        <div class="sd-main-card-header-top" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+          <div class="sd-main-card-title-group" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
             <span style="font-size:22px">${deptIcon}</span>
             <div>
               <div style="font-weight:700;font-size:15px">${deptTitle} — Single Day Report</div>
@@ -19572,28 +19588,28 @@ function renderDepartmentRosterPanel(deptKey) {
             </div>
           </div>
           <!-- Date Picker & Day Navigation -->
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <div class="sd-date-picker-wrap" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
             <label style="font-weight:600;font-size:13px">📅 Select Date:</label>
             <input type="date" id="single-day-date-${deptKey}" value="${sdDate}"
               style="padding:6px 10px;border:1.5px solid ${isDeity ? 'var(--saffron)' : 'var(--teal)'};border-radius:8px;font-size:13px;background:var(--surface);cursor:pointer;font-family:inherit"
               onchange="window.setSingleDayDate('${deptKey}', this.value)"
             />
-            <button type="button" class="btn sm" style="padding:5px 10px" onclick="window.navSingleDayDate('${deptKey}', -1)" title="Previous Day">◀</button>
-            <button type="button" class="btn sm" style="padding:5px 10px" onclick="window.navSingleDayDate('${deptKey}', 1)" title="Next Day">▶</button>
+            <button type="button" class="btn sm hide-mobile" style="padding:5px 10px" onclick="window.navSingleDayDate('${deptKey}', -1)" title="Previous Day">◀</button>
+            <button type="button" class="btn sm hide-mobile" style="padding:5px 10px" onclick="window.navSingleDayDate('${deptKey}', 1)" title="Next Day">▶</button>
             <button type="button" class="btn sm${isToday ? ' pri' : ''}" style="padding:5px 10px" onclick="window.navSingleDayDate('${deptKey}', 0)" title="Go to Today">Today</button>
           </div>
         </div>
 
         <!-- Day summary pills -->
-        <div style="display:flex;align-items:center;gap:8px;margin-top:12px;flex-wrap:wrap">
-          <span style="background:#fff;border:1px solid var(--line);border-radius:20px;padding:4px 12px;font-size:12px;font-weight:700">
+        <div class="sd-pills-row" style="display:flex;align-items:center;gap:8px;margin-top:12px;flex-wrap:wrap">
+          <span class="sd-pill" style="background:#fff;border:1px solid var(--line);border-radius:20px;padding:4px 12px;font-size:12px;font-weight:700">
             📅 ${fullDayName(sdDate)}, ${fmtD(sdDate)}
             ${isToday ? '<span style="background:var(--saffron);color:#fff;border-radius:10px;padding:1px 7px;font-size:10px;margin-left:4px">TODAY</span>' : (isFuture ? '<span style="background:var(--blue);color:#fff;border-radius:10px;padding:1px 7px;font-size:10px;margin-left:4px">UPCOMING</span>' : '<span style="background:var(--ink-3);color:#fff;border-radius:10px;padding:1px 7px;font-size:10px;margin-left:4px">PAST</span>')}
           </span>
-          <span style="background:#ECFDF5;color:#059669;border-radius:20px;padding:4px 12px;font-size:12px;font-weight:700">✅ ${doneC} Done</span>
-          <span style="background:#FEF9C3;color:#B45309;border-radius:20px;padding:4px 12px;font-size:12px;font-weight:700">⏳ ${pendingC} Pending</span>
-          ${missedC > 0 ? `<span style="background:#FEF2F2;color:#DC2626;border-radius:20px;padding:4px 12px;font-size:12px;font-weight:700">❌ ${missedC} Missed</span>` : ''}
-          <span style="background:var(--paper-2);color:var(--ink-2);border-radius:20px;padding:4px 12px;font-size:12px;font-weight:600">📋 ${totalCount} Total Services</span>
+          <span class="sd-pill" style="background:#ECFDF5;color:#059669;border-radius:20px;padding:4px 12px;font-size:12px;font-weight:700">✅ ${doneC} Done</span>
+          <span class="sd-pill" style="background:#FEF9C3;color:#B45309;border-radius:20px;padding:4px 12px;font-size:12px;font-weight:700">⏳ ${pendingC} Pending</span>
+          ${missedC > 0 ? `<span class="sd-pill" style="background:#FEF2F2;color:#DC2626;border-radius:20px;padding:4px 12px;font-size:12px;font-weight:700">❌ ${missedC} Missed</span>` : ''}
+          <span class="sd-pill" style="background:var(--paper-2);color:var(--ink-2);border-radius:20px;padding:4px 12px;font-size:12px;font-weight:600">📋 ${totalCount} Total Services</span>
         </div>
       </div>
 
