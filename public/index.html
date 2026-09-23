@@ -1702,6 +1702,19 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
   .morning-report-subrow .morning-exact-date-picker select{display:none !important}
   .morning-report-subrow > button,.morning-report-subrow > div > button{flex:none !important;width:auto !important;padding:4px 7px !important;font-size:11px !important;white-space:nowrap !important}
   .morning-btn-text{display:none !important}
+  /* Compact Morning Punctuality Breakdown card for mobile */
+  .morning-punc-card{padding:12px 14px !important}
+  .morning-punc-card .card-h{padding-bottom:8px !important}
+  .morning-punc-body{display:flex !important;flex-direction:row !important;align-items:center !important;justify-content:space-between !important;gap:10px !important;margin-top:8px !important;flex-wrap:nowrap !important}
+  .morning-punc-donut{width:92px !important;height:92px !important;flex:0 0 92px !important;margin:0 !important}
+  .morning-punc-donut svg{width:92px !important;height:92px !important}
+  .morning-punc-donut .punc-center-pct{font-size:16px !important}
+  .morning-punc-donut .punc-center-lbl{font-size:8px !important}
+  .morning-punc-legend{flex:1 1 auto !important;min-width:0 !important;gap:3px !important}
+  .morning-punc-row{padding:4px 8px !important;font-size:11.5px !important;border-radius:5px !important}
+  .morning-punc-row .badge{font-size:10px !important;padding:1px 5px !important}
+  .morning-punc-desc{display:none !important}
+  .morning-chart-hint{display:none !important}
 }
 @media(max-width:520px){
   .morning-view-btn-group button{padding:6px 2px !important;font-size:11px !important}
@@ -15903,10 +15916,10 @@ function renderMorningCharts(m, dateLabel, filterSt = '', activeBucket = '') {
   const C = 2 * Math.PI * R;
   const total = m.total || (m.onTimeCount + m.graceCount + m.lateCount + m.absentCount) || 1;
   const parts = [
-    { status: 'On Time', count: m.onTimeCount, col: 'var(--green,#10B981)', label: 'On Time (≤ 04:30 AM)' },
-    { status: 'Grace', count: m.graceCount, col: 'var(--mustard,#D97706)', label: 'Grace (≤ 05:30 AM)' },
-    { status: 'Late', count: m.lateCount, col: 'var(--danger,#DC2626)', label: 'Late (≤ 06:30 AM)' },
-    { status: 'Absent', count: m.absentCount, col: '#94A3B8', label: 'Absent (No punch)' }
+    { status: 'On Time', count: m.onTimeCount, col: 'var(--green,#10B981)', label: 'On Time', desc: ' (≤ 04:30 AM)' },
+    { status: 'Grace', count: m.graceCount, col: 'var(--mustard,#D97706)', label: 'Grace', desc: ' (≤ 05:30 AM)' },
+    { status: 'Late', count: m.lateCount, col: 'var(--danger,#DC2626)', label: 'Late', desc: ' (≤ 06:30 AM)' },
+    { status: 'Absent', count: m.absentCount, col: '#94A3B8', label: 'Absent', desc: ' (No punch)' }
   ];
   let acc = 0;
   const donutSegments = parts.map(p => {
@@ -15915,7 +15928,7 @@ function renderMorningCharts(m, dateLabel, filterSt = '', activeBucket = '') {
     const off = (acc / 100) * C;
     acc += pc;
     const isSel = filterSt === p.status;
-    return pc > 0 ? `<circle cx="60" cy="60" r="${R}" fill="none" stroke="${p.col}" stroke-width="${isSel ? '17' : '14'}" stroke-dasharray="${dash.toFixed(2)} ${C.toFixed(2)}" stroke-dashoffset="${(-off).toFixed(2)}" transform="rotate(-90 60 60)" stroke-linecap="round" data-act="morning-filter-status" data-s="${p.status}" style="cursor:pointer;transition:all .2s ease" title="Click to view ${p.label}: ${p.count} devotees"/>` : '';
+    return pc > 0 ? `<circle cx="60" cy="60" r="${R}" fill="none" stroke="${p.col}" stroke-width="${isSel ? '17' : '14'}" stroke-dasharray="${dash.toFixed(2)} ${C.toFixed(2)}" stroke-dashoffset="${(-off).toFixed(2)}" transform="rotate(-90 60 60)" stroke-linecap="round" data-act="morning-filter-status" data-s="${p.status}" style="cursor:pointer;transition:all .2s ease" title="Click to view ${p.label}${p.desc}: ${p.count} devotees"/>` : '';
   }).join('');
 
   const buckets = m.buckets || [
@@ -15929,36 +15942,36 @@ function renderMorningCharts(m, dateLabel, filterSt = '', activeBucket = '') {
   const onTimePct = m.onTimePct !== undefined ? m.onTimePct : (total > 0 ? Math.round((m.onTimeCount / total) * 100) : 0);
 
   return `<div class="morning-charts-grid">
-    <div class="card pad" style="position:relative">
+    <div class="card pad morning-punc-card" style="position:relative">
       <div class="card-h" style="padding:0 0 12px;border-bottom:1px solid var(--line-2);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
         <h3 style="margin:0">🎯 Punctuality Breakdown</h3>
         <span class="tiny" style="margin-left:auto">${esc(dateLabel)}</span>
       </div>
-      <div style="display:flex;align-items:center;justify-content:space-around;gap:16px;margin-top:14px;flex-wrap:wrap">
-        <div style="position:relative;width:120px;height:120px;flex:none;margin:0 auto" title="Interactive Donut Chart — click any section or center to filter">
+      <div class="morning-punc-body" style="display:flex;align-items:center;justify-content:space-around;gap:16px;margin-top:14px;flex-wrap:wrap">
+        <div class="morning-punc-donut" style="position:relative;width:120px;height:120px;flex:none;margin:0 auto" title="Interactive Donut Chart — click any section or center to filter">
           <svg viewBox="0 0 120 120" style="width:120px;height:120px;overflow:visible">
             <circle cx="60" cy="60" r="${R}" fill="none" stroke="var(--paper-2)" stroke-width="14"/>
             ${donutSegments}
           </svg>
           <div class="click" data-act="morning-filter-status" data-s="" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;border-radius:50%" title="Click to view all registered devotees (${total})">
-            <span style="font-family:var(--f-head);font-size:20px;font-weight:700;color:var(--ink);line-height:1">${onTimePct}%</span>
-            <span style="font-size:9.5px;color:var(--ink-3);text-transform:uppercase;font-weight:600">On Time</span>
+            <span class="punc-center-pct" style="font-family:var(--f-head);font-size:20px;font-weight:700;color:var(--ink);line-height:1">${onTimePct}%</span>
+            <span class="punc-center-lbl" style="font-size:9.5px;color:var(--ink-3);text-transform:uppercase;font-weight:600">On Time</span>
           </div>
         </div>
-        <div style="display:flex;flex-direction:column;gap:6px;min-width:140px;flex:1 1 180px">
+        <div class="morning-punc-legend" style="display:flex;flex-direction:column;gap:6px;min-width:140px;flex:1 1 180px">
           ${parts.map(p => {
             const isSel = filterSt === p.status;
-            return `<div class="click click-row" data-act="morning-filter-status" data-s="${p.status}" style="display:flex;align-items:center;justify-content:space-between;font-size:12px;padding:6px 10px;border-radius:6px;cursor:pointer;transition:all .15s;${isSel ? 'background:var(--paper-2);font-weight:700;border-left:3px solid ' + p.col : 'background:transparent'}" title="Click to view ${p.label}: ${p.count} devotees">
-              <span style="display:inline-flex;align-items:center;gap:6px">
-                <i style="width:10px;height:10px;border-radius:3px;background:${p.col};display:inline-block"></i>
-                ${p.label}
+            return `<div class="click click-row morning-punc-row" data-act="morning-filter-status" data-s="${p.status}" style="display:flex;align-items:center;justify-content:space-between;font-size:12px;padding:6px 10px;border-radius:6px;cursor:pointer;transition:all .15s;${isSel ? 'background:var(--paper-2);font-weight:700;border-left:3px solid ' + p.col : 'background:transparent'}" title="Click to view ${p.label}${p.desc}: ${p.count} devotees">
+              <span style="display:inline-flex;align-items:center;gap:6px;min-width:0">
+                <i style="width:10px;height:10px;border-radius:3px;background:${p.col};display:inline-block;flex:none"></i>
+                <span style="white-space:nowrap">${p.label}<span class="morning-punc-desc">${p.desc}</span></span>
               </span>
-              <span class="badge ${isSel ? 'b-indigo' : 'b-grey'}" style="font-size:11px">${p.count} (${pct(p.count, total)}%)</span>
+              <span class="badge ${isSel ? 'b-indigo' : 'b-grey'}" style="font-size:11px;flex:none;margin-left:6px">${p.count} (${pct(p.count, total)}%)</span>
             </div>`;
           }).join('')}
         </div>
       </div>
-      <div class="tiny muted" style="margin-top:10px;text-align:center">💡 Tap any slice or row to filter devotees below</div>
+      <div class="tiny muted morning-chart-hint" style="margin-top:10px;text-align:center">💡 Tap any slice or row to filter devotees below</div>
     </div>
 
     <div class="card pad" style="position:relative">
