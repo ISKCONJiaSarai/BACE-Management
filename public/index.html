@@ -5041,6 +5041,31 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-off
   .weekly-day-pill.pri .d-pill-dot {
     color: #fff;
   }
+  .weekly-service-card {
+    transition: background 0.12s ease;
+  }
+  .weekly-service-card:active {
+    background: var(--surface-2) !important;
+  }
+  .weekly-title-edit-btn {
+    height: 22px !important;
+    width: 22px !important;
+    min-width: 22px !important;
+    padding: 0 !important;
+    font-size: 11px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: var(--surface-2) !important;
+    border: 1px solid var(--line) !important;
+    border-radius: 6px !important;
+    cursor: pointer !important;
+    flex-shrink: 0 !important;
+    line-height: 1 !important;
+  }
+  .weekly-title-edit-btn:active {
+    transform: scale(0.92);
+  }
   .weekly-small-tbl {
     display: table !important;
     width: 100% !important;
@@ -19753,38 +19778,37 @@ function renderDepartmentRosterPanel(deptKey) {
                   <span>📅 ${dName}, ${fmtD(d)}</span>
                   ${isCur ? '<span class="badge" style="background:var(--saffron);color:#fff;font-size:9.5px;padding:1px 6px">Today</span>' : ''}
                 </div>
-                <table class="tbl weekly-small-tbl" style="width:100%;margin:0">
-                  <thead>
-                    <tr style="background:var(--surface-2)">
-                      <th style="width:40%">Service &amp; Time</th>
-                      <th style="width:46%">Assigned Devotee</th>
-                      <th style="width:14%;text-align:center">Edit</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    ${services.map(s => {
-                      const sl = getRosterSlot(roster, d, s.id);
-                      const isSub = isDeity && (s.isSub || s.id === 'd4' || s.id === 'd5');
-                      const hasDev = sl.devotees && sl.devotees.trim() && sl.devotees !== '—' && sl.devotees !== 'Unassigned';
-                      return `<tr>
-                        <td>
-                          <div style="font-weight:700;font-size:12.5px;color:var(--ink);line-height:1.25">
+                <div class="weekly-day-cards-list" style="display:flex;flex-direction:column;background:var(--surface)">
+                  ${services.map((s, idx) => {
+                    const sl = getRosterSlot(roster, d, s.id);
+                    const isSub = isDeity && (s.isSub || s.id === 'd4' || s.id === 'd5');
+                    const hasDev = sl.devotees && sl.devotees.trim() && sl.devotees !== '—' && sl.devotees !== 'Unassigned';
+                    const isDone = sl.status === 'done' || (sl.devotees && sl.devotees.includes('❌'));
+                    const isMissed = sl.status === 'missed';
+                    const isLast = idx === services.length - 1;
+                    return `
+                      <div class="weekly-service-card" style="padding:10px 12px;${isLast ? '' : 'border-bottom:1px solid var(--line-2);'}display:flex;flex-direction:column;gap:5px;background:var(--surface)">
+                        <!-- Row 1: Title + Pencil icon just to the right of title + Time on right -->
+                        <div style="display:flex;align-items:center;gap:6px">
+                          <span style="font-weight:700;font-size:13px;color:var(--ink);line-height:1.25">
                             ${isSub ? '<span style="color:var(--saffron)">↳ </span>' : ''}${esc(s.name)}
-                          </div>
-                          ${s.time ? `<div style="font-size:10px;color:var(--ink-3);margin-top:2px">${esc(s.time)}</div>` : ''}
-                        </td>
-                        <td>
-                          <span style="font-weight:600;font-size:12.5px;color:${hasDev ? 'var(--ink)' : 'var(--ink-3)'};word-break:break-word;cursor:pointer" data-act="edit-roster-slot" data-dept="${deptKey}" data-dt="${d}" data-s="${s.id}" data-src="weekly">
+                          </span>
+                          <button type="button" class="btn sm icon-only weekly-title-edit-btn" style="height:22px;width:22px;min-width:22px;padding:0;font-size:11px;display:inline-flex;align-items:center;justify-content:center;background:var(--surface-2);border:1px solid var(--line);border-radius:6px;cursor:pointer;flex-shrink:0" data-act="edit-roster-slot" data-dept="${deptKey}" data-dt="${d}" data-s="${s.id}" data-src="weekly" title="Edit devotee for ${esc(s.name)}">✏️</button>
+                          ${s.time ? `<span style="font-size:11px;color:var(--ink-3);margin-left:auto;font-family:monospace;font-weight:600;flex-shrink:0">${esc(s.time)}</span>` : ''}
+                        </div>
+                        <!-- Row 2: Assigned Devotee + Quick Status toggle -->
+                        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+                          <span style="font-weight:600;font-size:12.5px;color:${hasDev ? 'var(--ink)' : 'var(--ink-3)'};word-break:break-word;cursor:pointer" data-act="edit-roster-slot" data-dept="${deptKey}" data-dt="${d}" data-s="${s.id}" data-src="weekly" title="Click to assign devotee">
                             ${esc(sl.devotees || 'Unassigned')}
                           </span>
-                        </td>
-                        <td style="text-align:center">
-                          <button class="btn sm icon-only" style="height:24px;width:24px;padding:0;font-size:11px" data-act="edit-roster-slot" data-dept="${deptKey}" data-dt="${d}" data-s="${s.id}" data-src="weekly" title="Edit devotee">✏️</button>
-                        </td>
-                      </tr>`;
-                    }).join('')}
-                  </tbody>
-                </table>
+                          ${isDone ? `<button type="button" class="badge b-green" style="font-size:10.5px;padding:2px 7px;border:none;cursor:pointer" data-act="toggle-roster-status" data-dept="${deptKey}" data-dt="${d}" data-s="${s.id}" title="Toggle status">✅ Done</button>`
+                            : (isMissed ? `<button type="button" class="badge b-red" style="font-size:10.5px;padding:2px 7px;border:none;cursor:pointer" data-act="toggle-roster-status" data-dept="${deptKey}" data-dt="${d}" data-s="${s.id}" title="Toggle status">❌ Missed</button>`
+                            : (hasDev ? `<button type="button" class="badge b-amber" style="font-size:10.5px;padding:2px 7px;border:none;cursor:pointer" data-act="toggle-roster-status" data-dept="${deptKey}" data-dt="${d}" data-s="${s.id}" title="Toggle status">⏳ Pending</button>` : ''))}
+                        </div>
+                      </div>
+                    `;
+                  }).join('')}
+                </div>
               </div>
             `;
           })()}
