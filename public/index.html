@@ -1701,12 +1701,12 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
 /* Morning period filter toolbar (weekly/monthly select dropdowns) */
 .morning-period-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px}
 .morning-period-toolbar select{flex:1 1 160px;min-width:0}
-.morning-period-toolbar>div{flex:1 1 200px;min-width:0}
+.morning-period-toolbar>div{flex:1 1 220px;min-width:180px}
 /* Morning date picker row */
 .morning-exact-date-picker{display:flex;align-items:center;gap:6px;flex-wrap:wrap;width:100%}
 @media(max-width:640px){
   .morning-period-toolbar{flex-direction:column;align-items:stretch}
-  .morning-period-toolbar select,.morning-period-toolbar>div{flex:none;width:100%}
+  .morning-period-toolbar select,.morning-period-toolbar>div{flex:none !important;width:100% !important;min-width:0 !important}
   .morning-exact-date-picker{flex-direction:column;align-items:stretch}
   .morning-exact-date-picker input,.morning-exact-date-picker select{width:100%}
 }
@@ -16455,7 +16455,7 @@ function morningProgramPanel(){
 
         <!-- Filter & Sort Toolbar (Weekly) -->
         <div class="morning-period-toolbar" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px">
-          <div style="position:relative;flex:1 1 220px;min-width:180px">
+          <div style="position:relative">
             <input type="search" placeholder="🔍 Filter devotee in weekly report…" value="${esc(APP.morningSearch||'')}" data-act="morning-q" style="width:100%;padding:6px 10px 6px 32px;font-size:12.5px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)">
             <span style="position:absolute;left:10px;top:7px;color:var(--ink-3)">${ic('search')}</span>
           </div>
@@ -16609,7 +16609,7 @@ function morningProgramPanel(){
 
         <!-- Filter & Sort Toolbar (Monthly) -->
         <div class="morning-period-toolbar" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px">
-          <div style="position:relative;flex:1 1 220px;min-width:180px">
+          <div style="position:relative">
             <input type="search" placeholder="🔍 Filter devotee in monthly report…" value="${esc(APP.morningSearch||'')}" data-act="morning-q" style="width:100%;padding:6px 10px 6px 32px;font-size:12.5px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)">
             <span style="position:absolute;left:10px;top:7px;color:var(--ink-3)">${ic('search')}</span>
           </div>
