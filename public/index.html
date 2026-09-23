@@ -5125,6 +5125,416 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-off
   .deity-dressing-table .col-dress-dev {
     width: 56% !important;
   }
+
+  /* ── 5. Weekly All-Days Heatmap Grid ── */
+  .roster-heatmap-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .roster-heatmap-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    min-width: 300px;
+  }
+  .roster-heatmap-table th {
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    text-align: center !important;
+    padding: 6px 2px !important;
+    background: var(--surface-2) !important;
+    color: var(--ink-2) !important;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    border-bottom: 1px solid var(--line);
+  }
+  .roster-heatmap-table th.hm-svc-col {
+    text-align: left !important;
+    padding-left: 8px !important;
+    width: 34% !important;
+    font-size: 10px !important;
+  }
+  .roster-heatmap-table th.hm-today-col {
+    background: var(--saffron-soft) !important;
+    color: var(--saffron) !important;
+  }
+  .roster-heatmap-table td.hm-svc-name {
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    padding: 7px 4px 7px 8px !important;
+    color: var(--ink) !important;
+    line-height: 1.2 !important;
+    border-right: 1px solid var(--line-2);
+    background: var(--surface) !important;
+  }
+  .roster-heatmap-table td.hm-cell {
+    text-align: center !important;
+    padding: 4px 2px !important;
+    cursor: pointer !important;
+    border-right: 1px solid var(--line-2);
+    transition: background 0.1s;
+    font-size: 14px !important;
+  }
+  .roster-heatmap-table td.hm-cell:last-child {
+    border-right: none;
+  }
+  .roster-heatmap-table td.hm-today-cell {
+    background: rgba(245,168,105,0.10) !important;
+  }
+  .roster-heatmap-table tr {
+    border-bottom: 1px solid var(--line-2) !important;
+    display: table-row !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+  }
+  .roster-heatmap-table tr:last-child {
+    border-bottom: none !important;
+  }
+  .roster-heatmap-table td:before {
+    display: none !important;
+  }
+
+  /* ── CSS Grid Heatmap (rhm-grid) ── */
+  .rhm-grid {
+    display: grid;
+    grid-template-columns: minmax(110px,36%) repeat(calc(var(--rhm-cols) - 1), 1fr);
+    width: 100%;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    overflow: hidden;
+    font-size: 11px;
+  }
+  .rhm-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-right: 1px solid var(--line-2);
+    border-bottom: 1px solid var(--line-2);
+    padding: 5px 3px;
+    min-height: 36px;
+    cursor: default;
+  }
+  .rhm-cell:last-child { border-right: none; }
+  .rhm-srv-head {
+    align-items: flex-start;
+    padding-left: 8px;
+    background: var(--surface-2);
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--ink-2);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+  .rhm-day-head {
+    background: var(--surface-2);
+    font-weight: 700;
+    gap: 1px;
+  }
+  .rhm-day-head.rhm-today {
+    background: var(--saffron-soft);
+    color: var(--saffron);
+  }
+  .rhm-dname { font-size: 10px; font-weight: 700; color: inherit; }
+  .rhm-dnum  { font-size: 11px; font-weight: 800; color: inherit; }
+  .rhm-today-dot { font-size: 6px; color: var(--saffron); }
+  .rhm-srv-label {
+    align-items: flex-start;
+    padding-left: 8px;
+    background: var(--surface);
+    gap: 2px;
+  }
+  .rhm-srv-name { font-weight: 700; font-size: 10.5px; color: var(--ink); line-height: 1.2; word-break: break-word; }
+  .rhm-srv-time { font-size: 9px; color: var(--ink-3); }
+  .rhm-sub .rhm-srv-name { color: #b45309; }
+  .rhm-data {
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.1s;
+    min-height: 38px;
+  }
+  .rhm-data:active { opacity: 0.7; }
+  .rhm-done    { background: rgba(16,185,129,0.12); }
+  .rhm-missed  { background: rgba(239,68,68,0.12); }
+  .rhm-pending { background: rgba(245,158,11,0.10); }
+  .rhm-empty   { background: transparent; color: var(--ink-3); }
+  .rhm-today-col { background: rgba(245,168,105,0.10) !important; }
+  .rhm-done.rhm-today-col    { background: rgba(16,185,129,0.18) !important; }
+  .rhm-missed.rhm-today-col  { background: rgba(239,68,68,0.18) !important; }
+  .rhm-pending.rhm-today-col { background: rgba(245,158,11,0.16) !important; }
+
+  /* ── 6. Single Day View — Compact Mobile Header & Rows ── */
+  .sd-mobile-compact-header {
+    display: block !important;
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: var(--surface);
+    border-bottom: 1.5px solid var(--line);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .sd-mobile-compact-header .sd-hdr-row1 {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px 6px;
+    gap: 6px;
+  }
+  .sd-mobile-compact-header .sd-hdr-row2 {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 12px 8px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .sd-mobile-compact-header .sd-hdr-row2::-webkit-scrollbar { display: none; }
+  .sd-hdr-date-pill {
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--ink);
+    white-space: nowrap;
+  }
+  .sd-hdr-nav-btns {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .sd-hdr-nav-btns button {
+    border: 1px solid var(--line) !important;
+    background: var(--surface-2) !important;
+    color: var(--ink) !important;
+    border-radius: 7px !important;
+    font-size: 13px !important;
+    padding: 3px 9px !important;
+    height: 30px !important;
+    line-height: 1 !important;
+    font-weight: 700 !important;
+  }
+  .sd-hdr-stat-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 3px 9px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  /* Desktop version of single-day header: hide mobile header */
+  .sd-desktop-header { display: block; }
+  .sd-mobile-compact-header { display: none !important; }
+  /* Mobile: swap them */
+
+  /* ── 7. Single Day Segmented Filter Pills ── */
+  .sd-filter-pills-mobile {
+    display: none !important;
+  }
+  .sd-desktop-toolbar {
+    display: flex;
+  }
+
+  /* ── 8. Leaderboard Rows (Progress & Attendance) ── */
+  .lb-row {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    padding: 8px 10px !important;
+    border-bottom: 1px solid var(--line-2) !important;
+    background: var(--surface) !important;
+    min-height: 48px !important;
+    transition: background 0.12s !important;
+    cursor: pointer !important;
+    text-decoration: none !important;
+    color: var(--ink) !important;
+  }
+  .lb-row:active { background: var(--surface-2) !important; }
+  .lb-rank {
+    font-size: 10.5px !important;
+    font-weight: 700 !important;
+    color: var(--ink-3) !important;
+    min-width: 18px !important;
+    text-align: right !important;
+    flex-shrink: 0 !important;
+  }
+  .lb-dot {
+    width: 9px !important;
+    height: 9px !important;
+    border-radius: 50% !important;
+    flex-shrink: 0 !important;
+  }
+  .lb-dot.green  { background: #10B981 !important; }
+  .lb-dot.yellow { background: #F59E0B !important; }
+  .lb-dot.red    { background: #EF4444 !important; }
+  .lb-dot.grey   { background: #9CA3AF !important; }
+  .lb-name {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    font-size: 12.5px !important;
+    font-weight: 700 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    color: var(--ink) !important;
+  }
+  .lb-name small {
+    display: block !important;
+    font-size: 10px !important;
+    font-weight: 400 !important;
+    color: var(--ink-3) !important;
+    margin-top: 1px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+  .lb-bar-wrap {
+    display: flex !important;
+    align-items: center !important;
+    gap: 3px !important;
+    flex-shrink: 0 !important;
+  }
+  .lb-bar-block {
+    width: 10px !important;
+    height: 10px !important;
+    border-radius: 2px !important;
+    background: var(--line) !important;
+  }
+  .lb-bar-block.filled { background: var(--saffron) !important; }
+  .lb-bar-block.green-filled { background: #10B981 !important; }
+  .lb-pct {
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    min-width: 28px !important;
+    text-align: right !important;
+    flex-shrink: 0 !important;
+  }
+  .lb-delta {
+    font-size: 10.5px !important;
+    font-weight: 700 !important;
+    min-width: 38px !important;
+    text-align: right !important;
+    flex-shrink: 0 !important;
+    white-space: nowrap !important;
+  }
+  .lb-icon {
+    font-size: 14px !important;
+    flex-shrink: 0 !important;
+  }
+  .lb-action {
+    font-size: 11px !important;
+    flex-shrink: 0 !important;
+    padding: 2px 6px !important;
+    border-radius: 5px !important;
+    background: var(--surface-2) !important;
+    color: var(--ink-2) !important;
+    border: 1px solid var(--line) !important;
+    text-decoration: none !important;
+    white-space: nowrap !important;
+  }
+
+  /* ── 9. Three-Bucket Summary Bar ── */
+  .three-bucket-bar {
+    display: flex !important;
+    gap: 8px !important;
+    margin-bottom: 12px !important;
+  }
+  .bucket-card {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    border-radius: 10px !important;
+    padding: 10px 8px !important;
+    text-align: center !important;
+    cursor: pointer !important;
+    border: 2px solid transparent !important;
+    transition: transform 0.1s, border-color 0.1s !important;
+  }
+  .bucket-card:active { transform: scale(0.97) !important; }
+  .bucket-card.active-bucket { border-color: var(--ink) !important; }
+  .bucket-card.b-green { background: #ECFDF5 !important; }
+  .bucket-card.b-yellow { background: #FFFBEB !important; }
+  .bucket-card.b-red { background: #FEF2F2 !important; }
+  .bucket-card .bc-icon { font-size: 18px !important; margin-bottom: 2px !important; }
+  .bucket-card .bc-count { font-size: 20px !important; font-weight: 800 !important; line-height: 1.1 !important; }
+  .bucket-card .bc-label { font-size: 9.5px !important; font-weight: 700 !important; text-transform: uppercase !important; letter-spacing: 0.3px !important; margin-top: 1px !important; color: var(--ink-2) !important; }
+  .bucket-card.b-green .bc-count  { color: #059669 !important; }
+  .bucket-card.b-yellow .bc-count { color: #B45309 !important; }
+  .bucket-card.b-red .bc-count    { color: #DC2626 !important; }
+
+  /* ── 10. Mobile Filter Chips Row (replaces 3 select dropdowns) ── */
+  .lb-filter-chips {
+    display: flex !important;
+    gap: 5px !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    padding: 8px 10px !important;
+    border-bottom: 1px solid var(--line) !important;
+    background: var(--surface) !important;
+  }
+  .lb-filter-chips::-webkit-scrollbar { display: none !important; }
+  .lb-chip {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 3px !important;
+    padding: 4px 10px !important;
+    border-radius: 20px !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    border: 1.5px solid var(--line) !important;
+    background: var(--surface) !important;
+    color: var(--ink-2) !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+    cursor: pointer !important;
+    transition: all 0.1s !important;
+  }
+  .lb-chip.active {
+    background: var(--saffron) !important;
+    border-color: var(--saffron) !important;
+    color: #fff !important;
+  }
+
+  /* ── 11. Desktop-only blocks hidden on mobile ── */
+  .morning-desktop-table { display: none !important; }
+  .morning-mobile-lb { display: block !important; }
+  .sd-desktop-header { display: none !important; }
+  .sd-desktop-toolbar { display: none !important; }
+  .sd-mobile-compact-header { display: block !important; }
+  .sd-filter-pills-mobile { display: flex !important; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; gap: 5px; padding: 8px 12px; border-bottom: 1px solid var(--line); background: var(--surface); }
+  .sd-filter-pills-mobile::-webkit-scrollbar { display: none; }
+  .sd-compact-row { display: flex !important; align-items: center !important; gap: 6px !important; padding: 8px 12px !important; border-bottom: 1px solid var(--line-2) !important; min-height: 52px !important; }
+  .sd-compact-row .sd-cr-time { font-family: monospace; font-size: 10.5px; color: var(--ink-3); min-width: 38px; flex-shrink: 0; font-weight: 600; }
+  .sd-compact-row .sd-cr-info { flex: 1 1 0; min-width: 0; overflow: hidden; }
+  .sd-compact-row .sd-cr-name { font-size: 12.5px; font-weight: 700; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sd-compact-row .sd-cr-dev  { font-size: 11px; color: var(--ink-2); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sd-compact-row .sd-cr-actions { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+  .sd-status-dot { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 13px; cursor: pointer; flex-shrink: 0; }
+  .sd-edit-btn { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 12px; cursor: pointer; background: var(--surface-2); border: 1px solid var(--line); flex-shrink: 0; }
+  .sd-left-bar { width: 4px; height: 100%; border-radius: 3px; flex-shrink: 0; align-self: stretch; min-height: 36px; }
+  /* Hide the desktop single-day table on mobile */
+  .roster-single-day-table { display: none !important; }
+  .sd-mobile-rows-wrap { display: block !important; }
+}
+
+/* Desktop: hide mobile-only elements */
+.morning-mobile-lb { display: none; }
+.morning-desktop-table { display: block; }
+.sd-mobile-rows-wrap { display: none; }
+.sd-mobile-compact-header { display: none; }
+.sd-filter-pills-mobile { display: none; }
+.sd-compact-row { display: none; }
+.three-bucket-bar { display: none; }
+.lb-filter-chips { display: none; }
+.roster-heatmap-wrap { display: none; }
+@media(max-width:768px) {
+  .roster-heatmap-wrap { display: block !important; }
 }
 
 /* ── Phase 7: Preaching Funnel & Batch Management Mobile Ergonomics ── */
@@ -16058,7 +16468,7 @@ function morningProgramPanel(){
           <span style="font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px">👥 Weekly Devotee Summary (${weekly.devStats ? weekly.devStats.length : 0})</span>
           <button type="button" class="btn sm ghost" style="font-size:11.5px;padding:3px 8px;font-weight:600;pointer-events:none">${APP.morningTableCollapsed ? 'Show Table ▼' : 'Hide Table ▲'}</button>
         </div>
-        <div class="tbl-wrap" id="morning-report-table" style="${APP.morningTableCollapsed ? 'display:none' : ''}">
+        <div class="tbl-wrap morning-desktop-table" id="morning-report-table" style="${APP.morningTableCollapsed ? 'display:none' : ''}">
           <table class="tbl">
             <thead>
               <tr>
@@ -16110,6 +16520,34 @@ function morningProgramPanel(){
                 </tr>`).join('')}
             </tbody>
           </table>
+        </div>
+
+        <!-- MOBILE LEADERBOARD (weekly attendance) -->
+        <div class="morning-mobile-lb">
+          <div class="lb-filter-chips">
+            ${[{v:'',label:'All'},{v:'star',label:'🌟 Star ≥80%'},{v:'regular',label:'🟠 Regular'},{v:'low',label:'🔴 Low <50%'},{v:'zero',label:'⚪ Zero'}]
+              .map(({v,label}) => `<button class="lb-chip ${(APP.morningAttFilter||'')=== v?'active':''}" onclick="APP.morningAttFilter='${v}';render();">${label}</button>`).join('')}
+          </div>
+          <div>
+            ${filterAndSortMorningPeriodDevs(weekly.devStats, q, APP.morningAttFilter, APP.morningPuncFilter, APP.morningSort).map((d, i) => {
+              const dotCls = d.attendanceRate >= 80 ? 'green' : d.attendanceRate >= 50 ? 'yellow' : 'red';
+              const barFilled = Math.round((d.attendanceRate / 100) * 5);
+              const bars = Array.from({length:5},(_,bi) => `<div class="lb-bar-block ${bi < barFilled ? 'green-filled' : ''}"></div>`).join('');
+              const pctColor = d.attendanceRate>=80?'#10B981':d.attendanceRate>=50?'#F59E0B':'#EF4444';
+              return `<div class="lb-row">
+                <span class="lb-rank">${i+1}</span>
+                <span class="lb-dot ${dotCls}"></span>
+                <span class="lb-name">
+                  ${esc(d.name)}
+                  <small>${d.presentCount}/${weekly.totalSessions} sessions · ${d.standardTime}</small>
+                </span>
+                <div class="lb-bar-wrap">${bars}</div>
+                <span class="lb-pct" style="color:${pctColor}">${d.attendanceRate}%</span>
+                <span class="lb-icon" title="Punctuality">${d.punctualityRate>=80?'⏱️✅':d.punctualityRate>=50?'⏱️🟡':'⏱️🔴'}</span>
+                <a class="lb-action" href="#/devotee/${d.devotee.id}">👤</a>
+              </div>`;
+            }).join('')}
+          </div>
         </div>
       </div>
       ` : `
@@ -16184,7 +16622,7 @@ function morningProgramPanel(){
           <span style="font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px">👥 Monthly Devotee Summary (${monthly.devStats ? monthly.devStats.length : 0})</span>
           <button type="button" class="btn sm ghost" style="font-size:11.5px;padding:3px 8px;font-weight:600;pointer-events:none">${APP.morningTableCollapsed ? 'Show Table ▼' : 'Hide Table ▲'}</button>
         </div>
-        <div class="tbl-wrap" id="morning-report-table" style="${APP.morningTableCollapsed ? 'display:none' : ''}">
+        <div class="tbl-wrap morning-desktop-table" id="morning-report-table-monthly" style="${APP.morningTableCollapsed ? 'display:none' : ''}">
           <table class="tbl">
             <thead>
               <tr>
@@ -16240,6 +16678,34 @@ function morningProgramPanel(){
                 </tr>`).join('')}
             </tbody>
           </table>
+        </div>
+
+        <!-- MOBILE LEADERBOARD (monthly attendance) -->
+        <div class="morning-mobile-lb">
+          <div class="lb-filter-chips">
+            ${[{v:'',label:'All'},{v:'star',label:'🌟 Star ≥80%'},{v:'regular',label:'🟠 Regular'},{v:'low',label:'🔴 Low <50%'},{v:'zero',label:'⚪ Zero'}]
+              .map(({v,label}) => `<button class="lb-chip ${(APP.morningAttFilter||'')=== v?'active':''}" onclick="APP.morningAttFilter='${v}';render();">${label}</button>`).join('')}
+          </div>
+          <div>
+            ${filterAndSortMorningPeriodDevs(monthly.devStats, q, APP.morningAttFilter, APP.morningPuncFilter, APP.morningSort).map((d, i) => {
+              const dotCls = d.attendanceRate >= 80 ? 'green' : d.attendanceRate >= 50 ? 'yellow' : 'red';
+              const barFilled = Math.round((d.attendanceRate / 100) * 5);
+              const bars = Array.from({length:5},(_,bi) => `<div class="lb-bar-block ${bi < barFilled ? 'green-filled' : ''}"></div>`).join('');
+              const pctColor = d.attendanceRate>=80?'#10B981':d.attendanceRate>=50?'#F59E0B':'#EF4444';
+              return `<div class="lb-row">
+                <span class="lb-rank">${i+1}</span>
+                <span class="lb-dot ${dotCls}"></span>
+                <span class="lb-name">
+                  ${esc(d.name)}
+                  <small>${d.presentCount}/${monthly.totalSessions} sessions · Att: ${d.attendanceRate}%</small>
+                </span>
+                <div class="lb-bar-wrap">${bars}</div>
+                <span class="lb-pct" style="color:${pctColor}">${d.attendanceRate}%</span>
+                <span class="lb-icon" title="Punctuality">${d.punctualityRate>=80?'⏱️✅':d.punctualityRate>=50?'⏱️🟡':'⏱️🔴'}</span>
+                <a class="lb-action" href="#/devotee/${d.devotee.id}">👤</a>
+              </div>`;
+            }).join('')}
+          </div>
         </div>
       </div>
       `)}
@@ -16299,7 +16765,7 @@ function morningProgramPanel(){
         ` : ''}
       </div>
 
-      <div class="tbl-wrap">
+      <div class="tbl-wrap morning-desktop-table">
         <table class="tbl">
           <thead>
             <tr>
@@ -16369,6 +16835,99 @@ function morningProgramPanel(){
             }).join('')}
           </tbody>
         </table>
+      </div>
+
+      <!-- MOBILE LEADERBOARD VIEW (hidden on desktop) -->
+      <div class="morning-mobile-lb">
+        ${(() => {
+          const progressDevs = filterAndSortMorningProgressDevs(
+            isWeekly ? weekly.devStats : monthly.devStats,
+            APP.morningProgressSearch || '',
+            APP.morningProgressGrowthFilter || '',
+            APP.morningProgressPunctFilter || '',
+            APP.morningProgressSort || 'growth_desc'
+          );
+          const totalSessions = isWeekly ? weekly.totalSessions : monthly.totalSessions;
+          // Compute bucket counts
+          const onTrackDevs  = progressDevs.filter(p => p.punctualityRate >= 80);
+          const followupDevs = progressDevs.filter(p => p.punctualityRate >= 50 && p.punctualityRate < 80);
+          const atRiskDevs   = progressDevs.filter(p => p.punctualityRate < 50);
+          const activeBkt = APP.morningProgressBucket || '';
+          const displayDevs = activeBkt === 'ontrack'  ? onTrackDevs
+                            : activeBkt === 'followup' ? followupDevs
+                            : activeBkt === 'atrisk'   ? atRiskDevs
+                            : progressDevs;
+          return `
+          <!-- Three-Bucket Summary Bar -->
+          <div class="three-bucket-bar" style="padding:12px 12px 0">
+            <div class="bucket-card b-green ${activeBkt==='ontrack'?'active-bucket':''}" onclick="APP.morningProgressBucket=APP.morningProgressBucket==='ontrack'?'':'ontrack';render();" title="Punctuality ≥ 80%">
+              <div class="bc-icon">🌟</div>
+              <div class="bc-count">${onTrackDevs.length}</div>
+              <div class="bc-label">On Track</div>
+            </div>
+            <div class="bucket-card b-yellow ${activeBkt==='followup'?'active-bucket':''}" onclick="APP.morningProgressBucket=APP.morningProgressBucket==='followup'?'':'followup';render();" title="Punctuality 50–79%">
+              <div class="bc-icon">⚠️</div>
+              <div class="bc-count">${followupDevs.length}</div>
+              <div class="bc-label">Follow-up</div>
+            </div>
+            <div class="bucket-card b-red ${activeBkt==='atrisk'?'active-bucket':''}" onclick="APP.morningProgressBucket=APP.morningProgressBucket==='atrisk'?'':'atrisk';render();" title="Punctuality < 50%">
+              <div class="bc-icon">🔴</div>
+              <div class="bc-count">${atRiskDevs.length}</div>
+              <div class="bc-label">At Risk</div>
+            </div>
+          </div>
+
+          <!-- Mobile Filter Chips -->
+          <div class="lb-filter-chips">
+            ${[
+              {v:'',label:'All',emoji:''},
+              {v:'positive',label:'Improved',emoji:'📈'},
+              {v:'negative',label:'Dipped',emoji:'📉'},
+              {v:'steady',label:'Steady',emoji:'⚖️'},
+              {v:'followup',label:'Follow-up',emoji:'⚠️'},
+              {v:'exemplary',label:'100%',emoji:'🌟'}
+            ].map(({v,label,emoji}) =>
+              `<button class="lb-chip ${(APP.morningProgressGrowthFilter||'')=== v?'active':''}"
+                onclick="APP.morningProgressGrowthFilter='${v}';APP.morningProgressBucket='';render();">
+                ${emoji} ${label}
+              </button>`
+            ).join('')}
+          </div>
+
+          <!-- Leaderboard Rows -->
+          <div>
+            ${displayDevs.length ? displayDevs.map((p, i) => {
+              const delta = p.punctualityGrowthDelta;
+              const deltaStr = delta > 0 ? `<span style="color:#10B981">+${delta}%↑</span>`
+                             : delta < 0 ? `<span style="color:#EF4444">${delta}%↓</span>`
+                             : `<span style="color:var(--ink-3)">—</span>`;
+              const dotCls = p.punctualityRate >= 80 ? 'green' : p.punctualityRate >= 50 ? 'yellow' : 'red';
+              const barFilled = Math.round((p.punctualityRate / 100) * 5);
+              const bars = Array.from({length:5},(_,bi) =>
+                `<div class="lb-bar-block ${bi < barFilled ? 'filled' : ''}"></div>`
+              ).join('');
+              const statusIcon = p.statusBadge.includes('100%') ? '✅'
+                               : p.statusBadge.includes('Steady') ? '➡️' : '⚠️';
+              return `<div class="lb-row">
+                <span class="lb-rank">${i+1}</span>
+                <span class="lb-dot ${dotCls}"></span>
+                <span class="lb-name">
+                  ${esc(p.name)}
+                  <small>${p.presentCount}/${totalSessions} sessions · ${p.standardTime}</small>
+                </span>
+                <div class="lb-bar-wrap">${bars}</div>
+                <span class="lb-pct" style="color:${p.punctualityRate>=80?'#10B981':p.punctualityRate>=50?'#F59E0B':'#EF4444'}">${p.punctualityRate}%</span>
+                <span class="lb-delta">${deltaStr}</span>
+                <span class="lb-icon">${statusIcon}</span>
+                <a class="lb-action" href="#/devotee/${p.devotee.id}">👤</a>
+              </div>`;
+            }).join('') : `<div style="padding:28px 16px;text-align:center;color:var(--ink-3)">
+              <div style="font-size:24px;margin-bottom:8px">🔍</div>
+              <div style="font-weight:700">No devotees match this filter</div>
+              <button class="btn sm ghost" onclick="APP.morningProgressGrowthFilter='';APP.morningProgressBucket='';render();" style="margin-top:10px">Clear filters</button>
+            </div>`}
+          </div>`;
+        })()}
       </div>
     </div>
     `}
@@ -18928,8 +19487,32 @@ function renderDepartmentRosterPanel(deptKey) {
         </div>
       </div>
 
-      <!-- Filter & Sort toolbar -->
-      <div style="padding:10px 16px;border-bottom:1px solid var(--line);background:var(--surface);display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <!-- MOBILE COMPACT STICKY HEADER (hidden on desktop) -->
+      <div class="sd-mobile-compact-header">
+        <!-- Row 1: date label + nav arrows + Today button -->
+        <div class="sd-hdr-row1">
+          <button type="button" class="btn sm" style="padding:4px 10px;font-size:13px" onclick="window.navSingleDayDate('${deptKey}', -1)" title="Previous Day">◀</button>
+          <div style="display:flex;flex-direction:column;align-items:center;line-height:1.2">
+            <span style="font-weight:700;font-size:13px;color:var(--ink)">${fullDayName(sdDate)}, ${fmtD(sdDate)}</span>
+            <span style="font-size:10px;color:var(--ink-3)">${deptIcon} ${deptTitle} · ${isToday ? 'Today' : (isFuture ? 'Upcoming' : 'Past')}</span>
+          </div>
+          <button type="button" class="btn sm" style="padding:4px 10px;font-size:13px" onclick="window.navSingleDayDate('${deptKey}', 1)" title="Next Day">▶</button>
+        </div>
+        <!-- Row 2: progress pills + filter chips (horizontally scrollable) -->
+        <div class="sd-hdr-row2">
+          <span style="background:#ECFDF5;color:#059669;border-radius:10px;padding:3px 9px;font-size:11px;font-weight:700;white-space:nowrap">✅ ${doneC}</span>
+          <span style="background:#FEF9C3;color:#B45309;border-radius:10px;padding:3px 9px;font-size:11px;font-weight:700;white-space:nowrap">⏳ ${pendingC}</span>
+          ${missedC > 0 ? `<span style="background:#FEF2F2;color:#DC2626;border-radius:10px;padding:3px 9px;font-size:11px;font-weight:700;white-space:nowrap">❌ ${missedC}</span>` : ''}
+          <span style="width:1px;height:14px;background:var(--line-2);flex-shrink:0"></span>
+          <button type="button" class="lb-chip ${activeFilter==='all'?'active':''}" onclick="window.applySingleDayFilter('${deptKey}','all')">All</button>
+          <button type="button" class="lb-chip ${activeFilter==='done'?'active':''}" onclick="window.applySingleDayFilter('${deptKey}','done')">✅ Done</button>
+          <button type="button" class="lb-chip ${activeFilter==='pending'?'active':''}" onclick="window.applySingleDayFilter('${deptKey}','pending')">⏳ Pending</button>
+          <button type="button" class="lb-chip ${activeFilter==='missed'?'active':''}" onclick="window.applySingleDayFilter('${deptKey}','missed')">❌ Missed</button>
+        </div>
+      </div>
+
+      <!-- Filter & Sort toolbar (desktop only) -->
+      <div class="sd-desktop-toolbar" style="padding:10px 16px;border-bottom:1px solid var(--line);background:var(--surface);display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         <span style="font-size:12px;font-weight:600;color:var(--ink-2)">🔍 Filter:</span>
         <button type="button" class="btn sm" id="sd-filter-all-${deptKey}" onclick="window.applySingleDayFilter('${deptKey}','all')" style="padding:3px 10px;font-size:12px;${activeFilter==='all'?'background:var(--pri);color:#fff;border-color:var(--pri)':''}">All</button>
         <button type="button" class="btn sm" id="sd-filter-done-${deptKey}" onclick="window.applySingleDayFilter('${deptKey}','done')" style="padding:3px 10px;font-size:12px;${activeFilter==='done'?'background:var(--pri);color:#fff;border-color:var(--pri)':''}">✅ Done</button>
@@ -18950,8 +19533,8 @@ function renderDepartmentRosterPanel(deptKey) {
           style="padding:5px 10px;font-size:12px;border:1px solid var(--line);border-radius:6px;background:var(--surface);min-width:170px">
       </div>
 
-      <!-- Service rows -->
-      <div class="tbl-wrap roster-table-scroll roster-single-day-wrap" style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+      <!-- Service rows: DESKTOP full table -->
+      <div class="tbl-wrap roster-table-scroll roster-single-day-wrap morning-desktop-table" style="overflow-x:auto;-webkit-overflow-scrolling:touch">
         <table class="tbl roster-single-day-table" id="single-day-tbl-${deptKey}" style="width:100%">
           <thead>
             <tr style="background:${isDeity ? '#FFF5EA' : '#F0FDFA'}">
@@ -19003,6 +19586,32 @@ function renderDepartmentRosterPanel(deptKey) {
           </tbody>
         </table>
       </div>
+
+      <!-- MOBILE: Compact card rows (hidden on desktop via CSS) -->
+      <div id="sd-compact-rows-${deptKey}">
+        ${sdSlots.map(({s, sl}) => {
+          const devText = (sl.devotees || '').trim() || 'Unassigned';
+          const isDone = sl.status === 'done' || (sl.devotees && sl.devotees.includes('❌'));
+          const isMissed = sl.status === 'missed';
+          const statusLabel = isDone ? 'done' : (isMissed ? 'missed' : 'pending');
+          const isHidden = (activeFilter !== 'all' && statusLabel !== activeFilter);
+          const isSubService = isDeity && (s.isSub || s.id === 'd4' || s.id === 'd5');
+          const statusIcon = isDone ? '✅' : (isMissed ? '❌' : '⏳');
+          const leftBorderColor = isDone ? '#10B981' : (isMissed ? '#EF4444' : '#F59E0B');
+          return `<div class="sd-compact-row" data-status="${statusLabel}" data-time="${esc(s.time)}" data-service="${esc(s.name.toLowerCase())}" data-devotee="${esc(devText.toLowerCase())}" style="border-left:3px solid ${leftBorderColor};${isHidden ? 'display:none!important;' : ''}">
+            <span class="sd-cr-time">${(s.time || '—').replace(/\s*(AM|PM)/i,'$1').replace(':00','')}</span>
+            <span class="sd-cr-info">
+              <div class="sd-cr-name">${isSubService ? '↳ ' : ''}${esc(s.name)}</div>
+              <div class="sd-cr-dev">${esc(devText)}</div>
+            </span>
+            <div class="sd-cr-actions">
+              <button class="btn sm icon-only" style="height:28px;width:28px;padding:0;font-size:13px;display:flex;align-items:center;justify-content:center" data-act="toggle-roster-status" data-dept="${deptKey}" data-dt="${sdDate}" data-s="${s.id}" title="Toggle status">${statusIcon}</button>
+              <button class="btn sm icon-only" style="height:28px;width:28px;padding:0;font-size:12px;display:flex;align-items:center;justify-content:center" data-act="edit-roster-slot" data-dept="${deptKey}" data-dt="${sdDate}" data-s="${s.id}" data-src="single-day" title="Edit">✏️</button>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+
       <div class="tbl-foot"><span class="tiny">Click ✏️ Edit to assign a devotee · Click status icon to toggle Done/Missed/Pending</span></div>
     </div>
     `;
@@ -19087,50 +19696,54 @@ function renderDepartmentRosterPanel(deptKey) {
 
         <!-- Small Table Content -->
         <div class="weekly-mob-table-container">
-          ${activeWeeklyDay === 'all' ? days.map(d => {
-            const isCur = d === todayStr;
-            const dName = fullDayName(d);
-            return `
-              <div style="margin-bottom:12px;border:1px solid var(--line);border-radius:10px;overflow:hidden">
-                <div style="background:${isCur ? 'var(--saffron-soft)' : (isDeity ? '#FFF5EA' : '#F0FDFA')};padding:7px 10px;font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:space-between;color:var(--ink)">
-                  <span>📅 ${dName}, ${fmtD(d)}</span>
-                  ${isCur ? '<span class="badge" style="background:var(--saffron);color:#fff;font-size:9.5px;padding:1px 6px">Today</span>' : ''}
-                </div>
-                <table class="tbl weekly-small-tbl" style="width:100%;margin:0">
-                  <thead>
-                    <tr style="background:var(--surface-2)">
-                      <th style="width:40%">Service &amp; Time</th>
-                      <th style="width:46%">Assigned Devotee</th>
-                      <th style="width:14%;text-align:center">Edit</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    ${services.map(s => {
-                      const sl = getRosterSlot(roster, d, s.id);
-                      const isSub = isDeity && (s.isSub || s.id === 'd4' || s.id === 'd5');
-                      const hasDev = sl.devotees && sl.devotees.trim() && sl.devotees !== '—' && sl.devotees !== 'Unassigned';
-                      return `<tr>
-                        <td>
-                          <div style="font-weight:700;font-size:12px;color:var(--ink);line-height:1.2">
-                            ${isSub ? '<span style="color:var(--saffron)">↳ </span>' : ''}${esc(s.name)}
-                          </div>
-                          ${s.time ? `<div style="font-size:10px;color:var(--ink-3);margin-top:2px">${esc(s.time)}</div>` : ''}
-                        </td>
-                        <td>
-                          <span style="font-weight:600;font-size:12px;color:${hasDev ? 'var(--ink)' : 'var(--ink-3)'};word-break:break-word;cursor:pointer" data-act="edit-roster-slot" data-dept="${deptKey}" data-dt="${d}" data-s="${s.id}" data-src="weekly">
-                            ${esc(sl.devotees || 'Unassigned')}
-                          </span>
-                        </td>
-                        <td style="text-align:center">
-                          <button class="btn sm icon-only" style="height:22px;width:22px;padding:0;font-size:10.5px" data-act="edit-roster-slot" data-dept="${deptKey}" data-dt="${d}" data-s="${s.id}" data-src="weekly" title="Edit devotee">✏️</button>
-                        </td>
-                      </tr>`;
-                    }).join('')}
-                  </tbody>
-                </table>
-              </div>
-            `;
-          }).join('') : (() => {
+          ${activeWeeklyDay === 'all' ? `
+          <!-- HEATMAP GRID: All-days view (mobile only) -->
+          <div class="roster-heatmap-wrap">
+            <div class="rhm-grid" style="--rhm-cols:${days.length + 1}">
+              <!-- Header row -->
+              <div class="rhm-cell rhm-srv-head">Service</div>
+              ${days.map(d => {
+                const isCur = d === todayStr;
+                const dObj = parseDate(d);
+                const dayNum = dObj ? dObj.getDate() : '';
+                const dShort = fullDayName(d).slice(0,3);
+                return `<div class="rhm-cell rhm-day-head${isCur?' rhm-today':''}">
+                  <span class="rhm-dname">${dShort}</span>
+                  <span class="rhm-dnum">${dayNum}</span>
+                  ${isCur ? '<span class="rhm-today-dot">●</span>' : ''}
+                </div>`;
+              }).join('')}
+              <!-- Data rows: one per service -->
+              ${services.map(s => {
+                const isSub = isDeity && (s.isSub || s.id === 'd4' || s.id === 'd5');
+                return `
+                  <div class="rhm-cell rhm-srv-label${isSub?' rhm-sub':''}">
+                    <span class="rhm-srv-name">${isSub ? '↳ ' : ''}${esc(s.name)}</span>
+                    ${s.time ? `<span class="rhm-srv-time">${s.time}</span>` : ''}
+                  </div>
+                  ${days.map(d => {
+                    const sl = getRosterSlot(roster, d, s.id);
+                    const isDone = sl.status === 'done';
+                    const isMissed = sl.status === 'missed';
+                    const hasDev = sl.devotees && sl.devotees.trim() && sl.devotees !== '—' && sl.devotees !== 'Unassigned';
+                    const cellIcon = isDone ? '✅' : (isMissed ? '❌' : (hasDev ? '⏳' : '—'));
+                    const cellCls = isDone ? 'rhm-done' : (isMissed ? 'rhm-missed' : (hasDev ? 'rhm-pending' : 'rhm-empty'));
+                    const isCur = d === todayStr;
+                    const devTip = esc(sl.devotees || 'Unassigned');
+                    return `<div class="rhm-cell rhm-data ${cellCls}${isCur?' rhm-today-col':''}" data-act="edit-roster-slot" data-dept="${deptKey}" data-dt="${d}" data-s="${s.id}" data-src="weekly" title="${devTip}">
+                      ${cellIcon}
+                    </div>`;
+                  }).join('')}
+                `;
+              }).join('')}
+            </div>
+            <!-- Legend -->
+            <div style="display:flex;gap:10px;flex-wrap:wrap;padding:8px 4px 2px;font-size:11px;color:var(--ink-2)">
+              <span>✅ Done</span><span>⏳ Pending/Assigned</span><span>❌ Missed</span><span style="color:var(--ink-3)">— Unassigned</span>
+              <span style="margin-left:auto;color:var(--ink-3);font-size:10px">Tap cell to edit</span>
+            </div>
+          </div>
+          ` : (() => {
             const d = activeWeeklyDay;
             const isCur = d === todayStr;
             const dName = fullDayName(d);
@@ -19333,7 +19946,7 @@ function renderDepartmentRosterPanel(deptKey) {
           </div>
         </div>
 
-        <div class="tbl-wrap">
+        <div class="tbl-wrap morning-desktop-table">
           <table class="tbl" id="devotee-seva-report-tbl">
             <thead>
               <tr>
@@ -19379,6 +19992,31 @@ function renderDepartmentRosterPanel(deptKey) {
               }).join('')}
             </tbody>
           </table>
+        </div>
+
+        <!-- MOBILE: Devotee Hero Cards -->
+        <div class="morning-mobile-lb" style="padding:10px 12px;display:flex;flex-direction:column;gap:8px">
+          ${devoteeStats.map(d => {
+            const rate = d.rate;
+            const barFilled = Math.round((rate / 100) * 5);
+            const bars = Array.from({length:5},(_,bi) => `<div style="flex:1;height:5px;border-radius:2px;background:${bi < barFilled ? (rate>=90?'#10B981':rate>=75?'#3B82F6':'#EF4444') : 'var(--paper-2)'}"></div>`).join('');
+            const rateColor = rate>=90?'#10B981':rate>=75?'#3B82F6':'#EF4444';
+            const tier = rate === 100 && d.completed >= 3 ? '🌟' : (rate >= 85 ? '✅' : (d.missed > 0 ? '⚠️' : '⚡'));
+            return `<div style="background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px">
+              ${av(d.name)}
+              <div style="flex:1;min-width:0">
+                <div style="font-weight:700;font-size:13px;color:var(--ink)">${tier} ${esc(d.name)}</div>
+                <div style="display:flex;gap:6px;margin-top:4px;align-items:center">
+                  ${bars}
+                </div>
+                <div style="font-size:10.5px;color:var(--ink-3);margin-top:3px">✅ ${d.completed} done · ❌ ${d.missed} missed · ${d.assigned} assigned</div>
+              </div>
+              <div style="text-align:center;flex-shrink:0">
+                <div style="font-size:18px;font-weight:800;color:${rateColor};line-height:1">${rate}%</div>
+                <div style="font-size:9.5px;color:var(--ink-3)">complete</div>
+              </div>
+            </div>`;
+          }).join('')}
         </div>
       </div>
     </div>
