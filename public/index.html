@@ -3266,16 +3266,32 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
   }
   .summary-matrix-filters{
     width:100%!important;
-    display:flex!important;
-    flex-direction:column!important;
-    align-items:stretch!important;
+    display:grid!important;
+    grid-template-columns:1fr 1fr!important;
     gap:6px!important;
   }
   .summary-matrix-filters input,
   .summary-matrix-filters select{
-    width:100%!important;
-    max-width:100%!important;
     box-sizing:border-box!important;
+    max-width:100%!important;
+  }
+  #summary-matrix-search{
+    grid-column:1 / -1!important;
+    width:100%!important;
+  }
+  #summary-matrix-dept-filter{
+    grid-column:1 / 2!important;
+    width:100%!important;
+    min-width:0!important;
+  }
+  #summary-matrix-status-filter{
+    grid-column:2 / 3!important;
+    width:100%!important;
+    min-width:0!important;
+  }
+  #summary-matrix-sort{
+    grid-column:1 / -1!important;
+    width:100%!important;
   }
 }
 
