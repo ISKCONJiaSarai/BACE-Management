@@ -16829,7 +16829,7 @@ function morningProgramPanel(){
           <button class="btn sm ${isWeekly ? 'pri' : ''}" data-act="morning-progress-period" data-p="weekly" style="border:none">🗓️ Week-over-Week</button>
           <button class="btn sm ${!isWeekly ? 'pri' : ''}" data-act="morning-progress-period" data-p="monthly" style="border:none">📊 Month-over-Month</button>
           <div style="display:flex;gap:6px;align-items:center">
-            <button class="btn sm pri" data-act="export-morning-progress-pdf" style="border:none" title="Export beautiful printable growth report with active filters & sorting">${ic('download')} 📄 Export Growth Report (PDF)</button>
+            <button class="btn sm pri" data-act="export-morning-progress-pdf" style="border:none" title="Export beautiful printable growth report with active filters & sorting">${ic('download')} 📄 <span class="hide-mobile">Export Growth Report (</span>PDF<span class="hide-mobile">)</span></button>
             <button class="btn sm" data-act="export-morning-progress" style="border:none" title="Export as CSV">${ic('download')} CSV</button>
           </div>
         </div>
