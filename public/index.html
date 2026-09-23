@@ -16361,7 +16361,8 @@ function morningProgramPanel(){
           <span style="font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px">👥 Devotee Check-in Records (${rows.length})</span>
           <button type="button" class="btn sm ghost" style="font-size:11.5px;padding:3px 8px;font-weight:600;pointer-events:none">${APP.morningTableCollapsed ? 'Show Table ▼' : 'Hide Table ▲'}</button>
         </div>
-        <div class="tbl-wrap" id="morning-report-table" style="${APP.morningTableCollapsed ? 'display:none' : ''}">
+        <!-- Devotee Rows Table (Desktop View) -->
+        <div class="tbl-wrap morning-desktop-table" id="morning-report-table" style="${APP.morningTableCollapsed ? 'display:none' : ''}">
           <table class="tbl">
             <thead>
               <tr>
@@ -16419,6 +16420,48 @@ function morningProgramPanel(){
               `}
             </tbody>
           </table>
+        </div>
+
+        <!-- Devotee Rows Compact Cards (Mobile View) -->
+        <div class="morning-mobile-lb morning-daily-mobile-list" style="${APP.morningTableCollapsed ? 'display:none!important' : ''}">
+          ${rows.length ? rows.map(r => `
+            <div class="morning-daily-card" style="padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);margin-bottom:8px;display:flex;flex-direction:column;gap:7px">
+              <!-- Row 1: Devotee Avatar + Name & Appointment + Profile link -->
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+                <div class="who" style="gap:8px;min-width:0;flex:1">
+                  ${av(r.avatarName || r.name)}
+                  <div style="min-width:0">
+                    <b style="font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;color:var(--ink)">${esc(r.name)}</b>
+                    <span style="font-size:11px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block">${esc(r.devoteeInfo)}</span>
+                  </div>
+                </div>
+                ${r.devoteeId ? `<a class="btn sm icon-only ghost" href="#/devotee/${r.devoteeId}" title="View profile" style="height:26px;width:26px;min-width:26px;padding:0;font-size:12px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;color:var(--ink-2);background:var(--surface-2);border:1px solid var(--line)">👤</a>` : ''}
+              </div>
+
+              <!-- Row 2: Standard time with pencil icon directly beside it + Punch Time & Status Badge -->
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding-top:6px;border-top:1px solid var(--line-2)">
+                <div style="display:flex;align-items:center;gap:5px">
+                  <span style="font-size:11px;color:var(--ink-3);font-weight:600">Std:</span>
+                  <span style="font-family:monospace;font-size:12px;font-weight:700;color:var(--ink)">${r.standardTime}</span>
+                  <button type="button" class="btn sm icon-only" data-act="edit-devotee-morning-std" data-id="${r.devoteeId}" title="Edit standard morning time" style="height:20px;width:20px;min-width:20px;padding:0;font-size:10px;display:inline-flex;align-items:center;justify-content:center;background:var(--surface-2);border:1px solid var(--line);border-radius:5px;cursor:pointer;line-height:1">✏️</button>
+                </div>
+                <div style="display:flex;align-items:center;gap:6px">
+                  <span style="font-family:monospace;font-weight:700;font-size:12.5px;color:${r.statusTone === 'green' ? 'var(--green)' : (r.statusTone === 'amber' ? 'var(--mustard)' : (r.statusTone === 'danger' ? 'var(--danger)' : 'var(--ink-3)'))}">
+                    ${r.timeIn}
+                  </span>
+                  <span class="badge b-${r.statusTone}" style="font-size:10.5px;font-weight:700;padding:2px 7px">
+                    ${r.status}${r.badgeText && r.badgeText.startsWith('+') ? ' (' + r.badgeText.split(' ')[0] + ')' : ''}
+                  </span>
+                </div>
+              </div>
+            </div>
+          `).join('') : `
+            <div style="text-align:center;padding:24px 12px;color:var(--ink-3);background:var(--surface);border:1px solid var(--line);border-radius:10px">
+              <div style="font-size:24px;margin-bottom:6px">🔍</div>
+              <div style="font-weight:700;font-size:13px;color:var(--ink)">No devotee check-in records match the current filter</div>
+              <button class="btn sm ghost" data-act="morning-clear-filters" style="margin-top:10px;padding:3px 12px;font-size:11.5px">Clear Filters</button>
+            </div>
+          `}
         </div>
       </div>
       ` : (reportView === 'weekly' ? `
