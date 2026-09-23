@@ -3932,7 +3932,10 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-off
 /* ── 1a. Eyebrow: hide on mobile (breadcrumb replaces it) ── */
 @media(max-width:768px){
   .eyebrow{display:none!important}
-  .page-head p.sub{
+  .page-head:not(.has-dash-actions):not(:has(.dash-header-btn-col)) .eyebrow{display:none!important}
+  .page-head:not(.has-dash-actions):not(:has(.dash-header-btn-col)) p.sub{display:none!important}
+  .page-head.has-dash-actions p.sub,
+  .page-head:has(.dash-header-btn-col) p.sub{
     display:-webkit-box!important;
     -webkit-line-clamp:1!important;
     -webkit-box-orient:vertical!important;
@@ -3941,7 +3944,7 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-off
   }
 }
 @media(max-width:480px){
-  .page-head p.sub{display:none!important}
+  .page-head:not(.has-dash-actions):not(:has(.dash-header-btn-col)) p.sub{display:none!important}
 }
 
 /* ── 1b. Breadcrumb trail enhancements ── */
@@ -4408,11 +4411,51 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-off
   .g-batch-dash {
     grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)) !important;
   }
-  .grid.g6, .g6, .grid.g3, .g3 {
+  .grid.g6:has(> .stat), .g6:has(> .stat),
+  .grid.g6:has(> .stat-card), .g6:has(> .stat-card),
+  .grid.g4:has(> .stat), .g4:has(> .stat),
+  .grid.g4:has(> .stat-card), .g4:has(> .stat-card),
+  .grid.g2:has(> .stat), .g2:has(> .stat),
+  .grid.g2:has(> .stat-card), .g2:has(> .stat-card) {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+  .grid.g3:has(> .stat), .g3:has(> .stat),
+  .grid.g3:has(> .stat-card), .g3:has(> .stat-card) {
     grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
   }
-  .grid.g4, .g4, .grid.g2, .g2 {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+
+  /* Content card grids on mobile: stack into clean single column */
+  .grid.g-dept-cards,
+  .grid.g-batch-cards,
+  .grid:has(> .card:not(.stat):not(.stat-card)),
+  .g2:has(> .card:not(.stat):not(.stat-card)),
+  .g3:has(> .card:not(.stat):not(.stat-card)),
+  .g4:has(> .card:not(.stat):not(.stat-card)) {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Devotees responsive toolbar */
+  .dev-toolbar-row{
+    flex-direction:column!important;
+    align-items:stretch!important;
+    gap:8px!important;
+  }
+  .dev-toolbar-row > div:first-child{
+    width:100%!important;
+    flex:none!important;
+  }
+  .dev-toolbar-actions{
+    width:100%!important;
+    display:flex!important;
+    justify-content:space-between!important;
+  }
+  .mob-filter-toggle{
+    display:inline-flex!important;
+  }
+
+  /* Safe clearance for mobile bottom navigation and FAB */
+  .view{
+    padding-bottom: calc(105px + env(safe-area-inset-bottom, 0px)) !important;
   }
 
   /* Diminished card dimension, uniform height and flex alignment */
@@ -8405,7 +8448,7 @@ function barChart(data,{h=200,color='var(--accent)',horizontal=false,unit=''}={}
       <div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:4px"><span>${esc(d.l)}</span><b style="font-family:var(--f-head)">${d.v}${unit}</b></div>
       ${prog(d.v/max*100,d.color||color)}</div>`).join('')}</div>`;
   const w=560,pad=28,bw=(w-pad*2)/data.length;
-  return `<div class="chart"><svg viewBox="0 0 ${w} ${h}">
+  return `<div class="chart chart-bar-wrap" style="overflow-x:auto;-webkit-overflow-scrolling:touch"><svg viewBox="0 0 ${w} ${h}" style="min-width:${Math.max(480, data.length*44)}px;display:block">
    ${data.map((d,i)=>{const bh=(d.v/max)*(h-58);return `<g ${tipAttr(d.tip||`${d.l}: ${d.v}${unit}`)} ${d.r?`data-act="drill" data-r="${d.r}"`:''} style="${d.r?'cursor:pointer':''}">
     <rect class="hit" x="${pad+i*bw}" y="0" width="${bw}" height="${h-30}"></rect>
     <rect x="${pad+i*bw+bw*.19}" y="${h-30-bh}" width="${bw*.62}" height="${Math.max(2,bh)}" rx="5" fill="${d.color||color}" opacity=".92" pointer-events="none"/>
@@ -11447,12 +11490,12 @@ function viewDevotees(){
   };
 
   const toolbar=`
-    <div style="display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;width:100%">
+    <div class="dev-toolbar-row" style="display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;width:100%">
       <div style="position:relative;flex:1;min-width:0">
-        <input type="search" placeholder="🔍 Search devotees..." value="${esc(f.q)}" data-act="f" data-k="dev" data-n="q" style="width:100%;padding:8px 12px 8px 34px;border-radius:9px;border:1px solid var(--line);font-size:13.5px;background:var(--surface)">
+        <input type="search" placeholder="Search devotees..." value="${esc(f.q)}" data-act="f" data-k="dev" data-n="q" style="width:100%;padding:8px 12px 8px 34px;border-radius:9px;border:1px solid var(--line);font-size:13.5px;background:var(--surface)">
         <span style="position:absolute;left:11px;top:9px;font-size:13px;opacity:0.55;pointer-events:none">🔍</span>
       </div>
-      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <div class="dev-toolbar-actions" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         ${activeFilterCount > 0 ? `<button class="btn sm" data-act="clear-dev-filters" title="Reset all filters" style="color:var(--danger);background:rgba(220,53,69,0.06);border-color:rgba(220,53,69,0.25);font-weight:600;display:inline-flex;align-items:center;gap:5px">${ic('x')} Reset (${activeFilterCount})</button>` : ''}
         ${can('directory')?`<button class="btn sm" data-act="export-devotees" title="Export CSV" style="display:inline-flex;align-items:center;gap:4px">${ic('download')}Export CSV</button>`:''}
         <button class="mob-filter-toggle ${activeFilterCount>0?'has-filters':''} ${mobFilterOpen?'open':''}" data-act="toggle-mob-filters" style="display:none">
@@ -12326,7 +12369,7 @@ function viewDepts(){
     <select data-act="f" data-k="dept" data-n="status">${['Active','Inactive','Archived',''].map(s=>`<option value="${s}" ${f.status===s?'selected':''}>${s||'All statuses'}</option>`).join('')}</select>
     <select data-act="f" data-k="dept" data-n="cat"><option value="">All categories</option>${cats.map(c=>`<option ${f.cat===c?'selected':''}>${c}</option>`).join('')}</select>
     <button class="btn sm" data-act="export-depts" style="margin-left:auto">${ic('download')}Export CSV</button></div></div>
-   ${rows.length?`<div class="grid g3">${rows.map(d=>{const m=deptMetrics(d.id);
+   ${rows.length?`<div class="grid g3 g-dept-cards">${rows.map(d=>{const m=deptMetrics(d.id);
     return `<div class="card"><a href="#/dept/${d.id}" style="display:block"><div class="card-b" style="display:flex;gap:12px;align-items:flex-start">
        <span class="av m" style="background:var(--${d.color==='ink'?'ink':d.color});border-radius:12px;font-size:17px">${d.icon}</span>
        <div style="min-width:0"><h3>${esc(d.name)}</h3><div class="tiny" style="margin-top:3px">${esc(d.desc)}</div></div></div>
@@ -21327,7 +21370,7 @@ function viewBatches(){
   [1,2,3].map(lvl=>{
     const bs=DB.batches.filter(b=>b.level===lvl);
     return `<h2 style="margin:${lvl===1?'0':'22px'} 0 12px">Level ${lvl} <span class="tiny">· ${bs.length} batches</span></h2>
-    <div class="grid g2">${bs.map(b=>{const m=batchMetrics(b.id);return `<div class="card">
+    <div class="grid g2 g-batch-cards">${bs.map(b=>{const m=batchMetrics(b.id);return `<div class="card">
       <a href="#/batch/${b.id}" style="display:block"><div class="card-b">
         <div style="display:flex;gap:10px;align-items:flex-start"><span class="av m" style="background:var(--indigo);border-radius:12px">📖</span>
         <div style="min-width:0"><h3>${esc(b.name)}</h3><div class="tiny" style="margin-top:2px">${esc(b.desc)}</div></div>
