@@ -5904,6 +5904,36 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-off
   }
 }
 
+/* Devotee Overview Info Pair (Laptop Side-by-Side) */
+.dev-info-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  align-items: stretch;
+}
+.dev-info-pair > .card {
+  height: 100%;
+  margin-bottom: 0 !important;
+  display: flex;
+  flex-direction: column;
+}
+.dev-info-pair .collapsible-body-wrap,
+.dev-info-pair .collapsible-body,
+.dev-info-pair .card-b {
+  flex: 1;
+}
+.dev-info-pair .kv {
+  grid-template-columns: 108px 1fr;
+  gap: 8px 10px;
+  font-size: 13px;
+}
+@media (max-width: 960px) {
+  .dev-info-pair {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+
 /* ── Phase 7: Preaching Funnel & Batch Management Mobile Ergonomics ── */
 .funnel-mob-scroll{display:none}
 .mob-batch-list{display:none}
@@ -13017,7 +13047,7 @@ function viewDevotee(id){
        <dt>Care group</dt><dd>${esc(group(d.careGroup)?.name||'—')}</dd><dt>Facilitator</dt><dd>${esc(nameOf(d.facilitator))}</dd>
        <dt>Mentor</dt><dd>${esc(nameOf(d.mentor))}</dd></dl>`;
     return `<div class="grid g-2-1">
-     <div style="display:flex;flex-direction:column;gap:12px">
+     <div class="dev-info-pair">
       ${collSection('dv-basic-'+d.id,'👤 Basic information','<div class="card-b">'+basicInfoBody+'</div>','',true)}
       ${collSection('dv-community-'+d.id,'🛕 Community information','<div class="card-b">'+communityInfoBody+'</div>','',true)}
      </div>
@@ -13456,7 +13486,11 @@ function viewDevotee(id){
      <div style="height:15px"></div><div class="note">${esc(d.swabhav.nature)} by nature — suggested engagement: ${esc(d.swabhav.suggested)}. Interests: ${esc(d.swabhav.interests.join(', '))}.</div></div>`)
   }[tab];
   const attSummary = getDevoteeRealAttendance(d);
-  const sadhanaRounds = Number(d.sadhana?.rounds) || 16;
+  const mRate = (attSummary.morning && (attSummary.morning.rate !== undefined ? attSummary.morning.rate : attSummary.morning.punctuality)) || 0;
+  const sRounds = Number(d.sadhana?.rounds) || 16;
+  const dRate = (attSummary.deity && attSummary.deity.rate !== undefined ? attSummary.deity.rate : 0);
+  const clRate = (attSummary.classes && attSummary.classes.rate !== undefined ? attSummary.classes.rate : 0);
+  const overallRate = attSummary.overall !== undefined ? attSummary.overall : 0;
   const batchObj = d.batch && batch(d.batch);
   const batchName = batchObj?.name || (d.level ? 'Level ' + d.level : 'Pre-batch');
   const sevaName = d.service || (d.dept && dept(d.dept) ? dept(d.dept).name : 'Devotee Seva');
@@ -13480,15 +13514,15 @@ function viewDevotee(id){
           <span class="dev-bento-icon">🌅</span>
           <span class="dev-bento-label">Morning Program</span>
         </div>
-        <div class="dev-bento-val">${attSummary.morning}% <span class="dev-bento-badge ${attSummary.morning>=75?'on-track':'needs-care'}">${attSummary.morning>=75?'On track':'Needs care'}</span></div>
-        <div class="dev-bento-sub">Overall: ${attSummary.overall}% attendance</div>
+        <div class="dev-bento-val">${mRate}% <span class="dev-bento-badge ${mRate>=75?'on-track':'needs-care'}">${mRate>=75?'On track':'Needs care'}</span></div>
+        <div class="dev-bento-sub">Overall: ${overallRate}% attendance</div>
       </div>
       <div class="dev-bento-card" style="--bento-accent:#10b981">
         <div class="dev-bento-header">
           <span class="dev-bento-icon">📿</span>
           <span class="dev-bento-label">Daily Sadhana</span>
         </div>
-        <div class="dev-bento-val">${sadhanaRounds} <small style="font-size:12px;font-weight:600;color:var(--ink-2)">rounds</small></div>
+        <div class="dev-bento-val">${sRounds} <small style="font-size:12px;font-weight:600;color:var(--ink-2)">rounds</small></div>
         <div class="dev-bento-sub">${d.sadhana?.morningProgram ? d.sadhana.morningProgram + '% sadhana card' : 'Standard committed'}</div>
       </div>
       <div class="dev-bento-card" style="--bento-accent:#ea580c">
@@ -13496,7 +13530,7 @@ function viewDevotee(id){
           <span class="dev-bento-icon">🛕</span>
           <span class="dev-bento-label">Seva Reliability</span>
         </div>
-        <div class="dev-bento-val">${attSummary.deity}% <span class="dev-bento-badge ${attSummary.deity>=75?'reliable':'pending'}">${attSummary.deity>=75?'Reliable':'Active'}</span></div>
+        <div class="dev-bento-val">${dRate}% <span class="dev-bento-badge ${dRate>=75?'reliable':'pending'}">${dRate>=75?'Reliable':'Active'}</span></div>
         <div class="dev-bento-sub">${esc(sevaName)}</div>
       </div>
       <div class="dev-bento-card" style="--bento-accent:#6366f1">
@@ -13504,7 +13538,7 @@ function viewDevotee(id){
           <span class="dev-bento-icon">📖</span>
           <span class="dev-bento-label">Preaching Batch</span>
         </div>
-        <div class="dev-bento-val">${attSummary.classes}% <span class="dev-bento-badge ${attSummary.classes>=75?'regular':'improving'}">${attSummary.classes>=75?'Regular':'Enrolled'}</span></div>
+        <div class="dev-bento-val">${clRate}% <span class="dev-bento-badge ${clRate>=75?'regular':'improving'}">${clRate>=75?'Regular':'Enrolled'}</span></div>
         <div class="dev-bento-sub">${esc(batchName)}</div>
       </div>
     </div>
