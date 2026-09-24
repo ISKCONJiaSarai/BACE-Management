@@ -1930,6 +1930,444 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
 .dash-bar-bg{height:9px;background:var(--surface-2);border-radius:6px;overflow:hidden;position:relative}
 .dash-bar-fill{height:100%;border-radius:6px;transition:width .5s cubic-bezier(0.16,1,0.3,1)}
 
+/* ── Modern Devotee Dashboard Variety Graphs ── */
+
+/* Vertical Column Bar Chart */
+.dash-vbar-wrap {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 10px;
+}
+.dash-vbar-stage {
+  height: 165px;
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  padding: 0 8px 8px;
+  border-bottom: 2px solid var(--line);
+  position: relative;
+}
+.dash-vbar-gridlines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.dash-vbar-line {
+  border-bottom: 1px dashed var(--line);
+  opacity: 0.55;
+  width: 100%;
+}
+.dash-vbar-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  justify-content: flex-end;
+  position: relative;
+  z-index: 1;
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.22s cubic-bezier(0.16,1,0.3,1);
+}
+.dash-vbar-col:hover {
+  transform: translateY(-5px);
+}
+.dash-vbar-val-pill {
+  font-size: 11px;
+  font-weight: 800;
+  font-family: var(--f-head);
+  padding: 2.5px 7px;
+  border-radius: 99px;
+  background: var(--surface);
+  border: 1.5px solid var(--col-color, var(--line));
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  margin-bottom: 6px;
+  white-space: nowrap;
+  color: var(--ink);
+  transition: all 0.2s;
+}
+.dash-vbar-col:hover .dash-vbar-val-pill {
+  box-shadow: 0 4px 14px rgba(0,0,0,0.15);
+  transform: scale(1.05);
+}
+.dash-vbar-pillar {
+  width: 100%;
+  max-width: 46px;
+  min-height: 8px;
+  border-radius: 8px 8px 3px 3px;
+  background: var(--col-grad, var(--accent));
+  box-shadow: 0 3px 12px rgba(0,0,0,0.10);
+  transition: height 0.6s cubic-bezier(0.16,1,0.3,1), filter 0.2s;
+}
+.dash-vbar-col:hover .dash-vbar-pillar {
+  filter: brightness(1.15);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.22);
+}
+.dash-vbar-labels {
+  display: flex;
+  gap: 12px;
+  padding: 0 8px;
+}
+.dash-vbar-lbl-item {
+  flex: 1;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+}
+.dash-vbar-lbl-title {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.dash-vbar-lbl-sub {
+  font-size: 10px;
+  color: var(--ink-3);
+  font-weight: 600;
+}
+
+/* Stepped Progression Funnel */
+.dash-funnel-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  width: 100%;
+}
+.dash-funnel-step {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 8px 12px;
+  background: var(--surface-2, rgba(0,0,0,0.02));
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  transition: all 0.2s cubic-bezier(0.16,1,0.3,1);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  user-select: none;
+}
+.dash-funnel-step::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--step-color, var(--accent));
+  border-radius: 4px 0 0 4px;
+}
+.dash-funnel-step:hover {
+  background: var(--surface);
+  border-color: var(--step-color, var(--accent));
+  transform: translateX(4px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.07);
+}
+.dash-funnel-badge {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+.dash-funnel-info {
+  flex: 1;
+  min-width: 0;
+}
+.dash-funnel-name {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dash-funnel-bar {
+  height: 5px;
+  background: var(--line-2, #e5e7eb);
+  border-radius: 99px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+.dash-funnel-bar-fill {
+  height: 100%;
+  border-radius: 99px;
+  background: var(--step-color, var(--accent));
+  transition: width 0.5s ease;
+}
+.dash-funnel-stats {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  flex-shrink: 0;
+}
+.dash-funnel-count {
+  font-size: 14px;
+  font-weight: 800;
+  font-family: var(--f-head);
+  color: var(--ink);
+}
+.dash-funnel-pct {
+  font-size: 10.5px;
+  color: var(--ink-3);
+  font-weight: 600;
+}
+
+/* Segmented Ribbon Demographics */
+.dash-demog-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+.dash-demog-ribbon {
+  display: flex;
+  height: 14px;
+  border-radius: 99px;
+  overflow: hidden;
+  gap: 2px;
+  background: var(--surface-2);
+  padding: 2px;
+  border: 1px solid var(--line);
+}
+.dash-demog-seg {
+  height: 100%;
+  border-radius: 99px;
+  transition: filter 0.15s ease, transform 0.15s ease;
+  cursor: pointer;
+}
+.dash-demog-seg:hover {
+  filter: brightness(1.2);
+  transform: scaleY(1.15);
+}
+.dash-demog-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+.dash-demog-tile {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px;
+  background: var(--surface-2, rgba(0,0,0,0.02));
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.18s ease;
+}
+.dash-demog-tile:hover {
+  background: var(--surface);
+  border-color: var(--tile-color);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+}
+.dash-demog-tile-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+.dash-demog-tile-info {
+  flex: 1;
+  min-width: 0;
+}
+.dash-demog-tile-title {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dash-demog-tile-sub {
+  font-size: 10px;
+  color: var(--ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dash-demog-tile-val {
+  font-size: 13px;
+  font-weight: 800;
+  font-family: var(--f-head);
+  color: var(--ink);
+  flex-shrink: 0;
+}
+
+/* Seva Workforce Grid */
+.dash-seva-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  width: 100%;
+}
+.dash-seva-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  background: var(--surface-2, rgba(0,0,0,0.02));
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s cubic-bezier(0.16,1,0.3,1);
+  position: relative;
+  overflow: hidden;
+}
+.dash-seva-tile::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--seva-color);
+}
+.dash-seva-tile:hover {
+  background: var(--surface);
+  border-color: var(--seva-color);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.07);
+}
+.dash-seva-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.dash-seva-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.dash-seva-count {
+  font-size: 14px;
+  font-weight: 800;
+  font-family: var(--f-head);
+  color: var(--seva-color);
+}
+.dash-seva-bar {
+  height: 4px;
+  background: var(--line-2, #e5e7eb);
+  border-radius: 99px;
+  overflow: hidden;
+  margin-top: 2px;
+}
+.dash-seva-bar i {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+  background: var(--seva-color);
+}
+.dash-seva-pct {
+  font-size: 10px;
+  color: var(--ink-3);
+  text-align: right;
+  font-weight: 600;
+}
+
+/* Geo-Cluster Residence Cards */
+.dash-loc-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  width: 100%;
+}
+.dash-loc-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: var(--surface-2, rgba(0,0,0,0.02));
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.18s ease;
+}
+.dash-loc-row:hover {
+  background: var(--surface);
+  border-color: var(--loc-color);
+  transform: translateX(3px);
+  box-shadow: 0 3px 12px rgba(0,0,0,0.06);
+}
+.dash-loc-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--loc-color);
+  flex-shrink: 0;
+  box-shadow: 0 0 6px var(--loc-color);
+}
+.dash-loc-info {
+  flex: 1;
+  min-width: 0;
+}
+.dash-loc-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.dash-loc-sub {
+  font-size: 10.5px;
+  color: var(--ink-3);
+}
+.dash-loc-bar-wrap {
+  width: 75px;
+  height: 5px;
+  background: var(--line-2, #e5e7eb);
+  border-radius: 99px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.dash-loc-bar-fill {
+  height: 100%;
+  border-radius: 99px;
+  background: var(--loc-color);
+}
+.dash-loc-stats {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 50px;
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+.dash-loc-num {
+  font-size: 13.5px;
+  font-weight: 800;
+  font-family: var(--f-head);
+  color: var(--ink);
+}
+.dash-loc-pct {
+  font-size: 10.5px;
+  color: var(--ink-3);
+  font-weight: 600;
+}
+
 /* ---------- kanban ---------- */
 .kanban{display:flex;gap:14px;overflow-x:auto;padding-bottom:14px}
 .kcol{min-width:256px;width:256px;flex:none;background:var(--paper-2);border-radius:var(--r-l);padding:12px;border:1px solid var(--line)}
@@ -12629,10 +13067,10 @@ function classifyDevoteeDemographics(d) {
   return 'Dedicated Ashram & Community';
 }
 
-function devoteePieChart(slices, { size = 185, innerRadius = 50 } = {}) {
+function devoteePieChart(slices, { size = 185, innerRadius = 52 } = {}) {
   const total = slices.reduce((sum, s) => sum + s.value, 0);
   if (!total) {
-    return `<div style="text-align:center;padding:24px;color:var(--ink-3)">No devotee data to display</div>`;
+    return '<div style="text-align:center;padding:24px;color:var(--ink-3)">No devotee data to display</div>';
   }
   const cx = size / 2;
   const cy = size / 2;
@@ -12645,8 +13083,8 @@ function devoteePieChart(slices, { size = 185, innerRadius = 50 } = {}) {
     const sole = activeSlices[0];
     const strokeWidth = r - innerRadius;
     const midR = innerRadius + strokeWidth / 2;
-    paths = `<circle cx="${cx}" cy="${cy}" r="${midR}" fill="none" stroke="${sole.color}" stroke-width="${strokeWidth}"
-      data-act="dash-filter-devotees" data-filter-key="rounds" data-filter-val="${sole.valKey||''}" style="cursor:pointer" title="Click to filter"/>`;
+    paths = '<circle cx="' + cx + '" cy="' + cy + '" r="' + midR + '" fill="none" stroke="' + sole.color + '" stroke-width="' + strokeWidth + '" ' +
+      'data-act="dash-filter-devotees" data-filter-key="rounds" data-filter-val="' + (sole.valKey||'') + '" style="cursor:pointer" title="Click to filter"/>';
   } else {
     let currentAngle = -Math.PI / 2;
     paths = slices.map(s => {
@@ -12667,104 +13105,196 @@ function devoteePieChart(slices, { size = 185, innerRadius = 50 } = {}) {
       const largeArcFlag = sliceAngle > Math.PI ? 1 : 0;
 
       const d = [
-        `M ${x1.toFixed(2)} ${y1.toFixed(2)}`,
-        `A ${r.toFixed(2)} ${r.toFixed(2)} 0 ${largeArcFlag} 1 ${x2.toFixed(2)} ${y2.toFixed(2)}`,
-        `L ${ix1.toFixed(2)} ${iy1.toFixed(2)}`,
-        `A ${innerRadius.toFixed(2)} ${innerRadius.toFixed(2)} 0 ${largeArcFlag} 0 ${ix2.toFixed(2)} ${iy2.toFixed(2)}`,
+        'M ' + x1.toFixed(2) + ' ' + y1.toFixed(2),
+        'A ' + r.toFixed(2) + ' ' + r.toFixed(2) + ' 0 ' + largeArcFlag + ' 1 ' + x2.toFixed(2) + ' ' + y2.toFixed(2),
+        'L ' + ix1.toFixed(2) + ' ' + iy1.toFixed(2),
+        'A ' + innerRadius.toFixed(2) + ' ' + innerRadius.toFixed(2) + ' 0 ' + largeArcFlag + ' 0 ' + ix2.toFixed(2) + ' ' + iy2.toFixed(2),
         'Z'
       ].join(' ');
 
       currentAngle = endAngle;
       const pct = Math.round((s.value / total) * 100);
-      return `<path d="${d}" fill="${s.color}" opacity="0.94"
-        data-act="dash-filter-devotees" data-filter-key="rounds" data-filter-val="${s.valKey||''}"
-        style="transition:all .2s ease;cursor:pointer"
-        title="${esc(s.label)}: ${s.value} devotees (${pct}%) — Click to filter"
-        onmouseover="this.style.opacity='1';this.style.transform='scale(1.03)';this.style.transformOrigin='${cx}px ${cy}px'"
-        onmouseout="this.style.opacity='0.94';this.style.transform='scale(1)'"/>`;
+      return '<path d="' + d + '" fill="' + s.color + '" opacity="0.92" ' +
+        'data-act="dash-filter-devotees" data-filter-key="rounds" data-filter-val="' + (s.valKey||'') + '" ' +
+        'style="transition:all .2s ease;cursor:pointer" ' +
+        'title="' + esc(s.label) + ': ' + s.value + ' devotees (' + pct + '%) — Click to filter" ' +
+        'onmouseover="this.style.opacity=\'1\';this.style.transform=\'scale(1.04)\';this.style.transformOrigin=\'' + cx + 'px ' + cy + 'px\'" ' +
+        'onmouseout="this.style.opacity=\'0.92\';this.style.transform=\'scale(1)\'"/>';
     }).join('');
   }
 
-  return `<div style="display:flex;align-items:center;justify-content:center;gap:18px;flex-wrap:wrap;width:100%">
-    <div style="position:relative;width:${size}px;height:${size}px;flex-shrink:0">
-      <svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" style="overflow:visible">
-        ${paths}
-      </svg>
-      <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none">
-        <span style="font-size:22px;font-weight:800;font-family:var(--f-head);color:var(--ink)">${total}</span>
-        <span style="font-size:10px;color:var(--ink-3);font-weight:700;text-transform:uppercase;letter-spacing:0.04em">Devotees</span>
-      </div>
-    </div>
-    <div style="display:flex;flex-direction:column;gap:5px;min-width:170px;flex:1">
-      ${slices.map(s => {
+  return '<div style="display:flex;align-items:center;justify-content:center;gap:18px;flex-wrap:wrap;width:100%">' +
+    '<div style="position:relative;width:' + size + 'px;height:' + size + 'px;flex-shrink:0">' +
+      '<svg viewBox="0 0 ' + size + ' ' + size + '" width="' + size + '" height="' + size + '" style="overflow:visible">' +
+        paths +
+      '</svg>' +
+      '<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none">' +
+        '<span style="font-size:22px;font-weight:800;font-family:var(--f-head);color:var(--ink)">' + total + '</span>' +
+        '<span style="font-size:9.5px;color:var(--ink-3);font-weight:700;text-transform:uppercase;letter-spacing:0.04em">Devotees</span>' +
+      '</div>' +
+    '</div>' +
+    '<div style="display:flex;flex-direction:column;gap:5px;min-width:170px;flex:1">' +
+      slices.map(s => {
         const pct = total ? Math.round((s.value / total) * 100) : 0;
-        return `<div class="dash-click-row" data-act="dash-filter-devotees" data-filter-key="rounds" data-filter-val="${s.valKey||''}" title="Click to filter ${esc(s.label)}">
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px">
-            <div style="display:flex;align-items:center;gap:7px;min-width:0">
-              <span style="width:10px;height:10px;border-radius:3px;background:${s.color};flex-shrink:0"></span>
-              <span style="color:var(--ink-2);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(s.label)}</span>
-            </div>
-            <div style="display:flex;align-items:center;gap:5px;flex-shrink:0">
-              <b style="font-family:var(--f-head);color:var(--ink)">${s.value}</b>
-              <span style="font-size:10.5px;color:var(--ink-3);min-width:30px;text-align:right">(${pct}%)</span>
-            </div>
-          </div>
-        </div>`;
-      }).join('')}
-    </div>
-  </div>`;
+        return '<div class="dash-click-row" data-act="dash-filter-devotees" data-filter-key="rounds" data-filter-val="' + (s.valKey||'') + '" title="Click to filter ' + esc(s.label) + '">' +
+          '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px">' +
+            '<div style="display:flex;align-items:center;gap:7px;min-width:0">' +
+              '<span style="width:10px;height:10px;border-radius:3px;background:' + s.color + ';flex-shrink:0"></span>' +
+              '<span style="color:var(--ink-2);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(s.label) + '</span>' +
+            '</div>' +
+            '<div style="display:flex;align-items:center;gap:5px;flex-shrink:0">' +
+              '<b style="font-family:var(--f-head);color:var(--ink)">' + s.value + '</b>' +
+              '<span style="font-size:10.5px;color:var(--ink-3);min-width:30px;text-align:right">(' + pct + '%)</span>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+      }).join('') +
+    '</div>' +
+  '</div>';
 }
 
-function devoteeHorizontalBars(items, { filterKey = 'q' } = {}) {
+/* Modern Vertical Column Bar Chart */
+function devoteeVerticalBarChart(items, { filterKey = 'attendance' } = {}) {
   const max = Math.max(...items.map(i => i.count), 1);
-  return `<div style="display:flex;flex-direction:column;gap:8px;width:100%">
-    ${items.map(it => {
-      const pct = it.total ? Math.round((it.count / it.total) * 100) : 0;
-      const barW = Math.max(3, Math.round((it.count / max) * 100));
-      return `<div class="dash-click-row" data-act="dash-filter-devotees" data-filter-key="${filterKey}" data-filter-val="${esc(it.valKey || it.label)}" title="Click to filter by ${esc(it.label)}">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;font-size:12.5px">
-          <div style="display:flex;align-items:center;gap:7px;min-width:0">
-            <span style="width:8px;height:8px;border-radius:50%;background:${it.color};flex-shrink:0"></span>
-            <span style="font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(it.label)}</span>
-            ${it.sub ? `<span style="font-size:11px;color:var(--ink-3)">(${esc(it.sub)})</span>` : ''}
-          </div>
-          <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
-            <b style="font-family:var(--f-head);color:var(--ink)">${it.count}</b>
-            ${it.total ? `<span style="font-size:11px;color:var(--ink-3);min-width:32px;text-align:right">(${pct}%)</span>` : ''}
-          </div>
-        </div>
-        <div class="dash-bar-bg">
-          <div class="dash-bar-fill" style="width:${barW}%;background:${it.color}"></div>
-        </div>
-      </div>`;
-    }).join('')}
-  </div>`;
+  const total = items.reduce((sum, i) => sum + i.count, 0) || 1;
+
+  const gradMap = {
+    high: 'linear-gradient(180deg, #10B981, #059669)',
+    mid: 'linear-gradient(180deg, #3B82F6, #2563EB)',
+    low: 'linear-gradient(180deg, #F59E0B, #D97706)',
+    critical: 'linear-gradient(180deg, #EF4444, #DC2626)'
+  };
+  const iconMap = { high: '🌟', mid: '📘', low: '🌱', critical: '🚨' };
+
+  return '<div class="dash-vbar-wrap">' +
+    '<div class="dash-vbar-stage">' +
+      '<div class="dash-vbar-gridlines">' +
+        '<div class="dash-vbar-line"></div>' +
+        '<div class="dash-vbar-line"></div>' +
+        '<div class="dash-vbar-line"></div>' +
+        '<div class="dash-vbar-line"></div>' +
+      '</div>' +
+      items.map(it => {
+        const pct = Math.round((it.count / total) * 100);
+        const heightPct = Math.max(6, Math.round((it.count / max) * 100));
+        const grad = gradMap[it.valKey] || ('linear-gradient(180deg, ' + it.color + ', ' + it.color + ')');
+        return '<div class="dash-vbar-col" data-act="dash-filter-devotees" data-filter-key="' + filterKey + '" data-filter-val="' + esc(it.valKey) + '" style="--col-color:' + it.color + ';--col-grad:' + grad + '" title="Filter ' + esc(it.label) + ': ' + it.count + ' devotees (' + pct + '%)">' +
+          '<div class="dash-vbar-val-pill">' + it.count + ' <span style="font-size:9.5px;color:var(--ink-3)">(' + pct + '%)</span></div>' +
+          '<div class="dash-vbar-pillar" style="height:' + heightPct + '%"></div>' +
+        '</div>';
+      }).join('') +
+    '</div>' +
+    '<div class="dash-vbar-labels">' +
+      items.map(it => {
+        const ic = iconMap[it.valKey] || '•';
+        return '<div class="dash-vbar-lbl-item" data-act="dash-filter-devotees" data-filter-key="' + filterKey + '" data-filter-val="' + esc(it.valKey) + '" style="cursor:pointer">' +
+          '<div class="dash-vbar-lbl-title"><span>' + ic + '</span> <span>' + esc(it.label) + '</span></div>' +
+          (it.sub ? '<div class="dash-vbar-lbl-sub">' + esc(it.sub) + '</div>' : '') +
+        '</div>';
+      }).join('') +
+    '</div>' +
+  '</div>';
 }
 
-function devoteeProgressionLadder(levels) {
+/* Stepped Progression Funnel */
+function devoteeFunnelChart(levels) {
   const max = Math.max(...levels.map(l => l.count), 1);
-  return `<div style="display:flex;flex-direction:column;gap:9px;width:100%">
-    ${levels.map(l => {
+  return '<div class="dash-funnel-wrap">' +
+    levels.map(l => {
       const pct = l.total ? Math.round((l.count / l.total) * 100) : 0;
-      const barW = Math.max(4, Math.round((l.count / max) * 100));
-      return `<div class="dash-click-row" data-act="dash-filter-devotees" data-filter-key="level" data-filter-val="${l.levelKey}" title="Click to filter devotees in ${esc(l.title)}">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;font-size:12.5px">
-          <div style="display:flex;align-items:center;gap:8px;min-width:0">
-            <span class="badge sm" style="background:${l.badgeBg};color:${l.color};font-weight:800;font-size:10.5px">${esc(l.tag)}</span>
-            <span style="font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(l.title)}</span>
-          </div>
-          <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
-            <b style="font-family:var(--f-head);color:var(--ink)">${l.count}</b>
-            <span style="font-size:11px;color:var(--ink-3)">(${pct}%)</span>
-          </div>
-        </div>
-        <div class="dash-bar-bg">
-          <div class="dash-bar-fill" style="width:${barW}%;background:${l.color}"></div>
-        </div>
-      </div>`;
-    }).join('')}
-  </div>`;
+      const barW = Math.max(5, Math.round((l.count / max) * 100));
+      return '<div class="dash-funnel-step" data-act="dash-filter-devotees" data-filter-key="level" data-filter-val="' + l.levelKey + '" style="--step-color:' + l.color + '" title="Click to filter devotees in ' + esc(l.title) + '">' +
+        '<span class="dash-funnel-badge" style="background:' + l.badgeBg + ';color:' + l.color + '">' + esc(l.tag) + '</span>' +
+        '<div class="dash-funnel-info">' +
+          '<div class="dash-funnel-name">' + esc(l.title) + '</div>' +
+          '<div class="dash-funnel-bar"><div class="dash-funnel-bar-fill" style="width:' + barW + '%"></div></div>' +
+        '</div>' +
+        '<div class="dash-funnel-stats">' +
+          '<span class="dash-funnel-count">' + l.count + '</span>' +
+          '<span class="dash-funnel-pct">' + pct + '%</span>' +
+        '</div>' +
+      '</div>';
+    }).join('') +
+  '</div>';
 }
+
+/* Segmented Ribbon + Demographic Cards */
+function devoteeDemographicsChart(items) {
+  const total = items.reduce((sum, i) => sum + i.count, 0) || 1;
+  const icons = ['🎓', '💼', '🏛️', '📚', '🛕'];
+
+  return '<div class="dash-demog-wrap">' +
+    '<div class="dash-demog-ribbon" title="Demographic distribution ribbon">' +
+      items.map(it => {
+        const pct = Math.max(1, (it.count / total) * 100);
+        return '<div class="dash-demog-seg" data-act="dash-filter-devotees" data-filter-key="org" data-filter-val="' + esc(it.valKey) + '" style="flex:' + pct + ';background:' + it.color + '" title="' + esc(it.label) + ': ' + it.count + ' (' + Math.round(pct) + '%)"></div>';
+      }).join('') +
+    '</div>' +
+    '<div class="dash-demog-grid">' +
+      items.map((it, idx) => {
+        const ic = icons[idx % icons.length];
+        const pct = Math.round((it.count / total) * 100);
+        return '<div class="dash-demog-tile" data-act="dash-filter-devotees" data-filter-key="org" data-filter-val="' + esc(it.valKey) + '" style="--tile-color:' + it.color + '" title="Click to filter ' + esc(it.label) + '">' +
+          '<span class="dash-demog-tile-icon">' + ic + '</span>' +
+          '<div class="dash-demog-tile-info">' +
+            '<div class="dash-demog-tile-title">' + esc(it.label) + '</div>' +
+            '<div class="dash-demog-tile-sub">' + (it.sub ? esc(it.sub) : '') + ' · ' + pct + '%</div>' +
+          '</div>' +
+          '<span class="dash-demog-tile-val">' + it.count + '</span>' +
+        '</div>';
+      }).join('') +
+    '</div>' +
+  '</div>';
+}
+
+/* Geo-Cluster Residence Cards */
+function devoteeLocationMatrix(items) {
+  const max = Math.max(...items.map(i => i.count), 1);
+  const locIcons = ['🏠', '🏘️', '🎓', '🚗', '🌏'];
+
+  return '<div class="dash-loc-grid">' +
+    items.map((it, idx) => {
+      const pct = it.total ? Math.round((it.count / it.total) * 100) : 0;
+      const barW = Math.max(4, Math.round((it.count / max) * 100));
+      const ic = locIcons[idx % locIcons.length];
+      return '<div class="dash-loc-row" data-act="dash-filter-devotees" data-filter-key="residence" data-filter-val="' + esc(it.valKey) + '" style="--loc-color:' + it.color + '" title="Click to filter by ' + esc(it.label) + '">' +
+        '<span class="dash-loc-dot"></span>' +
+        '<div class="dash-loc-info">' +
+          '<div class="dash-loc-title"><span>' + ic + '</span> <span>' + esc(it.label) + '</span></div>' +
+          (it.sub ? '<div class="dash-loc-sub">' + esc(it.sub) + '</div>' : '') +
+        '</div>' +
+        '<div class="dash-loc-bar-wrap"><div class="dash-loc-bar-fill" style="width:' + barW + '%"></div></div>' +
+        '<div class="dash-loc-stats">' +
+          '<span class="dash-loc-num">' + it.count + '</span>' +
+          '<span class="dash-loc-pct">(' + pct + '%)</span>' +
+        '</div>' +
+      '</div>';
+    }).join('') +
+  '</div>';
+}
+
+/* Seva Workforce Grid */
+function devoteeSevaGrid(items) {
+  const max = Math.max(...items.map(i => i.count), 1);
+  const deptIcons = ['🛕', '📖', '🍲', '🧹', '💻', '🤝', '🌸', '🔔'];
+
+  return '<div class="dash-seva-grid">' +
+    items.map((it, idx) => {
+      const pct = it.total ? Math.round((it.count / it.total) * 100) : 0;
+      const barW = Math.max(4, Math.round((it.count / max) * 100));
+      const ic = deptIcons[idx % deptIcons.length];
+      return '<div class="dash-seva-tile" data-act="dash-filter-devotees" data-filter-key="dept" data-filter-val="' + esc(it.valKey) + '" style="--seva-color:' + it.color + '" title="Click to filter ' + esc(it.label) + '">' +
+        '<div class="dash-seva-top">' +
+          '<span class="dash-seva-name"><span>' + ic + '</span> <span>' + esc(it.label) + '</span></span>' +
+          '<span class="dash-seva-count">' + it.count + '</span>' +
+        '</div>' +
+        '<div class="dash-seva-bar"><i style="width:' + barW + '%"></i></div>' +
+        '<div class="dash-seva-pct">' + pct + '% workforce</div>' +
+      '</div>';
+    }).join('') +
+  '</div>';
+}
+
 
 function viewDevoteeDashboard(devotees){
   if(!devotees || !devotees.length){
@@ -12939,79 +13469,79 @@ function viewDevoteeDashboard(devotees){
       </div>
     </div>
 
-    <!-- 6 Rich, Non-Repetitive, Animative & Clickable Graphs -->
+    <!-- 6 Rich, Modern, Non-Repetitive & Interactive Variety Graphs -->
     <div class="dev-dash-grid">
-      <!-- GRAPH 1: PIE CHART (Chanting Rounds) -->
+      <!-- GRAPH 1: DONUT / RADIAL RING CHART (Japa Chanting Rounds) -->
       <div class="dev-dash-card">
         <div class="dev-dash-card-header">
           <div>
             <div class="dev-dash-card-title"><span>📿</span> Chanting Rounds (Japa Sadhana)</div>
             <div class="dev-dash-card-sub">Devotees vs daily rounds chanted (Community avg: <b>${avgRounds} rounds/day</b>)</div>
           </div>
-          <span class="badge sm" style="background:rgba(16,185,129,0.1);color:#10B981;font-weight:700">Pie Chart</span>
+          <span class="badge sm" style="background:rgba(16,185,129,0.1);color:#10B981;font-weight:700">Donut Chart</span>
         </div>
         <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:4px 0">
-          ${devoteePieChart(pieSlices, { size: 180, innerRadius: 48 })}
+          ${devoteePieChart(pieSlices, { size: 185, innerRadius: 52 })}
         </div>
       </div>
 
-      <!-- GRAPH 2: GEOGRAPHY & RESIDENCE (BACE vs Local vs Nearby) -->
-      <div class="dev-dash-card">
-        <div class="dev-dash-card-header">
-          <div>
-            <div class="dev-dash-card-title"><span>📍</span> Residence & Geographical Presence</div>
-            <div class="dev-dash-card-sub">Devotees stationed in BACE Ashram, Jia Sarai, nearby campuses & NCR</div>
-          </div>
-          <span class="badge sm" style="background:rgba(255,102,0,0.1);color:#FF6600;font-weight:700">Locations</span>
-        </div>
-        <div style="flex:1;display:flex;flex-direction:column;justify-content:center">
-          ${devoteeHorizontalBars(locationItems, { filterKey: 'residence' })}
-        </div>
-      </div>
-
-      <!-- GRAPH 3: SPIRITUAL PROGRESSION LADDER (Levels 0 to 3+) -->
-      <div class="dev-dash-card">
-        <div class="dev-dash-card-header">
-          <div>
-            <div class="dev-dash-card-title"><span>🎓</span> Spiritual Level & Course Progression</div>
-            <div class="dev-dash-card-sub">Growth ladder from open connects to dedicated senior mentors</div>
-          </div>
-          <span class="badge sm" style="background:rgba(139,92,246,0.1);color:#8B5CF6;font-weight:700">Growth Ladder</span>
-        </div>
-        <div style="flex:1;display:flex;flex-direction:column;justify-content:center">
-          ${devoteeProgressionLadder(levelLadder)}
-        </div>
-      </div>
-
-      <!-- GRAPH 4: ATTENDANCE HEALTH TIERS -->
+      <!-- GRAPH 2: VERTICAL COLUMN BAR CHART (Attendance Performance Tiers) -->
       <div class="dev-dash-card">
         <div class="dev-dash-card-header">
           <div>
             <div class="dev-dash-card-title"><span>📈</span> Attendance Performance Tiers</div>
-            <div class="dev-dash-card-sub">Real community participation across morning & evening programs</div>
+            <div class="dev-dash-card-sub">Real community participation across morning & evening programs (Avg: <b>${avgAtt}%</b>)</div>
           </div>
-          <span class="badge sm" style="background:rgba(59,130,246,0.1);color:#3B82F6;font-weight:700">Attendance</span>
+          <span class="badge sm" style="background:rgba(59,130,246,0.1);color:#3B82F6;font-weight:700">Vertical Columns</span>
         </div>
         <div style="flex:1;display:flex;flex-direction:column;justify-content:center">
-          ${devoteeHorizontalBars(attTiers, { filterKey: 'attendance' })}
+          ${devoteeVerticalBarChart(attTiers, { filterKey: 'attendance' })}
         </div>
       </div>
 
-      <!-- GRAPH 5: CAMPUS & PROFESSIONAL DEMOGRAPHICS -->
+      <!-- GRAPH 3: STEPPED PROGRESSION FUNNEL (Levels 0 to 3+) -->
       <div class="dev-dash-card">
         <div class="dev-dash-card-header">
           <div>
-            <div class="dev-dash-card-title"><span>🏛️</span> College & Professional Background</div>
-            <div class="dev-dash-card-sub">Scholarly background from IIT Delhi, JNU, working engineers & youth</div>
+            <div class="dev-dash-card-title"><span>🎓</span> Spiritual Level & Growth Funnel</div>
+            <div class="dev-dash-card-sub">Growth ladder from open connects to dedicated senior mentors</div>
           </div>
-          <span class="badge sm" style="background:rgba(16,185,129,0.1);color:#10B981;font-weight:700">Demographics</span>
+          <span class="badge sm" style="background:rgba(139,92,246,0.1);color:#8B5CF6;font-weight:700">Growth Funnel</span>
         </div>
         <div style="flex:1;display:flex;flex-direction:column;justify-content:center">
-          ${devoteeHorizontalBars(demoItems, { filterKey: 'org' })}
+          ${devoteeFunnelChart(levelLadder)}
         </div>
       </div>
 
-      <!-- GRAPH 6: DEPARTMENT & SEVA ENGAGEMENT -->
+      <!-- GRAPH 4: SEGMENTED RIBBON + DEMOGRAPHIC CARDS -->
+      <div class="dev-dash-card">
+        <div class="dev-dash-card-header">
+          <div>
+            <div class="dev-dash-card-title"><span>🏛️</span> College & Professional Demographics</div>
+            <div class="dev-dash-card-sub">Scholarly background from IIT Delhi, JNU, working engineers & youth</div>
+          </div>
+          <span class="badge sm" style="background:rgba(16,185,129,0.1);color:#10B981;font-weight:700">Campus & Career</span>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;justify-content:center">
+          ${devoteeDemographicsChart(demoItems)}
+        </div>
+      </div>
+
+      <!-- GRAPH 5: GEO-CLUSTER RESIDENCE MATRIX -->
+      <div class="dev-dash-card">
+        <div class="dev-dash-card-header">
+          <div>
+            <div class="dev-dash-card-title"><span>📍</span> Residence & Geographical Clusters</div>
+            <div class="dev-dash-card-sub">Devotees stationed in BACE Ashram, Jia Sarai, nearby campuses & NCR</div>
+          </div>
+          <span class="badge sm" style="background:rgba(255,102,0,0.1);color:#FF6600;font-weight:700">Geo Clusters</span>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;justify-content:center">
+          ${devoteeLocationMatrix(locationItems)}
+        </div>
+      </div>
+
+      <!-- GRAPH 6: SEVA WORKFORCE GRID TILES -->
       <div class="dev-dash-card">
         <div class="dev-dash-card-header">
           <div>
@@ -13021,7 +13551,7 @@ function viewDevoteeDashboard(devotees){
           <span class="badge sm" style="background:rgba(236,72,153,0.1);color:#EC4899;font-weight:700">Seva Allocation</span>
         </div>
         <div style="flex:1;display:flex;flex-direction:column;justify-content:center">
-          ${devoteeHorizontalBars(formattedDeptData, { filterKey: 'dept' })}
+          ${devoteeSevaGrid(formattedDeptData)}
         </div>
       </div>
     </div>
