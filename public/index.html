@@ -6086,105 +6086,183 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-off
     padding: 12px 14px 16px;
   }
 
-  /* ── KV list inside card ── */
-  .peek-body-inner .kv {
-    font-size: 12.5px;
-    row-gap: 7px;
-    column-gap: 10px;
+  /* ── Compact Peek-Expand Body System ── */
+  .peek-body-inner {
+    padding: 10px 12px 14px;
   }
-  .peek-body-inner .kv dt {
-    font-size: 10.5px;
-    color: var(--ink-2);
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: .3px;
-  }
-  .peek-body-inner .kv dd { color: var(--ink); }
 
-  /* ── Quick action buttons (Contact card) ── */
-  .peek-quick-row {
+  /* Compact 2-column key-value grid */
+  .pk-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 7px;
-    margin-bottom: 14px;
+    grid-template-columns: 1fr 1fr;
+    gap: 7px 10px;
   }
-  .peek-quick-btn {
+  .pk-cell {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    padding: 10px 6px;
-    border-radius: 12px;
-    background: var(--surface-2, #f8fafc);
-    border: 1px solid var(--line);
-    font-size: 11px;
+    gap: 1.5px;
+    min-width: 0;
+  }
+  .pk-cell.full {
+    grid-column: 1 / -1;
+  }
+  .pk-cell-lbl {
+    font-size: 9px;
     font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .35px;
+    color: var(--ink-3, #64748b);
+    line-height: 1.15;
+  }
+  .pk-cell-val {
+    font-size: 12px;
+    font-weight: 600;
     color: var(--ink);
+    line-height: 1.3;
+    word-break: break-word;
+  }
+
+  /* Compact Horizontal Quick Action Pills */
+  .peek-quick-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .peek-quick-btn {
+    flex: 1;
+    display: inline-flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 6.5px 10px;
+    border-radius: 8px;
+    background: var(--surface-2, rgba(0,0,0,0.025));
+    border: 1px solid var(--line);
+    font-size: 11.5px;
+    font-weight: 700;
     text-decoration: none;
     cursor: pointer;
     transition: background .12s, transform .1s;
     -webkit-tap-highlight-color: transparent;
   }
-  .peek-quick-btn:active { transform: scale(.95); }
-  .peek-quick-btn .pq-em { font-size: 18px; }
+  .peek-quick-btn:active { transform: scale(.96); }
+  .peek-quick-btn .pq-em { font-size: 14px; }
 
-  /* ── Progress bars (Attendance card) ── */
-  .pk-prog-row { margin-bottom: 10px; }
-  .pk-prog-label {
+  /* Compact Pillar Cards */
+  .pk-pillar-list {
     display: flex;
-    justify-content: space-between;
-    font-size: 11.5px;
-    font-weight: 600;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .pk-pillar-card {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 7px 10px;
+    background: var(--surface-2, rgba(0,0,0,0.02));
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    text-decoration: none;
     color: var(--ink);
-    margin-bottom: 4px;
+    transition: background .12s;
   }
-  .pk-prog-track {
-    height: 7px;
-    border-radius: 99px;
-    background: var(--line-2, #e5e7eb);
+  .pk-pillar-card:active { background: var(--line); }
+  .pk-pillar-info {
+    flex: 1;
+    min-width: 0;
+  }
+  .pk-pillar-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1.25;
+  }
+  .pk-pillar-sub {
+    font-size: 10.5px;
+    color: var(--ink-2);
+    line-height: 1.2;
+    white-space: nowrap;
     overflow: hidden;
+    text-overflow: ellipsis;
   }
-  .pk-prog-fill {
-    height: 100%;
-    border-radius: 99px;
-    transition: width .5s ease .1s;
+  .pk-pillar-arrow {
+    font-size: 15px;
+    color: var(--ink-3);
+    font-weight: 400;
   }
 
-  /* ── Section label inside cards ── */
+  /* Compact Attendance 2x2 Grid */
+  .pk-att-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 7px;
+  }
+  .pk-att-metric {
+    background: var(--surface-2, rgba(0,0,0,0.02));
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    padding: 7px 9px;
+    display: flex;
+    flex-direction: column;
+    gap: 2.5px;
+  }
+  .pam-lbl {
+    font-size: 9.5px;
+    font-weight: 700;
+    color: var(--ink-2);
+    text-transform: uppercase;
+    letter-spacing: .3px;
+  }
+  .pam-val {
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--ink);
+    line-height: 1.1;
+  }
+  .pam-bar {
+    height: 4px;
+    background: var(--line-2, #e5e7eb);
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 1px 0;
+  }
+  .pam-bar i {
+    display: block;
+    height: 100%;
+    border-radius: 4px;
+  }
+  .pam-sub {
+    font-size: 9.5px;
+    color: var(--ink-3);
+  }
+
+  /* Section label inside cards */
   .pk-section-label {
-    font-size: 10px;
+    font-size: 9.5px;
     font-weight: 800;
     text-transform: uppercase;
-    letter-spacing: .5px;
+    letter-spacing: .4px;
     color: var(--ink-2);
-    margin: 12px 0 7px;
+    margin: 8px 0 5px;
   }
 
-  /* ── Pillar links inside Three Pillars card ── */
-  .peek-body-inner .list .li {
-    padding: 8px 0;
+  /* Meeting & History Rows */
+  .pk-meeting-row, .pk-hist-row {
+    padding: 5px 0;
     border-bottom: 1px solid var(--line);
   }
-  .peek-body-inner .list .li:last-child { border-bottom: none; }
-
-  /* ── Meeting items ── */
-  .pk-meeting-row {
-    padding: 7px 0;
-    border-bottom: 1px solid var(--line);
+  .pk-meeting-row:last-child, .pk-hist-row:last-child { border-bottom: none; }
+  .pk-meeting-type, .pk-hist-main {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--ink);
   }
-  .pk-meeting-row:last-child { border-bottom: none; }
-  .pk-meeting-type { font-size: 12px; font-weight: 700; color: var(--ink); }
-  .pk-meeting-date { font-size: 11px; color: var(--ink-2); }
-  .pk-meeting-note { font-size: 11px; color: var(--ink-2); margin-top: 1px; }
-
-  /* ── History rows ── */
-  .pk-hist-row {
-    padding: 7px 0;
-    border-bottom: 1px solid var(--line);
+  .pk-meeting-note, .pk-hist-sub {
+    font-size: 10.5px;
+    color: var(--ink-2);
+    margin-top: 1px;
   }
-  .pk-hist-row:last-child { border-bottom: none; }
-  .pk-hist-main { font-size: 12px; font-weight: 700; color: var(--ink); }
-  .pk-hist-sub  { font-size: 11px; color: var(--ink-2); margin-top: 1px; }
 }
 
 /* ── Phase 7: Preaching Funnel & Batch Management Mobile Ergonomics ── */
@@ -13344,7 +13422,12 @@ function viewDevotee(id){
     const _sevaName  = d.service || _deptName;
     const _pk        = 'pk-'+d.id; // unique prefix for toggle IDs
 
-    // Helper: peek card builder
+    // Helper: peek card builder & compact cell builder
+    function pkCell(lbl, val, isFull) {
+      if (!val && val !== 0) val = '—';
+      return '<div class="pk-cell' + (isFull ? ' full' : '') + '"><span class="pk-cell-lbl">' + lbl + '</span><span class="pk-cell-val">' + val + '</span></div>';
+    }
+
     function pkCard(id, accentColor, icon, title, badgeText, prev1, prev2, bodyHtml) {
       return `<div class="peek-card" id="${id}" style="--pk-accent:${accentColor}">
   <div class="peek-card-stripe"></div>
@@ -13379,84 +13462,91 @@ function viewDevotee(id){
     </a>
     ${d.email ? `<a href="mailto:${esc(d.email)}" class="peek-quick-btn" style="color:#d97706" onclick="event.stopPropagation()"><span class="pq-em">✉️</span>Email</a>` : ''}
   </div>` : ''}
-  <dl class="kv">
-    <dt>Full name</dt><dd>${esc(d.name)}</dd>
-    <dt>Gender</dt><dd><span class="badge ${d.gender==='Female'?'b-amber':'b-indigo'}">${esc(d.gender||'Male')}</span></dd>
-    <dt>Date of birth</dt><dd>${fmtD(d.dob)}</dd>
-    <dt>Phone</dt><dd>${esc(d.phone||'—')}</dd>
-    <dt>Email</dt><dd>${esc(d.email||'—')}</dd>
-    <dt>Residence</dt><dd>${esc(d.residence||d.address||'—')}</dd>
-    <dt>Attendance mode</dt><dd><span class="badge ${d.attendanceMode==='Online'?'b-indigo':'b-teal'}">${esc(d.attendanceMode||'Offline at BACE')}</span></dd>
-    <dt>Occupation</dt><dd>${esc(d.occupation||'—')}</dd>
-    <dt>College / org</dt><dd>${esc(d.org||'—')}</dd>
-    <dt>Higher education</dt><dd>${esc(d.highestEducation||'—')}</dd>
-    <dt>Present studies / job</dt><dd>${esc(d.presentStudiesOrJob||'—')}</dd>
-    <dt>Permanent address</dt><dd>${esc(d.address||'—')}</dd>
-    <dt>Emergency contact</dt><dd>${esc(d.emergency||'—')}</dd>
-    <dt>Skills</dt><dd>${(d.skills||[]).map(s=>badge(s,'grey')).join(' ')||'—'}</dd>
-    <dt>Availability</dt><dd>${esc(d.availability||'Weekends')}</dd>
-  </dl>`;
+  <div class="pk-grid">
+    ${pkCell('Full name', esc(d.name))}
+    ${pkCell('Gender', '<span class="badge ' + (d.gender==='Female'?'b-amber':'b-indigo') + '">' + esc(d.gender||'Male') + '</span>')}
+    ${pkCell('Date of birth', fmtD(d.dob))}
+    ${pkCell('Phone', esc(d.phone||'—'))}
+    ${pkCell('Email', esc(d.email||'—'))}
+    ${pkCell('Attendance mode', '<span class="badge ' + (d.attendanceMode==='Online'?'b-indigo':'b-teal') + '">' + esc(d.attendanceMode||'Offline at BACE') + '</span>')}
+    ${pkCell('Residence', esc(d.residence||d.address||'—'), true)}
+    ${pkCell('Occupation', esc(d.occupation||'—'))}
+    ${pkCell('College / org', esc(d.org||'—'))}
+    ${pkCell('Higher education', esc(d.highestEducation||'—'))}
+    ${pkCell('Present studies / job', esc(d.presentStudiesOrJob||'—'))}
+    ${(d.address && d.address !== d.residence) ? pkCell('Permanent address', esc(d.address), true) : ''}
+    ${pkCell('Emergency contact', esc(d.emergency||'—'))}
+    ${pkCell('Availability', esc(d.availability||'Weekends'))}
+    ${(d.skills && d.skills.length) ? pkCell('Skills', d.skills.map(s=>badge(s,'grey')).join(' '), true) : ''}
+  </div>`;
 
     // ── Card 2: BACE Identity ────────────────────
-    const _baceBody = `<dl class="kv">
-    <dt>Joining date</dt><dd>${fmtD(d.joined)}</dd>
-    <dt>Status</dt><dd>${sbadge(d.status)}</dd>
-    <dt>Hierarchy ${rKeys.length>1?'roles':'role'}</dt><dd style="display:flex;flex-wrap:wrap;gap:5px">${roleBadges}</dd>
-    <dt>Current level</dt><dd>${d.level?'Level '+d.level:'Not yet levelled'}</dd>
-    <dt>Batch</dt><dd>${esc(_batchName)}</dd>
-    <dt>Batch role</dt><dd><span class="badge b-grey">${esc(d.batchRole||'Member')}</span></dd>
-    <dt>Care group</dt><dd>${esc(_grpName)}</dd>
-    <dt>Facilitator</dt><dd>${esc(nameOf(d.facilitator))}</dd>
-    <dt>Mentor</dt><dd>${esc(nameOf(d.mentor))}</dd>
-  </dl>`;
+    const _baceBody = `<div class="pk-grid">
+    ${pkCell('Joining date', fmtD(d.joined))}
+    ${pkCell('Status', sbadge(d.status))}
+    ${pkCell('Current level', d.level ? 'Level '+d.level : 'Not yet levelled')}
+    ${pkCell('Batch', esc(_batchName) + ' · <span class="badge b-grey">' + esc(d.batchRole||'Member') + '</span>')}
+    ${pkCell('Care group', esc(_grpName))}
+    ${pkCell('Facilitator', esc(nameOf(d.facilitator)))}
+    ${pkCell('Mentor', esc(nameOf(d.mentor)))}
+    ${pkCell('Hierarchy roles', '<div style="display:flex;flex-wrap:wrap;gap:4px">' + roleBadges + '</div>', true)}
+  </div>`;
 
     // ── Card 3: Three Pillars ────────────────────
-    const _pillarsBody = `<div class="list">
-    <a class="li click" href="#/dept/${d.dept||''}" onclick="event.stopPropagation()">
-      <span class="badge b-saffron">🛕 Seva</span>
-      <span class="grow">
-        <span class="t">${esc(_sevaName)}</span>
-        <span class="d">${esc(_deptName)}</span>
-      </span>
+    const _pillarsBody = `<div class="pk-pillar-list">
+    <a class="pk-pillar-card" href="#/dept/${d.dept||''}" onclick="event.stopPropagation()">
+      <span class="badge b-saffron" style="flex-shrink:0">🛕 Seva</span>
+      <div class="pk-pillar-info">
+        <div class="pk-pillar-title">${esc(_sevaName)}</div>
+        <div class="pk-pillar-sub">${esc(_deptName)}</div>
+      </div>
+      <span class="pk-pillar-arrow">›</span>
     </a>
-    <a class="li click" href="#/batch/${d.batch||''}" onclick="event.stopPropagation()">
-      <span class="badge b-indigo">📖 Preaching</span>
-      <span class="grow">
-        <span class="t">${esc(_batchName)}</span>
-        <span class="d">First contact ${fmtD(d.firstContact)} via ${esc(d.source)}</span>
-      </span>
+    <a class="pk-pillar-card" href="#/batch/${d.batch||''}" onclick="event.stopPropagation()">
+      <span class="badge b-indigo" style="flex-shrink:0">📖 Preaching</span>
+      <div class="pk-pillar-info">
+        <div class="pk-pillar-title">${esc(_batchName)}</div>
+        <div class="pk-pillar-sub">First contact ${fmtD(d.firstContact)} via ${esc(d.source)}</div>
+      </div>
+      <span class="pk-pillar-arrow">›</span>
     </a>
-    <a class="li click" href="#/group/${d.careGroup||''}" onclick="event.stopPropagation()">
-      <span class="badge b-green">❤️ Care</span>
-      <span class="grow">
-        <span class="t">${esc(_grpName)}</span>
-        <span class="d">Facilitator ${esc(nameOf(d.facilitator))}</span>
-      </span>
+    <a class="pk-pillar-card" href="#/group/${d.careGroup||''}" onclick="event.stopPropagation()">
+      <span class="badge b-green" style="flex-shrink:0">❤️ Care</span>
+      <div class="pk-pillar-info">
+        <div class="pk-pillar-title">${esc(_grpName)}</div>
+        <div class="pk-pillar-sub">Facilitator ${esc(nameOf(d.facilitator))}</div>
+      </div>
+      <span class="pk-pillar-arrow">›</span>
     </a>
   </div>`;
 
     // ── Card 4: Attendance ───────────────────────
     const _attBody = `
-  <div class="pk-prog-row">
-    <div class="pk-prog-label"><span>🌅 Morning Program</span><span>${_mP}%</span></div>
-    <div class="pk-prog-track"><div class="pk-prog-fill" style="width:${_mP}%;background:linear-gradient(90deg,#f59e0b,#d97706)"></div></div>
-  </div>
-  <div class="pk-prog-row">
-    <div class="pk-prog-label"><span>🪔 Deity Services</span><span>${_dP}%</span></div>
-    <div class="pk-prog-track"><div class="pk-prog-fill" style="width:${_dP}%;background:linear-gradient(90deg,#ea580c,#c2410c)"></div></div>
-  </div>
-  <div class="pk-prog-row">
-    <div class="pk-prog-label"><span>📖 Batch Classes</span><span>${_clP}%</span></div>
-    <div class="pk-prog-track"><div class="pk-prog-fill" style="width:${_clP}%;background:linear-gradient(90deg,#6366f1,#4f46e5)"></div></div>
-  </div>
-  <div class="pk-prog-row">
-    <div class="pk-prog-label"><span>⭐ Overall Score</span><span>${_ov}%</span></div>
-    <div class="pk-prog-track"><div class="pk-prog-fill" style="width:${_ov}%;background:linear-gradient(90deg,#10b981,#059669)"></div></div>
-  </div>
-  <div style="margin-top:10px;font-size:11px;color:var(--ink-2);text-align:right">
-    Morning: ${_att.morning?.present||0}/${_att.morning?.total||0} sessions ·
-    Deity: ${_att.deity?.completed||0}/${_att.deity?.total||0} sevas ·
-    Classes: ${_att.classes?.present||0}/${_att.classes?.total||0}
+  <div class="pk-att-grid">
+    <div class="pk-att-metric">
+      <div class="pam-lbl">🌅 Morning</div>
+      <div class="pam-val">${_mP}%</div>
+      <div class="pam-bar"><i style="width:${_mP}%;background:#f59e0b"></i></div>
+      <div class="pam-sub">${_att.morning?.present||0}/${_att.morning?.total||0} sessions</div>
+    </div>
+    <div class="pk-att-metric">
+      <div class="pam-lbl">🪔 Deity</div>
+      <div class="pam-val">${_dP}%</div>
+      <div class="pam-bar"><i style="width:${_dP}%;background:#ea580c"></i></div>
+      <div class="pam-sub">${_att.deity?.completed||0}/${_att.deity?.total||0} sevas</div>
+    </div>
+    <div class="pk-att-metric">
+      <div class="pam-lbl">📖 Classes</div>
+      <div class="pam-val">${_clP}%</div>
+      <div class="pam-bar"><i style="width:${_clP}%;background:#6366f1"></i></div>
+      <div class="pam-sub">${_att.classes?.present||0}/${_att.classes?.total||0} classes</div>
+    </div>
+    <div class="pk-att-metric">
+      <div class="pam-lbl">⭐ Overall</div>
+      <div class="pam-val">${_ov}%</div>
+      <div class="pam-bar"><i style="width:${_ov}%;background:#10b981"></i></div>
+      <div class="pam-sub">Score</div>
+    </div>
   </div>`;
 
     // ── Card 5: Devotee Care ─────────────────────
@@ -13467,17 +13557,17 @@ function viewDevotee(id){
     </div>`).join('') || '<div style="font-size:11.5px;color:var(--ink-2);padding:4px 0">No meetings logged yet.</div>';
 
     const _careBody = (can('care_notes') && (APP.user.role !== 'facilitator' || d.facilitator === APP.user.devotee || d.id === APP.user.devotee))
-      ? `<dl class="kv">
-    <dt>Spiritual care</dt><dd>${sbadge(d.careStatus?.spiritual||'Steady')}</dd>
-    <dt>Emotional care</dt><dd>${sbadge(d.careStatus?.emotional||'Good')}</dd>
-    <dt>Care group</dt><dd>${esc(_grpName)}</dd>
-    <dt>Facilitator</dt><dd>${esc(nameOf(d.facilitator))}</dd>
-    <dt>Mentor / guide</dt><dd>${esc(nameOf(d.mentor))}</dd>
-    <dt>Friends</dt><dd>${d.friends.map(f=>`<a href="#/devotee/${f}">${esc(nameOf(f))}</a>`).join(', ')||'—'}</dd>
-  </dl>
+      ? `<div class="pk-grid" style="margin-bottom:8px">
+    ${pkCell('Spiritual care', sbadge(d.careStatus?.spiritual||'Steady'))}
+    ${pkCell('Emotional care', sbadge(d.careStatus?.emotional||'Good'))}
+    ${pkCell('Care group', esc(_grpName))}
+    ${pkCell('Facilitator', esc(nameOf(d.facilitator)))}
+    ${pkCell('Mentor / guide', esc(nameOf(d.mentor)))}
+    ${pkCell('Friends', d.friends.map(f=>`<a href="#/devotee/${f}" onclick="event.stopPropagation()">${esc(nameOf(f))}</a>`).join(', ')||'—')}
+  </div>
   <div class="pk-section-label">Personal Meetings 🔒</div>
   ${_meetingsHtml}
-  <button class="btn sm" style="margin-top:10px;width:100%" data-act="set-care" data-id="${d.id}" onclick="event.stopPropagation()">✏️ Update care status</button>`
+  <button class="btn sm" style="margin-top:8px;width:100%" data-act="set-care" data-id="${d.id}" onclick="event.stopPropagation()">✏️ Update care status</button>`
       : `<div class="note" style="font-size:12px;padding:4px 0">🔒 Restricted to Devotee Care Manager and assigned facilitator.</div>`;
 
     // ── Card 6: Journey & History ────────────────
