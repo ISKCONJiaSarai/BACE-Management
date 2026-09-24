@@ -13018,8 +13018,9 @@ function viewDevotee(id){
     return emptyState('Profile not found','This devotee record does not exist.','<a class="btn" href="#/devotees">Back to directory</a>');
   }
   APP.crumbLeaf=d.name;
-  const tab=APP.tab.devotee||'Overview';
-  const tabs=['Overview','Preaching','Seva','Attendance','Care','Sadhana','Timeline','Friends','Notes'];
+  const rawTab=APP.tab.devotee||'Overview';
+  const tabs=['Overview','Preaching','Seva','Attendance','Care','Timeline','Friends','Notes'];
+  const tab=tabs.includes(rawTab)?rawTab:'Overview';
   const careOK=can('care_notes')&&(APP.user.role!=='facilitator'||d.facilitator===APP.user.devotee||d.id===APP.user.devotee);
   const mine=DB.assignments.filter(a=>a.devotee===d.id).map(a=>({a,x:act(a.activity)})).filter(o=>o.x);
   const rKeys=devoteeRoles(d);
@@ -13449,25 +13450,6 @@ function viewDevotee(id){
         <div class="li"><span class="grow"><span class="t">${esc(m.type)} · ${fmtD(m.date)}</span><span class="d">${esc(m.points)}</span></span></div>`).join('')
         ||emptyState('No meetings recorded','Record a personal meeting to start the care history.','<button class="btn pri" data-act="add-meeting" data-id="'+d.id+'">Record meeting</button>')}</div>`)}</div>`
      :denied("Care notes are visible only to the Devotee Care Manager, the Overall Coordinator, the Area Leader and this devotee's own facilitator."),
-   Sadhana:section('Sadhana',`<div class="card-b"><div class="grid g3" style="margin-bottom:15px">
-      ${stat('Daily rounds',d.sadhana.rounds,'committed',{em:'📿',r:'#/sadhana'})}${stat('Morning programme',d.sadhana.morningProgram+'%','attendance this month',{em:'🌅',r:'#/sadhana'})}
-      ${stat('Last reported',relD(d.sadhana.lastReported),'sadhana card',{em:'📅',r:'#/sadhana'})}</div>
-      <div class="note">Reported through the Sadhana Reporting department. These are the devotee's own submitted numbers, not an assessment.</div>
-      <div style="height:14px"></div>${(()=>{
-        const targetRounds = Number(d.sadhana?.rounds) || 16;
-        const devSadhanaLogs = DB.sadhana.filter(s => s.devotee === d.id);
-        const weeklyPoints = [5, 4, 3, 2, 1, 0].map(wOff => {
-          const label = wOff === 0 ? 'This wk' : wOff === 1 ? 'Last wk' : `${wOff}w ago`;
-          const rec = devSadhanaLogs.find(s => s.week === label || (wOff === 0 && s.week === 'This week'));
-          const v = rec ? Number(rec.rounds) : Math.max(0, targetRounds - (d.status === 'New' ? Math.max(0, 2 - wOff) : 0));
-          return {
-            l: label,
-            v: v,
-            tip: `${label}\nChanted: ${v} rounds\nTarget: ${targetRounds} rounds\nMorning Programme: ${Number(d.sadhana?.morningProgram) || 0}%\nStatus: ${v >= targetRounds ? 'Target achieved' : 'In progress'}`
-          };
-        });
-        return barChart(weeklyPoints, { color: 'var(--green)' });
-      })()}</div>`),
    Timeline:section('Devotee journey',`<div class="card-b"><div class="tl">${d.timeline.map(t=>`
       <div class="tl-item"><span class="tl-dot" style="border-color:var(--${t.tone})"></span>
       <div class="tl-date">${fmtD(t.date)}</div><div class="tl-title">${esc(t.title)}</div><div class="tl-desc">${esc(t.desc)}</div></div>`).join('')}</div></div>`),
@@ -13501,7 +13483,6 @@ function viewDevotee(id){
     Seva: '🛕',
     Attendance: '📊',
     Care: '❤️',
-    Sadhana: '📿',
     Timeline: '⏳',
     Friends: '🤝',
     Notes: '📝'
