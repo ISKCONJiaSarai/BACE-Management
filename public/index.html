@@ -13267,6 +13267,17 @@ function viewDevotees(){
     empty:emptyState('No devotees found','Nothing matches these filters. Clear one, or add a new devotee.','<button class="btn pri" data-act="add-devotee">Add devotee</button>','people')});
 }
 
+window.pkToggle = function(id) {
+  var card = document.getElementById(id);
+  if (!card) return;
+  var isOpen = card.classList.contains('pk-open');
+  card.classList.toggle('pk-open', !isOpen);
+  var lbl = document.getElementById(id + '-lbl');
+  var chv = document.getElementById(id + '-chv');
+  if (lbl) lbl.textContent = isOpen ? 'Show more' : 'Show less';
+  if (chv) chv.textContent = isOpen ? '▾' : '▴';
+};
+
 function viewDevotee(id){
   const d=dv(id);
   if(!d || isBaceAdminEmail(d.email) || d.appointment === 'BACE Administrator' || d.appointment === 'System Administrator' || d.name === 'ISKCON BACE Admin') {
@@ -13322,8 +13333,8 @@ function viewDevotee(id){
     // ─── Live data variables for mobile cards ────
     const _att  = getDevoteeRealAttendance(d);
     const _mP   = (_att.morning  && _att.morning.rate  !== undefined ? _att.morning.rate  : _att.morning?.punctuality)  || 0;
-    const _dP   = (_att.deity    && _att.deity.rate    !== undefined ? _att.deity.rate)   || 0;
-    const _clP  = (_att.classes  && _att.classes.rate  !== undefined ? _att.classes.rate) || 0;
+    const _dP   = (_att.deity    && _att.deity.rate    !== undefined ? _att.deity.rate : 0) || 0;
+    const _clP  = (_att.classes  && _att.classes.rate  !== undefined ? _att.classes.rate : 0) || 0;
     const _ov   = _att.overall  || 0;
     const _rawPhone  = (d.phone||'').replace(/\D/g,'');
     const _phone10   = _rawPhone.length >= 10 ? _rawPhone.slice(-10) : _rawPhone;
@@ -13484,21 +13495,7 @@ function viewDevotee(id){
     // ── Assemble mobile stack ────────────────────
     const _mobileHtml = `
 <div class="dev-mobile-overview" id="${_pk}-wrap">
-  <script>
-  (function(){
-    window.pkToggle = function(id) {
-      var card = document.getElementById(id);
-      if (!card) return;
-      var isOpen = card.classList.contains('pk-open');
-      card.classList.toggle('pk-open', !isOpen);
-      var lbl = document.getElementById(id+'-lbl');
-      var chv = document.getElementById(id+'-chv');
-      if (lbl) lbl.textContent = isOpen ? 'Show more' : 'Show less';
-      if (chv) chv.textContent = isOpen ? '▾' : '▴';
-    };
-  })();
-  <\/script>
-  ${pkCard(_pk+'-contact','#3b82f6','📇','Contact & Bio',
+    ${pkCard(_pk+'-contact','#3b82f6','📇','Contact & Bio',
       esc(d.attendanceMode||'Offline at BACE'),
       esc(d.phone||'No phone on file'),
       esc((d.residence||d.address||'Ashram resident')),
