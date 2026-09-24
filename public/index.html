@@ -6217,6 +6217,56 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-off
     font-weight: 700;
   }
 
+  /* Standards row inside attendance box */
+  .pk-att-standards-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 7px;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed var(--line);
+  }
+  .pk-att-std-chip {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    background: var(--surface-2, rgba(0,0,0,0.025));
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 5px 8px;
+    min-width: 0;
+  }
+  .pasc-ic {
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+  .pasc-body {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+  }
+  .pasc-lbl {
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .3px;
+    color: var(--ink-3);
+    line-height: 1.1;
+  }
+  .pasc-val {
+    font-size: 11px;
+    color: var(--ink-2);
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .pasc-val b {
+    color: var(--ink);
+    font-weight: 700;
+  }
+
   /* Compact Attendance 2x2 Grid */
   .pk-att-grid {
     display: grid;
@@ -13436,6 +13486,9 @@ function viewDevotee(id){
     const _mP   = (_att.morning  && _att.morning.rate  !== undefined ? _att.morning.rate  : _att.morning?.punctuality)  || 0;
     const _dP   = (_att.deity    && _att.deity.rate    !== undefined ? _att.deity.rate : 0) || 0;
     const _clP  = (_att.classes  && _att.classes.rate  !== undefined ? _att.classes.rate : 0) || 0;
+    const _cleanP = (_att.cleaning && _att.cleaning.rate !== undefined ? _att.cleaning.rate : 0) || 0;
+    const _sRounds = Number(d.sadhana?.rounds) || 16;
+    const _mStd = (d.morningStandardTime || '04:30 AM').trim();
     const _ov   = _att.overall  || 0;
     const _rawPhone  = (d.phone||'').replace(/\D/g,'');
     const _phone10   = _rawPhone.length >= 10 ? _rawPhone.slice(-10) : _rawPhone;
@@ -13567,10 +13620,26 @@ function viewDevotee(id){
       <div class="pam-sub">${_att.deity?.completed||0}/${_att.deity?.total||0} sevas</div>
     </div>
     <div class="pk-att-metric">
-      <div class="pam-lbl">📿 Daily Sadhana</div>
-      <div class="pam-val">${d.sadhana?.rounds || 16} <span style="font-size:11px;font-weight:600">rounds</span></div>
-      <div class="pam-bar"><i style="width:${Math.min(100, Math.round(((d.sadhana?.rounds||16)/16)*100))}%;background:#10b981"></i></div>
-      <div class="pam-sub">${d.sadhana?.morningProgram ? d.sadhana.morningProgram + '% sadhana' : 'Committed standard'}</div>
+      <div class="pam-lbl">🧹 Cleaning Seva</div>
+      <div class="pam-val">${_cleanP}%</div>
+      <div class="pam-bar"><i style="width:${_cleanP}%;background:#06b6d4"></i></div>
+      <div class="pam-sub">${_att.cleaning?.completed||0}/${_att.cleaning?.total||0} tasks</div>
+    </div>
+  </div>
+  <div class="pk-att-standards-row">
+    <div class="pk-att-std-chip">
+      <span class="pasc-ic">📿</span>
+      <div class="pasc-body">
+        <span class="pasc-lbl">Chanting Rounds</span>
+        <span class="pasc-val"><b>${_sRounds}</b> rounds/day</span>
+      </div>
+    </div>
+    <div class="pk-att-std-chip">
+      <span class="pasc-ic">⏰</span>
+      <div class="pasc-body">
+        <span class="pasc-lbl">Morning Standard</span>
+        <span class="pasc-val"><b>${_mStd}</b> target</span>
+      </div>
     </div>
   </div>`;
 
@@ -13623,14 +13692,14 @@ function viewDevotee(id){
       esc(_sevaName),
       'Care: '+esc(_grpName),
       _pillarsBody)}
-  ${pkCard(_pk+'-att','#10b981','📊','Attendance & Sadhana',
-      _ov>=75?'Regular':((_att.morning?.total||_att.classes?.total||_att.deity?.total)?'Needs attention':'New / No records'),
+  ${pkCard(_pk+'-att','#10b981','📊','Attendance & Seva',
+      _ov>=75?'Regular':((_att.morning?.total||_att.classes?.total||_att.deity?.total||_att.cleaning?.total)?'Needs attention':'New / No records'),
       _ov+'% Overall Score',
       `<div class="pk-pill-row">
         <span class="pk-pill">🌅 <b>${_mP}%</b> Morning</span>
         <span class="pk-pill">📖 <b>${_clP}%</b> Classes</span>
         <span class="pk-pill">🪔 <b>${_dP}%</b> Deity</span>
-        <span class="pk-pill">📿 <b>${d.sadhana?.rounds || 16}r</b> Sadhana</span>
+        <span class="pk-pill">🧹 <b>${_cleanP}%</b> Cleaning</span>
       </div>`,
       _attBody)}
   ${pkCard(_pk+'-care','#ec4899','❤️','Devotee Care',
