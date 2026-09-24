@@ -1683,6 +1683,7 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
 .morning-view-btn-group{display:inline-flex;border:1.5px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)}
 .morning-report-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .morning-report-subrow{display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap}
+.morning-report-actions{display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap}
 .morning-period-picker{display:inline-flex;align-items:center;gap:6px}
 .morning-period-select{padding:4px 8px;font-size:12px;font-weight:600;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);cursor:pointer}
 .morning-btn-text{display:inline}
@@ -1703,9 +1704,11 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
   .morning-report-subrow .morning-exact-date-picker input{flex:1 1 auto !important;min-width:90px !important;max-width:130px !important;width:auto !important;padding:3px 5px !important;font-size:11px !important}
   .morning-report-subrow .morning-exact-date-picker select{display:none !important}
   .morning-report-subrow .morning-period-picker{display:flex !important;flex-direction:row !important;align-items:center !important;gap:4px !important;flex:1 1 auto !important;min-width:0 !important;width:auto !important}
-  .morning-report-subrow .morning-period-select{flex:1 1 auto !important;min-width:0 !important;max-width:165px !important;width:auto !important;padding:4px 6px !important;font-size:11px !important;text-overflow:ellipsis !important}
+  .morning-report-subrow .morning-period-select{flex:1 1 auto !important;min-width:0 !important;max-width:145px !important;width:auto !important;padding:4px 6px !important;font-size:11px !important;text-overflow:ellipsis !important}
   .morning-report-subrow .morning-period-picker-label span{display:none !important}
-  .morning-report-subrow > button,.morning-report-subrow > div > button{flex:none !important;width:auto !important;padding:4px 7px !important;font-size:11px !important;white-space:nowrap !important}
+  .morning-report-subrow > button,.morning-report-subrow > div > button,.morning-report-actions > button{flex:none !important;width:auto !important;padding:4px 7px !important;font-size:11px !important;white-space:nowrap !important}
+  .morning-report-actions{display:flex !important;flex-direction:row !important;align-items:center !important;gap:4px !important;flex:none !important}
+  .morning-report-actions .morning-btn-pdf{order:-1 !important}
   .morning-btn-text{display:none !important}
   /* Compact Morning Punctuality Breakdown card for mobile */
   .morning-punc-card{padding:12px 14px !important}
@@ -16712,18 +16715,18 @@ function morningProgramPanel(){
               </select>
             </div>`}
 
-            <button class="btn sm" data-act="share-morning-report" title="Share Morning Program report to WhatsApp / phone apps" style="background:rgba(16,185,129,0.08);color:#059669;border-color:rgba(16,185,129,0.25);font-weight:600;display:inline-flex;align-items:center;gap:4px;padding:5px 9px;font-size:11.5px">
-              📤 <span class="morning-btn-text">Share to </span>WhatsApp
-            </button>
+            <div class="morning-report-actions">
+              <button class="btn sm" data-act="share-morning-report" title="Share Morning Program report to WhatsApp / phone apps" style="background:rgba(16,185,129,0.08);color:#059669;border-color:rgba(16,185,129,0.25);font-weight:600;display:inline-flex;align-items:center;gap:4px;padding:5px 9px;font-size:11.5px">
+                📤 <span class="morning-btn-text">Share to </span>WhatsApp
+              </button>
 
-            ${reportView === 'today' ? `
-            <button class="btn sm" data-act="export-morning-report" style="padding:5px 9px;font-size:11.5px">${ic('download')} <span class="morning-btn-text">Export </span>CSV</button>
-            ` : `
-            <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-              <button class="btn sm pri" data-act="export-morning-period-pdf" data-period="${reportView}" title="Export beautiful printable PDF report" style="padding:5px 9px;font-size:11.5px">${ic('download')} PDF</button>
+              ${reportView === 'today' ? `
+              <button class="btn sm" data-act="export-morning-report" style="padding:5px 9px;font-size:11.5px">${ic('download')} <span class="morning-btn-text">Export </span>CSV</button>
+              ` : `
+              <button class="btn sm pri morning-btn-pdf" data-act="export-morning-period-pdf" data-period="${reportView}" title="Export beautiful printable PDF report" style="padding:5px 9px;font-size:11.5px">${ic('download')} PDF</button>
               <button class="btn sm" data-act="export-morning-period-csv" data-period="${reportView}" title="Export as CSV" style="padding:5px 9px;font-size:11.5px">${ic('download')} CSV</button>
+              `}
             </div>
-            `}
           </div>
         </div>
       </div>
