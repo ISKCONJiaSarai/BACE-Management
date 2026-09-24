@@ -9617,7 +9617,7 @@ const PILLARS=[
  {key:'mgmt',t:'BACE Management',em:'🛕',pill:'var(--saffron)',m:'management',items:[
    {t:'Management dashboard',em:'📊',r:'#/mgmt',m:'management'},
    {t:'BACE Pillars',em:'🏛️',r:'#/attendance',m:'management'},
-   {t:'Departments',em:'🏢',r:'#/depts',m:'management'},
+   {t:'Other Departments',em:'🏢',r:'#/depts',m:'management'},
    {t:'Assign Seva',em:'📋',r:'#/assign',m:'assign'},
    {t:'SOPs & standards',em:'📘',r:'#/sops',m:'sops'}]},
  {key:'preach',t:'BACE Preaching',em:'📖',pill:'var(--indigo)',m:'preaching',items:[
@@ -9713,7 +9713,7 @@ function appHeader(){
     {t:'Management',r:'#/mgmt',m:'management',children:[
       {t:'Management Dashboard',em:'📊',r:'#/mgmt',m:'management'},
       {t:'BACE Pillars',em:'🏛️',r:'#/attendance',m:'management'},
-      {t:'Departments',em:'🏢',r:'#/depts',m:'management'},
+      {t:'Other Departments',em:'🏢',r:'#/depts',m:'management'},
       {t:'Accounts',em:'💰',r:'#/accounts',m:'management'},
       {t:'Assign Seva',em:'📋',r:'#/assign',m:'assign'},
       {t:'SOPs & Standards',em:'📘',r:'#/sops',m:'sops'}
@@ -10017,7 +10017,7 @@ function mobileNavDropdown(){
     {id:'mgmt', title:'Management', em:'🛕', hasActive:mgmtRoutes.includes(route), items:[
       {t:'Management Dashboard',em:'📊',r:'#/mgmt',m:'management'},
       {t:'BACE Pillars',em:'🏛️',r:'#/attendance',m:'management'},
-      {t:'Departments',em:'🏢',r:'#/depts',m:'management'},
+      {t:'Other Departments',em:'🏢',r:'#/depts',m:'management'},
       {t:'Accounts',em:'💰',r:'#/accounts',m:'management'},
       {t:'Assign Seva',em:'📋',r:'#/assign',m:'assign'},
       {t:'SOPs',em:'📘',r:'#/sops'},
@@ -10280,7 +10280,7 @@ function mobileTodayDrawer(){
   </div>`;
 }
 const CRUMBS={'':'Dashboard',today:'Today',devotees:'Devotees',devotee:'Devotee',org:'Organisation',mgmt:'BACE Management',
- depts:'Departments',dept:'Department',accounts:'Accounts & Budgets',assign:'Assign Seva',attendance:'BACE Pillars','dept-reports':'Department reports',
+ depts:'Other Departments',dept:'Department',accounts:'Accounts & Budgets',assign:'Assign Seva',attendance:'BACE Pillars','dept-reports':'Department reports',
  inventory:'Inventory & BBT',sops:'SOPs & standards',actions:'Action items',preaching:'BACE Preaching',batches:'Batch management',
  batch:'Batch',contacts:'Contacts & pipeline',followups:'Follow-ups',classes:'Classes & events','batch-attendance':'Batch attendance',
  'preaching-reports':'Preaching reports',care:'Devotee Care',friends:'Friends & Groups',groups:'Friends & Groups',group:'Group',swabhav:'Swabhav engagement',
@@ -11578,7 +11578,7 @@ function pillarCardMgmt(){
             <a class="pillar-item" href="#/depts">
               <span class="pillar-item-icon">🏢</span>
               <div class="pillar-item-info">
-                <div class="pillar-item-title">Departments</div>
+                <div class="pillar-item-title">Other Departments</div>
                 <div class="pillar-item-sub">${s.depts} active departments</div>
               </div>
               <span class="pillar-item-arrow">›</span>
@@ -13373,9 +13373,9 @@ function viewMgmt(){
   const s=STATS();
   const tot=activeDepts().reduce((o,d)=>{const m=deptMetrics(d.id);o.done+=m.done;o.missed+=m.missed;o.pend+=m.pending;o.vol+=m.volunteers;return o},{done:0,missed:0,pend:0,vol:0});
   return head('🛕 BACE Management','Management dashboard','Departments, seva rotas, attendance, inventory and the weekly reporting cycle',
-    `<button class="btn" data-act="go" data-r="#/depts">🏛 Departments</button><button class="btn pri" data-act="open-assign" data-type="Seva">📋 Assign seva</button>`)+
+    `<button class="btn" data-act="go" data-r="#/depts">🏛 Other Departments</button><button class="btn pri" data-act="open-assign" data-type="Seva">📋 Assign seva</button>`)+
   `<div class="grid g6" style="margin-bottom:15px">
-    ${stat('Departments',s.depts,'active',{em:'🏛',act:'go',r:'#/depts'})}
+    ${stat('Other Departments',s.depts,'active',{em:'🏛',act:'go',r:'#/depts'})}
     ${stat('Active volunteers',s.volunteers,'engaged in seva',{em:'🛠',r:'#/assign'})}
     ${stat('Scheduled',s.scheduled,'activities ahead',{em:'📋',act:'go',r:'#/assign'})}
     ${stat('Completed',tot.done,`${tot.missed} missed`,{em:'✅',r:'#/dept-reports'})}
@@ -13386,7 +13386,7 @@ function viewMgmt(){
       return {l:d.name.split(' ')[0],v:m.completion,color:m.completion<75?'var(--danger)':'var(--saffron)',
        tip:`${d.icon} ${d.name}\nCompleted: ${m.done}\nMissed: ${m.missed}\nPending: ${m.pending}\nVolunteers: ${m.volunteers}\nAttendance: ${m.attendance}%`,r:'#/dept/'+d.id}}),{unit:'%'})}
       <div class="tiny" style="margin-top:8px">Hover any bar for exact numbers · click to drill into the department</div></div>`,
-      `<a class="btn sm" href="#/depts">All departments</a>`)}
+      `<a class="btn sm" href="#/depts">All other departments</a>`)}
     <div style="display:flex;flex-direction:column;gap:15px">
      ${section('Reporting status',`<div class="list">
       ${attnRow('var(--danger)',DB.reports.filter(r=>r.kind==='Department weekly'&&r.status==='Pending').length,'weekly reports outstanding','#/dept-reports')}
@@ -13405,10 +13405,10 @@ function viewDepts(){
   const rows=DB.departments.filter(d=>(!f.q||d.name.toLowerCase().includes(f.q.toLowerCase()))
     &&(!f.status||d.status===f.status)&&(!f.cat||d.category===f.cat));
   const cats=[...new Set(DB.departments.map(d=>d.category))];
-  return head('🛕 BACE Management','Departments','Departments are data, not code — create, edit or archive them as the community changes',
+  return head('🛕 BACE Management','Other Departments','Departments are data, not code — create, edit or archive them as the community changes',
     can('manage_departments')?`<button class="btn pri" data-act="add-dept">${ic('plus')}Create department</button>`:'')+
   `<div class="card" style="margin-bottom:15px"><div class="toolbar">
-    <input type="search" placeholder="Search departments" value="${esc(f.q)}" data-act="f" data-k="dept" data-n="q">
+    <input type="search" placeholder="Search other departments" value="${esc(f.q)}" data-act="f" data-k="dept" data-n="q">
     <select data-act="f" data-k="dept" data-n="status">${['Active','Inactive','Archived',''].map(s=>`<option value="${s}" ${f.status===s?'selected':''}>${s||'All statuses'}</option>`).join('')}</select>
     <select data-act="f" data-k="dept" data-n="cat"><option value="">All categories</option>${cats.map(c=>`<option ${f.cat===c?'selected':''}>${c}</option>`).join('')}</select>
     <button class="btn sm" data-act="export-depts" style="margin-left:auto">${ic('download')}Export CSV</button></div></div>
@@ -13637,7 +13637,7 @@ function prasadamBlock(a){
   </div>`;
 }
 function viewDept(id){
-  const dp=dept(id);if(!dp)return emptyState('Department not found','','<a class="btn" href="#/depts">Back to departments</a>');
+  const dp=dept(id);if(!dp)return emptyState('Department not found','','<a class="btn" href="#/depts">Back to other departments</a>');
   APP.crumbLeaf=dp.name;
   return head(dp.icon+' Department',dp.name,`${dp.desc} · head ${nameOf(dp.head)} · ${dp.status}`,
     `${ownsDept(dp.id)?`<button class="btn" data-act="edit-dept" data-id="${dp.id}">${ic('edit')}Edit</button>
@@ -27297,7 +27297,7 @@ function searchModal(){
      ${total?grp('Devotees',dv_.map(d=>`<a class="li click" href="#/devotee/${d.id}">${av(d.name)}<span class="grow"><span class="t">${esc(d.name)}</span><span class="d">${esc(d.org)}</span></span>${ic('arrow')}</a>`))+
        grp('Contacts',ct.map(c=>`<button class="li click" data-act="open-contact" data-id="${c.id}"><span style="font-size:16px">🌱</span><span class="grow"><span class="t">${esc(c.name)}</span><span class="d">${esc(c.stage)}</span></span>${ic('arrow')}</button>`))+
        grp('Activities',ac.map(a=>`<button class="li click" data-act="open-activity" data-id="${a.id}"><span style="font-size:16px">🛕</span><span class="grow"><span class="t">${esc(a.name)}</span><span class="d">${esc(a.date)}</span></span>${ic('arrow')}</button>`))+
-       grp('Departments',dp.map(d=>`<a class="li click" href="#/dept/${d.id}"><span style="font-size:16px">${d.icon}</span><span class="grow"><span class="t">${esc(d.name)}</span></span>${ic('arrow')}</a>`))+
+       grp('Other Departments',dp.map(d=>`<a class="li click" href="#/dept/${d.id}"><span style="font-size:16px">${d.icon}</span><span class="grow"><span class="t">${esc(d.name)}</span></span>${ic('arrow')}</a>`))+
        grp('Batches',bt.map(b=>`<a class="li click" href="#/batch/${b.id}"><span style="font-size:16px">📖</span><span class="grow"><span class="t">${esc(b.name)}</span></span>${ic('arrow')}</a>`))+
        grp('SOPs',sp.map(s=>`<button class="li click" data-act="open-sop" data-id="${s.id}"><span style="font-size:16px">📜</span><span class="grow"><span class="t">${esc(s.name)}</span></span>${ic('arrow')}</a>`))
      :emptyState('No matches','Nothing in the devotee database, pipeline, activities or SOPs matches that search.','')}</div>
