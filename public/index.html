@@ -12618,14 +12618,7 @@ function viewDevotees(){
         { cls: 'sa-msg',   icon: '💬', label: 'Message', act: 'dm',             id: d.id }
       ]);
     }).join('');
-    const foot = `<div class="tbl-foot">
-      <span>${rowsAll.length} devotee${rowsAll.length!==1?'s':''} · page ${p} of ${pages||1}</span>
-      <div class="pg">
-        <button class="btn sm" data-act="page" data-t="dev" data-p="${p-1}" ${p<=1?'disabled':''}>Prev</button>
-        <button class="btn sm" data-act="page" data-t="dev" data-p="${p+1}" ${p>=pages?'disabled':''}>Next</button>
-      </div>
-    </div>`;
-    return `<div class="dev-mob-list" id="dev-mob-list">${items}${foot}</div>`;
+    return `<div class="dev-mob-list" id="dev-mob-list">${items}</div>`;
   };
 
    const currentTab = APP.tab?.devoteeView || 'list';
