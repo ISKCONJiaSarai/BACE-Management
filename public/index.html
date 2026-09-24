@@ -5961,6 +5961,234 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-off
   }
 }
 
+/* ── Concept D: Peek-Expand Summary Cards — Mobile Devotee Profile ── */
+.dev-mobile-overview { display: none; }
+.dev-desktop-overview{ display: block; }
+
+@media (max-width: 768px) {
+  .dev-desktop-overview { display: none !important; }
+  .dev-mobile-overview  { display: block !important; }
+  .dev-mob-tabs-hide    { display: none !important; }
+
+  /* ── Card shell ── */
+  .peek-card {
+    background: var(--surface);
+    border: 1.5px solid var(--line);
+    border-radius: 16px;
+    margin-bottom: 10px;
+    overflow: hidden;
+    transition: border-color .2s ease, box-shadow .2s ease;
+  }
+  .peek-card.pk-open {
+    border-color: var(--pk-accent);
+    box-shadow: 0 4px 20px rgba(0,0,0,.10);
+  }
+
+  /* Coloured top stripe */
+  .peek-card-stripe {
+    height: 4px;
+    background: var(--pk-accent);
+    border-radius: 16px 16px 0 0;
+  }
+
+  /* ── Header row (always visible) ── */
+  .peek-card-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 11px 14px 0;
+  }
+  .peek-card-icon {
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+  .peek-card-title {
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    color: var(--pk-accent);
+    flex: 1;
+  }
+  .peek-card-badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 99px;
+    background: color-mix(in srgb, var(--pk-accent) 12%, transparent);
+    color: var(--pk-accent);
+    border: 1px solid color-mix(in srgb, var(--pk-accent) 30%, transparent);
+    white-space: nowrap;
+  }
+
+  /* ── Preview section (always visible) ── */
+  .peek-preview {
+    padding: 6px 14px 10px;
+  }
+  .peek-preview-line1 {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1.3;
+    margin-bottom: 2px;
+  }
+  .peek-preview-line2 {
+    font-size: 12px;
+    color: var(--ink-2);
+    line-height: 1.4;
+  }
+
+  /* ── Toggle row ── */
+  .peek-toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 0 14px 10px;
+    gap: 4px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+  }
+  .peek-toggle-label {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--pk-accent);
+  }
+  .peek-chevron {
+    font-size: 11px;
+    color: var(--pk-accent);
+    display: inline-block;
+    transition: transform .3s cubic-bezier(.32,.72,0,1);
+  }
+  .peek-card.pk-open .peek-chevron { transform: rotate(180deg); }
+
+  /* ── Divider ── */
+  .peek-divider {
+    height: 1px;
+    background: var(--line);
+    margin: 0 14px;
+    display: none;
+  }
+  .peek-card.pk-open .peek-divider { display: block; }
+
+  /* ── Expandable body ── */
+  .peek-body {
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition:
+      max-height .42s cubic-bezier(.32,.72,0,1),
+      opacity    .22s ease .07s;
+  }
+  .peek-card.pk-open .peek-body {
+    max-height: 1200px;
+    opacity: 1;
+  }
+  .peek-body-inner {
+    padding: 12px 14px 16px;
+  }
+
+  /* ── KV list inside card ── */
+  .peek-body-inner .kv {
+    font-size: 12.5px;
+    row-gap: 7px;
+    column-gap: 10px;
+  }
+  .peek-body-inner .kv dt {
+    font-size: 10.5px;
+    color: var(--ink-2);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .3px;
+  }
+  .peek-body-inner .kv dd { color: var(--ink); }
+
+  /* ── Quick action buttons (Contact card) ── */
+  .peek-quick-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 7px;
+    margin-bottom: 14px;
+  }
+  .peek-quick-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 10px 6px;
+    border-radius: 12px;
+    background: var(--surface-2, #f8fafc);
+    border: 1px solid var(--line);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--ink);
+    text-decoration: none;
+    cursor: pointer;
+    transition: background .12s, transform .1s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .peek-quick-btn:active { transform: scale(.95); }
+  .peek-quick-btn .pq-em { font-size: 18px; }
+
+  /* ── Progress bars (Attendance card) ── */
+  .pk-prog-row { margin-bottom: 10px; }
+  .pk-prog-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 4px;
+  }
+  .pk-prog-track {
+    height: 7px;
+    border-radius: 99px;
+    background: var(--line-2, #e5e7eb);
+    overflow: hidden;
+  }
+  .pk-prog-fill {
+    height: 100%;
+    border-radius: 99px;
+    transition: width .5s ease .1s;
+  }
+
+  /* ── Section label inside cards ── */
+  .pk-section-label {
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    color: var(--ink-2);
+    margin: 12px 0 7px;
+  }
+
+  /* ── Pillar links inside Three Pillars card ── */
+  .peek-body-inner .list .li {
+    padding: 8px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .peek-body-inner .list .li:last-child { border-bottom: none; }
+
+  /* ── Meeting items ── */
+  .pk-meeting-row {
+    padding: 7px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .pk-meeting-row:last-child { border-bottom: none; }
+  .pk-meeting-type { font-size: 12px; font-weight: 700; color: var(--ink); }
+  .pk-meeting-date { font-size: 11px; color: var(--ink-2); }
+  .pk-meeting-note { font-size: 11px; color: var(--ink-2); margin-top: 1px; }
+
+  /* ── History rows ── */
+  .pk-hist-row {
+    padding: 7px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .pk-hist-row:last-child { border-bottom: none; }
+  .pk-hist-main { font-size: 12px; font-weight: 700; color: var(--ink); }
+  .pk-hist-sub  { font-size: 11px; color: var(--ink-2); margin-top: 1px; }
+}
+
 /* ── Phase 7: Preaching Funnel & Batch Management Mobile Ergonomics ── */
 .funnel-mob-scroll{display:none}
 .mob-batch-list{display:none}
@@ -13074,7 +13302,9 @@ function viewDevotee(id){
        <dt>Batch role</dt><dd><span class="badge b-grey">${esc(d.batchRole||'Member')}</span></dd>
        <dt>Care group</dt><dd>${esc(group(d.careGroup)?.name||'—')}</dd><dt>Facilitator</dt><dd>${esc(nameOf(d.facilitator))}</dd>
        <dt>Mentor</dt><dd>${esc(nameOf(d.mentor))}</dd></dl>`;
-    return `<div class="grid g-2-1">
+
+    // ─── Desktop: unchanged layout ───────────────
+    const _desktopHtml = `<div class="grid g-2-1">
      <div class="dev-info-pair">
       ${collSection('dv-basic-'+d.id,'👤 Basic information','<div class="card-b">'+basicInfoBody+'</div>','',true)}
       ${collSection('dv-community-'+d.id,'🛕 Community information','<div class="card-b">'+communityInfoBody+'</div>','',true)}
@@ -13088,6 +13318,219 @@ function viewDevotee(id){
       ${collSection('dv-att-'+d.id,'📊 Attendance','<div class="card-b">'+donut(getDevoteeRealAttendance(d).overall,'Overall attendance across classes, seva and the morning programme.')+'</div>','',true)}
       ${d.history.length?collSection('dv-history-'+d.id,'🕐 History retained',`<div class="list">${d.history.map(h=>`<div class="li"><span class="grow"><span class="t">${esc(h.from)} → ${esc(h.to)}</span><span class="d">${fmtD(h.date)} · ${esc(h.type)} change</span></span></div>`).join('')}</div>`,'',false):''}
      </div></div>`;
+
+    // ─── Live data variables for mobile cards ────
+    const _att  = getDevoteeRealAttendance(d);
+    const _mP   = (_att.morning  && _att.morning.rate  !== undefined ? _att.morning.rate  : _att.morning?.punctuality)  || 0;
+    const _dP   = (_att.deity    && _att.deity.rate    !== undefined ? _att.deity.rate)   || 0;
+    const _clP  = (_att.classes  && _att.classes.rate  !== undefined ? _att.classes.rate) || 0;
+    const _ov   = _att.overall  || 0;
+    const _rawPhone  = (d.phone||'').replace(/\D/g,'');
+    const _phone10   = _rawPhone.length >= 10 ? _rawPhone.slice(-10) : _rawPhone;
+    const _waPhone   = _phone10.length === 10 ? '91'+_phone10 : _phone10;
+    const _waGreet   = encodeURIComponent('Hare Krishna '+d.name+' Prabhu ji, ');
+    const _batchName = batch(d.batch)?.name || (d.level ? 'Level '+d.level : 'Pre-batch');
+    const _grpName   = group(d.careGroup)?.name || '—';
+    const _deptName  = dept(d.dept)?.name || 'No department';
+    const _sevaName  = d.service || _deptName;
+    const _pk        = 'pk-'+d.id; // unique prefix for toggle IDs
+
+    // Helper: peek card builder
+    function pkCard(id, accentColor, icon, title, badgeText, prev1, prev2, bodyHtml) {
+      return `<div class="peek-card" id="${id}" style="--pk-accent:${accentColor}">
+  <div class="peek-card-stripe"></div>
+  <div class="peek-card-head">
+    <span class="peek-card-icon">${icon}</span>
+    <span class="peek-card-title">${title}</span>
+    ${badgeText ? `<span class="peek-card-badge">${badgeText}</span>` : ''}
+  </div>
+  <div class="peek-preview">
+    <div class="peek-preview-line1">${prev1}</div>
+    <div class="peek-preview-line2">${prev2}</div>
+  </div>
+  <div class="peek-toggle-row" onclick="pkToggle('${id}')">
+    <span class="peek-toggle-label" id="${id}-lbl">Show more</span>
+    <span class="peek-chevron" id="${id}-chv">▾</span>
+  </div>
+  <div class="peek-divider"></div>
+  <div class="peek-body">
+    <div class="peek-body-inner">${bodyHtml}</div>
+  </div>
+</div>`;
+    }
+
+    // ── Card 1: Contact & Bio ────────────────────
+    const _contactBody = `
+  ${_phone10.length >= 10 ? `<div class="peek-quick-row">
+    <a href="https://wa.me/${_waPhone}?text=${_waGreet}" target="_blank" rel="noopener" class="peek-quick-btn" style="color:#16a34a" onclick="event.stopPropagation()">
+      <span class="pq-em">💬</span>WhatsApp
+    </a>
+    <a href="tel:${_phone10}" class="peek-quick-btn" style="color:#2563eb" onclick="event.stopPropagation()">
+      <span class="pq-em">📞</span>Call
+    </a>
+    ${d.email ? `<a href="mailto:${esc(d.email)}" class="peek-quick-btn" style="color:#d97706" onclick="event.stopPropagation()"><span class="pq-em">✉️</span>Email</a>` : ''}
+  </div>` : ''}
+  <dl class="kv">
+    <dt>Full name</dt><dd>${esc(d.name)}</dd>
+    <dt>Gender</dt><dd><span class="badge ${d.gender==='Female'?'b-amber':'b-indigo'}">${esc(d.gender||'Male')}</span></dd>
+    <dt>Date of birth</dt><dd>${fmtD(d.dob)}</dd>
+    <dt>Phone</dt><dd>${esc(d.phone||'—')}</dd>
+    <dt>Email</dt><dd>${esc(d.email||'—')}</dd>
+    <dt>Residence</dt><dd>${esc(d.residence||d.address||'—')}</dd>
+    <dt>Attendance mode</dt><dd><span class="badge ${d.attendanceMode==='Online'?'b-indigo':'b-teal'}">${esc(d.attendanceMode||'Offline at BACE')}</span></dd>
+    <dt>Occupation</dt><dd>${esc(d.occupation||'—')}</dd>
+    <dt>College / org</dt><dd>${esc(d.org||'—')}</dd>
+    <dt>Higher education</dt><dd>${esc(d.highestEducation||'—')}</dd>
+    <dt>Present studies / job</dt><dd>${esc(d.presentStudiesOrJob||'—')}</dd>
+    <dt>Permanent address</dt><dd>${esc(d.address||'—')}</dd>
+    <dt>Emergency contact</dt><dd>${esc(d.emergency||'—')}</dd>
+    <dt>Skills</dt><dd>${(d.skills||[]).map(s=>badge(s,'grey')).join(' ')||'—'}</dd>
+    <dt>Availability</dt><dd>${esc(d.availability||'Weekends')}</dd>
+  </dl>`;
+
+    // ── Card 2: BACE Identity ────────────────────
+    const _baceBody = `<dl class="kv">
+    <dt>Joining date</dt><dd>${fmtD(d.joined)}</dd>
+    <dt>Status</dt><dd>${sbadge(d.status)}</dd>
+    <dt>Hierarchy ${rKeys.length>1?'roles':'role'}</dt><dd style="display:flex;flex-wrap:wrap;gap:5px">${roleBadges}</dd>
+    <dt>Current level</dt><dd>${d.level?'Level '+d.level:'Not yet levelled'}</dd>
+    <dt>Batch</dt><dd>${esc(_batchName)}</dd>
+    <dt>Batch role</dt><dd><span class="badge b-grey">${esc(d.batchRole||'Member')}</span></dd>
+    <dt>Care group</dt><dd>${esc(_grpName)}</dd>
+    <dt>Facilitator</dt><dd>${esc(nameOf(d.facilitator))}</dd>
+    <dt>Mentor</dt><dd>${esc(nameOf(d.mentor))}</dd>
+  </dl>`;
+
+    // ── Card 3: Three Pillars ────────────────────
+    const _pillarsBody = `<div class="list">
+    <a class="li click" href="#/dept/${d.dept||''}" onclick="event.stopPropagation()">
+      <span class="badge b-saffron">🛕 Seva</span>
+      <span class="grow">
+        <span class="t">${esc(_sevaName)}</span>
+        <span class="d">${esc(_deptName)}</span>
+      </span>
+    </a>
+    <a class="li click" href="#/batch/${d.batch||''}" onclick="event.stopPropagation()">
+      <span class="badge b-indigo">📖 Preaching</span>
+      <span class="grow">
+        <span class="t">${esc(_batchName)}</span>
+        <span class="d">First contact ${fmtD(d.firstContact)} via ${esc(d.source)}</span>
+      </span>
+    </a>
+    <a class="li click" href="#/group/${d.careGroup||''}" onclick="event.stopPropagation()">
+      <span class="badge b-green">❤️ Care</span>
+      <span class="grow">
+        <span class="t">${esc(_grpName)}</span>
+        <span class="d">Facilitator ${esc(nameOf(d.facilitator))}</span>
+      </span>
+    </a>
+  </div>`;
+
+    // ── Card 4: Attendance ───────────────────────
+    const _attBody = `
+  <div class="pk-prog-row">
+    <div class="pk-prog-label"><span>🌅 Morning Program</span><span>${_mP}%</span></div>
+    <div class="pk-prog-track"><div class="pk-prog-fill" style="width:${_mP}%;background:linear-gradient(90deg,#f59e0b,#d97706)"></div></div>
+  </div>
+  <div class="pk-prog-row">
+    <div class="pk-prog-label"><span>🪔 Deity Services</span><span>${_dP}%</span></div>
+    <div class="pk-prog-track"><div class="pk-prog-fill" style="width:${_dP}%;background:linear-gradient(90deg,#ea580c,#c2410c)"></div></div>
+  </div>
+  <div class="pk-prog-row">
+    <div class="pk-prog-label"><span>📖 Batch Classes</span><span>${_clP}%</span></div>
+    <div class="pk-prog-track"><div class="pk-prog-fill" style="width:${_clP}%;background:linear-gradient(90deg,#6366f1,#4f46e5)"></div></div>
+  </div>
+  <div class="pk-prog-row">
+    <div class="pk-prog-label"><span>⭐ Overall Score</span><span>${_ov}%</span></div>
+    <div class="pk-prog-track"><div class="pk-prog-fill" style="width:${_ov}%;background:linear-gradient(90deg,#10b981,#059669)"></div></div>
+  </div>
+  <div style="margin-top:10px;font-size:11px;color:var(--ink-2);text-align:right">
+    Morning: ${_att.morning?.present||0}/${_att.morning?.total||0} sessions ·
+    Deity: ${_att.deity?.completed||0}/${_att.deity?.total||0} sevas ·
+    Classes: ${_att.classes?.present||0}/${_att.classes?.total||0}
+  </div>`;
+
+    // ── Card 5: Devotee Care ─────────────────────
+    const _meetingsHtml = DB.meetings.filter(m=>m.devotee===d.id).slice(0,4).map(m=>`
+    <div class="pk-meeting-row">
+      <div class="pk-meeting-type">${esc(m.type)} · ${fmtD(m.date)}</div>
+      ${m.points ? `<div class="pk-meeting-note">${esc(m.points)}</div>` : ''}
+    </div>`).join('') || '<div style="font-size:11.5px;color:var(--ink-2);padding:4px 0">No meetings logged yet.</div>';
+
+    const _careBody = (can('care_notes') && (APP.user.role !== 'facilitator' || d.facilitator === APP.user.devotee || d.id === APP.user.devotee))
+      ? `<dl class="kv">
+    <dt>Spiritual care</dt><dd>${sbadge(d.careStatus?.spiritual||'Steady')}</dd>
+    <dt>Emotional care</dt><dd>${sbadge(d.careStatus?.emotional||'Good')}</dd>
+    <dt>Care group</dt><dd>${esc(_grpName)}</dd>
+    <dt>Facilitator</dt><dd>${esc(nameOf(d.facilitator))}</dd>
+    <dt>Mentor / guide</dt><dd>${esc(nameOf(d.mentor))}</dd>
+    <dt>Friends</dt><dd>${d.friends.map(f=>`<a href="#/devotee/${f}">${esc(nameOf(f))}</a>`).join(', ')||'—'}</dd>
+  </dl>
+  <div class="pk-section-label">Personal Meetings 🔒</div>
+  ${_meetingsHtml}
+  <button class="btn sm" style="margin-top:10px;width:100%" data-act="set-care" data-id="${d.id}" onclick="event.stopPropagation()">✏️ Update care status</button>`
+      : `<div class="note" style="font-size:12px;padding:4px 0">🔒 Restricted to Devotee Care Manager and assigned facilitator.</div>`;
+
+    // ── Card 6: Journey & History ────────────────
+    const _histHtml = d.history && d.history.length
+      ? d.history.map(h=>`<div class="pk-hist-row">
+    <div class="pk-hist-main">${esc(h.from)} → ${esc(h.to)}</div>
+    <div class="pk-hist-sub">${fmtD(h.date)} · ${esc(h.type)} change</div>
+  </div>`).join('')
+      : '<div style="font-size:11.5px;color:var(--ink-2);padding:4px 0">No milestones logged yet.</div>';
+
+    const _histBody = `${_histHtml}`;
+
+    // ── Assemble mobile stack ────────────────────
+    const _mobileHtml = `
+<div class="dev-mobile-overview" id="${_pk}-wrap">
+  <script>
+  (function(){
+    window.pkToggle = function(id) {
+      var card = document.getElementById(id);
+      if (!card) return;
+      var isOpen = card.classList.contains('pk-open');
+      card.classList.toggle('pk-open', !isOpen);
+      var lbl = document.getElementById(id+'-lbl');
+      var chv = document.getElementById(id+'-chv');
+      if (lbl) lbl.textContent = isOpen ? 'Show more' : 'Show less';
+      if (chv) chv.textContent = isOpen ? '▾' : '▴';
+    };
+  })();
+  <\/script>
+  ${pkCard(_pk+'-contact','#3b82f6','📇','Contact & Bio',
+      esc(d.attendanceMode||'Offline at BACE'),
+      esc(d.phone||'No phone on file'),
+      esc((d.residence||d.address||'Ashram resident')),
+      _contactBody)}
+  ${pkCard(_pk+'-bace','#8b5cf6','🏛️','BACE Identity',
+      sbadge(d.status),
+      esc(_batchName),
+      'Facilitator: '+esc(nameOf(d.facilitator)),
+      _baceBody)}
+  ${pkCard(_pk+'-pillars','#f59e0b','🔗','Three Pillars',
+      'Integrated',
+      esc(_sevaName),
+      'Care: '+esc(_grpName),
+      _pillarsBody)}
+  ${pkCard(_pk+'-att','#10b981','📊','Attendance',
+      _ov>=75?'Regular':'Needs attention',
+      _ov+'% Overall Score',
+      '🌅 '+_mP+'% Morning · 🪔 '+_dP+'% Deity',
+      _attBody)}
+  ${pkCard(_pk+'-care','#ec4899','❤️','Devotee Care',
+      esc(d.careStatus?.spiritual||'Steady'),
+      'Spiritual: '+esc(d.careStatus?.spiritual||'Steady'),
+      'Emotional: '+esc(d.careStatus?.emotional||'Good'),
+      _careBody)}
+  ${pkCard(_pk+'-hist','#06b6d4','🕐','Journey & History',
+      fmtD(d.joined).slice(-4),
+      'Joined '+fmtD(d.joined),
+      (d.history?.length||0)+' milestone'+(d.history?.length===1?'':'s')+' logged',
+      _histBody)}
+</div>`;
+
+    return `<div class="dev-desktop-overview">${_desktopHtml}</div>${_mobileHtml}`;
    })(),
    Preaching:`<div class="grid g-2-1"><div class="card"><div class="card-h"><h3>Preaching record</h3></div><div class="card-b">
       <dl class="kv"><dt>First contact</dt><dd>${fmtD(d.firstContact)}</dd><dt>Contact source</dt><dd>${esc(d.source)}</dd>
@@ -13597,7 +14040,7 @@ function viewDevotee(id){
     </div>
   </div>
   ${bentoVitals}
-  <div class="tabs">${tabs.map(t=>`<button class="${t===tab?'on':''}" data-act="tab" data-k="devotee" data-v="${t}"><span class="tab-ic">${tabIcons[t]||''}</span> ${t}${t==='Care'&&!careOK?' 🔒':''}</button>`).join('')}</div>
+  <div class="tabs dev-mob-tabs-hide">${tabs.map(t=>`<button class="${t===tab?'on':''}" data-act="tab" data-k="devotee" data-v="${t}"><span class="tab-ic">${tabIcons[t]||''}</span> ${t}${t==='Care'&&!careOK?' 🔒':''}</button>`).join('')}</div>
   ${body}
   ${mobileStickyFooter([
     ...(canEditDevotee(d) ? [{ act: 'edit-devotee', id: d.id, label: 'Edit Profile', pri: true, icon: '✏️ ' }] : []),
