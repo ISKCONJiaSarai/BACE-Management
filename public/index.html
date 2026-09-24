@@ -8928,6 +8928,8 @@ const ICONS={
  sliders:'M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6'
 };
 const ic=(n,c='')=>`<svg class="ic ${c}" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="${ICONS[n]||ICONS.grid}"/></svg>`;
+const waIcon=(sz=16,c='')=>`<svg class="${c}" width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>`;
+const callIcon=(sz=16,c='')=>`<svg class="${c}" width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`;
 const av=(name,size='s')=>`<span class="av ${size}" style="background:${avc(name||'?')}">${initials(name||'?')}</span>`;
 const badge=(txt,tone='grey')=>`<span class="badge b-${tone}">${esc(txt)}</span>`;
 const TONE={Active:'green',New:'saffron',Inactive:'grey',Archived:'grey','Pending Approval':'amber',Completed:'green','Completed by Another':'teal',
@@ -9095,8 +9097,8 @@ function openDetailSheet({title='', body='', footerBtns=[], onClose=null}={}){
   const footer = footerBtns.length
     ? `<div class="detail-sheet-footer">${footerBtns.map(b=>`<button class="btn${b.pri?' pri':''}" data-act="${esc(b.act||'')}" data-id="${esc(b.id||'')}" data-arg="${esc(b.arg||'')}" data-r="${esc(b.r||b.arg||'')}">${esc(b.label||b.text||'')}</button>`).join('')}</div>`
     : '';
-  const html = `<div class="detail-sheet-wrap" id="${id}" data-act="close-detail-sheet">
-    <div class="detail-sheet" id="${id}_sheet">
+  const html = `<div class="detail-sheet-wrap" id="${id}">
+    <div class="detail-sheet" id="${id}_sheet" onclick="event.stopPropagation()">
       <div class="detail-sheet-handle"></div>
       <div class="detail-sheet-h">
         <h3>${esc(title)}</h3>
@@ -9164,18 +9166,13 @@ function openDevoteeDetailSheet(id){
     </div>
 
     ${cleanPhone.length >= 10 ? `
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:6px;margin-bottom:10px">
-        <a href="tel:+91${cleanPhone}" class="btn sm" style="justify-content:center;background:rgba(16,185,129,0.08);color:#059669;border-color:rgba(16,185,129,0.25);font-weight:600;text-decoration:none;min-height:38px;display:inline-flex;align-items:center;gap:4px" title="Call devotee phone">📞 Call</a>
-        <a href="https://wa.me/91${cleanPhone}?text=${waGreeting}" target="_blank" rel="noopener" class="btn sm" style="justify-content:center;background:rgba(16,185,129,0.08);color:#059669;border-color:rgba(16,185,129,0.25);font-weight:600;text-decoration:none;min-height:38px;display:inline-flex;align-items:center;gap:4px" title="Open WhatsApp chat with greeting">💬 WhatsApp</a>
-        <a href="sms:+91${cleanPhone}" class="btn sm" style="justify-content:center;background:rgba(59,130,246,0.08);color:#2563eb;border-color:rgba(59,130,246,0.25);font-weight:600;text-decoration:none;min-height:38px;display:inline-flex;align-items:center;gap:4px" title="Send SMS message">✉️ SMS</a>
-        ${cleanEmail ? `<a href="mailto:${esc(cleanEmail)}?subject=ISKCON%20BACE%20Jia%20Sarai" class="btn sm" style="justify-content:center;background:rgba(139,92,246,0.08);color:#7c3aed;border-color:rgba(139,92,246,0.25);font-weight:600;text-decoration:none;min-height:38px;display:inline-flex;align-items:center;gap:4px" title="Send email">📧 Email</a>` : ''}
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+        <a href="tel:+91${cleanPhone}" data-act="direct-call" data-phone="${cleanPhone}" class="btn sm" style="justify-content:center;background:rgba(16,185,129,0.08);color:#059669;border-color:rgba(16,185,129,0.25);font-weight:600;text-decoration:none;min-height:38px;display:inline-flex;align-items:center;gap:6px" title="Call devotee phone">${callIcon()} Call</a>
+        <a href="https://wa.me/91${cleanPhone}?text=${waGreeting}" target="_blank" rel="noopener" data-act="open-whatsapp" data-wa="https://wa.me/91${cleanPhone}?text=${waGreeting}" class="btn sm" style="justify-content:center;background:rgba(37,211,102,0.1);color:#128C7E;border-color:rgba(37,211,102,0.35);font-weight:600;text-decoration:none;min-height:38px;display:inline-flex;align-items:center;gap:6px" title="Open WhatsApp chat with greeting">${waIcon()} WhatsApp</a>
       </div>
       <div style="display:flex;gap:6px;margin-bottom:14px">
         <button class="btn sm ghost" data-act="save-vcard-contact" data-id="${d.id}" style="flex:1;justify-content:center;font-size:12px;min-height:34px;border:1px solid var(--line);gap:5px" title="Download .vcf contact for phone Contacts app">
           👤 Save Contact
-        </button>
-        <button class="btn sm ghost" data-act="share-devotee-contact" data-id="${d.id}" style="flex:1;justify-content:center;font-size:12px;min-height:34px;border:1px solid var(--line);gap:5px" title="Share devotee contact details via WhatsApp, etc.">
-          📤 Share Contact
         </button>
       </div>
     ` : ''}
@@ -13257,15 +13254,13 @@ function viewDevotee(id){
         const cleanEmail = (d.email||'').trim();
         let res = '';
         if(cleanPhone.length >= 10){
-          res += `<a class="btn sm" href="tel:+91${cleanPhone}" style="color:#059669;border-color:rgba(16,185,129,.3);background:rgba(16,185,129,.06);text-decoration:none;display:inline-flex;align-items:center;gap:4px" title="Call devotee phone">📞 Call</a>
-          <a class="btn sm" href="https://wa.me/91${cleanPhone}?text=${waGreeting}" target="_blank" rel="noopener" style="color:#059669;border-color:rgba(16,185,129,.3);background:rgba(16,185,129,.06);text-decoration:none;display:inline-flex;align-items:center;gap:4px" title="WhatsApp chat">💬 WhatsApp</a>
-          <a class="btn sm" href="sms:+91${cleanPhone}" style="color:#2563eb;border-color:rgba(59,130,246,.3);background:rgba(59,130,246,.06);text-decoration:none;display:inline-flex;align-items:center;gap:4px" title="Send SMS message">✉️ SMS</a>`;
+          res += `<a class="btn sm" href="tel:+91${cleanPhone}" data-act="direct-call" data-phone="${cleanPhone}" style="color:#059669;border-color:rgba(16,185,129,.3);background:rgba(16,185,129,.06);text-decoration:none;display:inline-flex;align-items:center;gap:6px" title="Call devotee phone">${callIcon()} Call</a>
+          <a class="btn sm" href="https://wa.me/91${cleanPhone}?text=${waGreeting}" target="_blank" rel="noopener" data-act="open-whatsapp" data-wa="https://wa.me/91${cleanPhone}?text=${waGreeting}" style="color:#128C7E;border-color:rgba(37,211,102,.35);background:rgba(37,211,102,.1);text-decoration:none;display:inline-flex;align-items:center;gap:6px" title="WhatsApp chat">${waIcon()} WhatsApp</a>`;
         }
         if(cleanEmail){
           res += `<a class="btn sm" href="mailto:${esc(cleanEmail)}?subject=ISKCON%20BACE%20Jia%20Sarai" style="color:#7c3aed;border-color:rgba(139,92,246,.3);background:rgba(139,92,246,.06);text-decoration:none;display:inline-flex;align-items:center;gap:4px" title="Send Email">📧 Email</a>`;
         }
-        res += `<button class="btn sm ghost" data-act="save-vcard-contact" data-id="${d.id}" title="Save to Phone Contacts app">👤 Save Contact</button>
-        <button class="btn sm ghost" data-act="share-devotee-contact" data-id="${d.id}" title="Share devotee contact details">📤 Share</button>`;
+        res += `<button class="btn sm ghost" data-act="save-vcard-contact" data-id="${d.id}" title="Save to Phone Contacts app">👤 Save Contact</button>`;
         return res;
       })()}
       <button class="btn" data-act="dm" data-id="${d.id}">${ic('chat')}Message</button>
@@ -13279,8 +13274,7 @@ function viewDevotee(id){
    ${body}
    ${mobileStickyFooter([
      ...(canEditDevotee(d) ? [{ act: 'edit-devotee', id: d.id, label: 'Edit Profile', pri: true, icon: '✏️ ' }] : []),
-     { act: 'save-vcard-contact', id: d.id, label: 'Save Contact', icon: '👤 ' },
-     { act: 'share-devotee-contact', id: d.id, label: 'Share', icon: '📤 ' }
+     { act: 'save-vcard-contact', id: d.id, label: 'Save Contact', icon: '👤 ' }
    ])}`;
 }
 
@@ -28368,6 +28362,18 @@ document.addEventListener('click',e=>{
     break;}
   case 'close-detail-sheet':stop();{
     closeDetailSheet();
+    break;}
+  case 'direct-call':{
+    const ph = t.dataset.phone || (t.getAttribute('href')||'').replace('tel:', '');
+    if(ph){
+      window.location.href = ph.startsWith('tel:') ? ph : ('tel:+91' + ph.replace(/\D/g, '').slice(-10));
+    }
+    break;}
+  case 'open-whatsapp':{
+    const wa = t.dataset.wa || t.getAttribute('href') || '';
+    if(wa){
+      window.open(wa, '_blank', 'noopener,noreferrer');
+    }
     break;}
   case 'mob-tab':stop();{
     const bar = t.dataset.tabBar;
