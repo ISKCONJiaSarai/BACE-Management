@@ -4812,6 +4812,37 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-off
     margin-top:0!important;
     border-top:none!important;
   }
+
+  /* ── Devotee Regularity Matrix Ultra-Compact 3-Line Mobile Card Layout ── */
+  #summary-matrix-tbl .matrix-desk-cell {
+    display: none !important;
+  }
+  #summary-matrix-tbl td.matrix-mob-cell,
+  #summary-matrix-tbl td.matrix-mob-cell:last-child {
+    display: block !important;
+    width: 100% !important;
+    padding: 10px 12px !important;
+    margin: 0 !important;
+    border: none !important;
+    border-top: none !important;
+    box-sizing: border-box !important;
+    justify-content: normal !important;
+  }
+  #summary-matrix-tbl td.matrix-mob-cell:before {
+    display: none !important;
+    content: none !important;
+  }
+  #summary-matrix-tbl tr {
+    padding: 0 !important;
+  }
+}
+
+/* ── Devotee Regularity Matrix: Desktop & Mobile Switching ── */
+.matrix-mob-cell {
+  display: none !important;
+}
+.matrix-desk-cell {
+  display: table-cell;
 }
 
 /* ── Deity & Cleaning Department Seva Charts: Mobile Compact Table Views ── */
@@ -4823,6 +4854,28 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-off
 }
 
 @media(max-width: 768px) {
+  #summary-matrix-tbl .matrix-desk-cell {
+    display: none !important;
+  }
+  #summary-matrix-tbl td.matrix-mob-cell,
+  #summary-matrix-tbl td.matrix-mob-cell:last-child {
+    display: block !important;
+    width: 100% !important;
+    padding: 10px 12px !important;
+    margin: 0 !important;
+    border: none !important;
+    border-top: none !important;
+    box-sizing: border-box !important;
+    justify-content: normal !important;
+  }
+  #summary-matrix-tbl td.matrix-mob-cell:before {
+    display: none !important;
+    content: none !important;
+  }
+  #summary-matrix-tbl tr {
+    padding: 0 !important;
+  }
+
   /* Hide swipe cues on mobile when charts fit 100% */
   .mobile-swipe-hint {
     display: none !important;
@@ -21208,8 +21261,8 @@ function deptAttendanceMatrix(){
           </thead>
           <tbody>
             ${summaryList.map(d => {
-              return `<tr data-name="${esc(d.name.toLowerCase())}">
-                <td data-l="Devotee">
+              return `<tr data-name="${esc(d.name.toLowerCase())}" data-status="${esc(d.statusText)}" data-score="${d.overallScore}" data-morning-pct="${d.morning ? d.morning.pct : 0}" data-deity-sevas="${d.deity ? d.deity.completed : 0}" data-cleaning-sevas="${d.cleaning ? d.cleaning.completed : 0}" data-has-morning="${d.morning && d.morning.present > 0}" data-has-deity="${d.deity && d.deity.completed > 0}" data-has-cleaning="${d.cleaning && d.cleaning.completed > 0}" data-all3="${d.isAllRounder}">
+                <td class="matrix-desk-cell" data-l="Devotee">
                   <div style="display:flex;align-items:center;gap:8px">
                     ${av(d.name)}
                     <div>
@@ -21218,7 +21271,7 @@ function deptAttendanceMatrix(){
                     </div>
                   </div>
                 </td>
-                <td data-l="Morning Program" style="text-align:center">
+                <td class="matrix-desk-cell" data-l="Morning Program" style="text-align:center">
                   ${d.morning && d.morning.present > 0 ? `
                     <div style="font-weight:700;color:var(--ink)">${d.morning.pct || 0}%</div>
                     <div class="tiny" style="color:var(--ink-3)">${d.morning.present}/${d.morning.total} days attended</div>
@@ -21227,7 +21280,7 @@ function deptAttendanceMatrix(){
                     <div class="tiny" style="color:var(--ink-3);font-style:italic">0/${d.morning ? d.morning.total : 0} days</div>
                   `}
                 </td>
-                <td data-l="Deity Department" style="text-align:center">
+                <td class="matrix-desk-cell" data-l="Deity Department" style="text-align:center">
                   ${d.deity && d.deity.isAssigned ? `
                     <div style="font-weight:700;color:${d.deity.completed>0?'var(--green)':'var(--ink)'}">${d.deity.completed}/${d.deity.assigned || d.deity.completed} sevas</div>
                     <div class="tiny" style="color:var(--ink-3)">${d.deity.rate}% reliability${d.deity.missed>0?` · <b style="color:var(--err)">${d.deity.missed} missed</b>`:''}${d.deity.subs>0?` · <b style="color:var(--pri)">+${d.deity.subs} sub</b>`:''}</div>
@@ -21236,7 +21289,7 @@ function deptAttendanceMatrix(){
                     <div class="tiny" style="color:var(--ink-3);font-style:italic">Not assigned</div>
                   `}
                 </td>
-                <td data-l="Cleaning Department" style="text-align:center">
+                <td class="matrix-desk-cell" data-l="Cleaning Department" style="text-align:center">
                   ${d.cleaning && d.cleaning.isAssigned ? `
                     <div style="font-weight:700;color:${d.cleaning.completed>0?'var(--teal)':'var(--ink)'}">${d.cleaning.completed}/${d.cleaning.assigned || d.cleaning.completed} sevas</div>
                     <div class="tiny" style="color:var(--ink-3)">${d.cleaning.rate}% reliability${d.cleaning.missed>0?` · <b style="color:var(--err)">${d.cleaning.missed} missed</b>`:''}${d.cleaning.subs>0?` · <b style="color:var(--pri)">+${d.cleaning.subs} sub</b>`:''}</div>
@@ -21245,7 +21298,7 @@ function deptAttendanceMatrix(){
                     <div class="tiny" style="color:var(--ink-3);font-style:italic">Not assigned</div>
                   `}
                 </td>
-                <td data-l="Combined Score">
+                <td class="matrix-desk-cell" data-l="Combined Score">
                   <div style="display:flex;align-items:center;gap:8px">
                     <div style="flex:1;height:7px;background:var(--paper-2);border-radius:4px;overflow:hidden">
                       <div style="width:${d.overallScore}%;height:100%;background:${d.overallScore>=90?'var(--green)':(d.overallScore>=75?'var(--blue)':'var(--amber)')}"></div>
@@ -21253,8 +21306,50 @@ function deptAttendanceMatrix(){
                     <b style="font-size:12.5px">${d.overallScore}%</b>
                   </div>
                 </td>
-                <td data-l="Status" style="text-align:center">
+                <td class="matrix-desk-cell" data-l="Status" style="text-align:center">
                   <span class="badge ${d.statusClass}">${d.statusText}</span>
+                </td>
+                <!-- Ultra-Compact 3-Line Mobile Card View -->
+                <td class="matrix-mob-cell">
+                  <!-- Line 1: Devotee Name on Left, Status Badge on Right -->
+                  <div class="sm-mob-l1" style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px">
+                    <div style="display:flex;align-items:center;gap:8px;min-width:0;flex:1">
+                      ${av(d.name)}
+                      <div style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+                        <b style="font-size:13.5px;color:var(--ink)">${esc(d.name)}</b>
+                        ${d.phone || d.bace ? `<span class="tiny" style="color:var(--ink-3);margin-left:4px;font-weight:400">· ${esc(d.phone || d.bace)}</span>` : ''}
+                      </div>
+                    </div>
+                    <div style="flex-shrink:0">
+                      <span class="badge ${d.statusClass}" style="font-size:11px;padding:3px 8px;white-space:nowrap">${d.statusText}</span>
+                    </div>
+                  </div>
+                  <!-- Line 2: Morning, Deity & Cleaning Departments in 1 row -->
+                  <div class="sm-mob-l2" style="display:grid;grid-template-columns:repeat(3, 1fr);gap:5px;margin-bottom:7px">
+                    <div style="background:var(--surface-2);border-radius:7px;padding:5px 6px;display:flex;align-items:center;justify-content:center;gap:4px;font-size:11px;min-width:0" title="Morning Program Attendance">
+                      <span style="font-size:12px;flex-shrink:0">🌅</span>
+                      <b style="color:var(--ink);font-size:11px">${d.morning ? d.morning.pct : 0}%</b>
+                      <span class="tiny" style="color:var(--ink-3);font-size:9.5px;white-space:nowrap">(${d.morning ? d.morning.present : 0}/${d.morning ? d.morning.total : 0}d)</span>
+                    </div>
+                    <div style="background:var(--surface-2);border-radius:7px;padding:5px 6px;display:flex;align-items:center;justify-content:center;gap:4px;font-size:11px;min-width:0" title="Deity Department Sevas">
+                      <span style="font-size:12px;flex-shrink:0">🛕</span>
+                      <b style="color:${d.deity && d.deity.completed > 0 ? 'var(--green)' : 'var(--ink)'};font-size:11px">${d.deity && d.deity.isAssigned ? `${d.deity.completed}/${d.deity.assigned || d.deity.completed}` : '0/0'}</b>
+                      <span class="tiny" style="color:var(--ink-3);font-size:9.5px;white-space:nowrap">${d.deity && d.deity.isAssigned ? `(${d.deity.rate}%${d.deity.subs > 0 ? ` +${d.deity.subs}s` : ''})` : '(—)'}</span>
+                    </div>
+                    <div style="background:var(--surface-2);border-radius:7px;padding:5px 6px;display:flex;align-items:center;justify-content:center;gap:4px;font-size:11px;min-width:0" title="Cleaning Department Sevas">
+                      <span style="font-size:12px;flex-shrink:0">🧹</span>
+                      <b style="color:${d.cleaning && d.cleaning.completed > 0 ? 'var(--teal)' : 'var(--ink)'};font-size:11px">${d.cleaning && d.cleaning.isAssigned ? `${d.cleaning.completed}/${d.cleaning.assigned || d.cleaning.completed}` : '0/0'}</b>
+                      <span class="tiny" style="color:var(--ink-3);font-size:9.5px;white-space:nowrap">${d.cleaning && d.cleaning.isAssigned ? `(${d.cleaning.rate}%${d.cleaning.subs > 0 ? ` +${d.cleaning.subs}s` : ''})` : '(—)'}</span>
+                    </div>
+                  </div>
+                  <!-- Line 3: Combined Seva Score with progress bar -->
+                  <div class="sm-mob-l3" style="display:flex;align-items:center;gap:8px">
+                    <span class="tiny" style="color:var(--ink-3);font-size:11px;font-weight:600;white-space:nowrap;flex-shrink:0">Combined Score</span>
+                    <div style="flex:1;height:6px;background:var(--paper-2);border-radius:4px;overflow:hidden">
+                      <div style="width:${d.overallScore}%;height:100%;border-radius:4px;background:${d.overallScore >= 90 ? 'var(--green)' : (d.overallScore >= 75 ? 'var(--blue)' : 'var(--amber)')}"></div>
+                    </div>
+                    <b style="font-size:12px;color:var(--ink);min-width:32px;text-align:right;flex-shrink:0">${d.overallScore}%</b>
+                  </div>
                 </td>
               </tr>`;
             }).join('')}
