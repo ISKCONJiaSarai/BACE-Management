@@ -5724,6 +5724,186 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-off
   flex: 1;
 }
 
+/* ── Premium Devotee Profile Redesign ── */
+.dev-hero-card {
+  position: relative;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(254, 243, 199, 0.45) 0%, var(--surface) 60%);
+  border: 1px solid rgba(245, 158, 11, 0.22);
+  box-shadow: 0 4px 20px -2px rgba(0,0,0,0.05);
+  padding: 18px 20px;
+  margin-bottom: 14px;
+}
+[data-theme="dark"] .dev-hero-card {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, var(--surface) 75%);
+  border-color: rgba(245, 158, 11, 0.25);
+}
+.dev-hero-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.dev-hero-identity {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 260px;
+  flex: 1;
+}
+.dev-hero-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.dev-hero-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.dev-hero-name {
+  font-size: 22px;
+  font-weight: 800;
+  margin: 0;
+  color: var(--ink);
+  letter-spacing: -0.3px;
+}
+.dev-hero-meta {
+  font-size: 12.5px;
+  color: var(--ink-2);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.dev-hero-chips {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+.dev-hero-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-left: auto;
+}
+.dev-bento-vitals {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.dev-bento-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.dev-bento-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3.5px;
+  background: var(--bento-accent, var(--accent));
+  border-radius: 3px 0 0 3px;
+}
+.dev-bento-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px -3px rgba(0,0,0,0.08);
+}
+.dev-bento-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.dev-bento-icon {
+  font-size: 16px;
+}
+.dev-bento-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-2);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.dev-bento-val {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--ink);
+  line-height: 1.2;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 2px;
+}
+.dev-bento-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.2px;
+}
+.dev-bento-badge.on-track,
+.dev-bento-badge.reliable,
+.dev-bento-badge.regular {
+  background: rgba(16, 185, 129, 0.12);
+  color: #059669;
+}
+.dev-bento-badge.needs-care,
+.dev-bento-badge.pending,
+.dev-bento-badge.improving {
+  background: rgba(245, 158, 11, 0.12);
+  color: #d97706;
+}
+.dev-bento-sub {
+  font-size: 11.5px;
+  color: var(--ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 1px;
+}
+.tabs .tab-ic {
+  font-size: 14px;
+  margin-right: 2px;
+}
+@media (max-width: 768px) {
+  .dev-hero-card {
+    padding: 14px;
+  }
+  .dev-hero-name {
+    font-size: 19px;
+  }
+  .dev-hero-actions {
+    display: none !important;
+  }
+  .dev-bento-vitals {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .dev-bento-card {
+    padding: 10px 11px;
+  }
+  .dev-bento-val {
+    font-size: 17px;
+  }
+}
+
 /* ── Phase 7: Preaching Funnel & Batch Management Mobile Ergonomics ── */
 .funnel-mob-scroll{display:none}
 .mob-batch-list{display:none}
@@ -12977,15 +13157,19 @@ function viewDevotee(id){
 
      // Sub-section 1: Morning Program
      const morningSection = `
-       <div class="card" style="margin-bottom:20px;border-left:4px solid #f59e0b;border-radius:12px">
-         <div class="card-h" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+       <div class="card section-collapsible is-open" style="margin-bottom:14px;border-left:4px solid #f59e0b;border-radius:12px">
+         <div class="card-h collapsible-header" data-act="toggle-collapsible" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;cursor:pointer">
            <div>
              <h3 style="margin:0;display:flex;align-items:center;gap:8px"><span>🌅</span> Morning Program & Sadhana</h3>
              <span class="tiny" style="color:var(--ink-2)">Biometric fingerprint attendance, mangala aarti punctuality & sadhana discipline</span>
            </div>
-           <button class="btn sm" data-act="edit-devotee-morning-std" data-id="${d.id}" title="Edit standard attendance time for this devotee">⏱️ Standard: ${esc(mStd)}</button>
+           <div style="display:flex;align-items:center;gap:6px">
+             <button class="btn sm" data-act="edit-devotee-morning-std" data-id="${d.id}" title="Edit standard attendance time for this devotee" onclick="event.stopPropagation()">⏱️ Standard: ${esc(mStd)}</button>
+             <span class="badge ${ma.punctuality>=75?'b-green':'b-amber'}">${ma.punctuality}% Punctual</span>
+             <span class="ch-toggle"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 6 8 10 12 6"/></svg></span>
+           </div>
          </div>
-         <div class="card-b">
+         <div class="collapsible-body-wrap"><div class="collapsible-body"><div class="card-b">
            <div class="grid g4" style="margin-bottom:14px">
              ${stat('Standard Target', mStd, 'Devotee on-time target', { em: '⏱' })}
              ${stat('Punctuality Rate', (ma.punctuality !== undefined ? ma.punctuality : '0') + '%', 'On-time / grace arrival', { em: '🎯' })}
@@ -13031,20 +13215,24 @@ function viewDevotee(id){
            ` : `<div style="text-align:center;padding:16px;background:var(--surface);border:1px dashed var(--line);border-radius:8px">
                   <span class="tiny" style="color:var(--ink-3)">No biometric punch records found for this devotee. Punches will appear dynamically when recorded on the BACE device.</span>
                 </div>`}
-         </div>
+         </div></div></div>
        </div>`;
 
      // Sub-section 2: Deity Services
      const deitySection = `
-       <div class="card" style="margin-bottom:20px;border-left:4px solid #ea580c;border-radius:12px">
-         <div class="card-h" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+       <div class="card section-collapsible is-open" style="margin-bottom:14px;border-left:4px solid #ea580c;border-radius:12px">
+         <div class="card-h collapsible-header" data-act="toggle-collapsible" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;cursor:pointer">
            <div>
              <h3 style="margin:0;display:flex;align-items:center;gap:8px"><span>🛕</span> Deity Services (Altar & Worship)</h3>
              <span class="tiny" style="color:var(--ink-2)">Aarti, bhoga offerings, dressing, altar seva & temple worship assignments</span>
            </div>
-           <a class="btn sm" href="#/dept/dp3" title="View Deity Department Roster">🪔 Deity Roster</a>
+           <div style="display:flex;align-items:center;gap:6px">
+             <a class="btn sm" href="#/dept/dp3" title="View Deity Department Roster" onclick="event.stopPropagation()">🪔 Deity Roster</a>
+             <span class="badge ${deit.rate>=75?'b-green':'b-amber'}">${deit.rate}% Reliable</span>
+             <span class="ch-toggle"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 6 8 10 12 6"/></svg></span>
+           </div>
          </div>
-         <div class="card-b">
+         <div class="collapsible-body-wrap"><div class="collapsible-body"><div class="card-b">
            <div class="grid g4" style="margin-bottom:14px">
              ${stat('Scheduled Sevas', deit.total, 'Allocated worship slots', { em: '🪔' })}
              ${stat('Completed Sevas', deit.completed, 'Successfully performed', { em: '✅' })}
@@ -13087,20 +13275,24 @@ function viewDevotee(id){
            ` : `<div style="text-align:center;padding:16px;background:var(--surface);border:1px dashed var(--line);border-radius:8px">
                   <span class="tiny" style="color:var(--ink-3)">No deity services recorded for this devotee yet. Services assigned from the Deity Department roster appear here.</span>
                 </div>`}
-         </div>
+         </div></div></div>
        </div>`;
 
      // Sub-section 3: Cleaning Section
      const cleaningSection = `
-       <div class="card" style="margin-bottom:20px;border-left:4px solid #0d9488;border-radius:12px">
-         <div class="card-h" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+       <div class="card section-collapsible is-open" style="margin-bottom:14px;border-left:4px solid #0d9488;border-radius:12px">
+         <div class="card-h collapsible-header" data-act="toggle-collapsible" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;cursor:pointer">
            <div>
              <h3 style="margin:0;display:flex;align-items:center;gap:8px"><span>🧹</span> Cleaning & Ashram Maintenance</h3>
              <span class="tiny" style="color:var(--ink-2)">Temple hall mopping, prasadam hall, kitchen, and washroom sanitation rotas</span>
            </div>
-           <a class="btn sm" href="#/dept/dp8" title="View Cleaning Department Roster">🧹 Cleaning Roster</a>
+           <div style="display:flex;align-items:center;gap:6px">
+             <a class="btn sm" href="#/dept/dp8" title="View Cleaning Department Roster" onclick="event.stopPropagation()">🧹 Cleaning Roster</a>
+             <span class="badge ${clean.rate>=75?'b-teal':'b-amber'}">${clean.rate}% Score</span>
+             <span class="ch-toggle"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 6 8 10 12 6"/></svg></span>
+           </div>
          </div>
-         <div class="card-b">
+         <div class="collapsible-body-wrap"><div class="collapsible-body"><div class="card-b">
            <div class="grid g4" style="margin-bottom:14px">
              ${stat('Assigned Rotas', clean.total, 'Scheduled cleaning tasks', { em: '🧹' })}
              ${stat('Completed Rotas', clean.completed, 'Sanitation verified', { em: '✨' })}
@@ -13143,20 +13335,24 @@ function viewDevotee(id){
            ` : `<div style="text-align:center;padding:16px;background:var(--surface);border:1px dashed var(--line);border-radius:8px">
                   <span class="tiny" style="color:var(--ink-3)">No cleaning rotas allocated to this devotee yet. Tasks assigned in the Cleaning Department roster appear here.</span>
                 </div>`}
-         </div>
+         </div></div></div>
        </div>`;
 
      // Sub-section 4: Class & Events Section
      const classSection = `
-       <div class="card" style="margin-bottom:20px;border-left:4px solid #6366f1;border-radius:12px">
-         <div class="card-h" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+       <div class="card section-collapsible is-open" style="margin-bottom:14px;border-left:4px solid #6366f1;border-radius:12px">
+         <div class="card-h collapsible-header" data-act="toggle-collapsible" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;cursor:pointer">
            <div>
              <h3 style="margin:0;display:flex;align-items:center;gap:8px"><span>📖</span> Class & Events Attendance</h3>
              <span class="tiny" style="color:var(--ink-2)">Preaching batch sessions, Gita courses, workshops, and festival programs</span>
            </div>
-           ${d.batch ? `<a class="btn sm" href="#/batch/${d.batch}" title="View Batch">📖 ${esc(batchObj?.name || 'Batch')}</a>` : ''}
+           <div style="display:flex;align-items:center;gap:6px">
+             ${d.batch ? `<a class="btn sm" href="#/batch/${d.batch}" title="View Batch" onclick="event.stopPropagation()">📖 ${esc(batchObj?.name || 'Batch')}</a>` : ''}
+             <span class="badge ${cls.rate>=75?'b-indigo':'b-amber'}">${cls.rate}% Regular</span>
+             <span class="ch-toggle"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 6 8 10 12 6"/></svg></span>
+           </div>
          </div>
-         <div class="card-b">
+         <div class="collapsible-body-wrap"><div class="collapsible-body"><div class="card-b">
            <div class="grid g4" style="margin-bottom:14px">
              ${stat('Current Batch', batchObj?.name || (d.level ? 'Level ' + d.level : 'Pre-batch'), 'Stage: ' + (d.stage || (d.level ? 'Level ' + d.level : 'New contact')), { em: '📖' })}
              ${stat('Classes Recorded', cls.total, 'Total batch sessions marked', { em: '📋' })}
@@ -13199,7 +13395,7 @@ function viewDevotee(id){
            ` : `<div style="text-align:center;padding:16px;background:var(--surface);border:1px dashed var(--line);border-radius:8px">
                   <span class="tiny" style="color:var(--ink-3)">No batch class sessions recorded for this devotee yet. Mark attendance in the Preaching Batch section to see records here.</span>
                 </div>`}
-         </div>
+         </div></div></div>
        </div>`;
 
      return topCards + benchmarkBar + morningSection + deitySection + cleaningSection + classSection;
@@ -13259,40 +13455,112 @@ function viewDevotee(id){
      <button class="btn pri" data-act="toast" data-msg="Note saved">Save note</button>
      <div style="height:15px"></div><div class="note">${esc(d.swabhav.nature)} by nature — suggested engagement: ${esc(d.swabhav.suggested)}. Interests: ${esc(d.swabhav.interests.join(', '))}.</div></div>`)
   }[tab];
-  return `<div class="card pad dev-hero-card" style="margin-bottom:16px;display:flex;gap:18px;align-items:center;flex-wrap:wrap">
-    <div class="dev-hero-name-row">
-    ${av(d.name,'l')}
-    <div style="min-width:190px"><h1 style="font-size:23px">${esc(d.name)}</h1>
-      <div class="tiny" style="margin-top:4px">${esc(d.occupation)} · ${esc(d.org)} · joined ${fmtD(d.joined)}</div>
-      <div class="chips" style="margin-top:10px">${roleBadges}${sbadge(d.status)}${d.batch && batch(d.batch) ? badge('📖 ' + batch(d.batch).name, 'indigo') : ''}${d.dept && dept(d.dept) ? badge('🛕 ' + dept(d.dept).name, 'saffron') : ''}${d.careGroup && group(d.careGroup) ? badge('❤️ ' + group(d.careGroup).name, 'green') : ''}</div></div>
+  const attSummary = getDevoteeRealAttendance(d);
+  const sadhanaRounds = Number(d.sadhana?.rounds) || 16;
+  const batchObj = d.batch && batch(d.batch);
+  const batchName = batchObj?.name || (d.level ? 'Level ' + d.level : 'Pre-batch');
+  const sevaName = d.service || (d.dept && dept(d.dept) ? dept(d.dept).name : 'Devotee Seva');
+
+  const tabIcons = {
+    Overview: '👤',
+    Preaching: '📖',
+    Seva: '🛕',
+    Attendance: '📊',
+    Care: '❤️',
+    Sadhana: '📿',
+    Timeline: '⏳',
+    Friends: '🤝',
+    Notes: '📝'
+  };
+
+  const bentoVitals = `
+    <div class="dev-bento-vitals">
+      <div class="dev-bento-card" style="--bento-accent:#f59e0b">
+        <div class="dev-bento-header">
+          <span class="dev-bento-icon">🌅</span>
+          <span class="dev-bento-label">Morning Program</span>
+        </div>
+        <div class="dev-bento-val">${attSummary.morning}% <span class="dev-bento-badge ${attSummary.morning>=75?'on-track':'needs-care'}">${attSummary.morning>=75?'On track':'Needs care'}</span></div>
+        <div class="dev-bento-sub">Overall: ${attSummary.overall}% attendance</div>
+      </div>
+      <div class="dev-bento-card" style="--bento-accent:#10b981">
+        <div class="dev-bento-header">
+          <span class="dev-bento-icon">📿</span>
+          <span class="dev-bento-label">Daily Sadhana</span>
+        </div>
+        <div class="dev-bento-val">${sadhanaRounds} <small style="font-size:12px;font-weight:600;color:var(--ink-2)">rounds</small></div>
+        <div class="dev-bento-sub">${d.sadhana?.morningProgram ? d.sadhana.morningProgram + '% sadhana card' : 'Standard committed'}</div>
+      </div>
+      <div class="dev-bento-card" style="--bento-accent:#ea580c">
+        <div class="dev-bento-header">
+          <span class="dev-bento-icon">🛕</span>
+          <span class="dev-bento-label">Seva Reliability</span>
+        </div>
+        <div class="dev-bento-val">${attSummary.deity}% <span class="dev-bento-badge ${attSummary.deity>=75?'reliable':'pending'}">${attSummary.deity>=75?'Reliable':'Active'}</span></div>
+        <div class="dev-bento-sub">${esc(sevaName)}</div>
+      </div>
+      <div class="dev-bento-card" style="--bento-accent:#6366f1">
+        <div class="dev-bento-header">
+          <span class="dev-bento-icon">📖</span>
+          <span class="dev-bento-label">Preaching Batch</span>
+        </div>
+        <div class="dev-bento-val">${attSummary.classes}% <span class="dev-bento-badge ${attSummary.classes>=75?'regular':'improving'}">${attSummary.classes>=75?'Regular':'Enrolled'}</span></div>
+        <div class="dev-bento-sub">${esc(batchName)}</div>
+      </div>
     </div>
-    <div class="dev-hero-actions" style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-      ${(()=>{
-        const cleanPhone = (d.phone||'').replace(/\D/g,'').slice(-10);
-        const waGreeting = encodeURIComponent(`Hare Krishna ${d.name} Prabhu ji, `);
-        const cleanEmail = (d.email||'').trim();
-        let res = '';
-        if(cleanPhone.length >= 10){
-          res += `<a class="btn sm" href="https://wa.me/91${cleanPhone}?text=${waGreeting}" target="_blank" rel="noopener" data-act="open-whatsapp" data-wa="https://wa.me/91${cleanPhone}?text=${waGreeting}" style="color:#128C7E;border-color:rgba(37,211,102,.35);background:rgba(37,211,102,.1);text-decoration:none;display:inline-flex;align-items:center;gap:6px" title="WhatsApp chat">${waIcon()} WhatsApp</a>`;
-        }
-        if(cleanEmail){
-          res += `<a class="btn sm" href="mailto:${esc(cleanEmail)}?subject=ISKCON%20BACE%20Jia%20Sarai" style="color:#7c3aed;border-color:rgba(139,92,246,.3);background:rgba(139,92,246,.06);text-decoration:none;display:inline-flex;align-items:center;gap:4px" title="Send Email">📧 Email</a>`;
-        }
-        return res;
-      })()}
-      <button class="btn" data-act="dm" data-id="${d.id}">${ic('chat')}Message</button>
-      <button class="btn" data-act="add-followup">${ic('clock')}Follow-up</button>
-      ${canAssignRole()?`<button class="btn" data-act="assign-role" data-id="${d.id}" title="Assign role from hierarchy">🧭 Assign role</button>`:''}
-      ${canEditDevotee(d)?`<button class="btn pri" data-act="edit-devotee" data-id="${d.id}">${ic('edit')}Edit profile</button>`:''}
-      ${canDeleteDevotee()?`<button class="btn danger" data-act="delete-devotee" data-id="${d.id}" style="color:var(--danger);border-color:rgba(220,53,69,0.3);background:rgba(220,53,69,0.05)">🗑 Delete Devotee Data</button>`:''}
+  `;
+
+  return `<div class="card dev-hero-card">
+    <div class="dev-hero-top-row">
+      <div class="dev-hero-identity">
+        ${av(d.name,'l')}
+        <div class="dev-hero-info">
+          <div class="dev-hero-title-row">
+            <h1 class="dev-hero-name">${esc(d.name)}</h1>
+            ${sbadge(d.status)}
+          </div>
+          <div class="dev-hero-meta">
+            <span>${esc(d.occupation||'Devotee')}</span>
+            ${d.org ? `<span>· ${esc(d.org)}</span>` : ''}
+            <span>· Joined ${fmtD(d.joined)}</span>
+          </div>
+          <div class="dev-hero-chips">
+            ${roleBadges}
+            ${d.batch && batch(d.batch) ? badge('📖 ' + batch(d.batch).name, 'indigo') : ''}
+            ${d.dept && dept(d.dept) ? badge('🛕 ' + dept(d.dept).name, 'saffron') : ''}
+            ${d.careGroup && group(d.careGroup) ? badge('❤️ ' + group(d.careGroup).name, 'green') : ''}
+          </div>
+        </div>
+      </div>
+      <div class="dev-hero-actions">
+        ${(()=>{
+          const cleanPhone = (d.phone||'').replace(/\D/g,'').slice(-10);
+          const waGreeting = encodeURIComponent(`Hare Krishna ${d.name} Prabhu ji, `);
+          const cleanEmail = (d.email||'').trim();
+          let res = '';
+          if(cleanPhone.length >= 10){
+            res += `<a class="btn sm" href="https://wa.me/91${cleanPhone}?text=${waGreeting}" target="_blank" rel="noopener" data-act="open-whatsapp" data-wa="https://wa.me/91${cleanPhone}?text=${waGreeting}" style="color:#128C7E;border-color:rgba(37,211,102,.35);background:rgba(37,211,102,.1);text-decoration:none;display:inline-flex;align-items:center;gap:6px" title="WhatsApp chat">${waIcon()} WhatsApp</a>`;
+          }
+          if(cleanEmail){
+            res += `<a class="btn sm" href="mailto:${esc(cleanEmail)}?subject=ISKCON%20BACE%20Jia%20Sarai" style="color:#7c3aed;border-color:rgba(139,92,246,.3);background:rgba(139,92,246,.06);text-decoration:none;display:inline-flex;align-items:center;gap:4px" title="Send Email">📧 Email</a>`;
+          }
+          return res;
+        })()}
+        <button class="btn" data-act="dm" data-id="${d.id}">${ic('chat')}Message</button>
+        <button class="btn" data-act="add-followup">${ic('clock')}Follow-up</button>
+        ${canAssignRole()?`<button class="btn" data-act="assign-role" data-id="${d.id}" title="Assign role from hierarchy">🧭 Assign role</button>`:''}
+        ${canEditDevotee(d)?`<button class="btn pri" data-act="edit-devotee" data-id="${d.id}">${ic('edit')}Edit profile</button>`:''}
+        ${canDeleteDevotee()?`<button class="btn danger" data-act="delete-devotee" data-id="${d.id}" style="color:var(--danger);border-color:rgba(220,53,69,0.3);background:rgba(220,53,69,0.05)">🗑 Delete Devotee Data</button>`:''}
+      </div>
     </div>
-   </div>
-   <div class="tabs">${tabs.map(t=>`<button class="${t===tab?'on':''}" data-act="tab" data-k="devotee" data-v="${t}">${t}${t==='Care'&&!careOK?' 🔒':''}</button>`).join('')}</div>
-   ${body}
-   ${mobileStickyFooter([
-     ...(canEditDevotee(d) ? [{ act: 'edit-devotee', id: d.id, label: 'Edit Profile', pri: true, icon: '✏️ ' }] : []),
-     { act: 'save-vcard-contact', id: d.id, label: 'Save Contact', icon: '👤 ' }
-   ])}`;
+  </div>
+  ${bentoVitals}
+  <div class="tabs">${tabs.map(t=>`<button class="${t===tab?'on':''}" data-act="tab" data-k="devotee" data-v="${t}"><span class="tab-ic">${tabIcons[t]||''}</span> ${t}${t==='Care'&&!careOK?' 🔒':''}</button>`).join('')}</div>
+  ${body}
+  ${mobileStickyFooter([
+    ...(canEditDevotee(d) ? [{ act: 'edit-devotee', id: d.id, label: 'Edit Profile', pri: true, icon: '✏️ ' }] : []),
+    { act: 'save-vcard-contact', id: d.id, label: 'Save Contact', icon: '👤 ' }
+  ])}`;
 }
 
 /* ---- organisation ---- */
