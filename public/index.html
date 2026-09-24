@@ -6926,6 +6926,218 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-off
   .field label{font-size:12px!important}
 }
 
+
+/* ── Compact Devotee Dashboard on Mobile (<= 768px) ── */
+@media (max-width: 768px) {
+  .dev-dash-grid {
+    gap: 10px !important;
+    margin-top: 6px !important;
+  }
+  .dev-dash-card {
+    padding: 12px 14px !important;
+    border-radius: 14px !important;
+  }
+  .dev-dash-card-header {
+    margin-bottom: 8px !important;
+  }
+  .dev-dash-card-title {
+    font-size: 13.5px !important;
+    gap: 6px !important;
+  }
+  .dev-dash-card-sub {
+    font-size: 10px !important;
+    margin-top: 1px !important;
+    line-height: 1.25 !important;
+  }
+
+  /* Donut chart compact: side-by-side on mobile */
+  .dash-pie-wrap {
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 12px !important;
+    padding: 2px 0 !important;
+  }
+  .dash-pie-svg-box {
+    width: 105px !important;
+    height: 105px !important;
+    flex-shrink: 0 !important;
+  }
+  .dash-pie-svg-box svg {
+    width: 105px !important;
+    height: 105px !important;
+  }
+  .dash-pie-center-num {
+    font-size: 17px !important;
+  }
+  .dash-pie-center-lbl {
+    font-size: 8px !important;
+  }
+  .dash-pie-legend {
+    min-width: 0 !important;
+    gap: 3px !important;
+    flex: 1 !important;
+  }
+  .dash-pie-legend .dash-click-row {
+    padding: 3px 5px !important;
+    margin: 0 !important;
+    border-radius: 6px !important;
+  }
+  .dash-pie-legend .dash-click-row div {
+    font-size: 11px !important;
+  }
+
+  /* Vertical Bar Chart compact */
+  .dash-vbar-wrap {
+    padding-top: 4px !important;
+    gap: 6px !important;
+  }
+  .dash-vbar-stage {
+    height: 110px !important;
+    gap: 8px !important;
+    padding: 0 4px 6px !important;
+  }
+  .dash-vbar-pillar {
+    max-width: 28px !important;
+    border-radius: 6px 6px 2px 2px !important;
+    min-height: 5px !important;
+  }
+  .dash-vbar-val-pill {
+    font-size: 9px !important;
+    padding: 1px 4.5px !important;
+    margin-bottom: 3px !important;
+  }
+  .dash-vbar-labels {
+    gap: 8px !important;
+    padding: 0 4px !important;
+  }
+  .dash-vbar-lbl-title {
+    font-size: 10px !important;
+  }
+  .dash-vbar-lbl-sub {
+    font-size: 8.5px !important;
+  }
+
+  /* Stepped Funnel compact */
+  .dash-funnel-wrap {
+    gap: 5px !important;
+  }
+  .dash-funnel-step {
+    padding: 5px 8px !important;
+    gap: 8px !important;
+    border-radius: 9px !important;
+  }
+  .dash-funnel-badge {
+    font-size: 9px !important;
+    padding: 2px 5px !important;
+  }
+  .dash-funnel-name {
+    font-size: 11.5px !important;
+  }
+  .dash-funnel-bar {
+    height: 3.5px !important;
+    margin-top: 2.5px !important;
+  }
+  .dash-funnel-count {
+    font-size: 12px !important;
+  }
+  .dash-funnel-pct {
+    font-size: 9.5px !important;
+  }
+
+  /* Demographics compact */
+  .dash-demog-wrap {
+    gap: 8px !important;
+  }
+  .dash-demog-ribbon {
+    height: 10px !important;
+  }
+  .dash-demog-grid {
+    gap: 6px !important;
+  }
+  .dash-demog-tile {
+    padding: 5px 8px !important;
+    gap: 6px !important;
+    border-radius: 8px !important;
+  }
+  .dash-demog-tile-icon {
+    font-size: 13px !important;
+  }
+  .dash-demog-tile-title {
+    font-size: 10.5px !important;
+  }
+  .dash-demog-tile-sub {
+    font-size: 9px !important;
+  }
+  .dash-demog-tile-val {
+    font-size: 12px !important;
+  }
+
+  /* Location matrix compact */
+  .dash-loc-grid {
+    gap: 5px !important;
+  }
+  .dash-loc-row {
+    padding: 5px 8px !important;
+    gap: 7px !important;
+    border-radius: 9px !important;
+  }
+  .dash-loc-title {
+    font-size: 11.5px !important;
+  }
+  .dash-loc-sub {
+    font-size: 9px !important;
+  }
+  .dash-loc-bar-wrap {
+    width: 45px !important;
+    height: 4px !important;
+  }
+  .dash-loc-num {
+    font-size: 12px !important;
+  }
+  .dash-loc-pct {
+    font-size: 9.5px !important;
+  }
+
+  /* Seva grid compact */
+  .dash-seva-grid {
+    gap: 6px !important;
+  }
+  .dash-seva-tile {
+    padding: 6px 8px !important;
+    border-radius: 9px !important;
+  }
+  .dash-seva-name {
+    font-size: 11px !important;
+  }
+  .dash-seva-count {
+    font-size: 13px !important;
+  }
+  .dash-seva-bar {
+    height: 3px !important;
+  }
+  .dash-seva-pct {
+    font-size: 9px !important;
+  }
+
+  /* KPI cards compact */
+  .dev-kpi-card {
+    padding: 8px 10px !important;
+    border-radius: 11px !important;
+  }
+  .dev-kpi-val {
+    font-size: 19px !important;
+    margin: 2px 0 !important;
+  }
+  .dev-kpi-label {
+    font-size: 10px !important;
+  }
+  .dev-kpi-sub {
+    font-size: 9.5px !important;
+  }
+}
+
 /* ── Initial App Loading / Splash Screen ── */
 .app-splash-screen{
   position:fixed;inset:0;width:100%;height:100%;
@@ -13123,17 +13335,17 @@ function devoteePieChart(slices, { size = 185, innerRadius = 52 } = {}) {
     }).join('');
   }
 
-  return '<div style="display:flex;align-items:center;justify-content:center;gap:18px;flex-wrap:wrap;width:100%">' +
-    '<div style="position:relative;width:' + size + 'px;height:' + size + 'px;flex-shrink:0">' +
+  return '<div class="dash-pie-wrap" style="display:flex;align-items:center;justify-content:center;gap:18px;flex-wrap:wrap;width:100%">' +
+    '<div class="dash-pie-svg-box" style="position:relative;width:' + size + 'px;height:' + size + 'px;flex-shrink:0">' +
       '<svg viewBox="0 0 ' + size + ' ' + size + '" width="' + size + '" height="' + size + '" style="overflow:visible">' +
         paths +
       '</svg>' +
       '<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none">' +
-        '<span style="font-size:22px;font-weight:800;font-family:var(--f-head);color:var(--ink)">' + total + '</span>' +
-        '<span style="font-size:9.5px;color:var(--ink-3);font-weight:700;text-transform:uppercase;letter-spacing:0.04em">Devotees</span>' +
+        '<span class="dash-pie-center-num" style="font-size:22px;font-weight:800;font-family:var(--f-head);color:var(--ink)">' + total + '</span>' +
+        '<span class="dash-pie-center-lbl" style="font-size:9.5px;color:var(--ink-3);font-weight:700;text-transform:uppercase;letter-spacing:0.04em">Devotees</span>' +
       '</div>' +
     '</div>' +
-    '<div style="display:flex;flex-direction:column;gap:5px;min-width:170px;flex:1">' +
+    '<div class="dash-pie-legend" style="display:flex;flex-direction:column;gap:5px;min-width:170px;flex:1">' +
       slices.map(s => {
         const pct = total ? Math.round((s.value / total) * 100) : 0;
         return '<div class="dash-click-row" data-act="dash-filter-devotees" data-filter-key="rounds" data-filter-val="' + (s.valKey||'') + '" title="Click to filter ' + esc(s.label) + '">' +
