@@ -13273,10 +13273,8 @@ function classifyDevoteeLocation(d) {
 function classifyDevoteeDemographics(d) {
   const org = ((d.org || '') + ' ' + (d.highestEducation || '') + ' ' + (d.occupation || '') + ' ' + (d.presentStudiesOrJob || '')).toLowerCase().trim();
   if (org.includes('iit') || org.includes('indian institute of technology')) return 'IIT Delhi';
-  if (org.includes('jnu') || org.includes('jawaharlal nehru') || org.includes('du') || org.includes('delhi university')) return 'JNU & Delhi Universities';
   if (org.includes('job') || org.includes('software') || org.includes('engineer') || org.includes('analyst') || org.includes('working') || org.includes('corporate') || org.includes('consultant') || org.includes('pvt') || org.includes('ltd') || org.includes('manager')) return 'Working Professionals';
-  if (org.includes('college') || org.includes('b.tech') || org.includes('m.tech') || org.includes('student') || org.includes('phd') || org.includes('scholar') || org.includes('studies')) return 'College Students & Scholars';
-  return 'Dedicated Ashram & Community';
+  return 'Other Colleges';
 }
 
 function devoteePieChart(slices, { size = 185, innerRadius = 52 } = {}) {
@@ -13433,7 +13431,7 @@ function devoteeFunnelChart(levels) {
 /* Segmented Ribbon + Demographic Cards */
 function devoteeDemographicsChart(items) {
   const total = items.reduce((sum, i) => sum + i.count, 0) || 1;
-  const icons = ['🎓', '💼', '🏛️', '📚', '🛕'];
+  const iconMap = { 'IIT Delhi': '🎓', 'Working Professionals': '💼', 'Other Colleges': '🏛️' };
 
   return '<div class="dash-demog-wrap">' +
     '<div class="dash-demog-ribbon" title="Demographic distribution ribbon">' +
@@ -13444,9 +13442,10 @@ function devoteeDemographicsChart(items) {
     '</div>' +
     '<div class="dash-demog-grid">' +
       items.map((it, idx) => {
-        const ic = icons[idx % icons.length];
+        const ic = iconMap[it.valKey] || '🎓';
         const pct = Math.round((it.count / total) * 100);
-        return '<div class="dash-demog-tile" data-act="dash-filter-devotees" data-filter-key="org" data-filter-val="' + esc(it.valKey) + '" style="--tile-color:' + it.color + '" title="Click to filter ' + esc(it.label) + '">' +
+        const isFull = (idx === 0 && items.length === 3);
+        return '<div class="dash-demog-tile' + (isFull ? ' full' : '') + '" data-act="dash-filter-devotees" data-filter-key="org" data-filter-val="' + esc(it.valKey) + '" style="--tile-color:' + it.color + (isFull ? ';grid-column:1 / -1' : '') + '" title="Click to filter ' + esc(it.label) + '">' +
           '<span class="dash-demog-tile-icon">' + ic + '</span>' +
           '<div class="dash-demog-tile-info">' +
             '<div class="dash-demog-tile-title">' + esc(it.label) + '</div>' +
@@ -13585,22 +13584,18 @@ function viewDevoteeDashboard(devotees){
   ];
 
   // 5. Demographics (College / Campus / Work)
-  let demoIit = 0, demoJnu = 0, demoWork = 0, demoCollege = 0, demoAshram = 0;
+  let demoIit = 0, demoWork = 0, demoOther = 0;
   devotees.forEach(d => {
     const dm = classifyDevoteeDemographics(d);
     if (dm === 'IIT Delhi') demoIit++;
-    else if (dm === 'JNU & Delhi Universities') demoJnu++;
     else if (dm === 'Working Professionals') demoWork++;
-    else if (dm === 'College Students & Scholars') demoCollege++;
-    else demoAshram++;
+    else demoOther++;
   });
 
   const demoItems = [
-    { label: 'IIT Delhi Scholars & Students', sub: 'B.Tech / M.Tech / PhD', count: demoIit, total: devotees.length, color: '#FF6600', valKey: 'IIT Delhi' },
+    { label: 'IIT Delhi Students', sub: 'B.Tech / M.Tech / PhD', count: demoIit, total: devotees.length, color: '#FF6600', valKey: 'IIT Delhi' },
     { label: 'Working Professionals', sub: 'Tech & Corporate', count: demoWork, total: devotees.length, color: '#10B981', valKey: 'Working Professionals' },
-    { label: 'JNU & Delhi Universities', sub: 'Scholars', count: demoJnu, total: devotees.length, color: '#3B82F6', valKey: 'JNU & Delhi Universities' },
-    { label: 'College Students & Scholars', sub: 'Universities', count: demoCollege, total: devotees.length, color: '#8B5CF6', valKey: 'College Students & Scholars' },
-    { label: 'Ashram & Community Staff', sub: 'Full-time', count: demoAshram, total: devotees.length, color: '#64748B', valKey: 'Dedicated Ashram & Community' }
+    { label: 'Other Colleges', sub: 'Campuses & Universities', count: demoOther, total: devotees.length, color: '#3B82F6', valKey: 'Other Colleges' }
   ];
 
   // 6. Department / Seva Distribution
@@ -13730,7 +13725,7 @@ function viewDevoteeDashboard(devotees){
         <div class="dev-dash-card-header">
           <div>
             <div class="dev-dash-card-title"><span>🏛️</span> College & Professional Demographics</div>
-            <div class="dev-dash-card-sub">Scholarly background from IIT Delhi, JNU, working engineers & youth</div>
+            <div class="dev-dash-card-sub">Devotees from IIT Delhi, other colleges, and working professionals</div>
           </div>
           <span class="badge sm" style="background:rgba(16,185,129,0.1);color:#10B981;font-weight:700">Campus & Career</span>
         </div>
