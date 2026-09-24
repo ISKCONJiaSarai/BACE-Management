@@ -5709,6 +5709,21 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-off
   .roster-heatmap-wrap { display: block !important; }
 }
 
+/* Mobile-only contact action utilities */
+.mobile-only-btn { display: none !important; }
+.mobile-only-flex { display: none !important; }
+@media (max-width: 768px) {
+  .mobile-only-btn { display: inline-flex !important; }
+  .mobile-only-flex { display: flex !important; }
+}
+.dev-quick-actions {
+  display: flex;
+  gap: 8px;
+}
+.dev-quick-actions .btn {
+  flex: 1;
+}
+
 /* ── Phase 7: Preaching Funnel & Batch Management Mobile Ergonomics ── */
 .funnel-mob-scroll{display:none}
 .mob-batch-list{display:none}
@@ -9098,7 +9113,7 @@ function openDetailSheet({title='', body='', footerBtns=[], onClose=null}={}){
     ? `<div class="detail-sheet-footer">${footerBtns.map(b=>`<button class="btn${b.pri?' pri':''}" data-act="${esc(b.act||'')}" data-id="${esc(b.id||'')}" data-arg="${esc(b.arg||'')}" data-r="${esc(b.r||b.arg||'')}">${esc(b.label||b.text||'')}</button>`).join('')}</div>`
     : '';
   const html = `<div class="detail-sheet-wrap" id="${id}">
-    <div class="detail-sheet" id="${id}_sheet" onclick="event.stopPropagation()">
+    <div class="detail-sheet" id="${id}_sheet">
       <div class="detail-sheet-handle"></div>
       <div class="detail-sheet-h">
         <h3>${esc(title)}</h3>
@@ -9166,12 +9181,12 @@ function openDevoteeDetailSheet(id){
     </div>
 
     ${cleanPhone.length >= 10 ? `
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
-        <a href="tel:+91${cleanPhone}" data-act="direct-call" data-phone="${cleanPhone}" class="btn sm" style="justify-content:center;background:rgba(16,185,129,0.08);color:#059669;border-color:rgba(16,185,129,0.25);font-weight:600;text-decoration:none;min-height:38px;display:inline-flex;align-items:center;gap:6px" title="Call devotee phone">${callIcon()} Call</a>
-        <a href="https://wa.me/91${cleanPhone}?text=${waGreeting}" target="_blank" rel="noopener" data-act="open-whatsapp" data-wa="https://wa.me/91${cleanPhone}?text=${waGreeting}" class="btn sm" style="justify-content:center;background:rgba(37,211,102,0.1);color:#128C7E;border-color:rgba(37,211,102,0.35);font-weight:600;text-decoration:none;min-height:38px;display:inline-flex;align-items:center;gap:6px" title="Open WhatsApp chat with greeting">${waIcon()} WhatsApp</a>
+      <div class="dev-quick-actions" style="margin-bottom:10px">
+        <a href="tel:+91${cleanPhone}" data-act="direct-call" data-phone="${cleanPhone}" class="btn sm mobile-only-btn" style="justify-content:center;background:rgba(16,185,129,0.08);color:#059669;border-color:rgba(16,185,129,0.25);font-weight:600;text-decoration:none;min-height:38px;align-items:center;gap:6px" title="Call devotee phone">${callIcon()} Call</a>
+        <a href="https://wa.me/91${cleanPhone}?text=${waGreeting}" target="_blank" rel="noopener" data-act="open-whatsapp" data-wa="https://wa.me/91${cleanPhone}?text=${waGreeting}" class="btn sm" style="flex:1;justify-content:center;background:rgba(37,211,102,0.1);color:#128C7E;border-color:rgba(37,211,102,0.35);font-weight:600;text-decoration:none;min-height:38px;display:inline-flex;align-items:center;gap:6px" title="Open WhatsApp chat with greeting">${waIcon()} WhatsApp</a>
       </div>
-      <div style="display:flex;gap:6px;margin-bottom:14px">
-        <button class="btn sm ghost" data-act="save-vcard-contact" data-id="${d.id}" style="flex:1;justify-content:center;font-size:12px;min-height:34px;border:1px solid var(--line);gap:5px" title="Download .vcf contact for phone Contacts app">
+      <div class="mobile-only-flex" style="gap:6px;margin-bottom:14px">
+        <button class="btn sm ghost" data-act="save-vcard-contact" data-id="${d.id}" onclick="saveDevoteeContact('${d.id}')" style="flex:1;justify-content:center;font-size:12px;min-height:34px;border:1px solid var(--line);gap:5px" title="Download .vcf contact for phone Contacts app">
           👤 Save Contact
         </button>
       </div>
@@ -9240,22 +9255,26 @@ function saveDevoteeContact(id){
     'END:VCARD'
   ].filter(Boolean).join('\r\n');
 
-  const blob = new Blob([vcard], { type: 'text/vcard;charset=utf-8' });
-  const fileName = `${safeName.replace(/[^a-zA-Z0-9]/g, '_') || 'devotee'}.vcf`;
-
-  const file = new File([blob], fileName, { type: 'text/vcard' });
-  if(navigator.canShare && navigator.canShare({ files: [file] })){
-    navigator.share({
-      files: [file],
-      title: `${safeName} Contact Card`,
-      text: `Contact card for ${safeName} (${org})`
-    }).catch(err => {
-      if(err.name !== 'AbortError') triggerVcardDownload(blob, fileName);
-    });
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  if (isIOS) {
+    const uri = 'data:text/vcard;charset=utf-8,' + encodeURIComponent(vcard);
+    window.location.href = uri;
+    toast(`Opening Contact Card for ${safeName}... Tap 'Save' in Contacts`, '👤');
     return;
   }
 
-  triggerVcardDownload(blob, fileName);
+  // Android & Desktop: Create blob & trigger download
+  const blob = new Blob([vcard], { type: 'text/vcard;charset=utf-8' });
+  const fileName = `${safeName.replace(/[^a-zA-Z0-9]/g, '_') || 'devotee'}.vcf`;
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+  toast(`Contact file downloaded (${fileName})! Tap to save in Contacts`, '👤');
 }
 
 function triggerVcardDownload(blob, fileName){
@@ -13254,13 +13273,11 @@ function viewDevotee(id){
         const cleanEmail = (d.email||'').trim();
         let res = '';
         if(cleanPhone.length >= 10){
-          res += `<a class="btn sm" href="tel:+91${cleanPhone}" data-act="direct-call" data-phone="${cleanPhone}" style="color:#059669;border-color:rgba(16,185,129,.3);background:rgba(16,185,129,.06);text-decoration:none;display:inline-flex;align-items:center;gap:6px" title="Call devotee phone">${callIcon()} Call</a>
-          <a class="btn sm" href="https://wa.me/91${cleanPhone}?text=${waGreeting}" target="_blank" rel="noopener" data-act="open-whatsapp" data-wa="https://wa.me/91${cleanPhone}?text=${waGreeting}" style="color:#128C7E;border-color:rgba(37,211,102,.35);background:rgba(37,211,102,.1);text-decoration:none;display:inline-flex;align-items:center;gap:6px" title="WhatsApp chat">${waIcon()} WhatsApp</a>`;
+          res += `<a class="btn sm" href="https://wa.me/91${cleanPhone}?text=${waGreeting}" target="_blank" rel="noopener" data-act="open-whatsapp" data-wa="https://wa.me/91${cleanPhone}?text=${waGreeting}" style="color:#128C7E;border-color:rgba(37,211,102,.35);background:rgba(37,211,102,.1);text-decoration:none;display:inline-flex;align-items:center;gap:6px" title="WhatsApp chat">${waIcon()} WhatsApp</a>`;
         }
         if(cleanEmail){
           res += `<a class="btn sm" href="mailto:${esc(cleanEmail)}?subject=ISKCON%20BACE%20Jia%20Sarai" style="color:#7c3aed;border-color:rgba(139,92,246,.3);background:rgba(139,92,246,.06);text-decoration:none;display:inline-flex;align-items:center;gap:4px" title="Send Email">📧 Email</a>`;
         }
-        res += `<button class="btn sm ghost" data-act="save-vcard-contact" data-id="${d.id}" title="Save to Phone Contacts app">👤 Save Contact</button>`;
         return res;
       })()}
       <button class="btn" data-act="dm" data-id="${d.id}">${ic('chat')}Message</button>
