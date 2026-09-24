@@ -12588,11 +12588,14 @@ function viewDevotees(){
       const attCol = v >= 75 ? '#10B981' : (v >= 50 ? '#F59E0B' : (v > 0 ? '#EF4444' : 'var(--line)'));
       const batchName = d.batch && batch(d.batch) ? batch(d.batch).name : '';
       const deptName  = d.dept  && dept(d.dept)  ? dept(d.dept).name  : '';
+      const rawFac    = d.facilitator ? nameOf(d.facilitator) : '';
+      const facName   = (rawFac && rawFac !== 'Unassigned' && rawFac !== 'None' && rawFac !== '—' && rawFac !== '-') ? rawFac : '';
       const rKeys = devoteeRoles(d);
       const isLeader = rKeys.some(k => k !== 'devotee');
       const leaderEmojis = isLeader ? rKeys.filter(k => k !== 'devotee').map(k => ROLES[k]?.emoji || '').join('') : '';
       const subParts = [
         batchName ? `📖 ${esc(batchName)}` : '',
+        facName   ? `🤝 ${esc(facName)}`   : '',
         deptName  ? `🛕 ${esc(deptName)}`  : ''
       ].filter(Boolean).join(' · ');
       const rowContent = `
