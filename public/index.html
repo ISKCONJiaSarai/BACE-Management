@@ -6192,6 +6192,31 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-off
     font-weight: 400;
   }
 
+  /* Compact Attendance Pill Row */
+  .pk-pill-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 6px;
+    margin-top: 4px;
+  }
+  .pk-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 3.5px;
+    font-size: 11px;
+    color: var(--ink-2);
+    background: var(--surface-2, rgba(0,0,0,0.03));
+    border: 1px solid var(--line);
+    padding: 2px 7px;
+    border-radius: 6px;
+    white-space: nowrap;
+    line-height: 1.25;
+  }
+  .pk-pill b {
+    color: var(--ink);
+    font-weight: 700;
+  }
+
   /* Compact Attendance 2x2 Grid */
   .pk-att-grid {
     display: grid;
@@ -13524,28 +13549,28 @@ function viewDevotee(id){
     const _attBody = `
   <div class="pk-att-grid">
     <div class="pk-att-metric">
-      <div class="pam-lbl">🌅 Morning</div>
+      <div class="pam-lbl">🌅 Morning Program</div>
       <div class="pam-val">${_mP}%</div>
       <div class="pam-bar"><i style="width:${_mP}%;background:#f59e0b"></i></div>
       <div class="pam-sub">${_att.morning?.present||0}/${_att.morning?.total||0} sessions</div>
     </div>
     <div class="pk-att-metric">
-      <div class="pam-lbl">🪔 Deity</div>
-      <div class="pam-val">${_dP}%</div>
-      <div class="pam-bar"><i style="width:${_dP}%;background:#ea580c"></i></div>
-      <div class="pam-sub">${_att.deity?.completed||0}/${_att.deity?.total||0} sevas</div>
-    </div>
-    <div class="pk-att-metric">
-      <div class="pam-lbl">📖 Classes</div>
+      <div class="pam-lbl">📖 Batch Classes</div>
       <div class="pam-val">${_clP}%</div>
       <div class="pam-bar"><i style="width:${_clP}%;background:#6366f1"></i></div>
       <div class="pam-sub">${_att.classes?.present||0}/${_att.classes?.total||0} classes</div>
     </div>
     <div class="pk-att-metric">
-      <div class="pam-lbl">⭐ Overall</div>
-      <div class="pam-val">${_ov}%</div>
-      <div class="pam-bar"><i style="width:${_ov}%;background:#10b981"></i></div>
-      <div class="pam-sub">Score</div>
+      <div class="pam-lbl">🪔 Deity Services</div>
+      <div class="pam-val">${_dP}%</div>
+      <div class="pam-bar"><i style="width:${_dP}%;background:#ea580c"></i></div>
+      <div class="pam-sub">${_att.deity?.completed||0}/${_att.deity?.total||0} sevas</div>
+    </div>
+    <div class="pk-att-metric">
+      <div class="pam-lbl">📿 Daily Sadhana</div>
+      <div class="pam-val">${d.sadhana?.rounds || 16} <span style="font-size:11px;font-weight:600">rounds</span></div>
+      <div class="pam-bar"><i style="width:${Math.min(100, Math.round(((d.sadhana?.rounds||16)/16)*100))}%;background:#10b981"></i></div>
+      <div class="pam-sub">${d.sadhana?.morningProgram ? d.sadhana.morningProgram + '% sadhana' : 'Committed standard'}</div>
     </div>
   </div>`;
 
@@ -13598,10 +13623,15 @@ function viewDevotee(id){
       esc(_sevaName),
       'Care: '+esc(_grpName),
       _pillarsBody)}
-  ${pkCard(_pk+'-att','#10b981','📊','Attendance',
-      _ov>=75?'Regular':'Needs attention',
+  ${pkCard(_pk+'-att','#10b981','📊','Attendance & Sadhana',
+      _ov>=75?'Regular':((_att.morning?.total||_att.classes?.total||_att.deity?.total)?'Needs attention':'New / No records'),
       _ov+'% Overall Score',
-      '🌅 '+_mP+'% Morning · 🪔 '+_dP+'% Deity',
+      `<div class="pk-pill-row">
+        <span class="pk-pill">🌅 <b>${_mP}%</b> Morning</span>
+        <span class="pk-pill">📖 <b>${_clP}%</b> Classes</span>
+        <span class="pk-pill">🪔 <b>${_dP}%</b> Deity</span>
+        <span class="pk-pill">📿 <b>${d.sadhana?.rounds || 16}r</b> Sadhana</span>
+      </div>`,
       _attBody)}
   ${pkCard(_pk+'-care','#ec4899','❤️','Devotee Care',
       esc(d.careStatus?.spiritual||'Steady'),
