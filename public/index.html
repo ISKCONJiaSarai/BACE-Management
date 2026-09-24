@@ -12642,11 +12642,7 @@ function viewDevotees(){
        </button>
      </div>`;
 
-   const topActions = `
-     ${currentTab === 'list'
-       ? `<button class="btn" data-act="tab" data-k="devoteeView" data-v="dashboard" style="display:inline-flex;align-items:center;gap:5px;margin-right:8px">${ic('chart')} Devotee Dashboard</button>`
-       : `<button class="btn" data-act="tab" data-k="devoteeView" data-v="list" style="display:inline-flex;align-items:center;gap:5px;margin-right:8px">${ic('people')} Devotees List</button>`}
-     ${canImportCsv()?`<button class="btn" data-act="open-import-csv" style="margin-right:8px">${ic('upload')}Import CSV</button>`:''}<button class="btn pri" data-act="add-devotee">${ic('plus')}Add devotee</button>`;
+   const topActions = `${canImportCsv()?`<button class="btn" data-act="open-import-csv" style="margin-right:8px">${ic('upload')}Import CSV</button>`:''}<button class="btn pri" data-act="add-devotee">${ic('plus')}Add devotee</button>`;
 
    const pageHead = head('👥 Devotee Community', currentTab === 'dashboard' ? 'Devotee Analytics Dashboard' : 'Devotee directory',
      currentTab === 'dashboard'
