@@ -12761,14 +12761,14 @@ function viewDevoteeDashboard(devotees){
         </div>
       </div>
 
-      <div class="dev-kpi-card" data-act="dash-filter-devotees" data-filter-key="residence" data-filter-val="BACE Residents" title="Click to view devotees residing in BACE Ashram">
+      <div class="dev-kpi-card" data-act="dash-filter-devotees" data-filter-key="residence" data-filter-val="BACE Residents" title="Click to view devotees residing in BACE">
         <div class="dev-kpi-top">
           <span class="dev-kpi-label">BACE Residents</span>
           <span class="dev-kpi-icon" style="color:#FF6600;background:rgba(255,102,0,0.1)">🛕</span>
         </div>
         <div class="dev-kpi-val" style="color:#FF6600">${locBace}</div>
         <div class="dev-kpi-sub">
-          <span>Ashram residents & sevaks</span>
+          <span>BACE residents & sevaks</span>
           <span class="dev-kpi-badge" style="background:rgba(255,102,0,0.12);color:#FF6600">Filter ›</span>
         </div>
       </div>
@@ -13496,7 +13496,7 @@ function viewDevotee(id){
     ${pkCard(_pk+'-contact','#3b82f6','📇','Contact & Bio',
       esc(d.attendanceMode||'Offline at BACE'),
       esc(d.phone||'No phone on file'),
-      esc((d.residence||d.address||'Ashram resident')),
+      esc(d.residence || d.address || (d.attendanceMode === 'Online' ? 'Online Devotee' : 'BACE Resident')),
       _contactBody)}
   ${pkCard(_pk+'-bace','#8b5cf6','🏛️','BACE Identity',
       sbadge(d.status),
@@ -29883,7 +29883,7 @@ document.addEventListener('click',e=>{
       ['dept_head', 'Department Head', 'Managing seva departments & roster execution', '🛠'],
       ['preaching_coord', 'Preaching Coordinator', 'Batch coordinator & preaching leadership', '🎓'],
       ['facilitator', 'Facilitator', 'Devotee mentoring, sadhana support & personal care', '🤝'],
-      ['devotee', 'Devotee', 'General volunteer, ashram resident & community member', '🙏']
+      ['devotee', 'Devotee', 'General volunteer, BACE resident & community member', '🙏']
     ];
     openForm(`Assign Hierarchy Roles: ${d.name}`,[
       FLD('roles','Select All Assigned Roles','role_multicheck',{v:curRoles,opts:roleOpts}),
