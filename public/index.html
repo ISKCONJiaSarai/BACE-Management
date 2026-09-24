@@ -5893,14 +5893,41 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-off
   }
   .dev-bento-vitals {
     grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
-    margin-bottom: 12px;
+    gap: 6px;
+    margin-bottom: 10px;
   }
   .dev-bento-card {
-    padding: 10px 11px;
+    padding: 7px 9px;
+    border-radius: 9px;
+    gap: 2px;
+  }
+  .dev-bento-card::before {
+    width: 3px;
+  }
+  .dev-bento-header {
+    gap: 4px;
+  }
+  .dev-bento-icon {
+    font-size: 13px;
+  }
+  .dev-bento-label {
+    font-size: 9.5px;
+    letter-spacing: 0.2px;
   }
   .dev-bento-val {
-    font-size: 17px;
+    font-size: 15px;
+    gap: 5px;
+    margin-top: 1px;
+  }
+  .dev-bento-badge {
+    font-size: 8.5px;
+    padding: 0 4px;
+    line-height: 14px;
+  }
+  .dev-bento-sub {
+    font-size: 10px;
+    margin-top: 0;
+    line-height: 1.2;
   }
 }
 
