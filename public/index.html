@@ -11513,7 +11513,7 @@ function mobileTodayDrawer(){
   </div>`;
 }
 const CRUMBS={'':'Dashboard',today:'Today',devotees:'Devotees',devotee:'Devotee',org:'Organisation',mgmt:'BACE Management',
- depts:'Other Departments',dept:'Department',accounts:'Accounts & Budgets',assign:'Assign Seva',attendance:'BACE Pillars','dept-reports':'Department reports',
+ depts:'Dept Hub',dept:'Department',accounts:'Accounts & Budgets',assign:'Assign Seva',attendance:'BACE Pillars','dept-reports':'Department reports',
  inventory:'Inventory & BBT',sops:'SOPs & standards',actions:'Action items',preaching:'BACE Preaching',batches:'Batch management',
  batch:'Batch',contacts:'Contacts & pipeline',followups:'Follow-ups',classes:'Classes & events','batch-attendance':'Batch attendance',
  'preaching-reports':'Preaching reports',care:'Devotee Care',friends:'Friends & Groups',groups:'Friends & Groups',group:'Group',swabhav:'Swabhav engagement',
@@ -11522,7 +11522,7 @@ const CRUMBS={'':'Dashboard',today:'Today',devotees:'Devotees',devotee:'Devotee'
  calendar:'Community calendar',messages:'Messages',notifications:'Notifications',admin:'Administration',more:'Menu'};
 
 const CRUMB_PARENTS = {
-  dept: '#/depts',
+  dept: '#/mgmt',
   devotee: '#/devotees',
   batch: '#/batches',
   group: '#/groups',
@@ -12791,7 +12791,7 @@ function pillarCardMgmt(){
           </div>
         </div>
         <div class="pillar-card-title">BACE Management</div>
-        <div class="pillar-card-sub">Operations, Seva rosters &amp; temple administration</div>
+        <div class="pillar-card-sub">Morning Program, Deity, Kitchen, Cleaning &amp; more</div>
         <div class="pillar-compressed-hint">
           <span>⚡ 6 quick links</span>
           <span style="display:flex;align-items:center;gap:3px">Tap to expand <span style="font-size:11px">▾</span></span>
@@ -12816,7 +12816,7 @@ function pillarCardMgmt(){
               </div>
               <span class="pillar-item-arrow">›</span>
             </a>
-            <a class="pillar-item" href="#/depts">
+            <a class="pillar-item" href="#/mgmt">
               <span class="pillar-item-icon">🏢</span>
               <div class="pillar-item-info">
                 <div class="pillar-item-title">Other Departments</div>
@@ -15111,54 +15111,97 @@ function viewMgmt(){
   const tot=activeDepts().reduce((o,d)=>{const m=deptMetrics(d.id);o.done+=m.done;o.missed+=m.missed;o.pend+=m.pending;o.vol+=m.volunteers;return o},{done:0,missed:0,pend:0,vol:0});
   const pendReports=DB.reports.filter(r=>r.kind==='Department weekly'&&r.status==='Pending').length;
   const completionPct=pct(tot.done,tot.done+tot.missed);
-  // Dept tile grid — each tile is a card linking to that dept's dashboard
-  function deptTile(icon,label,color,gradFrom,gradTo,route,statLine,statusPct){
-    const isOk=statusPct===null||statusPct>=75;
-    const isWarn=statusPct!==null&&statusPct>=50&&statusPct<75;
-    const dotColor=statusPct===null?'var(--green)':isOk?'var(--green)':isWarn?'var(--amber)':'var(--danger)';
-    return `<a href="${route}" class="card pad dept-tile-card" style="text-decoration:none;color:inherit;display:block;transition:box-shadow .18s ease,transform .18s ease;position:relative;overflow:hidden"
-      onmouseenter="this.style.boxShadow='0 8px 28px -6px ${gradFrom}44';this.style.transform='translateY(-2px)'"
+
+  // The 7 departments you specified — looked up by module key or name
+  // Deity (module:'deity'), Morning Program (module:'morning'), Cleaning (module:'cleaning')
+  // are the BACE pillar departments — pulled directly from DB.departments by their module key.
+  // The rest are matched by name substring.
+  function findDept(moduleKey, nameFrag) {
+    return DB.departments.find(d =>
+      (moduleKey && d.module === moduleKey) ||
+      (nameFrag && d.name.toLowerCase().includes(nameFrag.toLowerCase()))
+    );
+  }
+
+  const FEATURED_DEPTS = [
+    findDept('morning',   'Morning Program'),
+    findDept('deity',     'Deity Department'),
+    findDept('cleaning',  'Cleaning'),
+    findDept('kitchen',   'Kitchen'),
+    findDept('bbt',       'Study and Academics'),
+    findDept('birthday',  'Birthday'),
+    findDept(null,        'Accounts'),
+  ].filter(Boolean);
+
+  const colorMap = {
+    saffron: ['#EA580C','#C2410C'], indigo: ['#4F46E5','#3730A3'],
+    green:   ['#059669','#047857'], teal:   ['#0D9488','#0F766E'],
+    sky:     ['#0284C7','#0369A1'], mustard: ['#D97706','#B45309'],
+    amber:   ['#F59E0B','#D97706'], ink:    ['#374151','#1F2937'],
+    danger:  ['#DC2626','#B91C1C'], brown:  ['#92400E','#78350F'],
+  };
+
+  function deptTile(d) {
+    const m = deptMetrics(d.id);
+    const [gFrom, gTo] = (colorMap[d.color] || colorMap.saffron);
+    const isOk = m.completion >= 75;
+    const isWarn = m.completion >= 50 && m.completion < 75;
+    const dotColor = isOk ? 'var(--green)' : isWarn ? 'var(--amber)' : 'var(--danger)';
+    // For the 3 pillar departments, link to their dedicated routes
+    const pillarRoutes = { morning: '#/attendance', deity: '#/dept/'+d.id, cleaning: '#/dept/'+d.id };
+    const route = (d.module && pillarRoutes[d.module]) || '#/dept/' + d.id;
+    return `<a href="${route}" class="card pad dept-tile-card" style="text-decoration:none;color:inherit;display:block;transition:box-shadow .18s ease,transform .18s ease;position:relative;overflow:hidden;border-left:3px solid ${gFrom}"
+      onmouseenter="this.style.boxShadow='0 8px 28px -6px ${gFrom}33';this.style.transform='translateY(-2px)'"
       onmouseleave="this.style.boxShadow='';this.style.transform=''">
-      <div style="position:absolute;right:-12px;top:-12px;font-size:54px;opacity:0.06;pointer-events:none;line-height:1">${icon}</div>
+      <div style="position:absolute;right:-10px;top:-10px;font-size:50px;opacity:0.07;pointer-events:none;line-height:1">${d.icon}</div>
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-        <div style="width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,${gradFrom},${gradTo});display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;box-shadow:0 3px 10px ${gradFrom}44">${icon}</div>
+        <div style="width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,${gFrom},${gTo});display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;box-shadow:0 3px 10px ${gFrom}44">${d.icon}</div>
         <div style="min-width:0;flex:1">
-          <div style="font-weight:800;font-size:14px;font-family:var(--f-head);color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${label}</div>
-          <div style="font-size:11.5px;color:var(--ink-3);margin-top:1px">${statLine}</div>
+          <div style="font-weight:800;font-size:14px;font-family:var(--f-head);color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(d.name)}</div>
+          <div style="font-size:11.5px;color:var(--ink-3);margin-top:1px">${esc(d.desc.slice(0,52))}${d.desc.length>52?'…':''}</div>
         </div>
-        <span style="width:9px;height:9px;border-radius:50%;background:${dotColor};flex-shrink:0" title="${statusPct===null?'No data':statusPct+'% completion'}"></span>
+        <span style="width:9px;height:9px;border-radius:50%;background:${dotColor};flex-shrink:0;margin-top:2px" title="${m.completion}% completion"></span>
       </div>
-      ${statusPct!==null?prog(statusPct,isOk?'var(--green)':isWarn?'var(--amber)':'var(--danger)'):''}
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <div style="flex:1;background:var(--paper-2);border-radius:8px;padding:6px 8px;border:1px solid var(--line-2);text-align:center">
+          <div style="font-size:16px;font-weight:800;font-family:var(--f-head);color:${isOk?'var(--ink)':isWarn?'var(--amber)':'var(--danger)'}">${m.completion}%</div>
+          <div style="font-size:10px;color:var(--ink-3)">Done</div>
+        </div>
+        <div style="flex:1;background:var(--paper-2);border-radius:8px;padding:6px 8px;border:1px solid var(--line-2);text-align:center">
+          <div style="font-size:16px;font-weight:800;font-family:var(--f-head);color:var(--ink)">${m.volunteers}</div>
+          <div style="font-size:10px;color:var(--ink-3)">Sevaites</div>
+        </div>
+        <div style="flex:1;background:var(--paper-2);border-radius:8px;padding:6px 8px;border:1px solid var(--line-2);text-align:center">
+          <div style="font-size:16px;font-weight:800;font-family:var(--f-head);color:var(--ink)">${m.pending}</div>
+          <div style="font-size:10px;color:var(--ink-3)">Upcoming</div>
+        </div>
+      </div>
+      ${prog(m.completion, isOk ? 'var(--green)' : isWarn ? 'var(--amber)' : 'var(--danger)')}
     </a>`;
   }
-  // Build tiles for all active depts
-  const colorMap={saffron:['#EA580C','#C2410C'],indigo:['#4F46E5','#3730A3'],green:['#059669','#047857'],
-    teal:['#0D9488','#0F766E'],sky:['#0284C7','#0369A1'],mustard:['#D97706','#B45309'],
-    ink:['#374151','#1F2937'],danger:['#DC2626','#B91C1C'],amber:['#F59E0B','#D97706']};
-  const deptTiles=activeDepts().map(d=>{
-    const m=deptMetrics(d.id);
-    const [gFrom,gTo]=(colorMap[d.color]||colorMap.saffron);
-    const statLine=`${m.volunteers} volunteers · ${m.completion}%`;
-    return deptTile(d.icon,d.name,d.color,gFrom,gTo,'#/dept/'+d.id,statLine,m.completion);
-  }).join('');
-  return head('🛕 BACE Management','Dept Hub','All active departments, seva rosters, and temple operations',
-    (can('assign')?`<button class="btn" data-act="open-assign" data-type="Seva">📋 Assign Seva</button>`:'')+
-    `<button class="btn" data-act="go" data-r="#/sops">📘 SOPs</button>`)+
+
+  const deptTiles = FEATURED_DEPTS.length
+    ? FEATURED_DEPTS.map(deptTile).join('')
+    : '<div style="padding:20px;color:var(--ink-3)">No departments found</div>';
+
+  return head('🛕 BACE Management','Dept Hub','Your 7 key departments — tap any to open its full dashboard',
+    (can('assign') ? `<button class="btn" data-act="open-assign" data-type="Seva">📋 Assign Seva</button>` : '') +
+    `<button class="btn" data-act="go" data-r="#/sops">📘 SOPs</button>`) +
   `<div class="grid g6" style="margin-bottom:18px">
-    ${stat('Departments',s.depts,'active',{em:'🏛️'})}
-    ${stat('Volunteers',tot.vol,'in seva',{em:'🛠',act:'go',r:'#/assign'})}
+    ${stat('Departments',FEATURED_DEPTS.length,'active',{em:'🏛️'})}
+    ${stat('Sevaites',tot.vol,'in seva',{em:'🛠',act:'go',r:'#/assign'})}
     ${stat('Completion',completionPct+'%','this period',{em:'📈'})}
     ${stat('Missed',tot.missed,'activities',{em:'⚠️',tint:tot.missed>0})}
     ${stat('Reports',pendReports,'outstanding',{em:'📋',tint:pendReports>0,act:'go',r:'#/dept-reports'})}
     ${stat('Unfilled',s.unfilled,'slots open',{em:'🎯',tint:s.unfilled>0,act:'go',r:'#/assign'})}
   </div>
-  <div class="grid g4 g-dept-hub-tiles" style="margin-bottom:20px">
+  <div class="grid g3 g-dept-hub-tiles" style="margin-bottom:20px">
     ${deptTiles}
   </div>
-  ${pendReports>0?section('📋 Reporting Status',`<div class="list">
+  ${pendReports>0 ? section('📋 Reporting Status',`<div class="list">
     ${attnRow('var(--danger)',pendReports,'weekly reports outstanding','#/dept-reports')}
     ${attnRow('var(--amber)',DB.reports.filter(r=>r.status==='Submitted').length,'submitted, awaiting approval','#/dept-reports')}
-    ${attnRow('var(--green)',DB.reports.filter(r=>r.status==='Approved').length,'approved this cycle','#/dept-reports')}</div>`,'','mgmt_rpt',true):''}
+    ${attnRow('var(--green)',DB.reports.filter(r=>r.status==='Approved').length,'approved this cycle','#/dept-reports')}</div>`,'','mgmt_rpt',true) : ''}
   ${section('📅 Next Seven Days',`<div class="tbl-wrap">${actTable(DB.activities.filter(x=>x.date>=iso(TODAY)&&x.date<=iso(dayOff(7))&&x.type!=='Task'))}</div>`,`<a class="btn sm" href="#/assign">Assign / schedule</a>`,'mgmt_next7',true)}`;
 }
 
@@ -15399,7 +15442,7 @@ function prasadamBlock(a){
   </div>`;
 }
 function viewDept(id){
-  const dp=dept(id);if(!dp)return emptyState('Department not found','','<a class="btn" href="#/depts">Back to other departments</a>');
+  const dp=dept(id);if(!dp)return emptyState('Department not found','','<a class="btn" href="#/mgmt">Back to departments</a>');
   APP.crumbLeaf=dp.name;
   return head(dp.icon+' Department',dp.name,`${dp.desc} · head ${nameOf(dp.head)} · ${dp.status}`,
     `${ownsDept(dp.id)?`<button class="btn" data-act="edit-dept" data-id="${dp.id}">${ic('edit')}Edit</button>
@@ -29686,7 +29729,7 @@ function routeView(){
       case 'devotee':return viewDevotee(arg);
       case 'org':return viewOrg();
       case 'mgmt':return guard('management',viewMgmt);
-      case 'depts':return guard('management',viewDepts);
+      case 'depts':go('#/mgmt');return '';
       case 'dept':return guard('management',()=>viewDept(arg));
       case 'assign':return guard('assign',viewAssign);
       case 'attendance':
