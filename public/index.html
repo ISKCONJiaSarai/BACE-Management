@@ -24653,6 +24653,241 @@ function viewDeptReports(){
 /* =========================================================================
    📖 BACE PREACHING
    ========================================================================= */
+function communityBatchAttendanceSection() {
+  const batches = activeBatches();
+  if (!batches.length) {
+    return section('📊 Batch Attendance & Performance Benchmark', emptyState('No active batches', 'Create or activate batches to track attendance metrics.', ''));
+  }
+  const data = batches.map(b => {
+    const bm = batchMetrics(b.id);
+    const att = Math.round(bm.attendance || 0);
+    const memCount = bm.members ? bm.members.length : 0;
+    const classesCount = bm.classes ? bm.classes.length : 0;
+    let color = '#6366F1';
+    let statusLabel = 'Steady';
+    if (att >= 75) {
+      color = '#10B981';
+      statusLabel = 'Strong';
+    } else if (att < 60) {
+      color = '#F59E0B';
+      statusLabel = 'Needs Attention';
+    }
+    return {
+      id: b.id,
+      name: b.name,
+      short: b.name.split(' ')[0],
+      level: b.level,
+      att,
+      memCount,
+      classesCount,
+      best: bm.best || 0,
+      color,
+      statusLabel
+    };
+  });
+
+  const avgAtt = Math.round(data.reduce((s, d) => s + d.att, 0) / (data.length || 1));
+  const topBatch = data.slice().sort((a, b) => b.att - a.att)[0] || { short: '-', att: 0 };
+  const target = 70;
+  const onTargetCount = data.filter(d => d.att >= target).length;
+
+  const w = 540, h = 210, pad = 34, bBottom = h - 34;
+  const plotH = bBottom - 26;
+  const bw = (w - pad * 2) / data.length;
+  const targetY = bBottom - (target / 100) * plotH;
+
+  const svgBars = data.map((d, i) => {
+    const bh = Math.max(4, (d.att / 100) * plotH);
+    const bx = pad + i * bw + bw * 0.16;
+    const barWidth = bw * 0.68;
+    const by = bBottom - bh;
+    const tipText = `${d.name} (Level ${d.level})\nAttendance: ${d.att}%\nStatus: ${d.statusLabel}\nMembers: ${d.memCount} · Classes: ${d.classesCount}\nBest Class: ${d.best}%\nClick to open batch details`;
+
+    return `<g ${tipAttr(tipText)} data-act="drill" data-r="#/batch/${d.id}" style="cursor:pointer">
+      <rect class="hit" x="${pad + i * bw}" y="0" width="${bw}" height="${bBottom}" fill="transparent"></rect>
+      <rect x="${bx}" y="${by}" width="${barWidth}" height="${bh}" rx="4" fill="${d.color}" opacity="0.92"></rect>
+      <text x="${pad + i * bw + bw * 0.5}" y="${by - 5}" font-size="10" font-weight="700" fill="var(--ink)" text-anchor="middle" font-family="Inter">${d.att}%</text>
+      <text x="${pad + i * bw + bw * 0.5}" y="${h - 18}" font-size="9.5" font-weight="600" fill="var(--ink-2)" text-anchor="middle" font-family="Inter">${esc(d.short.slice(0, 9))}</text>
+      <text x="${pad + i * bw + bw * 0.5}" y="${h - 6}" font-size="8.5" fill="var(--ink-3)" text-anchor="middle" font-family="Inter">L${d.level}</text>
+    </g>`;
+  }).join('');
+
+  const bodyHtml = `<div class="card-b" style="display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;padding-bottom:10px;border-bottom:1px solid var(--line-2)">
+      <div style="display:flex;gap:14px;flex-wrap:wrap">
+        <div><span class="tiny muted">Community Avg</span><div style="font-weight:700;font-size:15px;color:var(--ink)">${avgAtt}%</div></div>
+        <div><span class="tiny muted">Top Batch</span><div style="font-weight:700;font-size:15px;color:var(--green)">${esc(topBatch.short)} (${topBatch.att}%)</div></div>
+        <div><span class="tiny muted">Meeting Target</span><div style="font-weight:700;font-size:15px;color:var(--indigo)">${onTargetCount} of ${data.length}</div></div>
+      </div>
+      <span class="badge b-blue" style="font-size:11px">Target: ${target}%</span>
+    </div>
+
+    <div class="chart chart-bar-wrap" style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+      <svg viewBox="0 0 ${w} ${h}" style="width:100%;min-width:${Math.max(340, data.length * 48)}px;height:auto;display:block">
+        <!-- Gridlines -->
+        ${[0, 25, 50, 75, 100].map(pctVal => {
+          const gy = bBottom - (pctVal / 100) * plotH;
+          return `<line x1="${pad}" x2="${w - pad}" y1="${gy}" y2="${gy}" stroke="var(--line-2)" stroke-dasharray="2 3" opacity="0.6"/>
+          <text x="${pad - 4}" y="${gy + 3}" font-size="8" fill="var(--ink-3)" text-anchor="end" font-family="Inter">${pctVal}%</text>`;
+        }).join('')}
+        
+        <!-- Target benchmark line -->
+        <line x1="${pad}" x2="${w - pad}" y1="${targetY}" y2="${targetY}" stroke="#3B82F6" stroke-dasharray="4 3" stroke-width="1.4" opacity="0.85"/>
+        <text x="${w - pad}" y="${targetY - 4}" font-size="8.5" font-weight="600" fill="#3B82F6" text-anchor="end" font-family="Inter">Target 70%</text>
+
+        <!-- Base axis -->
+        <line x1="${pad}" x2="${w - pad}" y1="${bBottom}" y2="${bBottom}" stroke="var(--line-2)" stroke-width="1.2"/>
+
+        ${svgBars}
+      </svg>
+    </div>
+
+    <div style="display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;padding-top:4px;font-size:11px;color:var(--ink-2)">
+      <span style="display:flex;align-items:center;gap:4px"><span style="width:9px;height:9px;border-radius:2px;background:#10B981"></span> ≥75% Strong</span>
+      <span style="display:flex;align-items:center;gap:4px"><span style="width:9px;height:9px;border-radius:2px;background:#6366F1"></span> 60–74% Steady</span>
+      <span style="display:flex;align-items:center;gap:4px"><span style="width:9px;height:9px;border-radius:2px;background:#F59E0B"></span> &lt;60% Follow-up</span>
+      <span style="display:flex;align-items:center;gap:4px"><span style="width:14px;height:2px;background:#3B82F6"></span> 70% Target</span>
+    </div>
+  </div>`;
+
+  return section('📊 Batch Attendance & Performance Benchmark', bodyHtml, `<a class="btn sm" href="#/batches">All batches</a>`);
+}
+
+function communityBatchDistributionSection() {
+  const batches = activeBatches();
+  const palette = ['#6366F1', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#06B6D4', '#F97316', '#3B82F6'];
+
+  let totalMembers = 0;
+  const levelCounts = { 1: 0, 2: 0, 3: 0 };
+
+  const batchList = batches.map((b, idx) => {
+    const mems = batchMembers(b.id);
+    const count = mems.length;
+    totalMembers += count;
+    levelCounts[b.level] = (levelCounts[b.level] || 0) + count;
+    return {
+      id: b.id,
+      name: b.name,
+      short: b.name.split(' ')[0],
+      level: b.level,
+      count,
+      color: palette[idx % palette.length],
+      coord: nameOf(b.coordinator || b.facilitators?.[0] || 'd1')
+    };
+  });
+
+  if (!batches.length) {
+    return section('👥 Member Distribution & Preaching Levels', emptyState('No active batches', '', ''));
+  }
+
+  batchList.forEach(item => {
+    item.pct = totalMembers > 0 ? Math.round((item.count / totalMembers) * 100) : 0;
+  });
+
+  const size = 180, cx = 90, cy = 90, r = 78, innerRadius = 50;
+  let paths = '';
+
+  if (totalMembers === 0) {
+    paths = `<circle cx="${cx}" cy="${cy}" r="${(r + innerRadius) / 2}" fill="none" stroke="var(--line-2)" stroke-width="${r - innerRadius}"/>`;
+  } else {
+    const nonZero = batchList.filter(s => s.count > 0);
+    if (nonZero.length === 1) {
+      const sole = nonZero[0];
+      const strokeW = r - innerRadius;
+      const midR = innerRadius + strokeW / 2;
+      const tipText = `${sole.name} (Level ${sole.level}): ${sole.count} devotees (100%)\nClick to open batch`;
+      paths = `<circle cx="${cx}" cy="${cy}" r="${midR}" fill="none" stroke="${sole.color}" stroke-width="${strokeW}"
+        ${tipAttr(tipText)} data-act="drill" data-r="#/batch/${sole.id}" style="cursor:pointer"/>`;
+    } else {
+      let currentAngle = -Math.PI / 2;
+      paths = batchList.map(s => {
+        if (s.count === 0) return '';
+        const sliceAngle = (s.count / totalMembers) * 2 * Math.PI;
+        const endAngle = currentAngle + sliceAngle;
+
+        const x1 = cx + r * Math.cos(currentAngle);
+        const y1 = cy + r * Math.sin(currentAngle);
+        const x2 = cx + r * Math.cos(endAngle);
+        const y2 = cy + r * Math.sin(endAngle);
+
+        const ix1 = cx + innerRadius * Math.cos(endAngle);
+        const iy1 = cy + innerRadius * Math.sin(endAngle);
+        const ix2 = cx + innerRadius * Math.cos(currentAngle);
+        const iy2 = cy + innerRadius * Math.sin(currentAngle);
+
+        const largeArc = sliceAngle > Math.PI ? 1 : 0;
+        const d = [
+          `M ${x1.toFixed(2)} ${y1.toFixed(2)}`,
+          `A ${r.toFixed(2)} ${r.toFixed(2)} 0 ${largeArc} 1 ${x2.toFixed(2)} ${y2.toFixed(2)}`,
+          `L ${ix1.toFixed(2)} ${iy1.toFixed(2)}`,
+          `A ${innerRadius.toFixed(2)} ${innerRadius.toFixed(2)} 0 ${largeArc} 0 ${ix2.toFixed(2)} ${iy2.toFixed(2)}`,
+          'Z'
+        ].join(' ');
+
+        currentAngle = endAngle;
+        const tipText = `${s.name} (Level ${s.level}): ${s.count} devotees (${s.pct}%)\nCoordinator: ${s.coord}\nClick to open batch`;
+
+        return `<path d="${d}" fill="${s.color}" opacity="0.92"
+          ${tipAttr(tipText)} data-act="drill" data-r="#/batch/${s.id}"
+          style="transition:opacity .15s ease;cursor:pointer"/>`;
+      }).join('');
+    }
+  }
+
+  const l1Pct = totalMembers > 0 ? Math.round((levelCounts[1] / totalMembers) * 100) : 0;
+  const l2Pct = totalMembers > 0 ? Math.round((levelCounts[2] / totalMembers) * 100) : 0;
+  const l3Pct = totalMembers > 0 ? Math.round((levelCounts[3] / totalMembers) * 100) : 0;
+
+  const bodyHtml = `<div class="card-b" style="display:flex;flex-direction:column;gap:12px">
+    <!-- Level progress pills -->
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;padding-bottom:10px;border-bottom:1px solid var(--line-2)">
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <span class="badge" style="background:rgba(99,102,241,0.12);color:#6366F1;font-size:11px;font-weight:600">
+          L1 Foundation: ${levelCounts[1]} (${l1Pct}%)
+        </span>
+        <span class="badge" style="background:rgba(16,185,129,0.12);color:#10B981;font-size:11px;font-weight:600">
+          L2 Sadhana: ${levelCounts[2]} (${l2Pct}%)
+        </span>
+        <span class="badge" style="background:rgba(245,158,11,0.12);color:#F59E0B;font-size:11px;font-weight:600">
+          L3 Discipleship: ${levelCounts[3]} (${l3Pct}%)
+        </span>
+      </div>
+      <span class="badge b-purple" style="font-size:11px">${totalMembers} Total Devotees</span>
+    </div>
+
+    <!-- Donut chart + Legend container -->
+    <div style="display:flex;align-items:center;justify-content:center;gap:20px;flex-wrap:wrap;min-height:190px">
+      <!-- Donut Circle -->
+      <div style="position:relative;width:${size}px;height:${size}px;flex:none;display:flex;align-items:center;justify-content:center">
+        <svg viewBox="0 0 ${size} ${size}" style="width:${size}px;height:${size}px;overflow:visible;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.06))">
+          ${paths}
+        </svg>
+        <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;text-align:center">
+          <div style="font-family:var(--f-head);font-size:22px;font-weight:700;line-height:1;color:var(--ink)">${totalMembers}</div>
+          <div style="font-size:10px;font-weight:600;color:var(--ink-3);margin-top:2px">Devotees</div>
+        </div>
+      </div>
+
+      <!-- Scrollable Batches Breakdown -->
+      <div style="flex:1;min-width:200px;max-height:185px;overflow-y:auto;display:flex;flex-direction:column;gap:5px;padding-right:4px">
+        ${batchList.map(b => `<div class="click" data-act="drill" data-r="#/batch/${b.id}" style="display:flex;align-items:center;justify-content:space-between;padding:5px 8px;border-radius:6px;background:var(--paper-2);font-size:12px;cursor:pointer;transition:background .15s" title="Click to view ${esc(b.name)}">
+          <div style="display:flex;align-items:center;gap:7px;min-width:0">
+            <span style="width:9px;height:9px;border-radius:50%;background:${b.color};flex:none"></span>
+            <span style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(b.name)}</span>
+            <span class="tiny" style="color:var(--ink-3);flex:none">L${b.level}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;flex:none;margin-left:8px">
+            <b style="font-family:var(--f-head);font-size:12.5px">${b.count}</b>
+            <span class="tiny muted" style="min-width:26px;text-align:right">${b.pct}%</span>
+          </div>
+        </div>`).join('')}
+      </div>
+    </div>
+  </div>`;
+
+  return section('👥 Member Distribution & Preaching Levels', bodyHtml, `<a class="btn sm" href="#/contacts">Contacts & Funnel</a>`);
+}
+
 function batchTable(){
   return `<table class="tbl"><thead><tr><th>Batch</th><th>Level</th><th>Coordinator</th><th>Members</th><th>Attendance</th><th>Budget</th><th>Status</th><th></th></tr></thead><tbody>
    ${DB.batches.map(b=>{const m=batchMetrics(b.id);return `<tr class="click" data-act="open-batch" data-id="${b.id}">
@@ -24760,11 +24995,9 @@ function viewPreaching(){
     </div></div>`;
   } else {
     body = `${section('All community batches',`<div class="tbl-wrap">${batchTable()}</div>`,`<a class="btn sm" href="#/batches">Manage batches</a>`)}
-   <div style="margin-top:20px">
-     ${section('Batch attendance comparison',`<div class="card-b">${barChart(activeBatches().map(item=>{const bm=batchMetrics(item.id);
-       return {l:item.name.split(' ')[0],v:bm.attendance,color:bm.attendance<65?'var(--danger)':'var(--indigo)',
-         tip:`${item.name} (Level ${item.level})\nMembers: ${bm.members.length}\nClasses: ${bm.classes.length}\nAttendance: ${bm.attendance}%\nBest class: ${bm.best}%`,r:'#/batch/'+item.id}}),{unit:'%',color:'var(--indigo)'})}</div>`,
-        `<a class="btn sm" href="#/batches">All batches</a>`)}
+   <div class="community-batch-graphs" style="margin-top:20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,440px),1fr));gap:18px">
+     ${communityBatchAttendanceSection()}
+     ${communityBatchDistributionSection()}
    </div>`;
   }
 
