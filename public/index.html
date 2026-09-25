@@ -2588,7 +2588,12 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
 .bub.pin{border-left:3px solid var(--mustard)}
 .chat-in{display:flex;gap:8px;padding:11px;border-top:1px solid var(--line-2);background:var(--surface)}
 .chat-in input{flex:1;padding:10px 13px;border:1px solid var(--line);border-radius:22px;background:var(--surface-2)}
-@media(max-width:820px){.chat{grid-template-columns:1fr;height:auto}.chat-list{max-height:200px;border-right:0;border-bottom:1px solid var(--line-2)}.chat-body{min-height:300px}}
+@media(max-width:820px){
+.g-dept-hub-tiles{grid-template-columns:repeat(2,1fr)!important}
+.g-batch-hub-tiles{grid-template-columns:repeat(2,1fr)!important}
+.grid.g4{grid-template-columns:repeat(2,1fr)}
+.grid.g3.g-batch-hub-tiles{grid-template-columns:repeat(2,1fr)}
+.chat{grid-template-columns:1fr;height:auto}.chat-list{max-height:200px;border-right:0;border-bottom:1px solid var(--line-2)}.chat-body{min-height:300px}}
 
 /* qr */
 .qr-box{display:grid;place-items:center;padding:18px}
@@ -8456,7 +8461,7 @@ const nowTime=()=>{const d=new Date();return `${String(d.getHours()).padStart(2,
    - care_notes : confidential care information (deliberately narrow)
 ------------------------------------------------------- */
 const ROLES={
-  counsellor:{name:'Counsellor',emoji:'🙏',scope:'Spiritual guidance and highest senior counsel over the community'},
+  counsellor:{name:'Senior Facilitator',emoji:'🙏',scope:'Senior spiritual guidance and highest oversight over the BACE community'},
   area_leader:{name:'Area Leader',emoji:'🪷',scope:'Strategic oversight of the whole community'},
   coordinator:{name:'Overall Coordinator',emoji:'🧭',scope:'Full operational view of all three pillars'},
   internal_manager:{name:'Internal Manager',emoji:'🛕',scope:'BACE Management — departments and seva'},
@@ -8502,10 +8507,10 @@ const getCounsellorInfo = (email) => {
   const [local] = clean.split('@');
   const loc = (local || '').replace(/\./g, '');
   if(loc === 'anurag0krishna' || clean.startsWith('anurag0krishna@gmail')) {
-    return { name: 'HG Ashray Krishna Pr', email: 'anurag0krishna@gmail.com', appointment: 'Counsellor', role: 'counsellor' };
+    return { name: 'HG Ashray Krishna Pr', email: 'anurag0krishna@gmail.com', appointment: 'Senior Facilitator', role: 'counsellor' };
   }
   if(loc === 'shubhamshukla6606' || clean.startsWith('shubham.shukla6606@gmail')) {
-    return { name: 'HG Sarojmukha Madhav Pr', email: 'shubham.shukla6606@gmail.com', appointment: 'Counsellor', role: 'counsellor' };
+    return { name: 'HG Sarojmukha Madhav Pr', email: 'shubham.shukla6606@gmail.com', appointment: 'Senior Facilitator', role: 'counsellor' };
   }
   return null;
 };
@@ -8514,16 +8519,18 @@ const ACCESS={
   dashboard:'*', calendar:'*', sops:'*', messages:'*', actions:'*', today:'*',
   directory:'*',
   management:'*',
-  manage_departments:['counsellor','coordinator','internal_manager','admin','area_leader'],
+  manage_departments:['counsellor','area_leader','admin'],
   assign:'*',
   preaching:'*',
   'batch-attendance':'*',
-  manage_batches:['counsellor','coordinator','preaching_manager','admin','area_leader'],
+  manage_batches:['counsellor','area_leader','admin'],
   care:'*',
   care_notes:['counsellor','coordinator','care_manager','facilitator','area_leader','admin'],
   inventory:'*',
   reports:'*',
-  admin:['admin','counsellor','area_leader']
+  admin:['admin','counsellor','area_leader'],
+  edit_standards:['admin','counsellor','area_leader'],
+  edit_batch_roles:['admin','counsellor','area_leader']
 };
 const can=(m,role)=>{
   const curUser = (APP && APP.user) || {};
@@ -8758,19 +8765,19 @@ const logAudit=(action,record)=>DB.audit.unshift({id:uid('au'),user:(APP.user?na
     name: 'HG Ashray Krishna Pr',
     gender: 'M',
     email: 'anurag0krishna@gmail.com',
-    appointment: 'Counsellor',
+    appointment: 'Senior Facilitator',
     role: 'counsellor',
     status: 'Active',
     joined: iso(dayOff(-1800)),
     rounds: 16,
     morning: 99,
     service: 'Senior Guidance',
-    serviceRole: 'Counsellor',
+    serviceRole: 'Senior Facilitator',
     skills: ['Spiritual Guidance', 'Counseling', 'Philosophy'],
     sadhana: { rounds: 16, morningProgram: 99, lastReported: iso(TODAY) },
     careStatus: { emotional: 'Flourishing', spiritual: 'Exemplary' },
     timeline: [
-      { date: iso(dayOff(-1800)), title: 'Senior Counsellor', desc: 'Spiritual guidance and community counsel.', tone: 'saffron' }
+      { date: iso(dayOff(-1800)), title: 'Senior Facilitator', desc: 'Spiritual guidance and community counsel.', tone: 'saffron' }
     ],
     history: []
   };
@@ -8779,19 +8786,19 @@ const logAudit=(action,record)=>DB.audit.unshift({id:uid('au'),user:(APP.user?na
     name: 'HG Sarojmukha Madhav Pr',
     gender: 'M',
     email: 'shubham.shukla6606@gmail.com',
-    appointment: 'Counsellor',
+    appointment: 'Senior Facilitator',
     role: 'counsellor',
     status: 'Active',
     joined: iso(dayOff(-1800)),
     rounds: 16,
     morning: 99,
     service: 'Senior Guidance',
-    serviceRole: 'Counsellor',
+    serviceRole: 'Senior Facilitator',
     skills: ['Spiritual Guidance', 'Counseling', 'Philosophy'],
     sadhana: { rounds: 16, morningProgram: 99, lastReported: iso(TODAY) },
     careStatus: { emotional: 'Flourishing', spiritual: 'Exemplary' },
     timeline: [
-      { date: iso(dayOff(-1800)), title: 'Senior Counsellor', desc: 'Spiritual guidance and community counsel.', tone: 'saffron' }
+      { date: iso(dayOff(-1800)), title: 'Senior Facilitator', desc: 'Spiritual guidance and community counsel.', tone: 'saffron' }
     ],
     history: []
   };
@@ -9596,7 +9603,7 @@ function devoteePositionTitle(id, role){
   const curEmail = ((d&&d.email) || (APP.user&&APP.user.email) || '').toLowerCase().trim();
   if(isBaceAdminEmail(curEmail)) return '⚙️ BACE Administrator';
   if(isSuryaEmail(curEmail)) return '🪷 Area Leader';
-  if(isCounsellorEmail(curEmail)) return '🙏 Counsellor';
+  if(isCounsellorEmail(curEmail)) return '🙏 Senior Facilitator';
   if(d){
     const rKeys = devoteeRoles(d).filter(k => k !== 'devotee');
     if(rKeys.length > 0){
@@ -9607,7 +9614,7 @@ function devoteePositionTitle(id, role){
     }
     if(d.appointment){
       const emojiMap={
-        'Counsellor':'🙏','Area Leader':'🪷','Overall Coordinator':'🧭','Internal Manager':'🛕','Preaching Manager':'📖',
+        'Counsellor':'🙏','Senior Facilitator':'🙏','Area Leader':'🪷','Overall Coordinator':'🧭','Internal Manager':'🛕','Preaching Manager':'📖',
         'Devotee Care Manager':'❤️','Department Head':'🛠','Preaching Coordinator':'🎓','Facilitator':'🤝',
         'Senior Devotee':'🪷','Devotee':'🙏','System Administrator':'⚙️','BACE Administrator':'⚙️'
       };
@@ -10892,49 +10899,22 @@ function exportReport(title,headerRows,rows){
    ========================================================================= */
 const NAV_TOP=[
   {t:'Dashboard',em:'🏠',r:'#/',m:'dashboard'},
-  {t:'Today',em:'⚡',r:'#/today',m:'today'},
   {t:'Devotees',em:'👥',r:'#/devotees',m:'directory'}
 ];
 const PILLARS=[
  {key:'mgmt',t:'BACE Management',em:'🛕',pill:'var(--saffron)',m:'management',items:[
-   {t:'Management dashboard',em:'📊',r:'#/mgmt',m:'management'},
-   {t:'BACE Pillars',em:'🏛️',r:'#/attendance',m:'management'},
-   {t:'Other Departments',em:'🏢',r:'#/depts',m:'management'},
+   {t:'Dept Hub',em:'🏛️',r:'#/mgmt',m:'management'},
    {t:'Assign Seva',em:'📋',r:'#/assign',m:'assign'},
-   {t:'SOPs & standards',em:'📘',r:'#/sops',m:'sops'}]},
+   {t:'SOPs & Standards',em:'📘',r:'#/sops',m:'sops'}]},
  {key:'preach',t:'BACE Preaching',em:'📖',pill:'var(--indigo)',m:'preaching',items:[
-   {t:'Preaching dashboard',em:'📊',r:'#/preaching',m:'preaching'},
-   {sub:'Level 1 (Foundation)'},
-   {t:'Taksharya',em:'•',r:'#/batch/b1',m:'preaching',indent:1},
-   {t:'Sreshtha',em:'•',r:'#/batch/b2',m:'preaching',indent:1},
-   {t:'IITD Faculty & Staff',em:'•',r:'#/batch/b3',m:'preaching',indent:1},
-   {t:'Siksharthakam',em:'•',r:'#/batch/b4',m:'preaching',indent:1},
-   {sub:'Level 2 (Development)'},
-   {t:'Arjun Sabha',em:'•',r:'#/batch/b5',m:'preaching',indent:1},
-   {t:'Alumni Preaching',em:'•',r:'#/batch/b6',m:'preaching',indent:1},
-   {sub:'Level 3 (Advanced)'},
-   {t:'Narad Sabha',em:'•',r:'#/batch/b7',m:'preaching',indent:1},
-   {t:'Gaurvani Sabha',em:'•',r:'#/batch/b8',m:'preaching',indent:1},
-   {sub:'All batches'},
-   {t:'Batch management',em:'🗂',r:'#/batches',m:'preaching'},
-   {t:'Contacts & pipeline',em:'🌱',r:'#/contacts',m:'preaching'},
+   {t:'Batch Hub',em:'🏫',r:'#/preaching',m:'preaching'},
+   {sub:''},
+   {t:'Contacts & Pipeline',em:'🌱',r:'#/contacts',m:'preaching'},
    {t:'Follow-ups',em:'⏰',r:'#/followups',m:'preaching',badge:'fuOverdue'},
-   {t:'Classes & events',em:'✨',r:'#/classes',m:'preaching'},
-   {t:'Attendance',em:'✅',r:'#/batch-attendance',m:'preaching'}]},
- {key:'care',t:'Devotee Care',em:'❤️',pill:'var(--green)',m:'care',items:[
-   {t:'Care dashboard',em:'📊',r:'#/care',m:'care'},
-   {sub:'Emotional care'},
-   {t:'Friends & Groups',em:'👥',r:'#/groups',m:'care',indent:1},
-   {sub:'Spiritual care'},
-   {t:'Sadhana & Swabhav',em:'📿',r:'#/sadhana',m:'care',indent:1},
-   {t:'Facilitators',em:'🤝',r:'#/facilitators',m:'care',indent:1},
-   {t:'Camps & Outings',em:'⛺',r:'#/camps',m:'care',indent:1},
-   {t:'Meetings & Follow-ups',em:'🔒',r:'#/meetings',m:'care',indent:1}]}
+   {t:'Classes & Events',em:'✨',r:'#/classes',m:'preaching'},
+   {t:'Attendance',em:'✅',r:'#/batch-attendance',m:'preaching'}]}
 ];
 const NAV_BOTTOM=[
-  {t:'Reports & analytics',em:'📊',r:'#/reports',m:'reports'},
-  {t:'Community calendar',em:'📅',r:'#/calendar',m:'calendar'},
-  {t:'Messages',em:'💬',r:'#/messages',m:'messages',badge:'unreadMsgs'},
   {t:'Notifications',em:'🔔',r:'#/notifications',m:'dashboard'},
   {t:'Administration',em:'⚙️',r:'#/admin',m:'admin',badge:'pendingApprovals'}
 ];
@@ -10993,31 +10973,17 @@ function appHeader(){
     {t:'Dashboard',r:'#/',m:'dashboard'},
     {t:'Devotees',r:'#/devotees',m:'directory'},
     {t:'Management',r:'#/mgmt',m:'management',children:[
-      {t:'Management Dashboard',em:'📊',r:'#/mgmt',m:'management'},
-      {t:'BACE Pillars',em:'🏛️',r:'#/attendance',m:'management'},
-      {t:'Other Departments',em:'🏢',r:'#/depts',m:'management'},
-      {t:'Accounts',em:'💰',r:'#/accounts',m:'management'},
+      {t:'Dept Hub',em:'🏛️',r:'#/mgmt',m:'management'},
       {t:'Assign Seva',em:'📋',r:'#/assign',m:'assign'},
       {t:'SOPs & Standards',em:'📘',r:'#/sops',m:'sops'}
     ]},
     {t:'Preaching',r:'#/preaching',m:'preaching',children:[
-      {t:'Preaching Dashboard',em:'📊',r:'#/preaching',m:'preaching'},
-      {t:'Batch Management',em:'🗂',r:'#/batches',m:'preaching'},
+      {t:'Batch Hub',em:'🏫',r:'#/preaching',m:'preaching'},
       {t:'Contacts & Pipeline',em:'🌱',r:'#/contacts',m:'preaching'},
       {t:'Follow-ups',em:'⏰',r:'#/followups',m:'preaching'},
       {t:'Classes & Events',em:'✨',r:'#/classes',m:'preaching'},
       {t:'Batch Attendance',em:'✅',r:'#/batch-attendance',m:'preaching'}
     ]},
-    {t:'Devotee Care',r:'#/care',m:'care',children:[
-      {t:'Care Dashboard',em:'📊',r:'#/care',m:'care'},
-      {t:'Friends & Groups',em:'👥',r:'#/groups',m:'care'},
-      {t:'Sadhana & Swabhav',em:'📿',r:'#/sadhana',m:'care'},
-      {t:'Facilitators',em:'🤝',r:'#/facilitators',m:'care'},
-      {t:'Camps & Outings',em:'⛺',r:'#/camps',m:'care'},
-      {t:'Meetings & Follow-ups',em:'🔒',r:'#/meetings',m:'care'}
-    ]},
-    {t:'Calendar',r:'#/calendar',m:'calendar'},
-    {t:'Reports',r:'#/reports',m:'reports'},
   ];
   const currentPillar = typeof pillarOf === 'function' ? pillarOf(APP.route) : '';
   const cleanRoute=(APP.route||'').replace(/^#\/?/,'');
@@ -11085,7 +11051,7 @@ function appHeader(){
       <div class="searchbox" style="margin:0">${ic('search')}<input type="search" placeholder="Search…" value="${esc(APP.search)}" data-act="global-search" aria-label="Global search"></div>
       ${topNavMusicBtn(true)}
       <button class="theme-toggle" data-act="toggle-theme" title="Toggle theme">${APP.theme==='dark'?sunSvg:moonSvg}</button>
-      <button class="icon-btn" data-act="go" data-r="#/messages" title="Messages">${ic('chat')}${unreadMsgs()?`<i class="dot">${unreadMsgs()}</i>`:''}</button>
+      
       <button class="icon-btn" data-act="notifications" title="Notifications">${ic('bell')}${unread?`<i class="dot">${unread}</i>`:''}</button>
       <button class="icon-btn" data-act="account" title="Account" style="border:none;background:none">${av(nameOf(APP.user.devotee),'s')}</button>
     </div>
@@ -11292,39 +11258,24 @@ function mobileNavDropdown(){
   const careRoutes=['care','friends','groups','group','swabhav','sadhana','facilitators','camps','meetings','care-followups','care-reports'];
   const mainItems=[
     {t:'Dashboard',em:'🏠',r:'#/',on:route===''},
-    {t:'Today',em:'⚡',r:'#/today',on:route==='today'},
     {t:'Devotees',em:'👥',r:'#/devotees',on:route==='devotees'||route==='devotee',m:'directory'},
   ];
   const sections=[
-    {id:'mgmt', title:'Management', em:'🛕', hasActive:mgmtRoutes.includes(route), items:[
-      {t:'Management Dashboard',em:'📊',r:'#/mgmt',m:'management'},
-      {t:'BACE Pillars',em:'🏛️',r:'#/attendance',m:'management'},
-      {t:'Other Departments',em:'🏢',r:'#/depts',m:'management'},
-      {t:'Accounts',em:'💰',r:'#/accounts',m:'management'},
+    {id:'mgmt', title:'BACE Management', em:'🛕', hasActive:mgmtRoutes.includes(route), items:[
+      {t:'Dept Hub',em:'🏛️',r:'#/mgmt',m:'management'},
       {t:'Assign Seva',em:'📋',r:'#/assign',m:'assign'},
-      {t:'SOPs',em:'📘',r:'#/sops'},
+      {t:'SOPs & Standards',em:'📘',r:'#/sops'},
     ]},
-    {id:'preach', title:'Preaching', em:'📖', hasActive:preachRoutes.includes(route), items:[
-      {t:'Preaching Dashboard',em:'📊',r:'#/preaching',m:'preaching'},
-      {t:'Batch Management',em:'🗂',r:'#/batches',m:'preaching'},
+    {id:'preach', title:'BACE Preaching', em:'📖', hasActive:preachRoutes.includes(route), items:[
+      {t:'Batch Hub',em:'🏫',r:'#/preaching',m:'preaching'},
       {t:'Contacts & Pipeline',em:'🌱',r:'#/contacts',m:'preaching'},
       {t:'Follow-ups',em:'⏰',r:'#/followups',m:'preaching'},
       {t:'Classes & Events',em:'✨',r:'#/classes',m:'preaching'},
       {t:'Attendance',em:'✅',r:'#/batch-attendance',m:'preaching'},
     ]},
-    {id:'care', title:'Devotee Care', em:'❤️', hasActive:careRoutes.includes(route), items:[
-      {t:'Care Dashboard',em:'📊',r:'#/care',m:'care'},
-      {t:'Friends & Groups',em:'👥',r:'#/groups',m:'care'},
-      {t:'Sadhana & Swabhav',em:'📿',r:'#/sadhana',m:'care'},
-      {t:'Facilitators',em:'🤝',r:'#/facilitators',m:'care'},
-      {t:'Camps & Outings',em:'⛺',r:'#/camps',m:'care'},
-      {t:'Meetings & Follow-ups',em:'🔒',r:'#/meetings',m:'care'},
-    ]},
+
   ];
   const bottomItems=[
-    {t:'Calendar',em:'📅',r:'#/calendar',on:route==='calendar'},
-    {t:'Reports',em:'📊',r:'#/reports',on:route==='reports',m:'reports'},
-    {t:'Messages',em:'💬',r:'#/messages',on:route==='messages'},
     {t:'Notifications',em:'🔔',r:'#/notifications'},
     {t:'Administration',em:'⚙️',r:'#/admin',m:'admin'},
   ];
@@ -11633,22 +11584,31 @@ function topbar(){
   return '';
 }
 function botnav(){
-  const items=[
-    ['Home', '🏠', '#/'],
-    ['Devotees', '👥', can('directory') ? '#/devotees' : '#/devotee/'+APP.user.devotee],
-    ['Pillars', '🏛️', '#/attendance'],
-    ['Seva', '📋', '#/assign'],
-    ['Chat', '💬', '#/messages', unreadMsgs()]
-  ];
-  return `<nav class="botnav">${items.map(([t, em, target, badge])=>{
-    const on = APP.route===target || (target!=='#/' && APP.route.startsWith(target));
-    const attr = `data-act="go" data-r="${target}"`;
-    return `<button class="${on?'on':''}" ${attr} title="${t}" aria-label="${t}">
-      <span class="em">${em}</span>
-      <span>${t}</span>${badge ? `<i class="bdot">${badge > 9 ? '9+' : badge}</i>` : ''}
+  const route=(APP.route||'').replace(/^#\/?/,'').split('/')[0];
+  const mgmtRoutes=['mgmt','depts','dept','assign','attendance','dept-reports','inventory','sops','accounts'];
+  const preachRoutes=['preaching','batches','batch','contacts','followups','classes','batch-attendance','preaching-reports'];
+  const devRoutes=['devotees','devotee'];
+  const onMgmt=mgmtRoutes.includes(route);
+  const onPreach=preachRoutes.includes(route);
+  const onDev=devRoutes.includes(route);
+  const onHome=route==='';
+  const pendingCount=DB.devotees.filter(d=>d.status==='Pending Approval').length;
+  function btn(t,em,isOn,r,badge){
+    return `<button class="${isOn?'on':''}" data-act="go" data-r="${r}" title="${t}" aria-label="${t}">
+      <span class="em">${em}</span><span>${t}</span>${badge?`<i class="bdot">${badge>9?'9+':badge}</i>`:''}
     </button>`;
-  }).join('')}</nav>`;
+  }
+  return `<nav class="botnav">
+    ${btn('Home','🏠',onHome,'#/')}
+    ${can('management')?btn('Mgmt','🛕',onMgmt,'#/mgmt'):''}
+    ${can('preaching')?btn('Preaching','📖',onPreach,'#/preaching'):''}
+    ${can('directory')?btn('Devotees','👥',onDev,'#/devotees'):btn('My Profile','👤',onDev,'#/devotee/'+(APP.user.devotee||''))}
+    <button class="${APP.mobileNavOpen?'on':''}" data-act="toggle-mobile-nav" title="More" aria-label="More menu">
+      <span class="em">☰</span><span>More</span>${pendingCount&&can('admin')?`<i class="bdot">${pendingCount>9?'9+':pendingCount}</i>`:''}
+    </button>
+  </nav>`;
 }
+
 function fab(){
   const acts=[['Assign seva','📋','open-assign','assign'],['Schedule class','🗓️','open-schedule','preaching'],['Create event / camp','✨','open-schedule-event','preaching'],['Add to calendar','📅','open-calendar-program','preaching'],['Add devotee','👥','add-devotee','directory'],
    ['Add contact','🌱','add-contact','preaching'],['Mark attendance','✅','go-attendance','batch-attendance'],
@@ -11802,13 +11762,13 @@ async function handleGoogleAuthResponse(response){
           joined:iso(TODAY),
           rounds:16,
           morning:95,
-          appointment:isCounsellor ? 'Counsellor' : (isSurya ? 'Area Leader' : 'Devotee'),
+          appointment:isCounsellor ? 'Senior Facilitator' : (isSurya ? 'Area Leader' : 'Devotee'),
           swabhav:'Organising'
         });
         DB.devotees.push(d);
       } else {
         if(data.user.devoteeDetails) Object.assign(d, data.user.devoteeDetails);
-        if(isCounsellor) { d.name = counsellorInfo.name; d.appointment = 'Counsellor'; d.status = 'Active'; }
+        if(isCounsellor) { d.name = counsellorInfo.name; d.appointment = 'Senior Facilitator'; d.status = 'Active'; }
         else if(isSurya) { d.name = 'Surya Narayana Das'; d.appointment = 'Area Leader'; d.status = 'Active'; }
         else if(finalApproval === 'approved') d.status='Active';
         else if(finalApproval === 'pending_approval' || finalApproval === 'pending_profile') d.status='Pending Approval';
@@ -12400,8 +12360,7 @@ function needsAttention(){
   const rows=[['var(--danger)',s.fuOverdue,'overdue preaching follow-ups','#/followups'],
     ['var(--danger)',s.unfilled,'activities short of volunteers','#/assign'],
     ['var(--amber)',s.careOverdue+s.careToday,'care follow-ups due or overdue','#/care-followups'],
-    ['var(--mustard)',s.actionsOverdue,'overdue action items','#/actions'],
-    ['var(--green)',s.attention,'devotees flagged for personal attention','#/care']].filter(r=>r[1]>0);
+    ['var(--mustard)',s.actionsOverdue,'overdue action items','#/actions']].filter(r=>r[1]>0);
   return section('⚠️ Needs attention today',rows.length?`<div class="list">${rows.map(r=>attnRow(...r)).join('')}</div>`
     :emptyState('Everything is clear','No overdue follow-ups or unfilled seva right now.','','calm'), '', 'needs_attn', true);
 }
@@ -12416,7 +12375,7 @@ function insightsCard(){
     [`🌱`,`${s.newContacts} new contacts were recorded in the last 30 days.`,'#/contacts'],
     noService?[`🎯`,`${noService} devotees have no active seva allocation.`,'#/swabhav']:null,
     readyL1?[`🎓`,`${readyL1} Level 1 devotees may be ready for a progression review.`,'#/batches']:null,
-    s.careWeek?[`❤️`,`${s.careWeek} care follow-ups are due this week.`,'#/care-followups']:null
+    // Care removed in Phase 1
   ].filter(Boolean);
 
   const isAll = !!APP.showAllInsights;
@@ -13241,10 +13200,111 @@ function viewToday(){
    ROLE DASHBOARDS (UNIFIED COMMUNITY VIEW FOR ALL ROLES)
    ========================================================================= */
 function viewDashboard(){
-  const headerActions = `<div class="dash-header-btn-col"><button class="btn dash-head-btn" data-act="go" data-r="#/org">${ic('layers')}View hierarchy</button><button class="btn pri dash-head-btn" data-act="go" data-r="#/reports">📊 Reports</button></div>`;
-  const hd = hero() + head('ISKCON BACE', 'Community blocks', 'All departments, batches, and care groups across the BACE', headerActions, 'has-dash-actions');
-  return hd + `${pillarCards(true)}<div style="height:15px"></div>
-     <div class="grid g2">${insightsCard()}${prabhupadaNectarCard()}</div>`;
+  const s=STATS();
+  // Management overview
+  const tot=activeDepts().reduce((o,d)=>{const m=deptMetrics(d.id);o.done+=m.done;o.missed+=m.missed;o.vol+=m.volunteers;return o},{done:0,missed:0,vol:0});
+  const completionPct=pct(tot.done,tot.done+tot.missed);
+  const unfilled=s.unfilled||0;
+  const pendReports=DB.reports.filter(r=>r.kind==='Department weekly'&&r.status==='Pending').length;
+  // Preaching overview
+  const batches=activeBatches();
+  const totalBatchDevs=batches.reduce((n,b)=>{const batchDevs=DB.devotees.filter(d=>d.batch===b.id||((d.batches||[]).includes(b.id)));return n+batchDevs.length;},0);
+  const fuOverdue=s.fuOverdue||0;
+  const newContacts=s.newContacts||0;
+  // Status dot helper
+  const dot=(ok,warn,danger,val)=>{
+    let c='var(--green)',tip='Good';
+    if(val>=danger){c='var(--danger)';tip='Needs attention';}
+    else if(val>=warn){c='var(--amber)';tip='Check needed';}
+    return `<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${c};margin-right:5px;flex-shrink:0" title="${tip}"></span>`;
+  };
+  // Needs attention rows (only when >0)
+  const attnItems=[
+    fuOverdue>0   && `<a class="attn" href="#/followups">${attnRow('var(--danger)',fuOverdue,'preaching follow-ups overdue','#/followups')}</a>`,
+    unfilled>0    && attnRow('var(--amber)',unfilled,'seva slots need volunteers','#/assign'),
+    pendReports>0 && attnRow('var(--mustard)',pendReports,'weekly reports outstanding','#/dept-reports'),
+  ].filter(Boolean);
+  const attnSection=attnItems.length
+    ? section('⚠️ Needs Attention',`<div class="list">${attnItems.join('')}</div>`,'','dash_attn',true)
+    : '';
+  // Management card
+  const mgmtCard=`<div class="card pad" style="cursor:pointer;transition:box-shadow .18s ease,transform .18s ease" data-act="go" data-r="#/mgmt"
+    onmouseenter="this.style.boxShadow='0 8px 28px -6px rgba(234,88,12,0.22)';this.style.transform='translateY(-2px)'"
+    onmouseleave="this.style.boxShadow='';this.style.transform=''">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+      <div style="display:flex;align-items:center;gap:13px">
+        <div style="width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,#EA580C,#C2410C);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;box-shadow:0 4px 12px rgba(234,88,12,.22)">🛕</div>
+        <div>
+          <div style="font-weight:800;font-size:16px;font-family:var(--f-head);color:var(--ink)">BACE Management</div>
+          <div style="font-size:12px;color:var(--ink-3);margin-top:2px">Operations, seva rosters &amp; temple administration</div>
+        </div>
+      </div>
+      <span style="font-size:18px;color:var(--ink-3);line-height:1;margin-top:2px">›</span>
+    </div>
+    <div class="grid g3" style="margin-top:16px;gap:10px">
+      <div style="background:var(--paper-2);border-radius:12px;padding:10px 12px;border:1px solid var(--line-2)">
+        <div style="font-size:11px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Completion</div>
+        <div style="font-size:22px;font-weight:800;font-family:var(--f-head);color:${completionPct<75?'var(--danger)':'var(--ink)'}">${completionPct}%</div>
+        <div style="font-size:11px;color:var(--ink-3)">this period</div>
+      </div>
+      <div style="background:var(--paper-2);border-radius:12px;padding:10px 12px;border:1px solid var(--line-2)">
+        <div style="font-size:11px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Volunteers</div>
+        <div style="font-size:22px;font-weight:800;font-family:var(--f-head);color:var(--ink)">${tot.vol}</div>
+        <div style="font-size:11px;color:var(--ink-3)">in seva across ${s.depts} depts</div>
+      </div>
+      <div style="background:var(--paper-2);border-radius:12px;padding:10px 12px;border:1px solid var(--line-2)">
+        <div style="font-size:11px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Unfilled</div>
+        <div style="font-size:22px;font-weight:800;font-family:var(--f-head);color:${unfilled>0?'var(--danger)':'var(--green)'}">${unfilled}</div>
+        <div style="font-size:11px;color:var(--ink-3)">seva slots open</div>
+      </div>
+    </div>
+    <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+      ${can('management')?`<button class="btn sm" data-act="go" data-r="#/mgmt" onclick="event.stopPropagation()">🏛️ Dept Hub</button>`:''}
+      ${can('assign')?`<button class="btn sm" data-act="open-assign" data-type="Seva" onclick="event.stopPropagation()">📋 Assign Seva</button>`:''}
+      <button class="btn sm" data-act="go" data-r="#/sops" onclick="event.stopPropagation()">📘 SOPs</button>
+    </div>
+  </div>`;
+  // Preaching card
+  const preachCard=`<div class="card pad" style="cursor:pointer;transition:box-shadow .18s ease,transform .18s ease" data-act="go" data-r="#/preaching"
+    onmouseenter="this.style.boxShadow='0 8px 28px -6px rgba(79,70,229,0.22)';this.style.transform='translateY(-2px)'"
+    onmouseleave="this.style.boxShadow='';this.style.transform=''">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+      <div style="display:flex;align-items:center;gap:13px">
+        <div style="width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,#4F46E5,#3730A3);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;box-shadow:0 4px 12px rgba(79,70,229,.22)">📖</div>
+        <div>
+          <div style="font-weight:800;font-size:16px;font-family:var(--f-head);color:var(--ink)">BACE Preaching</div>
+          <div style="font-size:12px;color:var(--ink-3);margin-top:2px">Batches, contacts &amp; outreach</div>
+        </div>
+      </div>
+      <span style="font-size:18px;color:var(--ink-3);line-height:1;margin-top:2px">›</span>
+    </div>
+    <div class="grid g3" style="margin-top:16px;gap:10px">
+      <div style="background:var(--paper-2);border-radius:12px;padding:10px 12px;border:1px solid var(--line-2)">
+        <div style="font-size:11px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Batches</div>
+        <div style="font-size:22px;font-weight:800;font-family:var(--f-head);color:var(--ink)">${batches.length}</div>
+        <div style="font-size:11px;color:var(--ink-3)">${totalBatchDevs} devotees</div>
+      </div>
+      <div style="background:var(--paper-2);border-radius:12px;padding:10px 12px;border:1px solid var(--line-2)">
+        <div style="font-size:11px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Contacts</div>
+        <div style="font-size:22px;font-weight:800;font-family:var(--f-head);color:var(--ink)">${s.contacts||0}</div>
+        <div style="font-size:11px;color:var(--ink-3)">${newContacts} new this month</div>
+      </div>
+      <div style="background:var(--paper-2);border-radius:12px;padding:10px 12px;border:1px solid var(--line-2)">
+        <div style="font-size:11px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Follow-ups</div>
+        <div style="font-size:22px;font-weight:800;font-family:var(--f-head);color:${fuOverdue>0?'var(--danger)':'var(--green)'}">${fuOverdue}</div>
+        <div style="font-size:11px;color:var(--ink-3)">overdue today</div>
+      </div>
+    </div>
+    <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+      ${can('preaching')?`<button class="btn sm" data-act="go" data-r="#/preaching" onclick="event.stopPropagation()">🏫 Batch Hub</button>`:''}
+      ${can('preaching')?`<button class="btn sm" data-act="go" data-r="#/contacts" onclick="event.stopPropagation()">🌱 Contacts</button>`:''}
+      ${can('preaching')?`<button class="btn sm" data-act="go" data-r="#/followups" onclick="event.stopPropagation()">${fuOverdue>0?`⏰ Follow-ups <i class="bdot">${fuOverdue}</i>`:'⏰ Follow-ups'}</button>`:''}
+    </div>
+  </div>`;
+  return hero()+
+    `<div class="grid g2" style="margin-bottom:15px">${mgmtCard}${preachCard}</div>`+
+    (attnSection||'')+
+    `<div style="margin-top:15px">${prabhupadaNectarCard()}</div>`;
 }
 function funnelRows(){
   const s=STATS();
@@ -14987,11 +15047,11 @@ function viewOrg(){
   const c2 = (window.BACE_COUNSELLORS && window.BACE_COUNSELLORS[1]) || devoteeCounsellors[1] || 'HG Sarojmukha Madhav Pr';
 
   const node=(n,r,tone)=>`<div class="org-node" style="border-top:3px solid ${tone}"><div class="nm">${esc(n)}</div><div class="rl">${esc(r)}</div></div>`;
-  return head('🧭 Who answers to whom','Organisation hierarchy','Two Counsellors and Area Leader down to every volunteer, with the three pillars in the middle')+
+  return head('🧭 Who answers to whom','Organisation hierarchy','Two Senior Facilitators and Area Leader down to every volunteer, with the three pillars in the middle')+
   `<div class="card pad org-card"><div class="org">
     <div class="org-row">
-      ${node(c1,'🙏 Counsellor','#D97706')}
-      ${node(c2,'🙏 Counsellor','#D97706')}
+      ${node(c1,'🙏 Senior Facilitator','#D97706')}
+      ${node(c2,'🙏 Senior Facilitator','#D97706')}
     </div>
     <div class="org-line"></div>
     ${node(find('area_leader'),'🪷 Area Leader','var(--ink)')}<div class="org-line"></div>
@@ -15049,34 +15109,59 @@ function actTable(rows){
 function viewMgmt(){
   const s=STATS();
   const tot=activeDepts().reduce((o,d)=>{const m=deptMetrics(d.id);o.done+=m.done;o.missed+=m.missed;o.pend+=m.pending;o.vol+=m.volunteers;return o},{done:0,missed:0,pend:0,vol:0});
-  return head('🛕 BACE Management','Management dashboard','Departments, seva rotas, attendance, inventory and the weekly reporting cycle',
-    `<button class="btn" data-act="go" data-r="#/depts">🏛 Other Departments</button><button class="btn pri" data-act="open-assign" data-type="Seva">📋 Assign seva</button>`)+
-  `<div class="grid g6" style="margin-bottom:15px">
-    ${stat('Other Departments',s.depts,'active',{em:'🏛',act:'go',r:'#/depts'})}
-    ${stat('Active volunteers',s.volunteers,'engaged in seva',{em:'🛠',r:'#/assign'})}
-    ${stat('Scheduled',s.scheduled,'activities ahead',{em:'📋',act:'go',r:'#/assign'})}
-    ${stat('Completed',tot.done,`${tot.missed} missed`,{em:'✅',r:'#/dept-reports'})}
-    ${stat('Completion',pct(tot.done,tot.done+tot.missed)+'%','this period',{em:'📈',act:'go',r:'#/reports'})}
-    ${stat('Unfilled',s.unfilled,'need volunteers',{em:'⚠️',tint:s.unfilled>0,act:'go',r:'#/assign'})}</div>
-   <div class="grid g-2-1" style="margin-bottom:15px">
-    ${section('Department performance centre',`<div class="card-b">${barChart(activeDepts().slice(0,10).map(d=>{const m=deptMetrics(d.id);
-      return {l:d.name.split(' ')[0],v:m.completion,color:m.completion<75?'var(--danger)':'var(--saffron)',
-       tip:`${d.icon} ${d.name}\nCompleted: ${m.done}\nMissed: ${m.missed}\nPending: ${m.pending}\nVolunteers: ${m.volunteers}\nAttendance: ${m.attendance}%`,r:'#/dept/'+d.id}}),{unit:'%'})}
-      <div class="tiny" style="margin-top:8px">Hover any bar for exact numbers · click to drill into the department</div></div>`,
-      `<a class="btn sm" href="#/depts">All other departments</a>`)}
-    <div style="display:flex;flex-direction:column;gap:15px">
-     ${section('Reporting status',`<div class="list">
-      ${attnRow('var(--danger)',DB.reports.filter(r=>r.kind==='Department weekly'&&r.status==='Pending').length,'weekly reports outstanding','#/dept-reports')}
-      ${attnRow('var(--amber)',DB.reports.filter(r=>r.status==='Submitted').length,'submitted, awaiting approval','#/dept-reports')}
-      ${attnRow('var(--green)',DB.reports.filter(r=>r.status==='Approved').length,'approved this cycle','#/dept-reports')}</div>`)}
-     ${section('Inventory & BBT',`<div class="list">
-      ${attnRow('var(--sky)',STATS().invPending,'requests awaiting approval','#/inventory')}
-      ${attnRow('var(--danger)',STATS().invOverdue,'issued items overdue for return','#/inventory')}</div>`)}
-    </div></div>
-   ${section('Next seven days',`<div class="tbl-wrap">${actTable(DB.activities.filter(x=>x.date>=iso(TODAY)&&x.date<=iso(dayOff(7))&&x.type!=='Task'))}</div>`,`<a class="btn sm" href="#/assign">Open assign / schedule</a>`)}`;
+  const pendReports=DB.reports.filter(r=>r.kind==='Department weekly'&&r.status==='Pending').length;
+  const completionPct=pct(tot.done,tot.done+tot.missed);
+  // Dept tile grid — each tile is a card linking to that dept's dashboard
+  function deptTile(icon,label,color,gradFrom,gradTo,route,statLine,statusPct){
+    const isOk=statusPct===null||statusPct>=75;
+    const isWarn=statusPct!==null&&statusPct>=50&&statusPct<75;
+    const dotColor=statusPct===null?'var(--green)':isOk?'var(--green)':isWarn?'var(--amber)':'var(--danger)';
+    return `<a href="${route}" class="card pad dept-tile-card" style="text-decoration:none;color:inherit;display:block;transition:box-shadow .18s ease,transform .18s ease;position:relative;overflow:hidden"
+      onmouseenter="this.style.boxShadow='0 8px 28px -6px ${gradFrom}44';this.style.transform='translateY(-2px)'"
+      onmouseleave="this.style.boxShadow='';this.style.transform=''">
+      <div style="position:absolute;right:-12px;top:-12px;font-size:54px;opacity:0.06;pointer-events:none;line-height:1">${icon}</div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <div style="width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,${gradFrom},${gradTo});display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;box-shadow:0 3px 10px ${gradFrom}44">${icon}</div>
+        <div style="min-width:0;flex:1">
+          <div style="font-weight:800;font-size:14px;font-family:var(--f-head);color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${label}</div>
+          <div style="font-size:11.5px;color:var(--ink-3);margin-top:1px">${statLine}</div>
+        </div>
+        <span style="width:9px;height:9px;border-radius:50%;background:${dotColor};flex-shrink:0" title="${statusPct===null?'No data':statusPct+'% completion'}"></span>
+      </div>
+      ${statusPct!==null?prog(statusPct,isOk?'var(--green)':isWarn?'var(--amber)':'var(--danger)'):''}
+    </a>`;
+  }
+  // Build tiles for all active depts
+  const colorMap={saffron:['#EA580C','#C2410C'],indigo:['#4F46E5','#3730A3'],green:['#059669','#047857'],
+    teal:['#0D9488','#0F766E'],sky:['#0284C7','#0369A1'],mustard:['#D97706','#B45309'],
+    ink:['#374151','#1F2937'],danger:['#DC2626','#B91C1C'],amber:['#F59E0B','#D97706']};
+  const deptTiles=activeDepts().map(d=>{
+    const m=deptMetrics(d.id);
+    const [gFrom,gTo]=(colorMap[d.color]||colorMap.saffron);
+    const statLine=`${m.volunteers} volunteers · ${m.completion}%`;
+    return deptTile(d.icon,d.name,d.color,gFrom,gTo,'#/dept/'+d.id,statLine,m.completion);
+  }).join('');
+  return head('🛕 BACE Management','Dept Hub','All active departments, seva rosters, and temple operations',
+    (can('assign')?`<button class="btn" data-act="open-assign" data-type="Seva">📋 Assign Seva</button>`:'')+
+    `<button class="btn" data-act="go" data-r="#/sops">📘 SOPs</button>`)+
+  `<div class="grid g6" style="margin-bottom:18px">
+    ${stat('Departments',s.depts,'active',{em:'🏛️'})}
+    ${stat('Volunteers',tot.vol,'in seva',{em:'🛠',act:'go',r:'#/assign'})}
+    ${stat('Completion',completionPct+'%','this period',{em:'📈'})}
+    ${stat('Missed',tot.missed,'activities',{em:'⚠️',tint:tot.missed>0})}
+    ${stat('Reports',pendReports,'outstanding',{em:'📋',tint:pendReports>0,act:'go',r:'#/dept-reports'})}
+    ${stat('Unfilled',s.unfilled,'slots open',{em:'🎯',tint:s.unfilled>0,act:'go',r:'#/assign'})}
+  </div>
+  <div class="grid g4 g-dept-hub-tiles" style="margin-bottom:20px">
+    ${deptTiles}
+  </div>
+  ${pendReports>0?section('📋 Reporting Status',`<div class="list">
+    ${attnRow('var(--danger)',pendReports,'weekly reports outstanding','#/dept-reports')}
+    ${attnRow('var(--amber)',DB.reports.filter(r=>r.status==='Submitted').length,'submitted, awaiting approval','#/dept-reports')}
+    ${attnRow('var(--green)',DB.reports.filter(r=>r.status==='Approved').length,'approved this cycle','#/dept-reports')}</div>`,'','mgmt_rpt',true):''}
+  ${section('📅 Next Seven Days',`<div class="tbl-wrap">${actTable(DB.activities.filter(x=>x.date>=iso(TODAY)&&x.date<=iso(dayOff(7))&&x.type!=='Task'))}</div>`,`<a class="btn sm" href="#/assign">Assign / schedule</a>`,'mgmt_next7',true)}`;
 }
 
-/* ---------------- departments (dynamic CRUD) ---------------- */
 function viewDepts(){
   const f=APP.filters.dept||(APP.filters.dept={q:'',status:'Active',cat:''});
   const rows=DB.departments.filter(d=>(!f.q||d.name.toLowerCase().includes(f.q.toLowerCase()))
@@ -24902,112 +24987,105 @@ function batchTable(){
 }
 function viewPreaching(){
   const s=STATS();
-  const view=APP.tab.preaching||'Batch';
-  const bid=APP.filters.repBatch||DB.batches[0]?.id||'b1';
-  const b=batch(bid)||DB.batches[0];
-  const m=batchMetrics(bid, APP.range.from, APP.range.to);
-  const bIncharge = b.incharge || 'd1';
-  const bCoordinator = b.coordinator || b.facilitators?.[0] || 'd1';
-  const facList = getBatchFacilitators(bid);
-  const volList = getBatchVolunteers(bid);
-
-  let body = '';
-  if (view === 'Batch') {
-    body = `<!-- Batch Monthly Report & Deep Analytics Section -->
-   <div class="sec-head" style="margin-top:14px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
-     <div>
-       <h2 style="margin:0;font-size:18px;font-weight:700;display:flex;align-items:center;gap:8px">
-         <span>📊 Batch Monthly Report &amp; Deep Analytics</span>
-         <span class="badge b-indigo" style="font-size:11px">Batch Level</span>
-       </h2>
-       <div class="tiny" style="color:var(--ink-3);margin-top:2px">Detailed funnel progression, team composition, class attendance and budget for ${esc(b.name)}</div>
-     </div>
-     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-       <select data-act="rep-batch" style="padding:6px 10px;font-size:13px;font-weight:600;border-radius:8px;border:1px solid var(--line-2);background:var(--surface);color:var(--ink)">
-         ${DB.batches.map(x=>`<option value="${x.id}" ${x.id===bid?'selected':''}>${esc(x.name)} — Level ${x.level}</option>`).join('')}
-       </select>
-       <input type="date" value="${APP.range.from}" data-act="range" data-n="from" style="padding:5px 8px;font-size:12px">
-       <input type="date" value="${APP.range.to}" data-act="range" data-n="to" style="padding:5px 8px;font-size:12px">
-       <button class="btn pri" data-act="download-batch-monthly-report-pdf" data-id="${bid}">${ic('doc')}Generate PDF Report</button>
-     </div>
-   </div>
-
-   <div class="batch-lead-bar" style="display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin-bottom:16px;padding:9px 15px;background:var(--surface);border:1px solid var(--line);border-radius:10px;font-size:13px">
-     <div style="display:flex;align-items:center;gap:6px">
-       <span class="muted" style="font-size:12px">Incharge:</span>
-       <span style="font-weight:600">${esc(nameOf(bIncharge))}</span>
-     </div>
-     <span class="muted" style="opacity:.4">|</span>
-     <div style="display:flex;align-items:center;gap:6px">
-       <span class="muted" style="font-size:12px">Coordinator:</span>
-       <span style="font-weight:600">${esc(nameOf(bCoordinator))}</span>
-     </div>
-     <span class="muted" style="opacity:.4">|</span>
-     <div style="display:flex;align-items:center;gap:6px">
-       <span class="muted" style="font-size:12px">Level:</span>
-       <span class="badge b-blue" style="font-size:11.5px">Level ${b.level}</span>
-     </div>
-     <div style="margin-left:auto;display:flex;align-items:center;gap:6px">
-       <span class="badge b-green" style="font-size:11.5px">● Live Automated</span>
-       <span class="tiny muted">Showing ${fmtD(APP.range.from)} → ${fmtD(APP.range.to)}</span>
-     </div>
-   </div>
-
-   <div class="grid g-2-1" style="margin-bottom:20px">
-    <div style="display:flex;flex-direction:column;gap:15px">
-      ${section('👥 Members & Team — ' + esc(b.name),`<div class="grid g6" style="padding:16px 18px">
-        ${stat('Total members',m.members.length,'in this batch',{r:'#/batch/'+bid})}
-        ${stat('Active',m.active,'attending',{r:'#/batch/'+bid})}
-        ${stat('New',m.neu,'joined this month',{r:'#/batch/'+bid})}
-        ${stat('Inactive',m.inactive,'not attending',{r:'#/batch/'+bid})}
-        ${stat('Facilitators',facList.length,'tap to view',{em:'🧑‍🏫',act:'open-batch-facilitators',id:bid,arg:bid})}
-        ${stat('Volunteers',volList.length,'tap to view',{em:'🛠',act:'open-batch-volunteers',id:bid,arg:bid})}
-      </div>`)}
-
-      ${section('🎯 Batch preaching funnel',`<div class="card-b">
-        <p class="tiny muted" style="margin-top:0;margin-bottom:12px">Conversion and progression of souls connected with ${esc(b.name)}</p>
-        ${funnel(batchPreachingFunnel(bid), bid)}
-      </div>`, `<span class="badge b-purple" style="font-size:11px">6-Stage Funnel</span>`)}
-
-      ${section('📖 Classes & events — ' + esc(b.name),`<div class="grid g4" style="padding:16px 18px">
-        ${stat('Classes',m.classes.length,'held or scheduled',{r:'#/classes'})}${stat('Events',m.events.length,'special programmes',{r:'#/classes'})}
-        ${stat('Average attendance',m.attendance+'%','across classes',{r:'#/batch-attendance'})}${stat('Total attendance',m.totalAtt,'present marks recorded',{r:'#/batch-attendance'})}</div>`)}
-    </div>
-
-    <div style="display:flex;flex-direction:column;gap:15px">
-      ${section('🧾 Budget — ' + esc(b.name), `<div class="card-b click" data-act="open-budget" data-kind="batch" data-id="${bid}" style="cursor:pointer" title="Click to update collected budget & expenses">
-        <div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:6px"><span class="muted">Budget Overview</span><b>${pct(b.budget.spent, b.budget.allocated)}% spent</b></div>
-        ${prog(pct(b.budget.spent, b.budget.allocated), pct(b.budget.spent, b.budget.allocated)>95?'var(--danger)':'var(--mustard)')}
-        <div class="grid g3" style="gap:8px;margin-top:10px">
-          <div><div class="tiny">Collected</div><b style="font-family:var(--f-head);font-size:15px;color:var(--green)">${money(b.budget.allocated)}</b></div>
-          <div><div class="tiny">Expenses</div><b style="font-family:var(--f-head);font-size:15px;color:var(--danger)">${money(b.budget.spent)}</b></div>
-          <div><div class="tiny">Remaining</div><b style="font-family:var(--f-head);font-size:15px;color:var(--ink)">${money(b.budget.allocated - b.budget.spent)}</b></div>
-        </div>
-        <div class="tiny muted" style="margin-top:8px;display:flex;align-items:center;gap:4px">
-          ${ic('edit')} Tap anywhere on budget to edit collection & expenses
-        </div></div>`, `<button class="btn sm" data-act="open-budget" data-kind="batch" data-id="${bid}">${ic('edit')}Edit budget</button>`)}
-      ${section('⏰ Batch follow-ups',`<div class="grid g2" style="padding:16px 18px;gap:9px">
-        ${stat('Total',m.fus.total,'',{r:'#/followups'})}${stat('Completed',m.fus.done,'',{r:'#/followups'})}
-        ${stat('Pending',m.fus.pending,'',{r:'#/followups'})}${stat('Overdue',m.fus.overdue,'',{tint:m.fus.overdue>0,r:'#/followups'})}</div>`)}
-      ${section('📊 Attendance per class',m.perClass.length?`<div class="card-b">${barChart(m.perClass.slice(-6).map(p=>({l:fmtD(p.c.date).slice(0,6),v:p.pctv,color:'var(--indigo)',
-        tip:`${p.c.name}\n${fmtLong(p.c.date)}\nAttendance: ${p.pctv}%\nPresent: ${p.present}\nAbsent: ${p.total-p.present}\nTotal: ${p.total}`})),{unit:'%'})}
-        <div class="tiny" style="margin-top:8px">Best ${m.best}% · lowest ${m.low}%</div></div>`:emptyState('No completed classes','','',''))}
-    </div></div>`;
-  } else {
-    body = `${section('All community batches',`<div class="tbl-wrap">${batchTable()}</div>`,`<a class="btn sm" href="#/batches">Manage batches</a>`)}
-   <div class="community-batch-graphs" style="margin-top:20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,440px),1fr));gap:18px">
-     ${communityBatchAttendanceSection()}
-     ${communityBatchDistributionSection()}
-   </div>`;
+  const allBatches=DB.batches||[];
+  // Level definitions
+  const levels=[
+    {key:'l1',num:1,label:'Level 1',sub:'Foundation',color:'#4F46E5',badge:'b-indigo'},
+    {key:'l2',num:2,label:'Level 2',sub:'Development',color:'#059669',badge:'b-green'},
+    {key:'l3',num:3,label:'Level 3',sub:'Advanced',color:'#D97706',badge:'b-mustard'},
+    {key:'l4',num:4,label:'Level 4',sub:'Discipleship',color:'#DC2626',badge:'b-danger'},
+  ];
+  const selLevel=APP.tab.preachingLevel||1;
+  // Member count per batch
+  function batchMemberCount(bid){
+    return DB.devotees.filter(d=>d.batch===bid||(Array.isArray(d.batches)&&d.batches.includes(bid))).length;
   }
-
-  return head('📖 BACE Preaching','Preaching Dashboard & Reports','Batch performance benchmarks, comparative attendance and automated monthly reports',
+  // Batch tile
+  function batchTile(b){
+    const members=batchMemberCount(b.id);
+    const m=batchMetrics(b.id);
+    const attPct=m.attendance||0;
+    const attColor=attPct>=75?'var(--green)':attPct>=50?'var(--amber)':'var(--danger)';
+    const lvlInfo=levels.find(l=>l.num===(b.level||1))||levels[0];
+    const coord=b.coordinator?nameOf(b.coordinator):(b.incharge?nameOf(b.incharge):'—');
+    return `<a href="#/batch/${b.id}" class="card pad batch-tile-card" style="text-decoration:none;color:inherit;display:block;transition:box-shadow .18s ease,transform .18s ease;border-left:3px solid ${lvlInfo.color}"
+      onmouseenter="this.style.boxShadow='0 8px 28px -6px ${lvlInfo.color}33';this.style.transform='translateY(-2px)'"
+      onmouseleave="this.style.boxShadow='';this.style.transform=''">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px">
+        <div>
+          <div style="font-weight:800;font-size:14.5px;font-family:var(--f-head);color:var(--ink);margin-bottom:2px">${esc(b.name)}</div>
+          <div style="font-size:11.5px;color:var(--ink-3)">Coordinator: ${esc(coord)}</div>
+        </div>
+        <span class="badge ${lvlInfo.badge}" style="font-size:10px;flex-shrink:0">${lvlInfo.label}</span>
+      </div>
+      <div class="grid g3" style="gap:8px;margin-bottom:10px">
+        <div style="background:var(--paper-2);border-radius:9px;padding:7px 10px;border:1px solid var(--line-2);text-align:center">
+          <div style="font-size:18px;font-weight:800;font-family:var(--f-head);color:var(--ink)">${members}</div>
+          <div style="font-size:10px;color:var(--ink-3)">Members</div>
+        </div>
+        <div style="background:var(--paper-2);border-radius:9px;padding:7px 10px;border:1px solid var(--line-2);text-align:center">
+          <div style="font-size:18px;font-weight:800;font-family:var(--f-head);color:${attColor}">${attPct}%</div>
+          <div style="font-size:10px;color:var(--ink-3)">Attendance</div>
+        </div>
+        <div style="background:var(--paper-2);border-radius:9px;padding:7px 10px;border:1px solid var(--line-2);text-align:center">
+          <div style="font-size:18px;font-weight:800;font-family:var(--f-head);color:var(--ink)">${m.classes.length||0}</div>
+          <div style="font-size:10px;color:var(--ink-3)">Classes</div>
+        </div>
+      </div>
+      ${b.schedule?`<div style="font-size:11.5px;color:var(--ink-3);display:flex;align-items:center;gap:4px">📅 ${esc(b.schedule)}</div>`:''}
+    </a>`;
+  }
+  // Filtered batches for selected level
+  const levelBatches=allBatches.filter(b=>Number(b.level||1)===Number(selLevel));
+  const levelBatchTiles=levelBatches.length
+    ? levelBatches.map(batchTile).join('')
+    : `<div style="grid-column:1/-1;padding:24px;text-align:center;color:var(--ink-3);font-size:13px">No batches at this level</div>`;
+  // Community overview stats
+  const totalDevs=allBatches.reduce((n,b)=>n+batchMemberCount(b.id),0);
+  const fuOverdue=s.fuOverdue||0;
+  return head('📖 BACE Preaching','Batch Hub','All preaching batches, contacts and outreach',
     `<div style="display:flex;gap:8px;flex-wrap:wrap">
-       <button class="btn" data-act="go" data-r="#/contacts">🌱 Contacts &amp; Funnel</button>
-       <button class="btn" data-act="go" data-r="#/batches">🗂 Batches</button>
-     </div>`)+
-    `<div class="tabs">${['Batch','Community batches'].map(t=>`<button class="${t===view?'on':''}" data-act="tab" data-k="preaching" data-v="${t}">${t}</button>`).join('')}</div>`+
-    body;
+      ${can('preaching')?`<button class="btn" data-act="go" data-r="#/contacts">🌱 Contacts</button>`:''}
+      ${can('preaching')?`<button class="btn" data-act="go" data-r="#/followups">⏰ Follow-ups${fuOverdue?`<i class="bdot">${fuOverdue}</i>`:''}</button>`:''}
+    </div>`)+
+  `<div class="grid g6" style="margin-bottom:18px">
+    ${stat('Active batches',allBatches.length,'total',{em:'🏫'})}
+    ${stat('Devotees',totalDevs,'in batches',{em:'👥'})}
+    ${stat('Contacts',s.contacts||0,'total',{em:'🌱',act:'go',r:'#/contacts'})}
+    ${stat('New contacts',s.newContacts||0,'this month',{em:'✨',act:'go',r:'#/contacts'})}
+    ${stat('Follow-ups',fuOverdue,'overdue',{em:'⏰',tint:fuOverdue>0,act:'go',r:'#/followups'})}
+    ${stat('Classes',DB.activities.filter(a=>a.type==='Class').length,'scheduled',{em:'📖',act:'go',r:'#/classes'})}
+  </div>
+  <div class="card" style="margin-bottom:18px">
+    <div style="padding:4px 4px 0">
+      <div class="tabs" style="margin-bottom:0">
+        ${levels.map(l=>{
+          const lBatches=allBatches.filter(b=>Number(b.level||1)===l.num);
+          const isSelected=Number(selLevel)===l.num;
+          return `<button class="${isSelected?'on':''}" data-act="tab" data-k="preachingLevel" data-v="${l.num}" style="display:flex;flex-direction:column;align-items:center;padding:9px 14px;gap:2px">
+            <span style="font-weight:700;font-size:13px">${esc(l.label)}</span>
+            <span style="font-size:10.5px;color:${isSelected?'rgba(255,255,255,0.8)':'var(--ink-3)'};">${esc(l.sub)} · ${lBatches.length}${lBatches.length===1?' batch':' batches'}</span>
+          </button>`;
+        }).join('')}
+      </div>
+    </div>
+    <div class="grid g3 g-batch-hub-tiles" style="padding:14px;gap:14px">
+      ${levelBatchTiles}
+    </div>
+  </div>
+  <div class="grid g2" style="gap:14px">
+    <div style="display:flex;flex-direction:column;gap:14px">
+      ${section('🌱 Contacts & Pipeline',`<div class="list">
+        ${attnRow('var(--indigo)',s.contacts||0,'total contacts in pipeline','#/contacts')}
+        ${attnRow('var(--green)',s.newContacts||0,'new contacts this month','#/contacts')}
+      </div>`,`<a class="btn sm" href="#/contacts">Open →</a>`,'preach_contacts',true)}
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      ${section('⏰ Follow-ups',`<div class="list">
+        ${attnRow('var(--danger)',fuOverdue,'overdue follow-ups','#/followups')}
+      </div>`,`<a class="btn sm" href="#/followups">Open →</a>`,'preach_fus',true)}
+    </div>
+  </div>`;
 }
 
 function viewBatches(){
@@ -27811,7 +27889,7 @@ function viewAdmin(){
    Permissions:section('Role and permission matrix',`<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Role</th>${modules.map(m=>`<th style="font-size:10.5px">${esc(m.replace('_',' '))}</th>`).join('')}</tr></thead><tbody>
      ${Object.entries(ROLES).map(([k,r])=>`<tr><td data-l="Role"><b>${r.emoji} ${esc(r.name)}</b></td>
       ${modules.map(m=>`<td data-l="${esc(m)}" style="text-align:center">${can(m,k)?'<span style="color:var(--green);font-weight:700">✓</span>':'<span style="color:var(--ink-3)">—</span>'}</td>`).join('')}</tr>`).join('')}</tbody></table></div>
-     <div class="card-b"><div class="note">Two separate ideas: <b>directory</b> means a role can search and view the central devotee database; the other columns are operational management rights within an area. Care notes are deliberately narrow.</div></div>`),
+     <div class="card-b"><div class="note">Two access tiers: <b>directory</b> means a role can search and view the central devotee database; the other columns are operational management rights within an area. Care notes are deliberately narrow.</div></div>`),
    Departments:section('Department configuration',`<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Department</th><th>Category</th><th>Head</th><th>Reporting</th><th>Module</th><th>Status</th><th></th></tr></thead><tbody>
      ${DB.departments.map(d=>`<tr><td data-l="Department"><b>${d.icon} ${esc(d.name)}</b></td><td data-l="Category">${esc(d.category)}</td>
       <td data-l="Head">${esc(nameOf(d.head))}</td><td data-l="Reporting">${esc(d.reportFreq)}</td>
@@ -27854,7 +27932,7 @@ function viewAdmin(){
 
 /* ---------------- mobile "More" menu ---------------- */
 function viewMore(){
-  const groups=[['🛕 BACE Management',PILLARS[0].items],['📖 BACE Preaching',PILLARS[1].items],['❤️ Devotee Care',PILLARS[2].items],
+  const groups=[['🛕 BACE Management',PILLARS[0].items],['📖 BACE Preaching',PILLARS[1].items],
     ['Community',NAV_BOTTOM.concat(NAV_TOP)]];
   return head('☰ Menu','Everything','All modules, permissions applied')+
    groups.map(([t,items])=>section(t,`<div class="list">${items.filter(i=>i.r&&(!i.m||can(i.m))).map(i=>`
@@ -29626,22 +29704,22 @@ function routeView(){
       case 'classes':return guard('preaching',viewClasses);
       case 'batch-attendance':return guard('batch-attendance',viewBatchAttendance);
       case 'preaching-reports':return guard('reports',viewReports);
-      case 'care':return guard('care',viewCare);
-      case 'friends':return guard('care',viewFriends);
-      case 'groups':return guard('care',viewGroups);
-      case 'group':return guard('care',()=>viewGroup(arg));
-      case 'swabhav':return guard('care',viewSwabhav);
-      case 'sadhana':return guard('care',viewSadhana);
-      case 'facilitators':return guard('care',viewFacilitators);
+      case 'care':go('#/');return '';// Phase 2
+      case 'friends':go('#/');return '';// Phase 2
+      case 'groups':go('#/');return '';// Phase 2
+      case 'group':go('#/');return '';// Phase 2
+      case 'swabhav':go('#/');return '';// Phase 2
+      case 'sadhana':go('#/');return '';// Phase 2
+      case 'facilitators':go('#/');return '';// Phase 2
       case 'spiritual-classes':go('#/camps');return '';
-      case 'camps':return guard('care',viewCamps);
-      case 'temple-visits':return guard('care',viewTempleVisits);
-      case 'meetings':return viewMeetings();
-      case 'care-followups':return guard('care',viewCareFollowups);
-      case 'care-reports':return guard('care',viewCareReports);
+      case 'camps':go('#/');return '';// Phase 2
+      case 'temple-visits':go('#/');return '';// Phase 2
+      case 'meetings':go('#/');return '';// Phase 2
+      case 'care-followups':go('#/');return '';// Phase 2
+      case 'care-reports':go('#/');return '';// Phase 2
       case 'reports':return guard('reports',viewReports);
       case 'calendar':return viewCalendar();
-      case 'messages':return viewMessages();
+      case 'messages':go('#/');return '';// Hidden Phase 1
       case 'notifications':return viewNotifications();
       case 'admin':return guard('admin',viewAdmin);
       case 'more':return viewMore();
