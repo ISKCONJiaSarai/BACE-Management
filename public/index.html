@@ -18463,6 +18463,7 @@ function filterAndSortMorningPeriodDevs(devList, q = '', attFilter = '', puncFil
   }
   if (attFilter) {
     if (attFilter === 'star' || attFilter === 'regular') list = list.filter(d => d.attendanceRate >= 70);
+    else if (attFilter === 'active') list = list.filter(d => d.presentCount > 0);
     else if (attFilter === 'low') list = list.filter(d => d.attendanceRate > 0 && d.attendanceRate < 70);
     else if (attFilter === 'zero') list = list.filter(d => d.attendanceRate === 0 || d.presentCount === 0);
   }
@@ -19052,10 +19053,11 @@ function morningProgramPanel(){
       <!-- WEEKLY VIEW: LAST 7 SESSIONS AGGREGATION & CHARTS -->
       <div style="padding:16px 18px">
         <div class="morning-hero-layout">
-          <div style="display:flex;flex-direction:column;gap:10px;justify-content:space-between">
-            ${stat('Devotees Logged', `${weekly.devStats ? weekly.devStats.length : 0} Devotees`, `${weekly.devStats.filter(d=>d.presentCount>0).length} active · ${weekly.totalSessions} sessions (${fmtD(weekly.startDate)} → ${fmtD(weekly.endDate)})`, {em:'👥',tint:!filterSt&&!activeBucket&&!APP.morningAttFilter,act:'morning-filter-status',s:''})}
+          <div style="display:grid;grid-template-columns:repeat(2, 1fr);gap:10px">
+            ${stat('Devotees Logged', `${weekly.devStats ? weekly.devStats.length : 0} Devotees`, `${weekly.totalSessions} sessions (${fmtD(weekly.startDate)} → ${fmtD(weekly.endDate)})`, {em:'👥',tint:!filterSt&&!activeBucket&&!APP.morningAttFilter,act:'morning-filter-status',s:''})}
+            ${stat('Active Attendees', `${weekly.devStats ? weekly.devStats.filter(d=>d.presentCount>0).length : 0} Devotees`, `attended ≥1 session · ${weekly.devStats && weekly.devStats.length ? Math.round((weekly.devStats.filter(d=>d.presentCount>0).length / weekly.devStats.length) * 100) : 0}% active`, {em:'🏃',tint:APP.morningAttFilter==='active',act:'morning-period-active-filter',s:'active'})}
             ${stat('Weekly Attendance', `${weekly.avgAttendancePct}%`, `${weekly.totalAttended} / ${weekly.totalPossible} check-ins`, {em:'✅',tint:filterSt==='Attended',act:'morning-filter-status',s:'Attended'})}
-            ${stat('Regular Sadhakas (≥70%)', `${weekly.devStats.filter(d=>d.attendanceRate>=70).length} Devotees`, 'regular attendees (≥70%)', {em:'🌟',tint:APP.morningAttFilter==='star',act:'morning-period-star-filter',s:'star'})}
+            ${stat('Regular Sadhakas (≥70%)', `${weekly.devStats ? weekly.devStats.filter(d=>d.attendanceRate>=70).length : 0} Devotees`, 'regular attendees (≥70%)', {em:'🌟',tint:APP.morningAttFilter==='star',act:'morning-period-star-filter',s:'star'})}
           </div>
 
           <!-- Charts: Attendance Breakdown Bar Graph (Fitted to the right) -->
@@ -19089,6 +19091,7 @@ function morningProgramPanel(){
 
           <select data-act="morning-att-filter" onchange="APP.morningAttFilter=this.value;render();" style="padding:6px 10px;font-size:12px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);cursor:pointer">
             <option value="">All Attendance</option>
+            <option value="active" ${APP.morningAttFilter==='active'?'selected':''}>🏃 Active (≥1 session)</option>
             <option value="star" ${APP.morningAttFilter==='star'?'selected':''}>🌟 Regular (≥70%)</option>
             <option value="low" ${APP.morningAttFilter==='low'?'selected':''}>🔴 Low (&lt;70%)</option>
             <option value="zero" ${APP.morningAttFilter==='zero'?'selected':''}>⚪ Zero Punches (0%)</option>
@@ -19189,7 +19192,7 @@ function morningProgramPanel(){
         <!-- MOBILE LEADERBOARD (weekly attendance) -->
         <div class="morning-mobile-lb">
           <div class="lb-filter-chips">
-            ${[{v:'',label:'All'},{v:'star',label:'🌟 Regular ≥70%'},{v:'low',label:'🔴 Low <70%'},{v:'zero',label:'⚪ Zero'}]
+            ${[{v:'',label:'All'},{v:'active',label:'🏃 Active'},{v:'star',label:'🌟 Regular ≥70%'},{v:'low',label:'🔴 Low <70%'},{v:'zero',label:'⚪ Zero'}]
               .map(({v,label}) => `<button class="lb-chip ${(APP.morningAttFilter||'')=== v?'active':''}" onclick="APP.morningAttFilter='${v}';render();">${label}</button>`).join('')}
           </div>
           <div>
@@ -19200,10 +19203,11 @@ function morningProgramPanel(){
       <!-- MONTHLY VIEW: LAST 30 SESSIONS AGGREGATION & CHARTS -->
       <div style="padding:16px 18px">
         <div class="morning-hero-layout">
-          <div style="display:flex;flex-direction:column;gap:10px;justify-content:space-between">
-            ${stat('Devotees Logged', `${monthly.devStats ? monthly.devStats.length : 0} Devotees`, `${monthly.devStats.filter(d=>d.presentCount>0).length} active · ${monthly.totalSessions} sessions (${fmtD(monthly.startDate)} → ${fmtD(monthly.endDate)})`, {em:'👥',tint:!filterSt&&!activeBucket&&!APP.morningAttFilter,act:'morning-filter-status',s:''})}
+          <div style="display:grid;grid-template-columns:repeat(2, 1fr);gap:10px">
+            ${stat('Devotees Logged', `${monthly.devStats ? monthly.devStats.length : 0} Devotees`, `${monthly.totalSessions} sessions (${fmtD(monthly.startDate)} → ${fmtD(monthly.endDate)})`, {em:'👥',tint:!filterSt&&!activeBucket&&!APP.morningAttFilter,act:'morning-filter-status',s:''})}
+            ${stat('Active Attendees', `${monthly.devStats ? monthly.devStats.filter(d=>d.presentCount>0).length : 0} Devotees`, `attended ≥1 session · ${monthly.devStats && monthly.devStats.length ? Math.round((monthly.devStats.filter(d=>d.presentCount>0).length / monthly.devStats.length) * 100) : 0}% active`, {em:'🏃',tint:APP.morningAttFilter==='active',act:'morning-period-active-filter',s:'active'})}
             ${stat('Monthly Attendance', `${monthly.avgAttendancePct}%`, `${monthly.totalAttended} / ${monthly.totalPossible} check-ins`, {em:'✅',tint:filterSt==='Attended',act:'morning-filter-status',s:'Attended'})}
-            ${stat('Regular Sadhakas (≥70%)', `${monthly.devStats.filter(d=>d.attendanceRate>=70).length} Devotees`, 'regular attendees (≥70%)', {em:'🌟',tint:APP.morningAttFilter==='star',act:'morning-period-star-filter',s:'star'})}
+            ${stat('Regular Sadhakas (≥70%)', `${monthly.devStats ? monthly.devStats.filter(d=>d.attendanceRate>=70).length : 0} Devotees`, 'regular attendees (≥70%)', {em:'🌟',tint:APP.morningAttFilter==='star',act:'morning-period-star-filter',s:'star'})}
           </div>
 
           <!-- Charts: Attendance Breakdown Bar Graph (Fitted to the right) -->
@@ -19237,6 +19241,7 @@ function morningProgramPanel(){
 
           <select data-act="morning-att-filter" onchange="APP.morningAttFilter=this.value;render();" style="padding:6px 10px;font-size:12px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);cursor:pointer">
             <option value="">All Attendance</option>
+            <option value="active" ${APP.morningAttFilter==='active'?'selected':''}>🏃 Active (≥1 session)</option>
             <option value="star" ${APP.morningAttFilter==='star'?'selected':''}>🌟 Regular (≥70%)</option>
             <option value="low" ${APP.morningAttFilter==='low'?'selected':''}>🔴 Low (&lt;70%)</option>
             <option value="zero" ${APP.morningAttFilter==='zero'?'selected':''}>⚪ Zero Punches (0%)</option>
@@ -19337,7 +19342,7 @@ function morningProgramPanel(){
         <!-- MOBILE LEADERBOARD (monthly attendance) -->
         <div class="morning-mobile-lb">
           <div class="lb-filter-chips">
-            ${[{v:'',label:'All'},{v:'star',label:'🌟 Regular ≥70%'},{v:'low',label:'🔴 Low <70%'},{v:'zero',label:'⚪ Zero'}]
+            ${[{v:'',label:'All'},{v:'active',label:'🏃 Active'},{v:'star',label:'🌟 Regular ≥70%'},{v:'low',label:'🔴 Low <70%'},{v:'zero',label:'⚪ Zero'}]
               .map(({v,label}) => `<button class="lb-chip ${(APP.morningAttFilter||'')=== v?'active':''}" onclick="APP.morningAttFilter='${v}';render();">${label}</button>`).join('')}
           </div>
           <div>
@@ -19392,8 +19397,8 @@ function morningProgramPanel(){
           <select data-act="morning-progress-sort" onchange="APP.morningProgressSort=this.value;render();" style="padding:5px 8px;font-size:11.5px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--ink);cursor:pointer">
             <option value="growth_desc" ${APP.morningProgressSort==='growth_desc'||!APP.morningProgressSort?'selected':''}>Sort: Highest Growth (+% First)</option>
             <option value="growth_asc" ${APP.morningProgressSort==='growth_asc'?'selected':''}>Sort: Lowest Growth (-% First)</option>
-            <option value="punct_desc" ${APP.morningProgressSort==='punct_desc'?'selected':''}>Sort: Highest Punctuality %</option>
-            <option value="punct_asc" ${APP.morningProgressSort==='punct_asc'?'selected':''}>Sort: Lowest Punctuality %</option>
+            <option value="att_desc" ${APP.morningProgressSort==='att_desc'||APP.morningProgressSort==='punct_desc'?'selected':''}>Sort: Highest Attendance %</option>
+            <option value="att_asc" ${APP.morningProgressSort==='att_asc'||APP.morningProgressSort==='punct_asc'?'selected':''}>Sort: Lowest Attendance %</option>
             <option value="present_desc" ${APP.morningProgressSort==='present_desc'?'selected':''}>Sort: Most Days Present</option>
             <option value="name_asc" ${APP.morningProgressSort==='name_asc'?'selected':''}>Sort: Devotee Name (A → Z)</option>
           </select>
@@ -19500,12 +19505,12 @@ function morningProgramPanel(){
               <div class="bc-count">${onTrackDevs.length}</div>
               <div class="bc-label">On Track</div>
             </div>
-            <div class="bucket-card b-yellow ${activeBkt==='followup'?'active-bucket':''}" onclick="APP.morningProgressBucket=APP.morningProgressBucket==='followup'?'':'followup';render();" title="Punctuality 50–79%">
+            <div class="bucket-card b-yellow ${activeBkt==='followup'?'active-bucket':''}" onclick="APP.morningProgressBucket=APP.morningProgressBucket==='followup'?'':'followup';render();" title="Attendance 50–69%">
               <div class="bc-icon">⚠️</div>
               <div class="bc-count">${followupDevs.length}</div>
               <div class="bc-label">Follow-up</div>
             </div>
-            <div class="bucket-card b-red ${activeBkt==='atrisk'?'active-bucket':''}" onclick="APP.morningProgressBucket=APP.morningProgressBucket==='atrisk'?'':'atrisk';render();" title="Attendance < 70%">
+            <div class="bucket-card b-red ${activeBkt==='atrisk'?'active-bucket':''}" onclick="APP.morningProgressBucket=APP.morningProgressBucket==='atrisk'?'':'atrisk';render();" title="Attendance < 50%">
               <div class="bc-icon">🔴</div>
               <div class="bc-count">${atRiskDevs.length}</div>
               <div class="bc-label">At Risk</div>
@@ -19532,12 +19537,13 @@ function morningProgramPanel(){
           <!-- Leaderboard Rows -->
           <div>
             ${displayDevs.length ? displayDevs.map((p, i) => {
-              const delta = p.punctualityGrowthDelta;
+              const delta = p.attendanceGrowthDelta !== undefined ? p.attendanceGrowthDelta : (p.punctualityGrowthDelta || 0);
               const deltaStr = delta > 0 ? `<span style="color:#10B981">+${delta}%↑</span>`
                              : delta < 0 ? `<span style="color:#EF4444">${delta}%↓</span>`
                              : `<span style="color:var(--ink-3)">—</span>`;
-              const dotCls = p.punctualityRate >= 80 ? 'green' : p.punctualityRate >= 50 ? 'yellow' : 'red';
-              const barFilled = Math.round((p.punctualityRate / 100) * 5);
+              const aRate = p.attendanceRate !== undefined ? p.attendanceRate : (p.punctualityRate || 0);
+              const dotCls = aRate >= 80 ? 'green' : aRate >= 50 ? 'yellow' : 'red';
+              const barFilled = Math.round((aRate / 100) * 5);
               const bars = Array.from({length:5},(_,bi) =>
                 `<div class="lb-bar-block ${bi < barFilled ? 'filled' : ''}"></div>`
               ).join('');
@@ -19551,7 +19557,7 @@ function morningProgramPanel(){
                   <small>${p.presentCount}/${totalSessions} sessions · ${p.standardTime}</small>
                 </span>
                 <div class="lb-bar-wrap">${bars}</div>
-                <span class="lb-pct" style="color:${p.punctualityRate>=80?'#10B981':p.punctualityRate>=50?'#F59E0B':'#EF4444'}">${p.punctualityRate}%</span>
+                <span class="lb-pct" style="color:${aRate>=80?'#10B981':aRate>=50?'#F59E0B':'#EF4444'}">${aRate}%</span>
                 <span class="lb-delta">${deltaStr}</span>
                 <span class="lb-icon">${statusIcon}</span>
                 <a class="lb-action" href="#/devotee/${p.devotee.id}">👤</a>
@@ -33221,6 +33227,13 @@ document.addEventListener('click',e=>{
     APP.morningAttFilter = '';
     APP.morningPuncFilter = '';
     APP.morningSort = 'att_desc';
+    render();
+    break;
+  }
+  case 'morning-period-active-filter':stop();{
+    APP.morningAttFilter = APP.morningAttFilter === 'active' ? '' : 'active';
+    APP.morningFilterStatus = '';
+    APP.morningFilterBucket = '';
     render();
     break;
   }
