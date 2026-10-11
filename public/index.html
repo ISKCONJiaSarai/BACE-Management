@@ -16255,58 +16255,54 @@ function computePeriodMorningMetrics(byDate, availableDates, targetDate, numDays
   }
   
   const devStats = uploadedDevs.map((d, i) => {
-    let presentCount = 0;
     let onTimeCount = 0;
     let graceCount = 0;
     let lateCount = 0;
     let veryLateCount = 0;
-    let absentCount = 0;
     const dailyPunches = [];
 
+    let missedCount = 0;
     periodDates.forEach(dt => {
       const dayRows = byDate[dt] || [];
       const devRow = dayRows.find(r => r.devoteeId === d.id || matchDevoteeFirstName(r.name, d.name));
       if (devRow && devRow.status === 'On Time') {
-        presentCount++;
         onTimeCount++;
         dailyPunches.push({ date: dt, status: 'On Time', time: devRow.timeIn });
       } else if (devRow && devRow.status === 'Grace') {
-        presentCount++;
         graceCount++;
         dailyPunches.push({ date: dt, status: 'Grace', time: devRow.timeIn });
       } else if (devRow && devRow.status === 'Late') {
-        presentCount++;
         lateCount++;
         dailyPunches.push({ date: dt, status: 'Late', time: devRow.timeIn });
       } else if (devRow && devRow.status === 'Very late') {
-        presentCount++;
         veryLateCount++;
         dailyPunches.push({ date: dt, status: 'Very late', time: devRow.timeIn });
       } else {
-        absentCount++;
+        missedCount++;
         dailyPunches.push({ date: dt, status: 'Absent', time: devRow ? devRow.timeIn : '—' });
       }
     });
 
+    // Attendance is days present & grace included; late & absent calculated as being absent
+    const presentCount = onTimeCount + graceCount;
+    const absentCount = lateCount + veryLateCount + missedCount;
+
     // Previous period stats for WoW / MoM growth
-    let prevPresentCount = 0;
     let prevOnTimeCount = 0;
     let prevGraceCount = 0;
     prevPeriodDates.forEach(dt => {
       const dayRows = byDate[dt] || [];
       const devRow = dayRows.find(r => r.devoteeId === d.id || matchDevoteeFirstName(r.name, d.name));
-      if (devRow && devRow.status !== 'Absent') {
-        prevPresentCount++;
-        if (devRow.status === 'On Time') prevOnTimeCount++;
-        else if (devRow.status === 'Grace') prevGraceCount++;
-      }
+      if (devRow && devRow.status === 'On Time') prevOnTimeCount++;
+      else if (devRow && devRow.status === 'Grace') prevGraceCount++;
     });
 
-    const attendanceRate = totalSessions > 0 ? Math.round(((onTimeCount + graceCount) / totalSessions) * 100) : 0;
-    const punctualityRate = presentCount > 0 ? Math.round(((onTimeCount + graceCount) / presentCount) * 100) : 0;
+    const prevPresentCount = prevOnTimeCount + prevGraceCount;
+    const attendanceRate = totalSessions > 0 ? Math.round((presentCount / totalSessions) * 100) : 0;
+    const punctualityRate = attendanceRate;
 
-    const prevAttendanceRate = prevPeriodDates.length > 0 ? Math.round(((prevOnTimeCount + prevGraceCount) / prevPeriodDates.length) * 100) : attendanceRate;
-    const prevPunctualityRate = prevPresentCount > 0 ? Math.round(((prevOnTimeCount + prevGraceCount) / prevPresentCount) * 100) : punctualityRate;
+    const prevAttendanceRate = prevPeriodDates.length > 0 ? Math.round((prevPresentCount / prevPeriodDates.length) * 100) : attendanceRate;
+    const prevPunctualityRate = prevAttendanceRate;
 
     const attendanceGrowthDelta = attendanceRate - prevAttendanceRate;
     const punctualityGrowthDelta = punctualityRate - prevPunctualityRate;
@@ -16345,24 +16341,26 @@ function computePeriodMorningMetrics(byDate, availableDates, targetDate, numDays
   const totalOnTime = devStats.reduce((acc, d) => acc + d.onTimeCount, 0);
   const totalGrace = devStats.reduce((acc, d) => acc + d.graceCount, 0);
   const totalLate = devStats.reduce((acc, d) => acc + d.lateCount, 0);
-  const totalAttended = totalOnTime + totalGrace; // Attendance includes only On Time and Grace (not Late or Absent)
-  const totalAbsent = Math.max(0, totalPossible - (totalOnTime + totalGrace + totalLate));
+  const totalVeryLate = devStats.reduce((acc, d) => acc + (d.veryLateCount || 0), 0);
+  const totalAttended = totalOnTime + totalGrace; // Days present & grace included
+  const totalAbsent = Math.max(0, totalPossible - totalAttended); // Late & absent calculated as being absent
+  const totalMissed = Math.max(0, totalAbsent - (totalLate + totalVeryLate));
 
   const avgAttendancePct = totalPossible > 0 ? Math.round((totalAttended / totalPossible) * 100) : 0;
-  const avgPunctualityPct = (totalOnTime + totalGrace + totalLate) > 0 ? Math.round(((totalOnTime + totalGrace) / (totalOnTime + totalGrace + totalLate)) * 100) : 0;
-  const onTimePct = totalAttended > 0 ? Math.round((totalOnTime / totalAttended) * 100) : 0;
+  const avgPunctualityPct = avgAttendancePct;
+  const onTimePct = totalPossible > 0 ? Math.round((totalOnTime / totalPossible) * 100) : 0;
 
-  // Average devotees per session/day (ensures total never crosses visible devotee count)
+  // Average devotees per session/day
   const avgOnTime = totalSessions > 0 ? Number((totalOnTime / totalSessions).toFixed(1)) : 0;
   const avgGrace = totalSessions > 0 ? Number((totalGrace / totalSessions).toFixed(1)) : 0;
-  const avgLate = totalSessions > 0 ? Number((totalLate / totalSessions).toFixed(1)) : 0;
-  const avgAbsent = totalSessions > 0 ? Number((totalAbsent / totalSessions).toFixed(1)) : 0;
+  const avgLate = totalSessions > 0 ? Number(((totalLate + totalVeryLate) / totalSessions).toFixed(1)) : 0;
+  const avgAbsent = totalSessions > 0 ? Number((totalMissed / totalSessions).toFixed(1)) : 0;
 
-  // Period arrival distribution buckets (avg devotees per day, without very late)
+  // Period arrival distribution buckets (with total counts matching totalPossible)
   const buckets = [
-    { label: '≤ 05:30 AM', count: avgOnTime, rawCount: totalOnTime, sub: 'On Time (≤ 05:30)', color: '#059669' },
-    { label: '05:30–06:00', count: avgGrace, rawCount: totalGrace, sub: 'Grace (05:30–06:00)', color: '#10B981' },
-    { label: '06:00–07:00', count: avgLate, rawCount: totalLate, sub: 'Late (06:00–07:00)', color: '#F59E0B' }
+    { label: '≤ 05:30 AM', count: totalOnTime, rawCount: totalOnTime, sub: 'On Time (≤ 05:30)', color: '#059669' },
+    { label: '05:30–06:00', count: totalGrace, rawCount: totalGrace, sub: 'Grace (05:30–06:00)', color: '#10B981' },
+    { label: '06:00–07:00', count: totalLate + totalVeryLate, rawCount: totalLate + totalVeryLate, sub: 'Late (06:00–07:00)', color: '#F59E0B' }
   ];
 
   // Arrival punch timings from attending non-hidden devotees
@@ -16390,7 +16388,9 @@ function computePeriodMorningMetrics(byDate, availableDates, targetDate, numDays
     totalOnTime,
     totalGrace,
     totalLate,
+    totalVeryLate,
     totalAbsent,
+    totalMissed,
     avgOnTime,
     avgGrace,
     avgLate,
@@ -17086,8 +17086,9 @@ function exportMorningPeriodReportPDF(periodType) {
   const repOnTime = visibleDevs.reduce((a, d) => a + d.onTimeCount, 0);
   const repGrace = visibleDevs.reduce((a, d) => a + d.graceCount, 0);
   const repLate = visibleDevs.reduce((a, d) => a + d.lateCount, 0);
-  const repAttended = repOnTime + repGrace; // Attendance includes ONLY on time and grace, not late and absent
-  const repAbsent = Math.max(0, repTotalPossible - (repOnTime + repGrace + repLate));
+  const repAttended = repOnTime + repGrace; // Attendance includes ONLY on time and grace (days present & grace included)
+  const repAbsent = Math.max(0, repTotalPossible - repAttended); // Late and absent calculated as absent
+  const repMissed = Math.max(0, repAbsent - repLate);
   const repAvgAttPct = repTotalPossible > 0 ? Math.round((repAttended / repTotalPossible) * 100) : 0;
 
   // Average devotees per session/day (summing to visibleDevs.length)
@@ -17160,31 +17161,31 @@ function exportMorningPeriodReportPDF(periodType) {
   <div class="section-title">🎯 Sadhana &amp; Arrival Analysis</div>
   <div class="analytics-grid">
     <div class="analytics-card">
-      <div class="analytics-head">🎯 Punctuality Breakdown (Daily Avg per Devotee)</div>
+      <div class="analytics-head">🎯 Attendance Breakdown</div>
       <div class="breakdown-row">
         <span>🟢 On Time (≤ 05:30 AM)</span>
-        <b>${repAvgOnTime} (${repTotalPossible > 0 ? Math.round((repOnTime / repTotalPossible) * 100) : 0}%)</b>
+        <b>${repTotalPossible > 0 ? Math.round((repOnTime / repTotalPossible) * 100) : 0}%</b>
       </div>
       <div class="breakdown-row">
         <span>🟡 Grace (05:30–06:00 AM)</span>
-        <b>${repAvgGrace} (${repTotalPossible > 0 ? Math.round((repGrace / repTotalPossible) * 100) : 0}%)</b>
+        <b>${repTotalPossible > 0 ? Math.round((repGrace / repTotalPossible) * 100) : 0}%</b>
       </div>
       <div class="breakdown-row">
         <span>🔴 Late (06:00–07:00 AM)</span>
-        <b>${repAvgLate} (${repTotalPossible > 0 ? Math.round((repLate / repTotalPossible) * 100) : 0}%)</b>
+        <b>${repTotalPossible > 0 ? Math.round((repLate / repTotalPossible) * 100) : 0}%</b>
       </div>
       <div class="breakdown-row" style="border-bottom:none;font-weight:700">
         <span>⚪ Absent (Missed Sessions)</span>
-        <b>${repAvgAbsent} (${repTotalPossible > 0 ? Math.round((repAbsent / repTotalPossible) * 100) : 0}%)</b>
+        <b>${repTotalPossible > 0 ? Math.round((repMissed / repTotalPossible) * 100) : 0}%</b>
       </div>
     </div>
 
     <div class="analytics-card">
-      <div class="analytics-head">📈 Arrival Distribution Timeline (Daily Avg per Devotee)</div>
+      <div class="analytics-head">📈 Arrival Distribution Timeline</div>
       ${repBuckets.map(b => `
         <div class="breakdown-row">
           <span style="font-weight:600">${b.label} <small style="color:#64748b">(${b.sub || 'Arrival window'})</small></span>
-          <span class="pill" style="background:#f1f5f9;color:#0f172a">${b.count} devotees</span>
+          <span class="pill" style="background:#f1f5f9;color:#0f172a">${repTotalPossible > 0 ? Math.round(((b.rawCount || b.count) / repTotalPossible) * 100) : 0}%</span>
         </div>
       `).join('')}
     </div>
@@ -17724,8 +17725,9 @@ function computeMorningMetrics(rows, date){
   const lateCount = rows.filter(r => r.status === 'Late').length;
   const veryLateCount = rows.filter(r => r.status === 'Very late').length;
   const absentCount = rows.filter(r => r.status === 'Absent').length;
-  // Attendance marked present ONLY when present according to standard time (excluding grace & late)
-  const attended = onTimeCount;
+  // Attendance marked present: days present (on time) & grace included
+  const attended = onTimeCount + graceCount;
+  const absentTotal = lateCount + veryLateCount + absentCount;
 
   const onTimePct = attended > 0 ? pct(onTimeCount, attended) : 0;
   const punctualityScore = attended > 0 ? pct(onTimeCount + graceCount, attended) : 0;
@@ -18334,7 +18336,8 @@ function getRosterSlot(roster, dateStr, sId) {
 /* =========================================================================
    🌅 1. MORNING PROGRAMME (Devotees Progress Tracking & CSV Analysis)
    ========================================================================= */
-function renderMorningCharts(m, dateLabel, filterSt = '', activeBucket = '') {
+function renderMorningCharts(m, dateLabel, filterSt = '', activeBucket = '', isPeriod = false) {
+  const isPeriodView = Boolean(isPeriod || m.isPeriod || (dateLabel && (dateLabel.includes('Weekly') || dateLabel.includes('Monthly'))));
   const R = 44;
   const C = 2 * Math.PI * R;
   const total = m.total || ((m.onTimeCount || 0) + (m.graceCount || 0) + (m.lateCount || 0) + (m.absentCount || 0)) || 1;
@@ -18351,7 +18354,9 @@ function renderMorningCharts(m, dateLabel, filterSt = '', activeBucket = '') {
     const off = (acc / 100) * C;
     acc += pc;
     const isSel = filterSt === p.status;
-    return pc > 0 ? `<circle cx="60" cy="60" r="${R}" fill="none" stroke="${p.col}" stroke-width="${isSel ? '17' : '14'}" stroke-dasharray="${dash.toFixed(2)} ${C.toFixed(2)}" stroke-dashoffset="${(-off).toFixed(2)}" transform="rotate(-90 60 60)" stroke-linecap="round" data-act="morning-filter-status" data-s="${p.status}" style="cursor:pointer;transition:all .2s ease" title="Click to view ${p.label}${p.desc}: ${p.count} devotees"/>` : '';
+    const pPct = pct(p.count, total);
+    const tipText = isPeriodView ? `${p.label}${p.desc}: ${pPct}%` : `${p.label}${p.desc}: ${p.count} devotees (${pPct}%)`;
+    return pc > 0 ? `<circle cx="60" cy="60" r="${R}" fill="none" stroke="${p.col}" stroke-width="${isSel ? '17' : '14'}" stroke-dasharray="${dash.toFixed(2)} ${C.toFixed(2)}" stroke-dashoffset="${(-off).toFixed(2)}" transform="rotate(-90 60 60)" stroke-linecap="round" data-act="morning-filter-status" data-s="${p.status}" style="cursor:pointer;transition:all .2s ease" title="Click to view ${tipText}"/>` : '';
   }).join('');
 
   const buckets = (m.buckets || [
@@ -18360,14 +18365,14 @@ function renderMorningCharts(m, dateLabel, filterSt = '', activeBucket = '') {
     { label: '06:00–07:00', count: m.lateCount, color: '#F59E0B', sub: 'Late (06:00–07:00)' }
   ]).filter(b => !b.label.includes('> 07:00') && !b.sub?.includes('Very late'));
   const maxBucket = Math.max(...buckets.map(b => Number(b.count) || 0), 1);
-  const attendedCount = (m.onTimeCount || 0) + (m.graceCount || 0); // Only On Time and Grace count as attended
+  const attendedCount = (m.onTimeCount || 0) + (m.graceCount || 0); // Days present & grace included as attended
   const attPct = total > 0 ? Math.round((attendedCount / total) * 100) : 0;
   const attColor = attPct >= 70 ? 'var(--green,#10B981)' : 'var(--danger,#DC2626)';
 
   return `<div class="morning-charts-grid">
     <div class="card pad morning-punc-card" style="position:relative">
       <div class="card-h" style="padding:0 0 12px;border-bottom:1px solid var(--line-2);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
-        <h3 style="margin:0">🎯 Punctuality Breakdown</h3>
+        <h3 style="margin:0">🎯 Attendance Breakdown</h3>
         <span class="tiny" style="margin-left:auto">${esc(dateLabel)}</span>
       </div>
       <div class="morning-punc-body" style="display:flex;align-items:center;justify-content:space-around;gap:16px;margin-top:14px;flex-wrap:wrap">
@@ -18384,12 +18389,15 @@ function renderMorningCharts(m, dateLabel, filterSt = '', activeBucket = '') {
         <div class="morning-punc-legend" style="display:flex;flex-direction:column;gap:6px;min-width:140px;flex:1 1 180px">
           ${parts.map(p => {
             const isSel = filterSt === p.status;
-            return `<div class="click click-row morning-punc-row" data-act="morning-filter-status" data-s="${p.status}" style="display:flex;align-items:center;justify-content:space-between;font-size:12px;padding:6px 10px;border-radius:6px;cursor:pointer;transition:all .15s;${isSel ? 'background:var(--paper-2);font-weight:700;border-left:3px solid ' + p.col : 'background:transparent'}" title="Click to view ${p.label}${p.desc}: ${p.count} devotees">
+            const pPct = pct(p.count, total);
+            const badgeText = isPeriodView ? `${pPct}%` : `${p.count} (${pPct}%)`;
+            const rowTip = isPeriodView ? `Click to view ${p.label}${p.desc}: ${pPct}%` : `Click to view ${p.label}${p.desc}: ${p.count} devotees`;
+            return `<div class="click click-row morning-punc-row" data-act="morning-filter-status" data-s="${p.status}" style="display:flex;align-items:center;justify-content:space-between;font-size:12px;padding:6px 10px;border-radius:6px;cursor:pointer;transition:all .15s;${isSel ? 'background:var(--paper-2);font-weight:700;border-left:3px solid ' + p.col : 'background:transparent'}" title="${rowTip}">
               <span style="display:inline-flex;align-items:center;gap:6px;min-width:0">
                 <i style="width:10px;height:10px;border-radius:3px;background:${p.col};display:inline-block;flex:none"></i>
                 <span style="white-space:nowrap">${p.label}<span class="morning-punc-desc">${p.desc}</span></span>
               </span>
-              <span class="badge ${isSel ? 'b-indigo' : 'b-grey'}" style="font-size:11px;flex:none;margin-left:6px">${p.count} (${pct(p.count, total)}%)</span>
+              <span class="badge ${isSel ? 'b-indigo' : 'b-grey'}" style="font-size:11px;flex:none;margin-left:6px">${badgeText}</span>
             </div>`;
           }).join('')}
         </div>
@@ -18406,8 +18414,11 @@ function renderMorningCharts(m, dateLabel, filterSt = '', activeBucket = '') {
         ${buckets.map(b => {
           const h = Math.max(16, Math.round((b.count / maxBucket) * 90));
           const isSel = activeBucket === b.label;
-          return `<div class="click click-col" data-act="morning-filter-bucket" data-b="${esc(b.label)}" style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;padding:6px 2px;border-radius:6px;transition:all .2s;${isSel ? 'background:var(--paper-2);box-shadow:0 0 0 1.5px var(--indigo);font-weight:700' : ''}" title="Click to filter by ${b.label}: ${b.count} devotees">
-            <div style="font-size:11px;font-weight:700;color:${isSel ? 'var(--indigo)' : 'var(--ink)'}">${b.count}</div>
+          const bPct = pct(b.count, total);
+          const topLabel = isPeriodView ? `${bPct}%` : `${b.count}`;
+          const bTip = isPeriodView ? `Click to filter by ${b.label}: ${bPct}%` : `Click to filter by ${b.label}: ${b.count} devotees`;
+          return `<div class="click click-col" data-act="morning-filter-bucket" data-b="${esc(b.label)}" style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;padding:6px 2px;border-radius:6px;transition:all .2s;${isSel ? 'background:var(--paper-2);box-shadow:0 0 0 1.5px var(--indigo);font-weight:700' : ''}" title="${bTip}">
+            <div style="font-size:11px;font-weight:700;color:${isSel ? 'var(--indigo)' : 'var(--ink)'}">${topLabel}</div>
             <div style="width:100%;max-width:42px;height:${h}px;background:${b.color};border-radius:6px 6px 2px 2px;transition:height .3s ease, transform .2s ease;${isSel ? 'transform:scaleY(1.05);filter:brightness(1.1)' : ''}"></div>
             <div style="font-size:9.5px;font-weight:600;color:var(--ink-3);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%" title="${b.label}">${b.label}</div>
           </div>`;
@@ -19083,14 +19094,15 @@ function morningProgramPanel(){
 
         <!-- Charts: Donut & Histogram (Weekly Aggregation) -->
         ${renderMorningCharts({
-          total: weekly.devStats ? weekly.devStats.length : 0,
-          onTimeCount: weekly.avgOnTime,
-          graceCount: weekly.avgGrace,
-          lateCount: weekly.avgLate,
-          absentCount: weekly.avgAbsent,
+          isPeriod: true,
+          total: weekly.totalPossible,
+          onTimeCount: weekly.totalOnTime,
+          graceCount: weekly.totalGrace,
+          lateCount: weekly.totalLate + (weekly.totalVeryLate || 0),
+          absentCount: weekly.totalMissed,
           earliestTime: weekly.earliestTime,
           buckets: weekly.buckets
-        }, `Weekly Avg per Day (${weekly.devStats ? weekly.devStats.length : 0} Devotees)`, filterSt, activeBucket)}
+        }, `Weekly Attendance (${weekly.devStats ? weekly.devStats.length : 0} Devotees)`, filterSt, activeBucket, true)}
 
         ${(filterSt || activeBucket) ? `
         <div style="background:var(--paper-2);border-left:4px solid var(--indigo);padding:8px 14px;border-radius:8px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
@@ -19228,14 +19240,15 @@ function morningProgramPanel(){
 
         <!-- Charts: Donut & Histogram (Monthly Aggregation) -->
         ${renderMorningCharts({
-          total: monthly.devStats ? monthly.devStats.length : 0,
-          onTimeCount: monthly.avgOnTime,
-          graceCount: monthly.avgGrace,
-          lateCount: monthly.avgLate,
-          absentCount: monthly.avgAbsent,
+          isPeriod: true,
+          total: monthly.totalPossible,
+          onTimeCount: monthly.totalOnTime,
+          graceCount: monthly.totalGrace,
+          lateCount: monthly.totalLate + (monthly.totalVeryLate || 0),
+          absentCount: monthly.totalMissed,
           earliestTime: monthly.earliestTime,
           buckets: monthly.buckets
-        }, `Monthly Avg per Day (${monthly.devStats ? monthly.devStats.length : 0} Devotees)`, filterSt, activeBucket)}
+        }, `Monthly Attendance (${monthly.devStats ? monthly.devStats.length : 0} Devotees)`, filterSt, activeBucket, true)}
 
         ${(filterSt || activeBucket) ? `
         <div style="background:var(--paper-2);border-left:4px solid var(--indigo);padding:8px 14px;border-radius:8px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
