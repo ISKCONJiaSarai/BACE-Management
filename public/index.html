@@ -14663,14 +14663,13 @@ function viewDevotee(id){
            </div>
            <div style="display:flex;align-items:center;gap:6px">
              <button class="btn sm" data-act="edit-devotee-morning-std" data-id="${d.id}" title="Edit standard attendance time for this devotee" onclick="event.stopPropagation()">⏱️ Standard: ${esc(mStd)}</button>
-             <span class="badge ${ma.punctuality>=75?'b-green':'b-amber'}">${ma.punctuality}% Punctual</span>
+             <span class="badge ${ma.rate>=70?'b-green':'b-danger'}">${ma.rate}% Attendance</span>
              <span class="ch-toggle"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 6 8 10 12 6"/></svg></span>
            </div>
          </div>
          <div class="collapsible-body-wrap"><div class="collapsible-body"><div class="card-b">
-           <div class="grid g4" style="margin-bottom:14px">
+           <div class="grid g3" style="margin-bottom:14px">
              ${stat('Standard Target', mStd, 'Devotee on-time target', { em: '⏱' })}
-             ${stat('Punctuality Rate', (ma.punctuality !== undefined ? ma.punctuality : '0') + '%', 'On-time / grace arrival', { em: '🎯' })}
              ${stat('Morning Attendance', ma.rate + '%', ma.present + ' / ' + ma.total + ' sessions present', { em: '🌅' })}
              ${stat('Last Punch', ma.lastPunchDate ? (fmtD(ma.lastPunchDate) + ' ' + (ma.lastTimeIn || '')) : 'No punch yet', ma.lastStatus || 'Standard: ' + mStd, { em: '📅' })}
            </div>
@@ -14678,7 +14677,7 @@ function viewDevotee(id){
            <!-- Responsive Punctuality Breakdown -->
            <div style="background:var(--surface-2, #f8fafc);border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:14px">
              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-               <span style="font-size:12px;font-weight:700">Check-in Punctuality Distribution</span>
+               <span style="font-size:12px;font-weight:700">Check-in Arrival Distribution</span>
                <span class="tiny" style="color:var(--ink-2)">Total: ${ma.total} morning sessions</span>
              </div>
              <div style="display:flex;height:12px;border-radius:6px;overflow:hidden;background:var(--line);margin-bottom:10px">
@@ -16303,25 +16302,16 @@ function computePeriodMorningMetrics(byDate, availableDates, targetDate, numDays
       }
     });
 
-    const attendanceRate = totalSessions > 0 ? Math.round((presentCount / totalSessions) * 100) : 0;
+    const attendanceRate = totalSessions > 0 ? Math.round(((onTimeCount + graceCount) / totalSessions) * 100) : 0;
     const punctualityRate = presentCount > 0 ? Math.round(((onTimeCount + graceCount) / presentCount) * 100) : 0;
 
-    const prevAttendanceRate = prevPeriodDates.length > 0 ? Math.round((prevPresentCount / prevPeriodDates.length) * 100) : attendanceRate;
+    const prevAttendanceRate = prevPeriodDates.length > 0 ? Math.round(((prevOnTimeCount + prevGraceCount) / prevPeriodDates.length) * 100) : attendanceRate;
     const prevPunctualityRate = prevPresentCount > 0 ? Math.round(((prevOnTimeCount + prevGraceCount) / prevPresentCount) * 100) : punctualityRate;
 
     const attendanceGrowthDelta = attendanceRate - prevAttendanceRate;
     const punctualityGrowthDelta = punctualityRate - prevPunctualityRate;
 
-    let statusBadge = '🌟 100% Exemplary';
-    if (attendanceRate < 60 || absentCount >= Math.ceil(totalSessions * 0.4)) {
-      statusBadge = '⚠️ Needs Follow-up';
-    } else if (punctualityRate >= 85) {
-      statusBadge = '🌟 100% Exemplary';
-    } else if (punctualityRate >= 65) {
-      statusBadge = '✅ Steady Regular';
-    } else {
-      statusBadge = '⚠️ Needs Follow-up';
-    }
+    let statusBadge = attendanceRate >= 70 ? '🌟 Regular (≥70%)' : '⚠️ Low (<70%)';
 
     const stdInfo = getDevoteeMorningStandard(d);
 
@@ -16348,27 +16338,31 @@ function computePeriodMorningMetrics(byDate, availableDates, targetDate, numDays
     };
   });
 
-  // Sort by attendanceRate desc, then punctualityRate desc
-  devStats.sort((a, b) => b.attendanceRate - a.attendanceRate || b.punctualityRate - a.punctualityRate);
+  // Sort by attendanceRate desc, then name asc
+  devStats.sort((a, b) => b.attendanceRate - a.attendanceRate || a.name.localeCompare(b.name));
 
   const totalPossible = totalSessions * uploadedDevs.length;
   const totalOnTime = devStats.reduce((acc, d) => acc + d.onTimeCount, 0);
   const totalGrace = devStats.reduce((acc, d) => acc + d.graceCount, 0);
   const totalLate = devStats.reduce((acc, d) => acc + d.lateCount, 0);
-  const totalVeryLate = devStats.reduce((acc, d) => acc + (d.veryLateCount || 0), 0);
-  const totalAttended = totalOnTime + totalGrace + totalLate + totalVeryLate;
-  const totalAbsent = Math.max(0, totalPossible - totalAttended);
+  const totalAttended = totalOnTime + totalGrace; // Attendance includes only On Time and Grace (not Late or Absent)
+  const totalAbsent = Math.max(0, totalPossible - (totalOnTime + totalGrace + totalLate));
 
   const avgAttendancePct = totalPossible > 0 ? Math.round((totalAttended / totalPossible) * 100) : 0;
-  const avgPunctualityPct = totalAttended > 0 ? Math.round(((totalOnTime + totalGrace) / totalAttended) * 100) : 0;
+  const avgPunctualityPct = (totalOnTime + totalGrace + totalLate) > 0 ? Math.round(((totalOnTime + totalGrace) / (totalOnTime + totalGrace + totalLate)) * 100) : 0;
   const onTimePct = totalAttended > 0 ? Math.round((totalOnTime / totalAttended) * 100) : 0;
 
-  // Period arrival distribution buckets (matching actual check-in attendance)
+  // Average devotees per session/day (ensures total never crosses visible devotee count)
+  const avgOnTime = totalSessions > 0 ? Number((totalOnTime / totalSessions).toFixed(1)) : 0;
+  const avgGrace = totalSessions > 0 ? Number((totalGrace / totalSessions).toFixed(1)) : 0;
+  const avgLate = totalSessions > 0 ? Number((totalLate / totalSessions).toFixed(1)) : 0;
+  const avgAbsent = totalSessions > 0 ? Number((totalAbsent / totalSessions).toFixed(1)) : 0;
+
+  // Period arrival distribution buckets (avg devotees per day, without very late)
   const buckets = [
-    { label: '≤ 05:30 AM', count: totalOnTime, sub: 'On Time (\u2264 05:30)', color: '#059669' },
-    { label: '05:30–06:00', count: totalGrace, sub: 'Grace (05:30–06:00)', color: '#10B981' },
-    { label: '06:00–07:00', count: totalLate, sub: 'Late (06:00–07:00)', color: '#F59E0B' },
-    { label: '> 07:00 AM', count: totalVeryLate, sub: 'Very late (> 07:00)', color: '#DC2626' }
+    { label: '≤ 05:30 AM', count: avgOnTime, rawCount: totalOnTime, sub: 'On Time (≤ 05:30)', color: '#059669' },
+    { label: '05:30–06:00', count: avgGrace, rawCount: totalGrace, sub: 'Grace (05:30–06:00)', color: '#10B981' },
+    { label: '06:00–07:00', count: avgLate, rawCount: totalLate, sub: 'Late (06:00–07:00)', color: '#F59E0B' }
   ];
 
   // Arrival punch timings from attending non-hidden devotees
@@ -16396,8 +16390,11 @@ function computePeriodMorningMetrics(byDate, availableDates, targetDate, numDays
     totalOnTime,
     totalGrace,
     totalLate,
-    totalVeryLate,
     totalAbsent,
+    avgOnTime,
+    avgGrace,
+    avgLate,
+    avgAbsent,
     avgAttendancePct,
     avgPunctualityPct,
     onTimePct,
@@ -17083,24 +17080,29 @@ function exportMorningPeriodReportPDF(periodType) {
 
   const periodTitle = isWeekly ? 'Weekly' : 'Monthly';
   const activeDevs = visibleDevs.filter(d => d.presentCount > 0);
-  const starDevs = visibleDevs.filter(d => d.attendanceRate >= 80);
 
   const repTotalSessions = pData.totalSessions;
   const repTotalPossible = repTotalSessions * visibleDevs.length;
   const repOnTime = visibleDevs.reduce((a, d) => a + d.onTimeCount, 0);
   const repGrace = visibleDevs.reduce((a, d) => a + d.graceCount, 0);
   const repLate = visibleDevs.reduce((a, d) => a + d.lateCount, 0);
-  const repVeryLate = visibleDevs.reduce((a, d) => a + (d.veryLateCount || 0), 0);
-  const repAttended = repOnTime + repGrace + repLate + repVeryLate;
-  const repAbsent = Math.max(0, repTotalPossible - repAttended);
+  const repAttended = repOnTime + repGrace; // Attendance includes ONLY on time and grace, not late and absent
+  const repAbsent = Math.max(0, repTotalPossible - (repOnTime + repGrace + repLate));
   const repAvgAttPct = repTotalPossible > 0 ? Math.round((repAttended / repTotalPossible) * 100) : 0;
 
+  // Average devotees per session/day (summing to visibleDevs.length)
+  const repAvgOnTime = repTotalSessions > 0 ? Number((repOnTime / repTotalSessions).toFixed(1)) : 0;
+  const repAvgGrace = repTotalSessions > 0 ? Number((repGrace / repTotalSessions).toFixed(1)) : 0;
+  const repAvgLate = repTotalSessions > 0 ? Number((repLate / repTotalSessions).toFixed(1)) : 0;
+  const repAvgAbsent = repTotalSessions > 0 ? Number((repAbsent / repTotalSessions).toFixed(1)) : 0;
+
   const repBuckets = [
-    { label: '≤ 05:30 AM', count: repOnTime, sub: 'On Time (≤ 05:30)' },
-    { label: '05:30–06:00', count: repGrace, sub: 'Grace (05:30–06:00)' },
-    { label: '06:00–07:00', count: repLate, sub: 'Late (06:00–07:00)' },
-    { label: '> 07:00 AM', count: repVeryLate, sub: 'Very late (> 07:00)' }
+    { label: '≤ 05:30 AM', count: repAvgOnTime, sub: 'On Time (≤ 05:30)' },
+    { label: '05:30–06:00', count: repAvgGrace, sub: 'Grace (05:30–06:00)' },
+    { label: '06:00–07:00', count: repAvgLate, sub: 'Late (06:00–07:00)' }
   ];
+
+  const starDevs = visibleDevs.filter(d => d.attendanceRate >= 70);
 
   // Determine periodId for remark lookup
   const periodId = isWeekly ? (APP.morningSelectedWeek || 'latest_7') : (APP.morningSelectedMonth || (pData.startDate || '').substring(0, 7));
@@ -17123,7 +17125,7 @@ function exportMorningPeriodReportPDF(periodType) {
     metaItems: [
       { label: 'REPORT PERIOD', val: `${periodTitle} (${pData.totalSessions} Days)` },
       { label: 'DEVOTEES LOGGED', val: `${visibleDevs.length} Devotees` },
-      { label: 'ACTIVE ATTENDEES', val: `${activeDevs.length} Active (${starDevs.length} Star)` },
+      { label: 'ACTIVE ATTENDEES', val: `${activeDevs.length} Active (${starDevs.length} ≥70%)` },
       { label: 'AVG ATTENDANCE', val: `${repAvgAttPct}%` }
     ],
     isLandscape: false,
@@ -17147,46 +17149,42 @@ function exportMorningPeriodReportPDF(periodType) {
     </div>
     <div class="stat-card">
       <div class="lbl">${periodTitle} Attendance</div>
-      <div class="val" style="color:#ea580c">${repAvgAttPct}%</div>
+      <div class="val" style="color:${repAvgAttPct >= 70 ? '#16a34a' : '#dc2626'}">${repAvgAttPct}%</div>
     </div>
     <div class="stat-card">
-      <div class="lbl">Star Sadhakas (≥80%)</div>
-      <div class="val" style="color:#d97706">${starDevs.length}</div>
+      <div class="lbl">Regular Sadhakas (≥70%)</div>
+      <div class="val" style="color:#16a34a">${starDevs.length}</div>
     </div>
   </div>
 
   <div class="section-title">🎯 Sadhana &amp; Arrival Analysis</div>
   <div class="analytics-grid">
     <div class="analytics-card">
-      <div class="analytics-head">🎯 Punctuality Breakdown</div>
+      <div class="analytics-head">🎯 Punctuality Breakdown (Daily Avg per Devotee)</div>
       <div class="breakdown-row">
         <span>🟢 On Time (≤ 05:30 AM)</span>
-        <b>${repOnTime} (${repAttended > 0 ? Math.round((repOnTime / repAttended) * 100) : 0}%)</b>
+        <b>${repAvgOnTime} (${repTotalPossible > 0 ? Math.round((repOnTime / repTotalPossible) * 100) : 0}%)</b>
       </div>
       <div class="breakdown-row">
         <span>🟡 Grace (05:30–06:00 AM)</span>
-        <b>${repGrace} (${repAttended > 0 ? Math.round((repGrace / repAttended) * 100) : 0}%)</b>
+        <b>${repAvgGrace} (${repTotalPossible > 0 ? Math.round((repGrace / repTotalPossible) * 100) : 0}%)</b>
       </div>
       <div class="breakdown-row">
         <span>🔴 Late (06:00–07:00 AM)</span>
-        <b>${repLate} (${repAttended > 0 ? Math.round((repLate / repAttended) * 100) : 0}%)</b>
-      </div>
-      <div class="breakdown-row">
-        <span>🟣 Very late (> 07:00 AM)</span>
-        <b>${repVeryLate} (${repAttended > 0 ? Math.round((repVeryLate / repAttended) * 100) : 0}%)</b>
+        <b>${repAvgLate} (${repTotalPossible > 0 ? Math.round((repLate / repTotalPossible) * 100) : 0}%)</b>
       </div>
       <div class="breakdown-row" style="border-bottom:none;font-weight:700">
         <span>⚪ Absent (Missed Sessions)</span>
-        <b>${repAbsent} (${repTotalPossible > 0 ? Math.round((repAbsent / repTotalPossible) * 100) : 0}%)</b>
+        <b>${repAvgAbsent} (${repTotalPossible > 0 ? Math.round((repAbsent / repTotalPossible) * 100) : 0}%)</b>
       </div>
     </div>
 
     <div class="analytics-card">
-      <div class="analytics-head">📈 Arrival Distribution Timeline</div>
+      <div class="analytics-head">📈 Arrival Distribution Timeline (Daily Avg per Devotee)</div>
       ${repBuckets.map(b => `
         <div class="breakdown-row">
           <span style="font-weight:600">${b.label} <small style="color:#64748b">(${b.sub || 'Arrival window'})</small></span>
-          <span class="pill" style="background:#f1f5f9;color:#0f172a">${b.count} check-ins</span>
+          <span class="pill" style="background:#f1f5f9;color:#0f172a">${b.count} devotees</span>
         </div>
       `).join('')}
     </div>
@@ -17231,7 +17229,7 @@ function exportMorningPeriodReportPDF(periodType) {
             <td style="text-align:center;color:${d.lateCount > 0 ? '#b91c1c' : '#64748b'};${d.lateCount > 0 ? 'font-weight:700' : ''}">${d.lateCount}</td>
             <td style="text-align:center;color:${d.absentCount > 0 ? '#b91c1c' : '#64748b'};${d.absentCount > 0 ? 'font-weight:700' : ''}">${d.absentCount}</td>
             <td style="text-align:center">
-              <span class="pill ${d.attendanceRate >= 80 ? 'pill-green' : (d.attendanceRate >= 50 ? 'pill-amber' : 'pill-red')}">${d.attendanceRate}%</span>
+              <span class="pill ${d.attendanceRate >= 70 ? 'pill-green' : 'pill-red'}">${d.attendanceRate}%</span>
             </td>
             <td style="text-align:center">${warningCell}</td>
             <td style="font-size:9.5px;color:#374151;white-space:normal;word-break:break-word">${esc(remark)}</td>
@@ -17277,9 +17275,9 @@ function exportMorningGrowthReportPDF() {
     APP.morningProgressSort || 'growth_desc'
   );
 
-  const improvedCount = list.filter(d => d.punctualityGrowthDelta > 0).length;
-  const dippedCount = list.filter(d => d.punctualityGrowthDelta < 0).length;
-  const steadyCount = list.filter(d => d.punctualityGrowthDelta === 0).length;
+  const improvedCount = list.filter(d => (d.attendanceGrowthDelta !== undefined ? d.attendanceGrowthDelta : d.punctualityGrowthDelta) > 0).length;
+  const dippedCount = list.filter(d => (d.attendanceGrowthDelta !== undefined ? d.attendanceGrowthDelta : d.punctualityGrowthDelta) < 0).length;
+  const steadyCount = list.filter(d => (d.attendanceGrowthDelta !== undefined ? d.attendanceGrowthDelta : d.punctualityGrowthDelta) === 0).length;
 
   const printDoc = `${getStandardReportHTMLHeader({
     pageTitle: `Devotees_Progress_Growth_Report_${isWeekly ? 'WoW' : 'MoM'}_${iso(TODAY)}`,
@@ -17290,7 +17288,7 @@ function exportMorningGrowthReportPDF() {
     durationStr: `${curPeriodName} vs ${prevPeriodName}`,
     badges: [
       { text: isWeekly ? 'Week-over-Week' : 'Month-over-Month', class: 'level-badge' },
-      { text: '● Sadhana & Punctuality', class: 'active-badge' }
+      { text: '● Sadhana & Attendance Growth', class: 'active-badge' }
     ],
     metaItems: [
       { label: 'COMPARISON VIEW', val: isWeekly ? 'Weekly (WoW)' : 'Monthly (MoM)' },
@@ -17309,7 +17307,7 @@ function exportMorningGrowthReportPDF() {
       <div class="val">${list.length}</div>
     </div>
     <div class="stat-card">
-      <div class="lbl">Improving Punctuality</div>
+      <div class="lbl">Improving Attendance</div>
       <div class="val" style="color:#16a34a">${improvedCount}</div>
     </div>
     <div class="stat-card">
@@ -17330,15 +17328,15 @@ function exportMorningGrowthReportPDF() {
           <th style="width:24%">Devotee Name</th>
           <th style="width:10%;text-align:center">Standard</th>
           <th style="width:12%;text-align:center">Days Present</th>
-          <th style="width:13%;text-align:center">${curPeriodName} Punctuality</th>
-          <th style="width:13%;text-align:center">${prevPeriodName} Punctuality</th>
+          <th style="width:13%;text-align:center">${curPeriodName} Attendance</th>
+          <th style="width:13%;text-align:center">${prevPeriodName} Attendance</th>
           <th style="width:14%;text-align:center">${isWeekly ? 'WoW Growth %' : 'MoM Growth %'}</th>
           <th style="width:14%;text-align:center">Status Badge</th>
         </tr>
       </thead>
       <tbody>
         ${list.map(p => {
-          const delta = p.punctualityGrowthDelta;
+          const delta = p.attendanceGrowthDelta !== undefined ? p.attendanceGrowthDelta : p.punctualityGrowthDelta;
           const deltaPill = delta > 0 ? 'pill-green' : (delta < 0 ? 'pill-red' : 'pill-grey');
           const isFollowUp = (p.statusBadge || '').includes('Follow-up');
           const isExemplary = (p.statusBadge || '').includes('Exemplary');
@@ -17352,9 +17350,9 @@ function exportMorningGrowthReportPDF() {
               <td style="text-align:center;font-family:monospace;font-weight:600">${p.standardTime}</td>
               <td style="text-align:center"><b>${p.presentCount}</b> / ${pData.totalSessions}</td>
               <td style="text-align:center">
-                <b style="color:${p.punctualityRate >= 80 ? '#15803d' : (p.punctualityRate >= 60 ? '#b45309' : '#b91c1c')}">${p.punctualityRate}%</b>
+                <b style="color:${p.attendanceRate >= 70 ? '#15803d' : '#b91c1c'}">${p.attendanceRate}%</b>
               </td>
-              <td style="text-align:center;color:#64748b">${p.prevPunctualityRate}%</td>
+              <td style="text-align:center;color:#64748b">${p.prevAttendanceRate}%</td>
               <td style="text-align:center">
                 <span class="pill ${deltaPill}">${delta > 0 ? `+${delta}% ↗` : (delta < 0 ? `${delta}% ↘` : `0%`)}</span>
               </td>
@@ -17368,7 +17366,7 @@ function exportMorningGrowthReportPDF() {
     </table>
   </div>
 
-  ${getStandardReportHTMLFooter('Sadhana & Punctuality Growth Document · For Facilitator & Mentor Review')}
+  ${getStandardReportHTMLFooter('Sadhana & Attendance Growth Document · For Facilitator & Mentor Review')}
 `;
 
   const win = window.open('', '_blank');
@@ -17400,6 +17398,10 @@ function exportMorningPeriodCSV(periodType) {
     if (hiddenList && hiddenList.length) {
       exportDevs = exportDevs.filter(d => !isDevoteeHidden(d, hiddenList));
     }
+  }
+  const selectedBatches = getMorningPdfBatchFilter();
+  if (selectedBatches && selectedBatches.length) {
+    exportDevs = exportDevs.filter(d => devoteeBelongsToBatches(d, selectedBatches));
   }
 
   const rows = [
@@ -18335,13 +18337,12 @@ function getRosterSlot(roster, dateStr, sId) {
 function renderMorningCharts(m, dateLabel, filterSt = '', activeBucket = '') {
   const R = 44;
   const C = 2 * Math.PI * R;
-  const total = m.total || (m.onTimeCount + m.graceCount + m.lateCount + (m.veryLateCount || 0) + m.absentCount) || 1;
+  const total = m.total || ((m.onTimeCount || 0) + (m.graceCount || 0) + (m.lateCount || 0) + (m.absentCount || 0)) || 1;
   const parts = [
     { status: 'On Time', count: m.onTimeCount, col: 'var(--green,#10B981)', label: 'On Time', desc: ' (≤ 05:30 AM)' },
     { status: 'Grace', count: m.graceCount, col: 'var(--mustard,#D97706)', label: 'Grace', desc: ' (05:30–06:00 AM)' },
     { status: 'Late', count: m.lateCount, col: 'var(--danger,#DC2626)', label: 'Late', desc: ' (06:00–07:00 AM)' },
-    ...(m.veryLateCount ? [{ status: 'Very late', count: m.veryLateCount, col: '#7C3AED', label: 'Very late', desc: ' (> 07:00 AM)' }] : []),
-    { status: 'Absent', count: m.absentCount, col: '#94A3B8', label: 'Absent', desc: ' (No punch)' }
+    { status: 'Absent', count: m.absentCount, col: '#94A3B8', label: 'Absent', desc: ' (Missed)' }
   ];
   let acc = 0;
   const donutSegments = parts.map(p => {
@@ -18353,15 +18354,15 @@ function renderMorningCharts(m, dateLabel, filterSt = '', activeBucket = '') {
     return pc > 0 ? `<circle cx="60" cy="60" r="${R}" fill="none" stroke="${p.col}" stroke-width="${isSel ? '17' : '14'}" stroke-dasharray="${dash.toFixed(2)} ${C.toFixed(2)}" stroke-dashoffset="${(-off).toFixed(2)}" transform="rotate(-90 60 60)" stroke-linecap="round" data-act="morning-filter-status" data-s="${p.status}" style="cursor:pointer;transition:all .2s ease" title="Click to view ${p.label}${p.desc}: ${p.count} devotees"/>` : '';
   }).join('');
 
-  const buckets = m.buckets || [
+  const buckets = (m.buckets || [
     { label: '≤ 05:30 AM', count: m.onTimeCount, color: '#059669', sub: 'On Time (≤ 05:30)' },
     { label: '05:30–06:00', count: m.graceCount, color: '#10B981', sub: 'Grace (05:30–06:00)' },
-    { label: '06:00–07:00', count: m.lateCount, color: '#F59E0B', sub: 'Late (06:00–07:00)' },
-    { label: '> 07:00 AM', count: (m.veryLateCount || 0), sub: 'Very late (> 07:00)', color: '#DC2626' }
-  ];
-  const maxBucket = Math.max(...buckets.map(b => b.count), 1);
-  const attendedCount = (m.onTimeCount || 0) + (m.graceCount || 0) + (m.lateCount || 0) + (m.veryLateCount || 0);
+    { label: '06:00–07:00', count: m.lateCount, color: '#F59E0B', sub: 'Late (06:00–07:00)' }
+  ]).filter(b => !b.label.includes('> 07:00') && !b.sub?.includes('Very late'));
+  const maxBucket = Math.max(...buckets.map(b => Number(b.count) || 0), 1);
+  const attendedCount = (m.onTimeCount || 0) + (m.graceCount || 0); // Only On Time and Grace count as attended
   const attPct = total > 0 ? Math.round((attendedCount / total) * 100) : 0;
+  const attColor = attPct >= 70 ? 'var(--green,#10B981)' : 'var(--danger,#DC2626)';
 
   return `<div class="morning-charts-grid">
     <div class="card pad morning-punc-card" style="position:relative">
@@ -18376,7 +18377,7 @@ function renderMorningCharts(m, dateLabel, filterSt = '', activeBucket = '') {
             ${donutSegments}
           </svg>
           <div class="click" data-act="morning-filter-status" data-s="" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;border-radius:50%" title="Click to view all registered devotees (${total})">
-            <span class="punc-center-pct" style="font-family:var(--f-head);font-size:20px;font-weight:700;color:var(--ink);line-height:1">${attPct}%</span>
+            <span class="punc-center-pct" style="font-family:var(--f-head);font-size:20px;font-weight:700;color:${attColor};line-height:1">${attPct}%</span>
             <span class="punc-center-lbl" style="font-size:9.5px;color:var(--ink-3);text-transform:uppercase;font-weight:600">Attended</span>
           </div>
         </div>
@@ -18487,9 +18488,8 @@ function filterAndSortMorningPeriodDevs(devList, q = '', attFilter = '', puncFil
     });
   }
   if (attFilter) {
-    if (attFilter === 'star') list = list.filter(d => d.attendanceRate >= 80);
-    else if (attFilter === 'regular') list = list.filter(d => d.attendanceRate >= 50 && d.attendanceRate < 80);
-    else if (attFilter === 'low') list = list.filter(d => d.attendanceRate > 0 && d.attendanceRate < 50);
+    if (attFilter === 'star' || attFilter === 'regular') list = list.filter(d => d.attendanceRate >= 70);
+    else if (attFilter === 'low') list = list.filter(d => d.attendanceRate > 0 && d.attendanceRate < 70);
     else if (attFilter === 'zero') list = list.filter(d => d.attendanceRate === 0 || d.presentCount === 0);
   }
   if (puncFilter) {
@@ -18499,12 +18499,11 @@ function filterAndSortMorningPeriodDevs(devList, q = '', attFilter = '', puncFil
   }
   list.sort((a, b) => {
     if (sortMode === 'att_asc') return (a.attendanceRate - b.attendanceRate) || (a.presentCount - b.presentCount) || a.name.localeCompare(b.name);
-    if (sortMode === 'punc_desc') return (b.punctualityRate - a.punctualityRate) || (b.attendanceRate - a.attendanceRate);
     if (sortMode === 'present_desc') return (b.presentCount - a.presentCount) || (b.attendanceRate - a.attendanceRate);
     if (sortMode === 'absent_desc') return (b.absentCount - a.absentCount) || (a.attendanceRate - b.attendanceRate);
     if (sortMode === 'name_asc') return a.name.localeCompare(b.name);
     // Default: att_desc (Highest attendance first)
-    return (b.attendanceRate - a.attendanceRate) || (b.presentCount - a.presentCount) || (b.punctualityRate - a.punctualityRate) || a.name.localeCompare(b.name);
+    return (b.attendanceRate - a.attendanceRate) || (b.presentCount - a.presentCount) || a.name.localeCompare(b.name);
   });
   return list;
 }
@@ -18532,10 +18531,10 @@ window.toggleMorningDevExpand = function(periodKey, devId, evt) {
 };
 
 function renderMorningDevoteeMobileRow(d, i, periodKey, totalSessions) {
-  const dotCls = d.attendanceRate >= 80 ? 'green' : d.attendanceRate >= 50 ? 'yellow' : 'red';
+  const dotCls = d.attendanceRate >= 70 ? 'green' : 'red';
   const barFilled = Math.round((d.attendanceRate / 100) * 5);
   const bars = Array.from({length:5},(_,bi) => `<div class="lb-bar-block ${bi < barFilled ? 'green-filled' : ''}"></div>`).join('');
-  const pctColor = d.attendanceRate >= 80 ? '#10B981' : d.attendanceRate >= 50 ? '#F59E0B' : '#EF4444';
+  const pctColor = d.attendanceRate >= 70 ? '#10B981' : '#EF4444';
   
   APP.expandedMorningDevs = APP.expandedMorningDevs || {};
   const isExp = !!APP.expandedMorningDevs[`${periodKey}_${d.devotee.id}`];
@@ -18618,30 +18617,39 @@ function renderMorningDevoteeMobileRow(d, i, periodKey, totalSessions) {
 
 function filterAndSortMorningProgressDevs(devList, q = '', growthFilter = '', punctFilter = '', sortMode = 'growth_desc') {
   let list = (devList || []).slice();
+  if (!APP.morningShowHidden) {
+    const hiddenList = getMorningHiddenDevotees();
+    if (hiddenList.length) list = list.filter(d => !isDevoteeHidden(d, hiddenList));
+  }
+  const selectedBatches = getMorningPdfBatchFilter();
+  if (selectedBatches && selectedBatches.length) {
+    list = list.filter(d => devoteeBelongsToBatches(d, selectedBatches));
+  }
   if (q) {
     const ql = q.toLowerCase().trim();
     list = list.filter(d => d.name.toLowerCase().includes(ql) || (d.appointment || '').toLowerCase().includes(ql));
   }
   if (growthFilter) {
-    if (growthFilter === 'positive') list = list.filter(d => d.punctualityGrowthDelta > 0);
-    else if (growthFilter === 'negative') list = list.filter(d => d.punctualityGrowthDelta < 0);
-    else if (growthFilter === 'steady') list = list.filter(d => d.punctualityGrowthDelta === 0);
-    else if (growthFilter === 'followup') list = list.filter(d => (d.statusBadge || '').includes('Follow-up'));
-    else if (growthFilter === 'exemplary') list = list.filter(d => (d.statusBadge || '').includes('Exemplary'));
+    if (growthFilter === 'positive') list = list.filter(d => (d.attendanceGrowthDelta !== undefined ? d.attendanceGrowthDelta : d.punctualityGrowthDelta) > 0);
+    else if (growthFilter === 'negative') list = list.filter(d => (d.attendanceGrowthDelta !== undefined ? d.attendanceGrowthDelta : d.punctualityGrowthDelta) < 0);
+    else if (growthFilter === 'steady') list = list.filter(d => (d.attendanceGrowthDelta !== undefined ? d.attendanceGrowthDelta : d.punctualityGrowthDelta) === 0);
+    else if (growthFilter === 'followup') list = list.filter(d => d.attendanceRate < 70);
+    else if (growthFilter === 'exemplary') list = list.filter(d => d.attendanceRate >= 70);
   }
   if (punctFilter) {
-    if (punctFilter === 'high') list = list.filter(d => d.punctualityRate >= 80);
-    else if (punctFilter === 'mid') list = list.filter(d => d.punctualityRate >= 60 && d.punctualityRate < 80);
-    else if (punctFilter === 'low') list = list.filter(d => d.punctualityRate < 60);
+    if (punctFilter === 'high' || punctFilter === 'star' || punctFilter === 'regular') list = list.filter(d => d.attendanceRate >= 70);
+    else if (punctFilter === 'low') list = list.filter(d => d.attendanceRate < 70);
   }
   list.sort((a, b) => {
-    if (sortMode === 'growth_asc') return (a.punctualityGrowthDelta - b.punctualityGrowthDelta) || (a.punctualityRate - b.punctualityRate);
-    if (sortMode === 'punct_desc') return (b.punctualityRate - a.punctualityRate) || (b.punctualityGrowthDelta - a.punctualityGrowthDelta);
-    if (sortMode === 'punct_asc') return (a.punctualityRate - b.punctualityRate) || (a.punctualityGrowthDelta - b.punctualityGrowthDelta);
-    if (sortMode === 'present_desc') return (b.presentCount - a.presentCount) || (b.punctualityRate - a.punctualityRate);
+    const dA = a.attendanceGrowthDelta !== undefined ? a.attendanceGrowthDelta : a.punctualityGrowthDelta;
+    const dB = b.attendanceGrowthDelta !== undefined ? b.attendanceGrowthDelta : b.punctualityGrowthDelta;
+    if (sortMode === 'growth_asc') return (dA - dB) || (a.attendanceRate - b.attendanceRate);
+    if (sortMode === 'att_desc' || sortMode === 'punct_desc') return (b.attendanceRate - a.attendanceRate) || (dB - dA);
+    if (sortMode === 'att_asc' || sortMode === 'punct_asc') return (a.attendanceRate - b.attendanceRate) || (dA - dB);
+    if (sortMode === 'present_desc') return (b.presentCount - a.presentCount) || (b.attendanceRate - a.attendanceRate);
     if (sortMode === 'name_asc') return a.name.localeCompare(b.name);
     // Default: growth_desc (Highest growth delta first)
-    return (b.punctualityGrowthDelta - a.punctualityGrowthDelta) || (b.punctualityRate - a.punctualityRate) || a.name.localeCompare(b.name);
+    return (dB - dA) || (b.attendanceRate - a.attendanceRate) || a.name.localeCompare(b.name);
   });
   return list;
 }
@@ -19033,7 +19041,6 @@ function morningProgramPanel(){
                   ${av(r.avatarName || r.name)}
                   <div style="min-width:0">
                     <b style="font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;color:var(--ink)">${esc(r.name)}</b>
-                    
                   </div>
                 </div>
                 ${r.devoteeId ? `<a class="btn sm icon-only ghost" href="#/devotee/${r.devoteeId}" title="View profile" style="height:26px;width:26px;min-width:26px;padding:0;font-size:12px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;color:var(--ink-2);background:var(--surface-2);border:1px solid var(--line)">👤</a>` : ''}
@@ -19071,21 +19078,19 @@ function morningProgramPanel(){
         <div class="grid g3" style="margin-bottom:16px">
           ${stat('Devotees Logged', `${weekly.devStats ? weekly.devStats.length : 0} Devotees`, `${weekly.devStats.filter(d=>d.presentCount>0).length} active · ${weekly.totalSessions} sessions (${fmtD(weekly.startDate)} → ${fmtD(weekly.endDate)})`, {em:'👥',tint:!filterSt&&!activeBucket&&!APP.morningAttFilter,act:'morning-filter-status',s:''})}
           ${stat('Weekly Attendance', `${weekly.avgAttendancePct}%`, `${weekly.totalAttended} / ${weekly.totalPossible} check-ins`, {em:'✅',tint:filterSt==='Attended',act:'morning-filter-status',s:'Attended'})}
-          ${stat('Star Sadhakas (≥80%)', `${weekly.devStats.filter(d=>d.attendanceRate>=80).length} Devotees`, 'high regular attendance', {em:'🌟',tint:APP.morningAttFilter==='star',act:'morning-period-star-filter',s:'star'})}
+          ${stat('Regular Sadhakas (≥70%)', `${weekly.devStats.filter(d=>d.attendanceRate>=70).length} Devotees`, 'regular attendees (≥70%)', {em:'🌟',tint:APP.morningAttFilter==='star',act:'morning-period-star-filter',s:'star'})}
         </div>
 
         <!-- Charts: Donut & Histogram (Weekly Aggregation) -->
         ${renderMorningCharts({
-          total: weekly.totalPossible,
-          onTimeCount: weekly.totalOnTime,
-          graceCount: weekly.totalGrace,
-          lateCount: weekly.totalLate,
-          veryLateCount: weekly.totalVeryLate || 0,
-          absentCount: weekly.totalAbsent,
-          onTimePct: weekly.onTimePct,
+          total: weekly.devStats ? weekly.devStats.length : 0,
+          onTimeCount: weekly.avgOnTime,
+          graceCount: weekly.avgGrace,
+          lateCount: weekly.avgLate,
+          absentCount: weekly.avgAbsent,
           earliestTime: weekly.earliestTime,
           buckets: weekly.buckets
-        }, `Weekly Summary (${fmtD(weekly.startDate)} – ${fmtD(weekly.endDate)})`, filterSt, activeBucket)}
+        }, `Weekly Avg per Day (${weekly.devStats ? weekly.devStats.length : 0} Devotees)`, filterSt, activeBucket)}
 
         ${(filterSt || activeBucket) ? `
         <div style="background:var(--paper-2);border-left:4px solid var(--indigo);padding:8px 14px;border-radius:8px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
@@ -19105,30 +19110,21 @@ function morningProgramPanel(){
 
           <select data-act="morning-att-filter" onchange="APP.morningAttFilter=this.value;render();" style="padding:6px 10px;font-size:12px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);cursor:pointer">
             <option value="">All Attendance</option>
-            <option value="star" ${APP.morningAttFilter==='star'?'selected':''}>🌟 Star (≥80%)</option>
-            <option value="regular" ${APP.morningAttFilter==='regular'?'selected':''}>🟠 Regular (50–79%)</option>
-            <option value="low" ${APP.morningAttFilter==='low'?'selected':''}>🔴 Low (<50%)</option>
+            <option value="star" ${APP.morningAttFilter==='star'?'selected':''}>🌟 Regular (≥70%)</option>
+            <option value="low" ${APP.morningAttFilter==='low'?'selected':''}>🔴 Low (&lt;70%)</option>
             <option value="zero" ${APP.morningAttFilter==='zero'?'selected':''}>⚪ Zero Punches (0%)</option>
-          </select>
-
-          <select data-act="morning-punc-filter" onchange="APP.morningPuncFilter=this.value;render();" style="padding:6px 10px;font-size:12px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);cursor:pointer">
-            <option value="">All Punctuality</option>
-            <option value="high" ${APP.morningPuncFilter==='high'?'selected':''}>⏱️ High (≥80%)</option>
-            <option value="mid" ${APP.morningPuncFilter==='mid'?'selected':''}>🟡 Moderate (50–79%)</option>
-            <option value="low" ${APP.morningPuncFilter==='low'?'selected':''}>🔴 Low (<50%)</option>
           </select>
 
           <select data-act="morning-sort" onchange="APP.morningSort=this.value;render();" style="padding:6px 10px;font-size:12px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);cursor:pointer">
             <option value="att_desc" ${APP.morningSort==='att_desc'||!APP.morningSort?'selected':''}>Sort: Highest Attendance %</option>
             <option value="att_asc" ${APP.morningSort==='att_asc'?'selected':''}>Sort: Lowest Attendance %</option>
-            <option value="punc_desc" ${APP.morningSort==='punc_desc'?'selected':''}>Sort: Highest Punctuality %</option>
             <option value="present_desc" ${APP.morningSort==='present_desc'?'selected':''}>Sort: Most Days Present</option>
             <option value="absent_desc" ${APP.morningSort==='absent_desc'?'selected':''}>Sort: Most Absences</option>
             <option value="name_asc" ${APP.morningSort==='name_asc'?'selected':''}>Sort: Devotee Name (A → Z)</option>
           </select>
 
-          ${(APP.morningSearch || APP.morningAttFilter || APP.morningPuncFilter || (APP.morningSort && APP.morningSort !== 'att_desc')) ? `
-            <button class="btn sm ghost" data-act="morning-reset-table-filters" onclick="APP.morningSearch='';APP.morningAttFilter='';APP.morningPuncFilter='';APP.morningSort='att_desc';render();" style="padding:4px 10px;font-size:11.5px">✕ Reset</button>
+          ${(APP.morningSearch || APP.morningAttFilter || (APP.morningSort && APP.morningSort !== 'att_desc')) ? `
+            <button class="btn sm ghost" data-act="morning-reset-table-filters" onclick="APP.morningSearch='';APP.morningAttFilter='';APP.morningSort='att_desc';render();" style="padding:4px 10px;font-size:11.5px">✕ Reset</button>
           ` : ''}
         </div>
 
@@ -19138,7 +19134,7 @@ function morningProgramPanel(){
           <span style="font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px">👥 Weekly Devotee Summary (${filterAndSortMorningPeriodDevs(weekly.devStats, q, APP.morningAttFilter, APP.morningPuncFilter, APP.morningSort).length})</span>
           <button type="button" class="btn sm ghost" style="font-size:11.5px;padding:3px 8px;font-weight:600;pointer-events:none">${APP.morningTableCollapsed ? 'Show Table ▼' : 'Hide Table ▲'}</button>
         </div>
-        <div class="tbl-wrap morning-desktop-table" id="morning-report-table" style="${APP.morningTableCollapsed ? 'display:none' : ''}">
+        <div class="tbl-wrap morning-desktop-table" id="morning-report-table-weekly" style="${APP.morningTableCollapsed ? 'display:none' : ''}">
           <table class="tbl">
             <thead>
               <tr>
@@ -19184,7 +19180,7 @@ function morningProgramPanel(){
                   <td class="center" data-l="Late" style="color:${d.lateCount>0?'var(--danger)':'var(--ink-3)'};font-weight:${d.lateCount>0?'700':'normal'}">${d.lateCount}</td>
                   <td class="center" data-l="Absent" style="color:${d.absentCount>0?'var(--danger)':'var(--ink-3)'};font-weight:${d.absentCount>0?'700':'normal'}">${d.absentCount}</td>
                   <td class="center" data-l="Att %">
-                    <b style="color:${d.attendanceRate>=80?'var(--green)':(d.attendanceRate>=60?'var(--mustard)':'var(--danger)')}">${d.attendanceRate}%</b>
+                    <b style="color:${d.attendanceRate >= 70 ? 'var(--green)' : 'var(--danger)'}">${d.attendanceRate}%</b>
                   </td>
                   <td class="center" data-l="Warning">
                     ${renderDevoteeWarningCell(d, false, false)}
@@ -19214,12 +19210,11 @@ function morningProgramPanel(){
         <!-- MOBILE LEADERBOARD (weekly attendance) -->
         <div class="morning-mobile-lb">
           <div class="lb-filter-chips">
-            ${[{v:'',label:'All'},{v:'star',label:'🌟 Star ≥80%'},{v:'regular',label:'🟠 Regular'},{v:'low',label:'🔴 Low <50%'},{v:'zero',label:'⚪ Zero'}]
+            ${[{v:'',label:'All'},{v:'star',label:'🌟 Regular ≥70%'},{v:'low',label:'🔴 Low <70%'},{v:'zero',label:'⚪ Zero'}]
               .map(({v,label}) => `<button class="lb-chip ${(APP.morningAttFilter||'')=== v?'active':''}" onclick="APP.morningAttFilter='${v}';render();">${label}</button>`).join('')}
           </div>
           <div>
             ${filterAndSortMorningPeriodDevs(weekly.devStats, q, APP.morningAttFilter, APP.morningPuncFilter, APP.morningSort).map((d, i) => renderMorningDevoteeMobileRow(d, i, 'weekly', weekly.totalSessions)).join('')}
-          </div>
         </div>
       </div>
       ` : `
@@ -19228,21 +19223,19 @@ function morningProgramPanel(){
         <div class="grid g3" style="margin-bottom:16px">
           ${stat('Devotees Logged', `${monthly.devStats ? monthly.devStats.length : 0} Devotees`, `${monthly.devStats.filter(d=>d.presentCount>0).length} active · ${monthly.totalSessions} sessions (${fmtD(monthly.startDate)} → ${fmtD(monthly.endDate)})`, {em:'👥',tint:!filterSt&&!activeBucket&&!APP.morningAttFilter,act:'morning-filter-status',s:''})}
           ${stat('Monthly Attendance', `${monthly.avgAttendancePct}%`, `${monthly.totalAttended} / ${monthly.totalPossible} check-ins`, {em:'✅',tint:filterSt==='Attended',act:'morning-filter-status',s:'Attended'})}
-          ${stat('Star Sadhakas (≥80%)', `${monthly.devStats.filter(d=>d.attendanceRate>=80).length} Devotees`, 'consistent regular attendees', {em:'🌟',tint:APP.morningAttFilter==='star',act:'morning-period-star-filter',s:'star'})}
+          ${stat('Regular Sadhakas (≥70%)', `${monthly.devStats.filter(d=>d.attendanceRate>=70).length} Devotees`, 'regular attendees (≥70%)', {em:'🌟',tint:APP.morningAttFilter==='star',act:'morning-period-star-filter',s:'star'})}
         </div>
 
         <!-- Charts: Donut & Histogram (Monthly Aggregation) -->
         ${renderMorningCharts({
-          total: monthly.totalPossible,
-          onTimeCount: monthly.totalOnTime,
-          graceCount: monthly.totalGrace,
-          lateCount: monthly.totalLate,
-          veryLateCount: monthly.totalVeryLate || 0,
-          absentCount: monthly.totalAbsent,
-          onTimePct: monthly.onTimePct,
+          total: monthly.devStats ? monthly.devStats.length : 0,
+          onTimeCount: monthly.avgOnTime,
+          graceCount: monthly.avgGrace,
+          lateCount: monthly.avgLate,
+          absentCount: monthly.avgAbsent,
           earliestTime: monthly.earliestTime,
           buckets: monthly.buckets
-        }, `Monthly Summary (${fmtD(monthly.startDate)} – ${fmtD(monthly.endDate)})`, filterSt, activeBucket)}
+        }, `Monthly Avg per Day (${monthly.devStats ? monthly.devStats.length : 0} Devotees)`, filterSt, activeBucket)}
 
         ${(filterSt || activeBucket) ? `
         <div style="background:var(--paper-2);border-left:4px solid var(--indigo);padding:8px 14px;border-radius:8px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
@@ -19262,30 +19255,21 @@ function morningProgramPanel(){
 
           <select data-act="morning-att-filter" onchange="APP.morningAttFilter=this.value;render();" style="padding:6px 10px;font-size:12px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);cursor:pointer">
             <option value="">All Attendance</option>
-            <option value="star" ${APP.morningAttFilter==='star'?'selected':''}>🌟 Star (≥80%)</option>
-            <option value="regular" ${APP.morningAttFilter==='regular'?'selected':''}>🟠 Regular (50–79%)</option>
-            <option value="low" ${APP.morningAttFilter==='low'?'selected':''}>🔴 Low (<50%)</option>
+            <option value="star" ${APP.morningAttFilter==='star'?'selected':''}>🌟 Regular (≥70%)</option>
+            <option value="low" ${APP.morningAttFilter==='low'?'selected':''}>🔴 Low (&lt;70%)</option>
             <option value="zero" ${APP.morningAttFilter==='zero'?'selected':''}>⚪ Zero Punches (0%)</option>
-          </select>
-
-          <select data-act="morning-punc-filter" onchange="APP.morningPuncFilter=this.value;render();" style="padding:6px 10px;font-size:12px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);cursor:pointer">
-            <option value="">All Punctuality</option>
-            <option value="high" ${APP.morningPuncFilter==='high'?'selected':''}>⏱️ High (≥80%)</option>
-            <option value="mid" ${APP.morningPuncFilter==='mid'?'selected':''}>🟡 Moderate (50–79%)</option>
-            <option value="low" ${APP.morningPuncFilter==='low'?'selected':''}>🔴 Low (<50%)</option>
           </select>
 
           <select data-act="morning-sort" onchange="APP.morningSort=this.value;render();" style="padding:6px 10px;font-size:12px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);cursor:pointer">
             <option value="att_desc" ${APP.morningSort==='att_desc'||!APP.morningSort?'selected':''}>Sort: Highest Attendance %</option>
             <option value="att_asc" ${APP.morningSort==='att_asc'?'selected':''}>Sort: Lowest Attendance %</option>
-            <option value="punc_desc" ${APP.morningSort==='punc_desc'?'selected':''}>Sort: Highest Punctuality %</option>
             <option value="present_desc" ${APP.morningSort==='present_desc'?'selected':''}>Sort: Most Days Present</option>
             <option value="absent_desc" ${APP.morningSort==='absent_desc'?'selected':''}>Sort: Most Absences</option>
             <option value="name_asc" ${APP.morningSort==='name_asc'?'selected':''}>Sort: Devotee Name (A → Z)</option>
           </select>
 
-          ${(APP.morningSearch || APP.morningAttFilter || APP.morningPuncFilter || (APP.morningSort && APP.morningSort !== 'att_desc')) ? `
-            <button class="btn sm ghost" data-act="morning-reset-table-filters" onclick="APP.morningSearch='';APP.morningAttFilter='';APP.morningPuncFilter='';APP.morningSort='att_desc';render();" style="padding:4px 10px;font-size:11.5px">✕ Reset</button>
+          ${(APP.morningSearch || APP.morningAttFilter || (APP.morningSort && APP.morningSort !== 'att_desc')) ? `
+            <button class="btn sm ghost" data-act="morning-reset-table-filters" onclick="APP.morningSearch='';APP.morningAttFilter='';APP.morningSort='att_desc';render();" style="padding:4px 10px;font-size:11.5px">✕ Reset</button>
           ` : ''}
         </div>
 
@@ -19341,7 +19325,7 @@ function morningProgramPanel(){
                   <td class="center" data-l="Late" style="color:${d.lateCount>0?'var(--danger)':'var(--ink-3)'};font-weight:${d.lateCount>0?'700':'normal'}">${d.lateCount}</td>
                   <td class="center" data-l="Absent" style="color:${d.absentCount>0?'var(--danger)':'var(--ink-3)'};font-weight:${d.absentCount>0?'700':'normal'}">${d.absentCount}</td>
                   <td class="center" data-l="Attendance %">
-                    <b style="color:${d.attendanceRate>=80?'var(--green)':(d.attendanceRate>=60?'var(--mustard)':'var(--danger)')}">${d.attendanceRate}%</b>
+                    <b style="color:${d.attendanceRate >= 70 ? 'var(--green)' : 'var(--danger)'}">${d.attendanceRate}%</b>
                   </td>
                   <td class="center" data-l="Warning">
                     ${renderDevoteeWarningCell(d, true, false)}
@@ -19371,7 +19355,7 @@ function morningProgramPanel(){
         <!-- MOBILE LEADERBOARD (monthly attendance) -->
         <div class="morning-mobile-lb">
           <div class="lb-filter-chips">
-            ${[{v:'',label:'All'},{v:'star',label:'🌟 Star ≥80%'},{v:'regular',label:'🟠 Regular'},{v:'low',label:'🔴 Low <50%'},{v:'zero',label:'⚪ Zero'}]
+            ${[{v:'',label:'All'},{v:'star',label:'🌟 Regular ≥70%'},{v:'low',label:'🔴 Low <70%'},{v:'zero',label:'⚪ Zero'}]
               .map(({v,label}) => `<button class="lb-chip ${(APP.morningAttFilter||'')=== v?'active':''}" onclick="APP.morningAttFilter='${v}';render();">${label}</button>`).join('')}
           </div>
           <div>
@@ -19421,12 +19405,7 @@ function morningProgramPanel(){
             <option value="exemplary" ${APP.morningProgressGrowthFilter==='exemplary'?'selected':''}>🌟 100% Exemplary</option>
           </select>
 
-          <select data-act="morning-progress-punct-filter" onchange="APP.morningProgressPunctFilter=this.value;render();" style="padding:5px 8px;font-size:11.5px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--ink);cursor:pointer">
-            <option value="">All Punctuality</option>
-            <option value="high" ${APP.morningProgressPunctFilter==='high'?'selected':''}>🟢 High (≥80%)</option>
-            <option value="mid" ${APP.morningProgressPunctFilter==='mid'?'selected':''}>🟡 Moderate (60–79%)</option>
-            <option value="low" ${APP.morningProgressPunctFilter==='low'?'selected':''}>🔴 Low (<60%)</option>
-          </select>
+
 
           <select data-act="morning-progress-sort" onchange="APP.morningProgressSort=this.value;render();" style="padding:5px 8px;font-size:11.5px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--ink);cursor:pointer">
             <option value="growth_desc" ${APP.morningProgressSort==='growth_desc'||!APP.morningProgressSort?'selected':''}>Sort: Highest Growth (+% First)</option>
@@ -19446,8 +19425,8 @@ function morningProgramPanel(){
               <th style="width:22%">Devotee Name</th>
               <th style="width:10%;text-align:center">Standard</th>
               <th style="width:12%;text-align:center">Days Present</th>
-              <th style="width:12%;text-align:center">${curPeriodName} Punctuality</th>
-              <th style="width:12%;text-align:center">${prevPeriodName} Punctuality</th>
+              <th style="width:12%;text-align:center">${curPeriodName} Attendance</th>
+              <th style="width:12%;text-align:center">${prevPeriodName} Attendance</th>
               <th style="width:15%;text-align:center">
                 ${isWeekly ? 'Week-over-Week (WoW) Growth %' : 'Month-over-Month (MoM) Growth %'}
               </th>
@@ -19464,7 +19443,7 @@ function morningProgramPanel(){
               APP.morningProgressPunctFilter || '',
               APP.morningProgressSort || 'growth_desc'
             ).map(p => {
-              const delta = p.punctualityGrowthDelta;
+              const delta = p.attendanceGrowthDelta !== undefined ? p.attendanceGrowthDelta : p.punctualityGrowthDelta;
               const deltaSign = delta > 0 ? '+' : '';
               const deltaColor = delta > 0 ? 'var(--green)' : (delta < 0 ? 'var(--danger)' : 'var(--ink-3)');
               const deltaBadge = delta > 0 ? `${deltaSign}${delta}% ↗` : (delta < 0 ? `${delta}%` : `0% —`);
@@ -19485,11 +19464,11 @@ function morningProgramPanel(){
                 <td class="center" data-l="Sessions">
                   <b>${p.presentCount}</b> / ${isWeekly ? weekly.totalSessions : monthly.totalSessions}
                 </td>
-                <td class="center" data-l="Current Punctuality">
-                  <b style="color:${p.punctualityRate>=80?'var(--green)':(p.punctualityRate>=60?'var(--mustard)':'var(--danger)')}">${p.punctualityRate}%</b>
+                <td class="center" data-l="Current Attendance">
+                  <b style="color:${p.attendanceRate>=70?'var(--green)':'var(--danger)'}">${p.attendanceRate}%</b>
                 </td>
-                <td class="center" data-l="Previous Punctuality" style="color:var(--ink-3)">
-                  ${p.prevPunctualityRate}%
+                <td class="center" data-l="Previous Attendance" style="color:var(--ink-3)">
+                  ${p.prevAttendanceRate}%
                 </td>
                 <td class="center" data-l="Percentage Growth">
                   <span style="display:inline-block;padding:3px 10px;border-radius:12px;font-weight:700;font-size:12.5px;color:${deltaColor};background:${delta > 0 ? 'rgba(16,185,129,0.12)' : (delta < 0 ? 'rgba(239,68,68,0.12)' : 'var(--paper-2)')}">
@@ -19523,9 +19502,9 @@ function morningProgramPanel(){
           );
           const totalSessions = isWeekly ? weekly.totalSessions : monthly.totalSessions;
           // Compute bucket counts
-          const onTrackDevs  = progressDevs.filter(p => p.punctualityRate >= 80);
-          const followupDevs = progressDevs.filter(p => p.punctualityRate >= 50 && p.punctualityRate < 80);
-          const atRiskDevs   = progressDevs.filter(p => p.punctualityRate < 50);
+          const onTrackDevs  = progressDevs.filter(p => p.attendanceRate >= 70);
+          const atRiskDevs   = progressDevs.filter(p => p.attendanceRate < 70);
+          const followupDevs = atRiskDevs;
           const activeBkt = APP.morningProgressBucket || '';
           const displayDevs = activeBkt === 'ontrack'  ? onTrackDevs
                             : activeBkt === 'followup' ? followupDevs
@@ -19534,7 +19513,7 @@ function morningProgramPanel(){
           return `
           <!-- Three-Bucket Summary Bar -->
           <div class="three-bucket-bar" style="padding:12px 12px 0">
-            <div class="bucket-card b-green ${activeBkt==='ontrack'?'active-bucket':''}" onclick="APP.morningProgressBucket=APP.morningProgressBucket==='ontrack'?'':'ontrack';render();" title="Punctuality ≥ 80%">
+            <div class="bucket-card b-green ${activeBkt==='ontrack'?'active-bucket':''}" onclick="APP.morningProgressBucket=APP.morningProgressBucket==='ontrack'?'':'ontrack';render();" title="Attendance ≥ 70%">
               <div class="bc-icon">🌟</div>
               <div class="bc-count">${onTrackDevs.length}</div>
               <div class="bc-label">On Track</div>
@@ -19544,7 +19523,7 @@ function morningProgramPanel(){
               <div class="bc-count">${followupDevs.length}</div>
               <div class="bc-label">Follow-up</div>
             </div>
-            <div class="bucket-card b-red ${activeBkt==='atrisk'?'active-bucket':''}" onclick="APP.morningProgressBucket=APP.morningProgressBucket==='atrisk'?'':'atrisk';render();" title="Punctuality < 50%">
+            <div class="bucket-card b-red ${activeBkt==='atrisk'?'active-bucket':''}" onclick="APP.morningProgressBucket=APP.morningProgressBucket==='atrisk'?'':'atrisk';render();" title="Attendance < 70%">
               <div class="bc-icon">🔴</div>
               <div class="bc-count">${atRiskDevs.length}</div>
               <div class="bc-label">At Risk</div>
