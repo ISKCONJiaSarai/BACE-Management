@@ -17133,10 +17133,13 @@ function exportMorningPeriodReportPDF(periodType) {
     ],
     isLandscape: false,
     extraStyles: `
-      .analytics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
-      .analytics-card { background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%); border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
-      .analytics-head { font-size: 11.5px; font-weight: 800; color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; margin-bottom: 8px; }
-      .breakdown-row { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; font-size: 10.5px; border-bottom: 1px dashed #f1f5f9; }
+      .pdf-bar-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 18px; margin-bottom: 14px; box-shadow: 0 2px 6px rgba(0,0,0,0.03); }
+      .pdf-bar-grid { display: flex; align-items: flex-end; justify-content: space-around; gap: 16px; height: 115px; padding: 10px 10px 4px; }
+      .pdf-bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+      .pdf-bar-val { font-size: 13px; font-weight: 800; color: #0f172a; line-height: 1; }
+      .pdf-bar-pillar { width: 100%; max-width: 58px; border-radius: 6px 6px 2px 2px; }
+      .pdf-bar-label { font-size: 11px; font-weight: 700; color: #1e293b; text-align: center; margin-top: 2px; }
+      .pdf-bar-sub { font-size: 9.5px; font-weight: 500; color: #64748b; text-align: center; }
     `
   })}
 
@@ -17160,36 +17163,32 @@ function exportMorningPeriodReportPDF(periodType) {
     </div>
   </div>
 
-  <div class="section-title">🎯 Sadhana &amp; Arrival Analysis</div>
-  <div class="analytics-grid">
-    <div class="analytics-card">
-      <div class="analytics-head">🎯 Attendance Breakdown</div>
-      <div class="breakdown-row">
-        <span>🟢 On Time (≤ 05:30 AM)</span>
-        <b>${repTotalPossible > 0 ? Math.round((repOnTime / repTotalPossible) * 100) : 0}%</b>
-      </div>
-      <div class="breakdown-row">
-        <span>🟡 Grace (05:30–06:00 AM)</span>
-        <b>${repTotalPossible > 0 ? Math.round((repGrace / repTotalPossible) * 100) : 0}%</b>
-      </div>
-      <div class="breakdown-row">
-        <span>🔴 Late (06:00–07:00 AM)</span>
-        <b>${repTotalPossible > 0 ? Math.round((repLate / repTotalPossible) * 100) : 0}%</b>
-      </div>
-      <div class="breakdown-row" style="border-bottom:none;font-weight:700">
-        <span>⚪ Absent (Missed Sessions)</span>
-        <b>${repTotalPossible > 0 ? Math.round((repMissed / repTotalPossible) * 100) : 0}%</b>
-      </div>
+  <div class="section-title">🎯 Attendance Breakdown (${periodTitle})</div>
+  <div class="pdf-bar-card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid #e2e8f0">
+      <span style="font-size:11.5px;font-weight:800;color:#0f172a">📊 Sadhana Arrival &amp; Check-in Distribution</span>
+      <span style="font-size:11px;font-weight:700;color:${repAvgAttPct >= 70 ? '#15803d' : '#b91c1c'};background:${repAvgAttPct >= 70 ? '#f0fdf4' : '#fef2f2'};padding:2px 8px;border-radius:6px;border:1px solid ${repAvgAttPct >= 70 ? '#bbf7d0' : '#fecaca'}">${repAvgAttPct}% Attended (On Time + Grace)</span>
     </div>
-
-    <div class="analytics-card">
-      <div class="analytics-head">📈 Arrival Distribution Timeline</div>
-      ${repBuckets.map(b => `
-        <div class="breakdown-row">
-          <span style="font-weight:600">${b.label} <small style="color:#64748b">(${b.sub || 'Arrival window'})</small></span>
-          <span class="pill" style="background:#f1f5f9;color:#0f172a">${repTotalPossible > 0 ? Math.round(((b.rawCount || b.count) / repTotalPossible) * 100) : 0}%</span>
-        </div>
-      `).join('')}
+    <div class="pdf-bar-grid">
+      ${(() => {
+        const pItems = [
+          { label: 'On Time', sub: '≤ 05:30 AM', pct: repTotalPossible > 0 ? Math.round((repOnTime / repTotalPossible) * 100) : 0, color: '#10b981' },
+          { label: 'Grace', sub: '05:30–06:00', pct: repTotalPossible > 0 ? Math.round((repGrace / repTotalPossible) * 100) : 0, color: '#059669' },
+          { label: 'Late', sub: '06:00–07:00', pct: repTotalPossible > 0 ? Math.round((repLate / repTotalPossible) * 100) : 0, color: '#f59e0b' },
+          { label: 'Absent', sub: 'Missed', pct: repTotalPossible > 0 ? Math.round((repMissed / repTotalPossible) * 100) : 0, color: '#94a3b8' }
+        ];
+        const maxPdfPct = Math.max(...pItems.map(p => p.pct), 1);
+        return pItems.map(p => {
+          const h = Math.max(16, Math.round((p.pct / maxPdfPct) * 65));
+          return `
+          <div class="pdf-bar-col">
+            <div class="pdf-bar-val">${p.pct}%</div>
+            <div class="pdf-bar-pillar" style="height:${h}px;background:${p.color}"></div>
+            <div class="pdf-bar-label">${p.label}</div>
+            <div class="pdf-bar-sub">${p.sub}</div>
+          </div>`;
+        }).join('');
+      })()}
     </div>
   </div>
 
@@ -18339,95 +18338,48 @@ function getRosterSlot(roster, dateStr, sId) {
    ========================================================================= */
 function renderMorningCharts(m, dateLabel, filterSt = '', activeBucket = '', isPeriod = false) {
   const isPeriodView = Boolean(isPeriod || m.isPeriod || (dateLabel && (dateLabel.includes('Weekly') || dateLabel.includes('Monthly'))));
-  const R = 44;
-  const C = 2 * Math.PI * R;
   const total = m.total || ((m.onTimeCount || 0) + (m.graceCount || 0) + (m.lateCount || 0) + (m.absentCount || 0)) || 1;
-  const parts = [
-    { status: 'On Time', count: m.onTimeCount, col: 'var(--green,#10B981)', label: 'On Time', desc: ' (≤ 05:30 AM)' },
-    { status: 'Grace', count: m.graceCount, col: 'var(--mustard,#D97706)', label: 'Grace', desc: ' (05:30–06:00 AM)' },
-    { status: 'Late', count: m.lateCount, col: 'var(--danger,#DC2626)', label: 'Late', desc: ' (06:00–07:00 AM)' },
-    { status: 'Absent', count: m.absentCount, col: '#94A3B8', label: 'Absent', desc: ' (Missed)' }
-  ];
-  let acc = 0;
-  const donutSegments = parts.map(p => {
-    const pc = total > 0 ? (p.count / total) * 100 : 0;
-    const dash = (pc / 100) * C;
-    const off = (acc / 100) * C;
-    acc += pc;
-    const isSel = filterSt === p.status;
-    const pPct = pct(p.count, total);
-    const tipText = isPeriodView ? `${p.label}${p.desc}: ${pPct}%` : `${p.label}${p.desc}: ${p.count} devotees (${pPct}%)`;
-    return pc > 0 ? `<circle cx="60" cy="60" r="${R}" fill="none" stroke="${p.col}" stroke-width="${isSel ? '17' : '14'}" stroke-dasharray="${dash.toFixed(2)} ${C.toFixed(2)}" stroke-dashoffset="${(-off).toFixed(2)}" transform="rotate(-90 60 60)" stroke-linecap="round" data-act="morning-filter-status" data-s="${p.status}" style="cursor:pointer;transition:all .2s ease" title="Click to view ${tipText}"/>` : '';
-  }).join('');
-
-  const buckets = (m.buckets || [
-    { label: '≤ 05:30 AM', count: m.onTimeCount, color: '#059669', sub: 'On Time (≤ 05:30)' },
-    { label: '05:30–06:00', count: m.graceCount, color: '#10B981', sub: 'Grace (05:30–06:00)' },
-    { label: '06:00–07:00', count: m.lateCount, color: '#F59E0B', sub: 'Late (06:00–07:00)' },
-    { label: 'Absent', count: m.absentCount, color: '#94A3B8', sub: 'Absent (Missed)' }
-  ]).filter(b => !b.label.includes('> 07:00') && !b.sub?.includes('Very late'));
-  const maxBucket = Math.max(...buckets.map(b => Number(b.count) || 0), 1);
   const attendedCount = (m.onTimeCount || 0) + (m.graceCount || 0); // Days present & grace included as attended
   const attPct = total > 0 ? Math.round((attendedCount / total) * 100) : 0;
   const attColor = attPct >= 70 ? 'var(--green,#10B981)' : 'var(--danger,#DC2626)';
 
-  return `<div class="morning-charts-grid">
-    <div class="card pad morning-punc-card" style="position:relative">
-      <div class="card-h" style="padding:0 0 12px;border-bottom:1px solid var(--line-2);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
-        <h3 style="margin:0">🎯 Attendance Breakdown</h3>
-        <span class="tiny" style="margin-left:auto">${esc(dateLabel)}</span>
+  const parts = [
+    { status: 'On Time', count: m.onTimeCount || 0, col: '#059669', grad: 'linear-gradient(180deg, #10b981 0%, #059669 100%)', label: 'On Time', desc: '≤ 05:30 AM' },
+    { status: 'Grace', count: m.graceCount || 0, col: '#10B981', grad: 'linear-gradient(180deg, #34d399 0%, #10b981 100%)', label: 'Grace', desc: '05:30–06:00 AM' },
+    { status: 'Late', count: m.lateCount || 0, col: '#F59E0B', grad: 'linear-gradient(180deg, #fbbf24 0%, #d97706 100%)', label: 'Late', desc: '06:00–07:00 AM' },
+    { status: 'Absent', count: m.absentCount || 0, col: '#94A3B8', grad: 'linear-gradient(180deg, #cbd5e1 0%, #94a3b8 100%)', label: 'Absent', desc: 'Missed Sessions' }
+  ];
+
+  const maxPct = Math.max(...parts.map(p => pct(p.count, total)), 1);
+
+  return `<div class="card pad" style="margin-bottom:16px;position:relative">
+    <div class="card-h" style="padding:0 0 12px;border-bottom:1px solid var(--line-2);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+      <h3 style="margin:0;display:flex;align-items:center;gap:8px"><span>🎯</span> Attendance Breakdown</h3>
+      <div style="display:flex;align-items:center;gap:10px;margin-left:auto;flex-wrap:wrap">
+        <span class="badge ${attPct >= 70 ? 'b-green' : 'b-amber'}" style="font-size:12px;font-weight:700" title="Sessions attended on-time or grace">${attPct}% Attended</span>
+        <span class="tiny" style="color:var(--ink-2);font-weight:600">${esc(dateLabel)}</span>
       </div>
-      <div class="morning-punc-body" style="display:flex;align-items:center;justify-content:space-around;gap:16px;margin-top:14px;flex-wrap:wrap">
-        <div class="morning-punc-donut" style="position:relative;width:120px;height:120px;flex:none;margin:0 auto" title="Interactive Donut Chart — click any section or center to filter">
-          <svg viewBox="0 0 120 120" style="width:120px;height:120px;overflow:visible">
-            <circle cx="60" cy="60" r="${R}" fill="none" stroke="var(--paper-2)" stroke-width="14"/>
-            ${donutSegments}
-          </svg>
-          <div class="click" data-act="morning-filter-status" data-s="" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;border-radius:50%" title="Click to view all registered devotees (${total})">
-            <span class="punc-center-pct" style="font-family:var(--f-head);font-size:20px;font-weight:700;color:${attColor};line-height:1">${attPct}%</span>
-            <span class="punc-center-lbl" style="font-size:9.5px;color:var(--ink-3);text-transform:uppercase;font-weight:600">Attended</span>
-          </div>
-        </div>
-        <div class="morning-punc-legend" style="display:flex;flex-direction:column;gap:6px;min-width:140px;flex:1 1 180px">
-          ${parts.map(p => {
-            const isSel = filterSt === p.status;
-            const pPct = pct(p.count, total);
-            const badgeText = isPeriodView ? `${pPct}%` : `${p.count} (${pPct}%)`;
-            const rowTip = isPeriodView ? `Click to view ${p.label}${p.desc}: ${pPct}%` : `Click to view ${p.label}${p.desc}: ${p.count} devotees`;
-            return `<div class="click click-row morning-punc-row" data-act="morning-filter-status" data-s="${p.status}" style="display:flex;align-items:center;justify-content:space-between;font-size:12px;padding:6px 10px;border-radius:6px;cursor:pointer;transition:all .15s;${isSel ? 'background:var(--paper-2);font-weight:700;border-left:3px solid ' + p.col : 'background:transparent'}" title="${rowTip}">
-              <span style="display:inline-flex;align-items:center;gap:6px;min-width:0">
-                <i style="width:10px;height:10px;border-radius:3px;background:${p.col};display:inline-block;flex:none"></i>
-                <span style="white-space:nowrap">${p.label}<span class="morning-punc-desc">${p.desc}</span></span>
-              </span>
-              <span class="badge ${isSel ? 'b-indigo' : 'b-grey'}" style="font-size:11px;flex:none;margin-left:6px">${badgeText}</span>
-            </div>`;
-          }).join('')}
-        </div>
-      </div>
-      <div class="tiny muted morning-chart-hint" style="margin-top:10px;text-align:center">💡 Tap any slice or row to filter devotees below</div>
     </div>
 
-    <div class="card pad" style="position:relative">
-      <div class="card-h" style="padding:0 0 12px;border-bottom:1px solid var(--line-2);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
-        <h3 style="margin:0">📈 Arrival Distribution Timeline</h3>
-        <span class="tiny" style="margin-left:auto">Earliest: <b>${m.earliestTime || '04:15 AM'}</b></span>
-      </div>
-      <div style="margin-top:14px;display:flex;align-items:flex-end;justify-content:space-between;gap:6px;height:130px;padding:10px 4px 0;width:100%;box-sizing:border-box">
-        ${buckets.map(b => {
-          const h = Math.max(16, Math.round((b.count / maxBucket) * 90));
-          const isSel = activeBucket === b.label;
-          const bPct = pct(b.count, total);
-          const topLabel = isPeriodView ? `${bPct}%` : `${b.count}`;
-          const bTip = isPeriodView ? `Click to filter by ${b.label}: ${bPct}%` : `Click to filter by ${b.label}: ${b.count} devotees`;
-          return `<div class="click click-col" data-act="morning-filter-bucket" data-b="${esc(b.label)}" style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;padding:6px 2px;border-radius:6px;transition:all .2s;${isSel ? 'background:var(--paper-2);box-shadow:0 0 0 1.5px var(--indigo);font-weight:700' : ''}" title="${bTip}">
-            <div style="font-size:11px;font-weight:700;color:${isSel ? 'var(--indigo)' : 'var(--ink)'}">${topLabel}</div>
-            <div style="width:100%;max-width:42px;height:${h}px;background:${b.color};border-radius:6px 6px 2px 2px;transition:height .3s ease, transform .2s ease;${isSel ? 'transform:scaleY(1.05);filter:brightness(1.1)' : ''}"></div>
-            <div style="font-size:9.5px;font-weight:600;color:var(--ink-3);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%" title="${b.label}">${b.label}</div>
-          </div>`;
-        }).join('')}
-      </div>
-      <div class="tiny muted" style="margin-top:10px;text-align:center">💡 Tap any timeline bar to filter arrival window</div>
+    <!-- 4-item Bar Graph -->
+    <div style="display:flex;align-items:flex-end;justify-content:space-around;gap:12px;height:160px;padding:22px 10px 0;width:100%;box-sizing:border-box">
+      ${parts.map(p => {
+        const pPct = pct(p.count, total);
+        const h = Math.max(18, Math.round((pPct / maxPct) * 105));
+        const isSel = filterSt === p.status;
+        const topLabel = isPeriodView ? `${pPct}%` : `${p.count} <span style="font-size:11px;font-weight:600;color:var(--ink-3)">(${pPct}%)</span>`;
+        const tip = isPeriodView ? `Click to filter by ${p.label} (${p.desc}): ${pPct}%` : `Click to filter by ${p.label} (${p.desc}): ${p.count} devotees (${pPct}%)`;
+
+        return `<div class="click click-col" data-act="morning-filter-status" data-s="${p.status}" style="flex:1;max-width:140px;min-width:0;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;padding:8px 6px;border-radius:10px;transition:all .2s ease;${isSel ? 'background:var(--paper-2);box-shadow:0 0 0 2px var(--indigo);font-weight:700' : ''}" title="${tip}">
+          <div style="font-size:13px;font-weight:800;color:${isSel ? 'var(--indigo)' : 'var(--ink)'};text-align:center;line-height:1.2">${topLabel}</div>
+          <div style="width:100%;max-width:72px;height:${h}px;background:${p.grad};border-radius:8px 8px 3px 3px;transition:height .3s ease, transform .2s ease;${isSel ? 'transform:scaleY(1.04);filter:brightness(1.1);box-shadow:0 4px 12px rgba(0,0,0,0.15)' : ''}"></div>
+          <div style="font-size:12px;font-weight:700;color:var(--ink);text-align:center;margin-top:2px;white-space:nowrap">${p.label}</div>
+          <div style="font-size:10px;font-weight:600;color:var(--ink-3);text-align:center;white-space:nowrap">${p.desc}</div>
+        </div>`;
+      }).join('')}
     </div>
+
+    <div class="tiny muted" style="margin-top:14px;text-align:center">💡 Tap any bar to filter devotees below by arrival status</div>
   </div>`;
 }
 
