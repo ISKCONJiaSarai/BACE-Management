@@ -15968,18 +15968,18 @@ function matchDevotee(a, b) {
 }
 
 function getDevoteeMorningStandard(devotee) {
-  if (!devotee) return { stdMin: 270, stdTime: '04:30', graceMin: 330, lateMin: 390, cutoffMin: 420 };
-  const rawStd = (devotee.morningStandardTime || '04:30').trim();
-  const parsedStd = parseTimeMinutes(rawStd) ?? 270; // 04:30 AM = 270 min
+  if (!devotee) return { stdMin: 330, stdTime: '05:30', graceMin: 360, lateMin: 420, cutoffMin: 420 };
+  const rawStd = (devotee.morningStandardTime || '05:30').trim();
+  const parsedStd = parseTimeMinutes(rawStd) ?? 330; // 05:30 AM = 330 min
   
   // Standard thresholds:
-  // On-time: <= stdMin (default 04:30 AM)
-  // Grace: <= graceMin (default 05:30 AM, +60m window)
-  // Late: <= lateMin (default 06:30 AM, +120m window)
-  // Absent / No marking: after cutoffMin (default 07:00 AM, +150m window)
-  const graceMin = parsedStd + 60;
-  const lateMin = parsedStd + 120;
-  const cutoffMin = parsedStd + 150;
+  // Present: <= stdMin (default 05:30 AM = 330 min)
+  // Grace: > stdMin and <= 06:00 AM (360 min)
+  // Late: > 06:00 AM and <= 07:00 AM (420 min)
+  // Absent: > 07:00 AM (420 min)
+  const graceMin = parsedStd === 330 ? 360 : (parsedStd + 30);
+  const lateMin = 420;
+  const cutoffMin = 420;
 
   return {
     stdMin: parsedStd,
@@ -16005,17 +16005,17 @@ function evaluatePunchPunctuality(inMin, devotee) {
     };
   }
 
-  // Punch after 7:00 AM: Very late (arrival distribution > 07:00 AM)
+  // Absent if punch > 7:00 AM (420m)
   if (inMin > std.cutoffMin) {
     const diff = inMin - std.stdMin;
     return {
-      status: 'Very late',
+      status: 'Absent',
       statusTone: 'danger',
-      badgeText: '+' + diff + 'm (Very late > ' + formatMinutesTime(std.cutoffMin) + ')',
+      badgeText: 'Absent (> 07:00 AM, +' + diff + 'm)',
       diffMin: diff,
       stdMin: std.stdMin,
       standardTime: std.stdTime,
-      isMarked: true
+      isMarked: false
     };
   }
 
@@ -16031,15 +16031,15 @@ function evaluatePunchPunctuality(inMin, devotee) {
   } else if (inMin <= std.graceMin) {
     status = 'Grace';
     statusTone = 'amber';
-    badgeText = '+' + diffMin + 'm (Grace \u2264 ' + formatMinutesTime(std.graceMin) + ')';
+    badgeText = '+' + diffMin + 'm (Grace 05:30–06:00)';
   } else if (inMin <= std.lateMin) {
     status = 'Late';
     statusTone = 'danger';
-    badgeText = '+' + diffMin + 'm (Late \u2264 ' + formatMinutesTime(std.lateMin) + ')';
+    badgeText = '+' + diffMin + 'm (Late ≤ 07:00)';
   } else {
-    status = 'Late';
+    status = 'Absent';
     statusTone = 'danger';
-    badgeText = '+' + diffMin + 'm (Critical delay)';
+    badgeText = 'Absent (> 07:00 AM)';
   }
 
   return {
@@ -16049,7 +16049,7 @@ function evaluatePunchPunctuality(inMin, devotee) {
     diffMin,
     stdMin: std.stdMin,
     standardTime: std.stdTime,
-    isMarked: true
+    isMarked: status === 'On Time'
   };
 }
 
@@ -16244,15 +16244,19 @@ function computePeriodMorningMetrics(byDate, availableDates, targetDate, numDays
     periodDates.forEach(dt => {
       const dayRows = byDate[dt] || [];
       const devRow = dayRows.find(r => r.devoteeId === d.id || matchDevoteeFirstName(r.name, d.name));
-      if (devRow && devRow.status !== 'Absent') {
+      if (devRow && devRow.status === 'On Time') {
         presentCount++;
-        if (devRow.status === 'On Time') onTimeCount++;
-        else if (devRow.status === 'Grace') graceCount++;
-        else if (devRow.status === 'Late') lateCount++;
-        dailyPunches.push({ date: dt, status: devRow.status, time: devRow.timeIn });
+        onTimeCount++;
+        dailyPunches.push({ date: dt, status: 'On Time', time: devRow.timeIn });
+      } else if (devRow && devRow.status === 'Grace') {
+        graceCount++;
+        dailyPunches.push({ date: dt, status: 'Grace', time: devRow.timeIn });
+      } else if (devRow && (devRow.status === 'Late' || devRow.status === 'Very late')) {
+        lateCount++;
+        dailyPunches.push({ date: dt, status: 'Late', time: devRow.timeIn });
       } else {
         absentCount++;
-        dailyPunches.push({ date: dt, status: 'Absent', time: '—' });
+        dailyPunches.push({ date: dt, status: 'Absent', time: devRow ? devRow.timeIn : '—' });
       }
     });
 
@@ -16342,19 +16346,17 @@ function computePeriodMorningMetrics(byDate, availableDates, targetDate, numDays
   const latestMin = validTimes.length ? Math.max(...validTimes) : null;
 
   const buckets = [
-    { label: '< 04:30 AM', count: 0, sub: 'On Time (\u2264 04:30)', color: '#059669' },
-    { label: '04:30–05:30', count: 0, sub: 'Grace (\u2264 05:30)', color: '#10B981' },
-    { label: '05:30–06:30', count: 0, sub: 'Late (\u2264 06:30)', color: '#F59E0B' },
-    { label: '06:30–07:00', count: 0, sub: 'Critical delay', color: '#F97316' },
-    { label: '> 07:00 AM', count: 0, sub: 'Very late', color: '#DC2626' }
+    { label: '≤ 05:30 AM', count: 0, sub: 'On Time (\u2264 05:30)', color: '#059669' },
+    { label: '05:30–06:00', count: 0, sub: 'Grace (05:30–06:00)', color: '#10B981' },
+    { label: '06:00–07:00', count: 0, sub: 'Late (06:00–07:00)', color: '#F59E0B' },
+    { label: '> 07:00 AM', count: 0, sub: 'Absent (> 07:00)', color: '#DC2626' }
   ];
 
   validTimes.forEach(m => {
-    if (m <= 270) buckets[0].count++;
-    else if (m <= 330) buckets[1].count++;
-    else if (m <= 390) buckets[2].count++;
-    else if (m <= 420) buckets[3].count++;
-    else buckets[4].count++;
+    if(m <= 330) buckets[0].count++;
+    else if(m <= 360) buckets[1].count++;
+    else if(m <= 420) buckets[2].count++;
+    else buckets[3].count++;
   });
 
   return {
@@ -16817,7 +16819,16 @@ function getMorningRemark(periodType, periodId, devKey) {
     var map = getMorningRemarksMap();
     var k = (periodType || 'general') + '_' + (periodId || 'default') + '_' + devKey;
     if (map[k] !== undefined && map[k] !== null && map[k] !== '') return map[k];
-    return localStorage.getItem('bace_morning_remark_' + k) || '';
+    var fallback = localStorage.getItem('bace_morning_remark_' + k);
+    if (fallback) return fallback;
+    var pPrefix = (periodType || '') + '_';
+    for (var mk in map) {
+      if (mk.startsWith(pPrefix) && mk.endsWith('_' + devKey) && map[mk]) return map[mk];
+    }
+    for (var mk2 in map) {
+      if (mk2.endsWith('_' + devKey) && map[mk2]) return map[mk2];
+    }
+    return '';
   } catch(e) { return ''; }
 }
 function setMorningRemark(periodType, periodId, devKey, text) {
@@ -16872,7 +16883,7 @@ function renderDevoteeWarningCell(d, isMonthly, isPdf) {
     if (!wPunches.length) {
       return '<span title="Week ' + (i + 1) + ': No sessions" style="display:inline-block;width:12px;height:' + barH + ';border-radius:2px;background:#cbd5e1"></span>';
     }
-    var pres = wPunches.filter(function(p){ return p.status !== 'Absent'; }).length;
+    var pres = wPunches.filter(function(p){ return p.status === 'On Time'; }).length;
     var pct = Math.round((pres / wPunches.length) * 100);
     var isWarn = pct < 70;
     var col = isWarn ? '#ef4444' : '#22c55e';
@@ -16909,6 +16920,59 @@ function renderMonthlyWarningBarsPDF(devId, devName, monthDates, byDateRows) {
 /* =========================================================================
    MORNING PROGRAMME BATCH FILTER — multi-select for PDF export & reports
    ========================================================================= */
+function getMorningHiddenDevotees() {
+  try { var raw = localStorage.getItem('bace_morning_hidden_devotees'); return raw ? JSON.parse(raw) : []; } catch(e) { return []; }
+}
+function setMorningHiddenDevotees(arr) {
+  try { localStorage.setItem('bace_morning_hidden_devotees', JSON.stringify(arr || [])); } catch(e) {}
+}
+function isDevoteeHidden(d, hiddenList) {
+  if (!d) return false;
+  var list = hiddenList || getMorningHiddenDevotees();
+  if (!list || !list.length) return false;
+  var id = (d.devotee && d.devotee.id) || d.devoteeId || d.id || '';
+  var name = (d.name || '').toLowerCase().trim();
+  return list.some(function(item) {
+    if (!item) return false;
+    var s = String(item).toLowerCase().trim();
+    return s === String(id).toLowerCase().trim() || s === name || (d.customId && s === String(d.customId).toLowerCase().trim());
+  });
+}
+function toggleHideMorningDevotee(devKey) {
+  var list = getMorningHiddenDevotees();
+  var idx = list.indexOf(devKey);
+  if (idx >= 0) {
+    list.splice(idx, 1);
+    toast('Devotee unhidden from report', '👁️');
+  } else {
+    list.push(devKey);
+    toast('Devotee hidden from report', '🙈');
+  }
+  setMorningHiddenDevotees(list);
+  if (typeof render === 'function') render();
+}
+function unhideAllMorningDevotees() {
+  setMorningHiddenDevotees([]);
+  APP.morningShowHidden = false;
+  toast('All hidden devotees restored to report', '👁️');
+  if (typeof render === 'function') render();
+}
+function renderMorningHiddenBar() {
+  var hidden = getMorningHiddenDevotees();
+  if (!hidden || !hidden.length) return '';
+  var showing = !!APP.morningShowHidden;
+  return '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 14px;background:var(--paper-2);border-radius:8px;margin-bottom:12px;font-size:12px;border-left:3px solid var(--amber);flex-wrap:wrap">'
+    + '<div style="display:flex;align-items:center;gap:6px">'
+    + '<span>🙈</span>'
+    + '<span><b>' + hidden.length + ' devotee' + (hidden.length !== 1 ? 's' : '') + ' hidden</b> from morning report' + (showing ? ' (currently revealed)' : '') + '</span>'
+    + '</div>'
+    + '<div style="display:inline-flex;gap:6px">'
+    + '<button type="button" class="btn sm" data-act="morning-toggle-show-hidden" style="font-size:11px;padding:3px 9px">' + (showing ? 'Hide Them Again' : 'Show Hidden') + '</button>'
+    + '<button type="button" class="btn sm ghost" data-act="morning-unhide-all" style="font-size:11px;padding:3px 9px">Unhide All</button>'
+    + '</div>'
+    + '</div>';
+}
+
 function getMorningPdfBatchFilter() {
   try { var raw = localStorage.getItem('bace_morning_pdf_batch_filter'); return raw ? JSON.parse(raw) : []; } catch(e) { return []; }
 }
@@ -17056,11 +17120,11 @@ function exportMorningPeriodReportPDF(periodType) {
     <div class="analytics-card">
       <div class="analytics-head">🎯 Punctuality Breakdown</div>
       <div class="breakdown-row">
-        <span>🟢 On Time (≤ 04:30 AM)</span>
+        <span>🟢 On Time (≤ 05:30 AM)</span>
         <b>${pData.totalOnTime} (${pData.totalAttended > 0 ? Math.round((pData.totalOnTime/pData.totalAttended)*100) : 0}%)</b>
       </div>
       <div class="breakdown-row">
-        <span>🟡 Grace (04:30–05:30 AM)</span>
+        <span>🟡 Grace (05:30–06:00 AM)</span>
         <b>${pData.totalGrace} (${pData.totalAttended > 0 ? Math.round((pData.totalGrace/pData.totalAttended)*100) : 0}%)</b>
       </div>
       <div class="breakdown-row">
@@ -17094,17 +17158,16 @@ function exportMorningPeriodReportPDF(periodType) {
       <thead>
         <tr>
           <th style="width:4%;text-align:center">#</th>
-          <th style="width:22%">Devotee Name</th>
+          <th style="width:24%">Devotee Name</th>
           <th style="width:9%;text-align:center">Standard</th>
-          <th style="width:10%;text-align:center">Days Present</th>
-          <th style="width:6%;text-align:center">On Time</th>
-          <th style="width:6%;text-align:center">Grace</th>
-          <th style="width:6%;text-align:center">Late</th>
-          <th style="width:6%;text-align:center">Absent</th>
+          <th style="width:11%;text-align:center">Days Present</th>
+          <th style="width:7%;text-align:center">On Time</th>
+          <th style="width:7%;text-align:center">Grace</th>
+          <th style="width:7%;text-align:center">Late</th>
+          <th style="width:7%;text-align:center">Absent</th>
           <th style="width:9%;text-align:center">Att%</th>
-          <th style="width:9%;text-align:center">Punct%</th>
           <th style="width:8%;text-align:center">Warning</th>
-          <th style="width:15%">Remarks</th>
+          <th style="width:17%">Remarks</th>
         </tr>
       </thead>
       <tbody>
@@ -17120,8 +17183,6 @@ function exportMorningPeriodReportPDF(periodType) {
             <td style="text-align:center;color:#64748b;font-weight:600">${i + 1}</td>
             <td>
               <b>${esc(d.name)}</b>
-              ${batchName ? `<div style="font-size:9px;color:#94a3b8">${esc(batchName)}</div>` : ''}
-              <div style="font-size:9.5px;color:#64748b">${esc(d.appointment)}</div>
             </td>
             <td style="text-align:center;font-family:monospace;font-weight:600">${d.standardTime}</td>
             <td style="text-align:center"><b>${d.presentCount}</b> / ${pData.totalSessions}</td>
@@ -17132,11 +17193,8 @@ function exportMorningPeriodReportPDF(periodType) {
             <td style="text-align:center">
               <span class="pill ${d.attendanceRate >= 80 ? 'pill-green' : (d.attendanceRate >= 50 ? 'pill-amber' : 'pill-red')}">${d.attendanceRate}%</span>
             </td>
-            <td style="text-align:center">
-              <span class="pill ${d.punctualityRate >= 80 ? 'pill-green' : (d.punctualityRate >= 50 ? 'pill-amber' : 'pill-red')}">${d.punctualityRate}%</span>
-            </td>
             <td style="text-align:center">${warningCell}</td>
-            <td style="font-size:9.5px;color:#374151">${esc(remark)}</td>
+            <td style="font-size:9.5px;color:#374151;white-space:normal;word-break:break-word">${esc(remark)}</td>
           </tr>`;
         }).join('')}
       </tbody>
@@ -17250,7 +17308,6 @@ function exportMorningGrowthReportPDF() {
             <tr>
               <td>
                 <b>${esc(p.name)}</b>
-                <div style="font-size:9.5px;color:#64748b">${esc(p.appointment)}</div>
               </td>
               <td style="text-align:center;font-family:monospace;font-weight:600">${p.standardTime}</td>
               <td style="text-align:center"><b>${p.presentCount}</b> / ${pData.totalSessions}</td>
@@ -17617,7 +17674,8 @@ function computeMorningMetrics(rows, date){
   const lateCount = rows.filter(r => r.status === 'Late').length;
   const veryLateCount = rows.filter(r => r.status === 'Very late').length;
   const absentCount = rows.filter(r => r.status === 'Absent').length;
-  const attended = total - absentCount;
+  // Attendance marked present ONLY when present according to standard time (excluding grace & late)
+  const attended = onTimeCount;
 
   const onTimePct = attended > 0 ? pct(onTimeCount, attended) : 0;
   const punctualityScore = attended > 0 ? pct(onTimeCount + graceCount, attended) : 0;
@@ -17637,19 +17695,17 @@ function computeMorningMetrics(rows, date){
   // Delay: 06:30 - 07:00 AM
   // Absent: > 07:00 AM (No marking)
   const buckets = [
-    { label: '< 04:30 AM', count: 0, sub: 'On Time (\u2264 04:30)', color: '#059669' },
-    { label: '04:30–05:30', count: 0, sub: 'Grace (\u2264 05:30)', color: '#10B981' },
-    { label: '05:30–06:30', count: 0, sub: 'Late (\u2264 06:30)', color: '#F59E0B' },
-    { label: '06:30–07:00', count: 0, sub: 'Critical delay', color: '#F97316' },
-    { label: '> 07:00 AM', count: 0, sub: 'Very late', color: '#DC2626' }
+    { label: '≤ 05:30 AM', count: 0, sub: 'On Time (\u2264 05:30)', color: '#059669' },
+    { label: '05:30–06:00', count: 0, sub: 'Grace (05:30–06:00)', color: '#10B981' },
+    { label: '06:00–07:00', count: 0, sub: 'Late (06:00–07:00)', color: '#F59E0B' },
+    { label: '> 07:00 AM', count: 0, sub: 'Absent (> 07:00)', color: '#DC2626' }
   ];
 
   validTimes.forEach(m => {
-    if(m <= 270) buckets[0].count++;
-    else if(m <= 330) buckets[1].count++;
-    else if(m <= 390) buckets[2].count++;
-    else if(m <= 420) buckets[3].count++;
-    else buckets[4].count++;
+    if(m <= 330) buckets[0].count++;
+    else if(m <= 360) buckets[1].count++;
+    else if(m <= 420) buckets[2].count++;
+    else buckets[3].count++;
   });
 
   const met = {
@@ -17989,7 +18045,7 @@ function saveMorningAttendanceToDB(showToast = true){
     rows.forEach(r => {
       const devId = r.devoteeId || r.name;
       const ref = 'mp_' + dt;
-      const st = r.status === 'On Time' || r.status === 'Grace' ? 'Present' : (r.status === 'Late' ? 'Late' : 'Absent');
+      const st = r.status === 'On Time' ? 'Present' : (r.status === 'Grace' ? 'Grace' : (r.status === 'Late' ? 'Late' : 'Absent'));
       let rec = DB.attendance.find(a => a.category === 'Morning programme' && a.ref === ref && (a.devotee === devId || (r.devoteeId && a.devotee === r.devoteeId)));
       if(rec){
         rec.status = st;
@@ -18233,7 +18289,7 @@ function renderMorningCharts(m, dateLabel, filterSt = '', activeBucket = '') {
   const C = 2 * Math.PI * R;
   const total = m.total || (m.onTimeCount + m.graceCount + m.lateCount + m.absentCount) || 1;
   const parts = [
-    { status: 'On Time', count: m.onTimeCount, col: 'var(--green,#10B981)', label: 'On Time', desc: ' (≤ 04:30 AM)' },
+    { status: 'On Time', count: m.onTimeCount, col: 'var(--green,#10B981)', label: 'On Time', desc: ' (≤ 05:30 AM)' },
     { status: 'Grace', count: m.graceCount, col: 'var(--mustard,#D97706)', label: 'Grace', desc: ' (≤ 05:30 AM)' },
     { status: 'Late', count: m.lateCount, col: 'var(--danger,#DC2626)', label: 'Late', desc: ' (≤ 06:30 AM)' },
     { status: 'Absent', count: m.absentCount, col: '#94A3B8', label: 'Absent', desc: ' (No punch)' }
@@ -18335,6 +18391,12 @@ function filterAndSortMorningPeriodDevs(devList, q = '', attFilter = '', puncFil
   sortMode = sortMode || APP.morningSort || 'att_desc';
 
   let list = (devList || []).slice();
+  if (!APP.morningShowHidden) {
+    const hiddenList = getMorningHiddenDevotees();
+    if (hiddenList.length) {
+      list = list.filter(d => !isDevoteeHidden(d, hiddenList));
+    }
+  }
   const selectedBatches = getMorningPdfBatchFilter();
   if (selectedBatches && selectedBatches.length) {
     list = list.filter(d => devoteeBelongsToBatches(d, selectedBatches));
@@ -18367,10 +18429,9 @@ function filterAndSortMorningPeriodDevs(devList, q = '', attFilter = '', puncFil
         if (p.status === 'Absent' || !p.time || p.time === '—') return false;
         const m = parseTimeMinutes(p.time);
         if (m == null) return false;
-        if (activeBucket === '< 04:30 AM') return m <= 270;
-        if (activeBucket === '04:30–05:30') return m > 270 && m <= 330;
-        if (activeBucket === '05:30–06:30') return m > 330 && m <= 390;
-        if (activeBucket === '06:30–07:00') return m > 390 && m <= 420;
+        if (activeBucket === '≤ 05:30 AM' || activeBucket === '< 04:30 AM' || activeBucket === '< 05:30 AM') return m <= 330;
+        if (activeBucket === '05:30–06:00' || activeBucket === '04:30–05:30') return m > 330 && m <= 360;
+        if (activeBucket === '06:00–07:00' || activeBucket === '05:30–06:30' || activeBucket === '06:30–07:00') return m > 360 && m <= 420;
         if (activeBucket === '> 07:00 AM') return m > 420;
         return false;
       });
@@ -18460,7 +18521,7 @@ function renderMorningDevoteeMobileRow(d, i, periodKey, totalSessions) {
       </span>
       <div class="lb-bar-wrap">${bars}</div>
       <span class="lb-pct" style="color:${pctColor}">${d.attendanceRate}%</span>
-      <span class="lb-icon" title="Punctuality">${d.punctualityRate>=80?'⏱️✅':d.punctualityRate>=50?'⏱️🟡':'⏱️🔴'}</span>
+      
       <span class="lb-expand-indicator" id="mdev-chev-${periodKey}-${d.devotee.id}">${isExp ? '▲' : '▼'}</span>
       <a class="lb-action" href="#/devotee/${d.devotee.id}" onclick="event.stopPropagation()" title="View profile">👤</a>
     </div>
@@ -18478,7 +18539,7 @@ function renderMorningDevoteeMobileRow(d, i, periodKey, totalSessions) {
       <!-- Quick Metrics Strip -->
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;font-size:11px;color:var(--ink-2);margin-bottom:8px;padding:6px 8px;background:var(--surface);border-radius:6px;border:1px solid var(--line-2)">
         <div>🎯 <b>Target:</b> ${d.standardTime}</div>
-        <div>⏱️ <b>Punctuality:</b> <b style="color:${d.punctualityRate>=80?'var(--green)':'var(--mustard)'}">${d.punctualityRate}%</b></div>
+        
         <div>🏷️ <b>Badge:</b> ${d.statusBadge || 'Regular'}</div>
         ${d.attendanceGrowthDelta !== undefined ? `<div>📈 <b>Trend:</b> <span style="color:${d.attendanceGrowthDelta>=0?'var(--green)':'var(--danger)'};font-weight:700">${d.attendanceGrowthDelta>=0?'+':''}${d.attendanceGrowthDelta}%</span></div>` : ''}
       </div>
@@ -18498,6 +18559,7 @@ function renderMorningDevoteeMobileRow(d, i, periodKey, totalSessions) {
 
       <!-- Bottom action buttons -->
       <div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-top:8px">
+        <button type="button" class="btn sm ghost" data-act="morning-hide-devotee" data-id="${_morningDevKey(d)}" style="padding:4px 9px;font-size:11px;gap:3px">${isDevoteeHidden(d, getMorningHiddenDevotees()) ? '👁️ Unhide' : '🙈 Hide'}</button>
         <button type="button" class="btn sm" data-act="edit-devotee-morning-std" data-id="${d.devotee.id}" style="padding:4px 9px;font-size:11px;gap:3px">✏️ Edit Target</button>
         <a class="btn sm pri" href="#/devotee/${d.devotee.id}" style="padding:4px 9px;font-size:11px;gap:3px">👤 Devotee Profile</a>
       </div>
@@ -18566,7 +18628,7 @@ function morningProgramPanel(){
           All records are saved permanently to MongoDB and accumulated across sessions without being cleared.<br>
           Devotees will be matched with the database by their <b>first name (case-insensitive)</b>.<br>
           <span style="display:inline-block;margin-top:8px;color:var(--ink-2);font-weight:600">
-            Standard: 04:30 AM On Time · Grace up to 05:30 AM · Late up to 06:30 AM · Absent after 07:00 AM (no marking)
+            Standard: 05:30 AM On Time · Grace 05:30–06:00 AM · Late 06:00–07:00 AM · Absent > 07:00 AM
           </span>
         </p>
         <button class="btn pri" data-act="trigger-morning-csv" style="padding:10px 24px;font-size:14px">
@@ -18625,6 +18687,7 @@ function morningProgramPanel(){
 
   // Filter rows for Today's view
   let rows = dailyBaseRows.filter(r => {
+    if (!APP.morningShowHidden && isDevoteeHidden(r, getMorningHiddenDevotees())) return false;
     if(filterSt){
       if(filterSt === 'Attended'){
         if(r.status === 'Absent') return false;
@@ -18802,8 +18865,8 @@ function morningProgramPanel(){
         <div class="grid g4" style="margin-bottom:16px">
           ${stat('Uploaded Devotees', m.total, 'in this session · tap to filter', {em:'👥',tint:!filterSt&&!activeBucket,act:'morning-filter-status',s:''})}
           ${stat('Attendance Rate', `${pct(m.attended, m.total)}%`, `${m.attended} present · ${m.absentCount} absent`, {em:'✅',tint:filterSt==='Attended',act:'morning-filter-status',s:'Attended'})}
-          ${stat('On-Time Standard', `${m.onTimePct}%`, `${m.onTimeCount} on time (≤ 04:30)`, {em:'⏱️',tint:filterSt==='On Time',act:'morning-filter-status',s:'On Time'})}
-          ${stat('Grace Arrivals', m.graceCount, 'arrived 04:30–05:30', {em:'🟡',tint:filterSt==='Grace',act:'morning-filter-status',s:'Grace'})}
+          ${stat('On-Time Standard', `${m.onTimePct}%`, `${m.onTimeCount} on time (≤ 05:30)`, {em:'⏱️',tint:filterSt==='On Time',act:'morning-filter-status',s:'On Time'})}
+          ${stat('Grace Arrivals', m.graceCount, 'arrived 05:30–06:00', {em:'🟡',tint:filterSt==='Grace',act:'morning-filter-status',s:'Grace'})}
         </div>
 
         <!-- Charts: Donut & Histogram (Interactive Drill-Down) -->
@@ -18821,6 +18884,8 @@ function morningProgramPanel(){
             <button class="btn sm" data-act="morning-clear-filters" style="padding:2px 8px;font-size:11.5px">✕ Show All (${m.total})</button>
           </div>
         </div>` : ''}
+
+        ${renderMorningHiddenBar()}
 
         <!-- Filter & Search Toolbar (Daily) -->
         <div class="toolbar morning-filter-toolbar" style="gap:8px;align-items:center;flex-wrap:wrap;padding:0;margin-bottom:12px">
@@ -18870,7 +18935,6 @@ function morningProgramPanel(){
                     ${av(r.avatarName || r.name)}
                     <div>
                       <b>${esc(r.name)}</b>
-                      <span>${esc(r.devoteeInfo)}</span>
                     </div>
                   </div>
                 </td>
@@ -18920,7 +18984,7 @@ function morningProgramPanel(){
                   ${av(r.avatarName || r.name)}
                   <div style="min-width:0">
                     <b style="font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;color:var(--ink)">${esc(r.name)}</b>
-                    <span style="font-size:11px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block">${esc(r.devoteeInfo)}</span>
+                    
                   </div>
                 </div>
                 ${r.devoteeId ? `<a class="btn sm icon-only ghost" href="#/devotee/${r.devoteeId}" title="View profile" style="height:26px;width:26px;min-width:26px;padding:0;font-size:12px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;color:var(--ink-2);background:var(--surface-2);border:1px solid var(--line)">👤</a>` : ''}
@@ -19020,7 +19084,7 @@ function morningProgramPanel(){
           ` : ''}
         </div>
 
-        ${renderMorningBatchFilterUI()}
+        ${renderMorningHiddenBar()}${renderMorningBatchFilterUI()}
 
         <div class="card-h click" data-act="toggle-morning-table" style="cursor:pointer;padding:10px 14px;border:1px solid var(--line);border-radius:10px;display:flex;align-items:center;justify-content:space-between;background:var(--surface);margin-bottom:10px;-webkit-tap-highlight-color:transparent">
           <span style="font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px">👥 Weekly Devotee Summary (${filterAndSortMorningPeriodDevs(weekly.devStats, q, APP.morningAttFilter, APP.morningPuncFilter, APP.morningSort).length})</span>
@@ -19031,7 +19095,7 @@ function morningProgramPanel(){
             <thead>
               <tr>
                 <th style="width:3%;text-align:center">#</th>
-                <th style="width:20%">Devotee Name</th>
+                <th style="width:22%">Devotee Name</th>
                 <th style="width:8%;text-align:center">Standard</th>
                 <th style="width:9%;text-align:center">Days Present</th>
                 <th style="width:6%;text-align:center">On Time</th>
@@ -19039,11 +19103,9 @@ function morningProgramPanel(){
                 <th style="width:6%;text-align:center">Late</th>
                 <th style="width:6%;text-align:center">Absent</th>
                 <th style="width:7%;text-align:center">Att %</th>
-                <th style="width:7%;text-align:center">Punct %</th>
-                <th style="width:7%;text-align:center">Warning</th>
-                <th style="width:14%">Remarks</th>
-                <th style="width:4%;text-align:center">Std</th>
-                <th style="width:3%;text-align:center">View</th>
+                <th style="width:8%;text-align:center">Warning</th>
+                <th style="width:13%">Remarks</th>
+                <th style="width:6%;text-align:center">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -19059,7 +19121,7 @@ function morningProgramPanel(){
                       ${av(d.name)}
                       <div>
                         <b>${esc(d.name)}</b>
-                        <span>${esc(d.appointment)}</span>
+                        ${isDevoteeHidden(d, getMorningHiddenDevotees()) ? '<span style="color:var(--danger);font-size:10px;font-weight:700"> (Hidden 🙈)</span>' : ''}
                       </div>
                     </div>
                   </td>
@@ -19076,9 +19138,6 @@ function morningProgramPanel(){
                   <td class="center" data-l="Att %">
                     <b style="color:${d.attendanceRate>=80?'var(--green)':(d.attendanceRate>=60?'var(--mustard)':'var(--danger)')}">${d.attendanceRate}%</b>
                   </td>
-                  <td class="center" data-l="Punct %">
-                    <b style="color:${d.punctualityRate>=80?'var(--green)':(d.punctualityRate>=60?'var(--mustard)':'var(--danger)')}">${d.punctualityRate}%</b>
-                  </td>
                   <td class="center" data-l="Warning">
                     ${renderDevoteeWarningCell(d, false, false)}
                   </td>
@@ -19091,11 +19150,12 @@ function morningProgramPanel(){
                            style="width:100%;min-width:90px;padding:3px 7px;font-size:11.5px;border:1px solid var(--line);border-radius:5px;background:var(--surface);color:var(--ink)"
                            ${canEdit?'':'readonly title="Read-only"'} />
                   </td>
-                  <td class="center" data-l="Edit Std">
-                    <button class="btn sm" data-act="edit-devotee-morning-std" data-id="${d.devotee.id}" style="padding:2px 7px;font-size:11px">✏️ Std</button>
-                  </td>
-                  <td class="center" data-l="View">
-                    <a class="btn sm icon-only" href="#/devotee/${d.devotee.id}" title="View profile">👤</a>
+                  <td class="center" data-l="Actions">
+                    <div style="display:inline-flex;gap:3px;align-items:center">
+                      <button class="btn sm icon-only" data-act="edit-devotee-morning-std" data-id="${d.devotee.id}" title="Edit devotee standard time" style="padding:2px 5px;font-size:10px">✏️</button>
+                      <a class="btn sm icon-only ghost" href="#/devotee/${d.devotee.id}" title="View profile" style="padding:2px 5px;font-size:10px">👤</a>
+                      <button type="button" class="btn sm icon-only ghost" data-act="morning-hide-devotee" data-id="${devKey}" title="${isDevoteeHidden(d, getMorningHiddenDevotees()) ? 'Restore to report' : 'Hide from report'}" style="padding:2px 5px;font-size:10px;color:var(--ink-3)">${isDevoteeHidden(d, getMorningHiddenDevotees()) ? '👁️' : '🙈'}</button>
+                    </div>
                   </td>
                 </tr>`;
                 }).join('')}
@@ -19182,7 +19242,7 @@ function morningProgramPanel(){
           ` : ''}
         </div>
 
-        ${renderMorningBatchFilterUI()}
+        ${renderMorningHiddenBar()}${renderMorningBatchFilterUI()}
 
         <div class="card-h click" data-act="toggle-morning-table" style="cursor:pointer;padding:10px 14px;border:1px solid var(--line);border-radius:10px;display:flex;align-items:center;justify-content:space-between;background:var(--surface);margin-bottom:10px;-webkit-tap-highlight-color:transparent">
           <span style="font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px">👥 Monthly Devotee Summary (${filterAndSortMorningPeriodDevs(monthly.devStats, q, APP.morningAttFilter, APP.morningPuncFilter, APP.morningSort).length})</span>
@@ -19193,19 +19253,17 @@ function morningProgramPanel(){
             <thead>
               <tr>
                 <th style="width:3%;text-align:center">#</th>
-                <th style="width:19%">Devotee Name</th>
-                <th style="width:7%;text-align:center">Standard</th>
-                <th style="width:8%;text-align:center">Days Present</th>
-                <th style="width:5%;text-align:center">On Time</th>
-                <th style="width:5%;text-align:center">Grace</th>
-                <th style="width:5%;text-align:center">Late</th>
-                <th style="width:5%;text-align:center">Absent</th>
+                <th style="width:22%">Devotee Name</th>
+                <th style="width:8%;text-align:center">Standard</th>
+                <th style="width:9%;text-align:center">Days Present</th>
+                <th style="width:6%;text-align:center">On Time</th>
+                <th style="width:6%;text-align:center">Grace</th>
+                <th style="width:6%;text-align:center">Late</th>
+                <th style="width:6%;text-align:center">Absent</th>
                 <th style="width:7%;text-align:center">Att %</th>
-                <th style="width:7%;text-align:center">Punct %</th>
-                <th style="width:9%;text-align:center">Warning</th>
-                <th style="width:14%">Remarks</th>
-                <th style="width:5%;text-align:center">Std</th>
-                <th style="width:3%;text-align:center">View</th>
+                <th style="width:8%;text-align:center">Warning</th>
+                <th style="width:13%">Remarks</th>
+                <th style="width:6%;text-align:center">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -19221,7 +19279,7 @@ function morningProgramPanel(){
                       ${av(d.name)}
                       <div>
                         <b>${esc(d.name)}</b>
-                        <span>${esc(d.appointment)}</span>
+                        ${isDevoteeHidden(d, getMorningHiddenDevotees()) ? '<span style="color:var(--danger);font-size:10px;font-weight:700"> (Hidden 🙈)</span>' : ''}
                       </div>
                     </div>
                   </td>
@@ -19238,9 +19296,6 @@ function morningProgramPanel(){
                   <td class="center" data-l="Attendance %">
                     <b style="color:${d.attendanceRate>=80?'var(--green)':(d.attendanceRate>=60?'var(--mustard)':'var(--danger)')}">${d.attendanceRate}%</b>
                   </td>
-                  <td class="center" data-l="Punctuality %">
-                    <b style="color:${d.punctualityRate>=80?'var(--green)':(d.punctualityRate>=60?'var(--mustard)':'var(--danger)')}">${d.punctualityRate}%</b>
-                  </td>
                   <td class="center" data-l="Warning">
                     ${renderDevoteeWarningCell(d, true, false)}
                   </td>
@@ -19253,11 +19308,12 @@ function morningProgramPanel(){
                            style="width:100%;min-width:90px;padding:3px 7px;font-size:11.5px;border:1px solid var(--line);border-radius:5px;background:var(--surface);color:var(--ink)"
                            ${canEdit?'':'readonly title="Read-only"'} />
                   </td>
-                  <td class="center" data-l="Edit Std">
-                    <button class="btn sm" data-act="edit-devotee-morning-std" data-id="${d.devotee.id}" style="padding:2px 7px;font-size:11px">✏️ Std</button>
-                  </td>
-                  <td class="center" data-l="View">
-                    <a class="btn sm icon-only" href="#/devotee/${d.devotee.id}" title="View profile">👤</a>
+                  <td class="center" data-l="Actions">
+                    <div style="display:inline-flex;gap:3px;align-items:center">
+                      <button class="btn sm icon-only" data-act="edit-devotee-morning-std" data-id="${d.devotee.id}" title="Edit devotee standard time" style="padding:2px 5px;font-size:10px">✏️</button>
+                      <a class="btn sm icon-only ghost" href="#/devotee/${d.devotee.id}" title="View profile" style="padding:2px 5px;font-size:10px">👤</a>
+                      <button type="button" class="btn sm icon-only ghost" data-act="morning-hide-devotee" data-id="${devKey}" title="${isDevoteeHidden(d, getMorningHiddenDevotees()) ? 'Restore to report' : 'Hide from report'}" style="padding:2px 5px;font-size:10px;color:var(--ink-3)">${isDevoteeHidden(d, getMorningHiddenDevotees()) ? '👁️' : '🙈'}</button>
+                    </div>
                   </td>
                 </tr>`;
                 }).join('')}
@@ -26182,10 +26238,9 @@ function loadPreachingFilters(){
 function getRowBucket(r){
   if(!r || r.status === 'Absent' || r.timeInMin == null) return '> 07:00 AM';
   const m = r.timeInMin;
-  if(m <= 270) return '< 04:30 AM';
-  if(m <= 330) return '04:30–05:30';
-  if(m <= 390) return '05:30–06:30';
-  if(m <= 420) return '06:30–07:00';
+  if(m <= 330) return '≤ 05:30 AM';
+  if(m <= 360) return '05:30–06:00';
+  if(m <= 420) return '06:00–07:00';
   return '> 07:00 AM';
 }
 
@@ -32469,6 +32524,20 @@ document.addEventListener('click',e=>{
   }
   case 'export-morning-progress-pdf':stop();{
     exportMorningGrowthReportPDF();
+    break;
+  }
+  case 'morning-hide-devotee':stop();{
+    const dId = t.dataset.id;
+    if(dId) toggleHideMorningDevotee(dId);
+    break;
+  }
+  case 'morning-unhide-all':stop();{
+    unhideAllMorningDevotees();
+    break;
+  }
+  case 'morning-toggle-show-hidden':stop();{
+    APP.morningShowHidden = !APP.morningShowHidden;
+    render();
     break;
   }
   case 'export-morning-period-csv':stop();{
