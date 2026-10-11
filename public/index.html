@@ -1680,6 +1680,10 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
 /* Responsive Morning Programme Charts & Controls */
 .morning-top-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .morning-charts-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-bottom:16px}
+.morning-hero-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(320px,440px);gap:16px;margin-bottom:16px;align-items:stretch}
+@media(max-width:960px){
+  .morning-hero-layout{grid-template-columns:1fr !important}
+}
 .morning-view-btn-group{display:inline-flex;border:1.5px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)}
 .morning-report-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .morning-report-subrow{display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap}
@@ -1688,6 +1692,7 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
 .morning-period-select{padding:4px 8px;font-size:12px;font-weight:600;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);cursor:pointer}
 .morning-btn-text{display:inline}
 @media(max-width:768px){
+  .morning-hero-layout{grid-template-columns:1fr !important}
   .morning-top-actions{width:100% !important;display:flex !important;gap:6px !important;flex-wrap:wrap !important}
   .morning-top-actions .btn{flex:1 1 auto !important;justify-content:center !important;text-align:center !important;padding:7px 10px !important;font-size:12px !important}
   .morning-charts-grid{grid-template-columns:1fr !important}
@@ -18352,34 +18357,34 @@ function renderMorningCharts(m, dateLabel, filterSt = '', activeBucket = '', isP
 
   const maxPct = Math.max(...parts.map(p => pct(p.count, total)), 1);
 
-  return `<div class="card pad" style="margin-bottom:16px;position:relative">
-    <div class="card-h" style="padding:0 0 12px;border-bottom:1px solid var(--line-2);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
-      <h3 style="margin:0;display:flex;align-items:center;gap:8px"><span>🎯</span> Attendance Breakdown</h3>
-      <div style="display:flex;align-items:center;gap:10px;margin-left:auto;flex-wrap:wrap">
-        <span class="badge ${attPct >= 70 ? 'b-green' : 'b-amber'}" style="font-size:12px;font-weight:700" title="Sessions attended on-time or grace">${attPct}% Attended</span>
-        <span class="tiny" style="color:var(--ink-2);font-weight:600">${esc(dateLabel)}</span>
+  return `<div class="card pad" style="margin-bottom:0;position:relative;height:100%;box-sizing:border-box;display:flex;flex-direction:column;justify-content:space-between">
+    <div class="card-h" style="padding:0 0 10px;border-bottom:1px solid var(--line-2);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px">
+      <h3 style="margin:0;font-size:14px;display:flex;align-items:center;gap:6px"><span>🎯</span> Attendance Breakdown</h3>
+      <div style="display:flex;align-items:center;gap:8px;margin-left:auto;flex-wrap:wrap">
+        <span class="badge ${attPct >= 70 ? 'b-green' : 'b-amber'}" style="font-size:11.5px;font-weight:700" title="Sessions attended on-time or grace">${attPct}% Attended</span>
+        ${dateLabel ? `<span class="tiny" style="color:var(--ink-2);font-weight:600">${esc(dateLabel)}</span>` : ''}
       </div>
     </div>
 
-    <!-- 4-item Bar Graph -->
-    <div style="display:flex;align-items:flex-end;justify-content:space-around;gap:12px;height:160px;padding:22px 10px 0;width:100%;box-sizing:border-box">
+    <!-- 4-item Bar Graph (Compact) -->
+    <div style="display:flex;align-items:flex-end;justify-content:space-around;gap:6px;height:140px;padding:14px 4px 0;width:100%;box-sizing:border-box">
       ${parts.map(p => {
         const pPct = pct(p.count, total);
-        const h = Math.max(18, Math.round((pPct / maxPct) * 105));
+        const h = Math.max(16, Math.round((pPct / maxPct) * 92));
         const isSel = filterSt === p.status;
-        const topLabel = isPeriodView ? `${pPct}%` : `${p.count} <span style="font-size:11px;font-weight:600;color:var(--ink-3)">(${pPct}%)</span>`;
+        const topLabel = isPeriodView ? `${pPct}%` : `${p.count} <span style="font-size:10.5px;font-weight:600;color:var(--ink-3)">(${pPct}%)</span>`;
         const tip = isPeriodView ? `Click to filter by ${p.label} (${p.desc}): ${pPct}%` : `Click to filter by ${p.label} (${p.desc}): ${p.count} devotees (${pPct}%)`;
 
-        return `<div class="click click-col" data-act="morning-filter-status" data-s="${p.status}" style="flex:1;max-width:140px;min-width:0;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;padding:8px 6px;border-radius:10px;transition:all .2s ease;${isSel ? 'background:var(--paper-2);box-shadow:0 0 0 2px var(--indigo);font-weight:700' : ''}" title="${tip}">
-          <div style="font-size:13px;font-weight:800;color:${isSel ? 'var(--indigo)' : 'var(--ink)'};text-align:center;line-height:1.2">${topLabel}</div>
-          <div style="width:100%;max-width:72px;height:${h}px;background:${p.grad};border-radius:8px 8px 3px 3px;transition:height .3s ease, transform .2s ease;${isSel ? 'transform:scaleY(1.04);filter:brightness(1.1);box-shadow:0 4px 12px rgba(0,0,0,0.15)' : ''}"></div>
-          <div style="font-size:12px;font-weight:700;color:var(--ink);text-align:center;margin-top:2px;white-space:nowrap">${p.label}</div>
-          <div style="font-size:10px;font-weight:600;color:var(--ink-3);text-align:center;white-space:nowrap">${p.desc}</div>
+        return `<div class="click click-col" data-act="morning-filter-status" data-s="${p.status}" style="flex:1;max-width:80px;min-width:0;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;padding:6px 2px;border-radius:8px;transition:all .2s ease;${isSel ? 'background:var(--paper-2);box-shadow:0 0 0 2px var(--indigo);font-weight:700' : ''}" title="${tip}">
+          <div style="font-size:12px;font-weight:800;color:${isSel ? 'var(--indigo)' : 'var(--ink)'};text-align:center;line-height:1.2">${topLabel}</div>
+          <div style="width:100%;max-width:44px;height:${h}px;background:${p.grad};border-radius:6px 6px 2px 2px;transition:height .3s ease, transform .2s ease;${isSel ? 'transform:scaleY(1.04);filter:brightness(1.1);box-shadow:0 4px 12px rgba(0,0,0,0.15)' : ''}"></div>
+          <div style="font-size:11px;font-weight:700;color:var(--ink);text-align:center;margin-top:2px;white-space:nowrap">${p.label}</div>
+          <div style="font-size:9px;font-weight:600;color:var(--ink-3);text-align:center;white-space:nowrap">${p.desc}</div>
         </div>`;
       }).join('')}
     </div>
 
-    <div class="tiny muted" style="margin-top:14px;text-align:center">💡 Tap any bar to filter devotees below by arrival status</div>
+    <div class="tiny muted" style="margin-top:10px;text-align:center;font-size:10.5px">💡 Tap any bar to filter devotees below by arrival status</div>
   </div>`;
 }
 
@@ -18888,15 +18893,17 @@ function morningProgramPanel(){
       ${reportView === 'today' ? `
       <!-- TODAY'S VIEW: KPI CARDS, CHARTS, AND TABLE -->
       <div style="padding:16px 18px">
-        <div class="grid g4" style="margin-bottom:16px">
-          ${stat('Uploaded Devotees', m.total, 'in this session · tap to filter', {em:'👥',tint:!filterSt&&!activeBucket,act:'morning-filter-status',s:''})}
-          ${stat('Attendance Rate', `${pct(m.attended, m.total)}%`, `${m.attended} present · ${m.absentCount} absent`, {em:'✅',tint:filterSt==='Attended',act:'morning-filter-status',s:'Attended'})}
-          ${stat('On-Time Standard', `${m.onTimePct}%`, `${m.onTimeCount} on time (≤ 05:30)`, {em:'⏱️',tint:filterSt==='On Time',act:'morning-filter-status',s:'On Time'})}
-          ${stat('Grace Arrivals', m.graceCount, 'arrived 05:30–06:00', {em:'🟡',tint:filterSt==='Grace',act:'morning-filter-status',s:'Grace'})}
-        </div>
+        <div class="morning-hero-layout">
+          <div style="display:grid;grid-template-columns:repeat(2, 1fr);gap:10px">
+            ${stat('Uploaded Devotees', m.total, 'in this session · tap to filter', {em:'👥',tint:!filterSt&&!activeBucket,act:'morning-filter-status',s:''})}
+            ${stat('Attendance Rate', `${pct(m.attended, m.total)}%`, `${m.attended} present · ${m.absentCount} absent`, {em:'✅',tint:filterSt==='Attended',act:'morning-filter-status',s:'Attended'})}
+            ${stat('On-Time Standard', `${m.onTimePct}%`, `${m.onTimeCount} on time (≤ 05:30)`, {em:'⏱️',tint:filterSt==='On Time',act:'morning-filter-status',s:'On Time'})}
+            ${stat('Grace Arrivals', m.graceCount, 'arrived 05:30–06:00', {em:'🟡',tint:filterSt==='Grace',act:'morning-filter-status',s:'Grace'})}
+          </div>
 
-        <!-- Charts: Donut & Histogram (Interactive Drill-Down) -->
-        ${renderMorningCharts(m, data.date, filterSt, activeBucket)}
+          <!-- Charts: Attendance Breakdown Bar Graph (Fitted to the right) -->
+          ${renderMorningCharts(m, data.date, filterSt, activeBucket)}
+        </div>
 
         <!-- Active Filter Indicator Banner -->
         ${(filterSt || activeBucket) ? `
@@ -19044,23 +19051,25 @@ function morningProgramPanel(){
       ` : (reportView === 'weekly' ? `
       <!-- WEEKLY VIEW: LAST 7 SESSIONS AGGREGATION & CHARTS -->
       <div style="padding:16px 18px">
-        <div class="grid g3" style="margin-bottom:16px">
-          ${stat('Devotees Logged', `${weekly.devStats ? weekly.devStats.length : 0} Devotees`, `${weekly.devStats.filter(d=>d.presentCount>0).length} active · ${weekly.totalSessions} sessions (${fmtD(weekly.startDate)} → ${fmtD(weekly.endDate)})`, {em:'👥',tint:!filterSt&&!activeBucket&&!APP.morningAttFilter,act:'morning-filter-status',s:''})}
-          ${stat('Weekly Attendance', `${weekly.avgAttendancePct}%`, `${weekly.totalAttended} / ${weekly.totalPossible} check-ins`, {em:'✅',tint:filterSt==='Attended',act:'morning-filter-status',s:'Attended'})}
-          ${stat('Regular Sadhakas (≥70%)', `${weekly.devStats.filter(d=>d.attendanceRate>=70).length} Devotees`, 'regular attendees (≥70%)', {em:'🌟',tint:APP.morningAttFilter==='star',act:'morning-period-star-filter',s:'star'})}
-        </div>
+        <div class="morning-hero-layout">
+          <div style="display:flex;flex-direction:column;gap:10px;justify-content:space-between">
+            ${stat('Devotees Logged', `${weekly.devStats ? weekly.devStats.length : 0} Devotees`, `${weekly.devStats.filter(d=>d.presentCount>0).length} active · ${weekly.totalSessions} sessions (${fmtD(weekly.startDate)} → ${fmtD(weekly.endDate)})`, {em:'👥',tint:!filterSt&&!activeBucket&&!APP.morningAttFilter,act:'morning-filter-status',s:''})}
+            ${stat('Weekly Attendance', `${weekly.avgAttendancePct}%`, `${weekly.totalAttended} / ${weekly.totalPossible} check-ins`, {em:'✅',tint:filterSt==='Attended',act:'morning-filter-status',s:'Attended'})}
+            ${stat('Regular Sadhakas (≥70%)', `${weekly.devStats.filter(d=>d.attendanceRate>=70).length} Devotees`, 'regular attendees (≥70%)', {em:'🌟',tint:APP.morningAttFilter==='star',act:'morning-period-star-filter',s:'star'})}
+          </div>
 
-        <!-- Charts: Donut & Histogram (Weekly Aggregation) -->
-        ${renderMorningCharts({
-          isPeriod: true,
-          total: weekly.totalPossible,
-          onTimeCount: weekly.totalOnTime,
-          graceCount: weekly.totalGrace,
-          lateCount: weekly.totalLate + (weekly.totalVeryLate || 0),
-          absentCount: weekly.totalMissed,
-          earliestTime: weekly.earliestTime,
-          buckets: weekly.buckets
-        }, `Weekly Attendance (${weekly.devStats ? weekly.devStats.length : 0} Devotees)`, filterSt, activeBucket, true)}
+          <!-- Charts: Attendance Breakdown Bar Graph (Fitted to the right) -->
+          ${renderMorningCharts({
+            isPeriod: true,
+            total: weekly.totalPossible,
+            onTimeCount: weekly.totalOnTime,
+            graceCount: weekly.totalGrace,
+            lateCount: weekly.totalLate + (weekly.totalVeryLate || 0),
+            absentCount: weekly.totalMissed,
+            earliestTime: weekly.earliestTime,
+            buckets: weekly.buckets
+          }, `Weekly Attendance (${weekly.devStats ? weekly.devStats.length : 0} Devotees)`, filterSt, activeBucket, true)}
+        </div>
 
         ${(filterSt || activeBucket) ? `
         <div style="background:var(--paper-2);border-left:4px solid var(--indigo);padding:8px 14px;border-radius:8px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
@@ -19190,23 +19199,25 @@ function morningProgramPanel(){
       ` : `
       <!-- MONTHLY VIEW: LAST 30 SESSIONS AGGREGATION & CHARTS -->
       <div style="padding:16px 18px">
-        <div class="grid g3" style="margin-bottom:16px">
-          ${stat('Devotees Logged', `${monthly.devStats ? monthly.devStats.length : 0} Devotees`, `${monthly.devStats.filter(d=>d.presentCount>0).length} active · ${monthly.totalSessions} sessions (${fmtD(monthly.startDate)} → ${fmtD(monthly.endDate)})`, {em:'👥',tint:!filterSt&&!activeBucket&&!APP.morningAttFilter,act:'morning-filter-status',s:''})}
-          ${stat('Monthly Attendance', `${monthly.avgAttendancePct}%`, `${monthly.totalAttended} / ${monthly.totalPossible} check-ins`, {em:'✅',tint:filterSt==='Attended',act:'morning-filter-status',s:'Attended'})}
-          ${stat('Regular Sadhakas (≥70%)', `${monthly.devStats.filter(d=>d.attendanceRate>=70).length} Devotees`, 'regular attendees (≥70%)', {em:'🌟',tint:APP.morningAttFilter==='star',act:'morning-period-star-filter',s:'star'})}
-        </div>
+        <div class="morning-hero-layout">
+          <div style="display:flex;flex-direction:column;gap:10px;justify-content:space-between">
+            ${stat('Devotees Logged', `${monthly.devStats ? monthly.devStats.length : 0} Devotees`, `${monthly.devStats.filter(d=>d.presentCount>0).length} active · ${monthly.totalSessions} sessions (${fmtD(monthly.startDate)} → ${fmtD(monthly.endDate)})`, {em:'👥',tint:!filterSt&&!activeBucket&&!APP.morningAttFilter,act:'morning-filter-status',s:''})}
+            ${stat('Monthly Attendance', `${monthly.avgAttendancePct}%`, `${monthly.totalAttended} / ${monthly.totalPossible} check-ins`, {em:'✅',tint:filterSt==='Attended',act:'morning-filter-status',s:'Attended'})}
+            ${stat('Regular Sadhakas (≥70%)', `${monthly.devStats.filter(d=>d.attendanceRate>=70).length} Devotees`, 'regular attendees (≥70%)', {em:'🌟',tint:APP.morningAttFilter==='star',act:'morning-period-star-filter',s:'star'})}
+          </div>
 
-        <!-- Charts: Donut & Histogram (Monthly Aggregation) -->
-        ${renderMorningCharts({
-          isPeriod: true,
-          total: monthly.totalPossible,
-          onTimeCount: monthly.totalOnTime,
-          graceCount: monthly.totalGrace,
-          lateCount: monthly.totalLate + (monthly.totalVeryLate || 0),
-          absentCount: monthly.totalMissed,
-          earliestTime: monthly.earliestTime,
-          buckets: monthly.buckets
-        }, `Monthly Attendance (${monthly.devStats ? monthly.devStats.length : 0} Devotees)`, filterSt, activeBucket, true)}
+          <!-- Charts: Attendance Breakdown Bar Graph (Fitted to the right) -->
+          ${renderMorningCharts({
+            isPeriod: true,
+            total: monthly.totalPossible,
+            onTimeCount: monthly.totalOnTime,
+            graceCount: monthly.totalGrace,
+            lateCount: monthly.totalLate + (monthly.totalVeryLate || 0),
+            absentCount: monthly.totalMissed,
+            earliestTime: monthly.earliestTime,
+            buckets: monthly.buckets
+          }, `Monthly Attendance (${monthly.devStats ? monthly.devStats.length : 0} Devotees)`, filterSt, activeBucket, true)}
+        </div>
 
         ${(filterSt || activeBucket) ? `
         <div style="background:var(--paper-2);border-left:4px solid var(--indigo);padding:8px 14px;border-radius:8px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
