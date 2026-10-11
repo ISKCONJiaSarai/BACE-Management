@@ -16793,6 +16793,175 @@ function getStandardReportHTMLFooter(note = 'Official ISKCON Jia Sarai Documenta
 }
 
 
+
+/* =========================================================================
+   MORNING PROGRAMME REMARKS — persistent per-devotee notes (localStorage)
+   ========================================================================= */
+function _morningDevKey(d) {
+  if (!d) return 'unknown';
+  if (typeof d === 'string') return d;
+  return (d.devotee && d.devotee.id) || d.id || (d.name ? d.name.toLowerCase().trim() : 'unknown');
+}
+function _morningRemarkKey(periodType, periodId, devKey) {
+  return 'bace_morning_remark_' + (periodType || 'general') + '_' + (periodId || 'default') + '_' + devKey;
+}
+function getMorningRemarksMap() {
+  try {
+    var raw = localStorage.getItem('bace_morning_remarks');
+    return raw ? JSON.parse(raw) : {};
+  } catch(e) { return {}; }
+}
+function getMorningRemark(periodType, periodId, devKey) {
+  try {
+    if (typeof devKey === 'object') devKey = _morningDevKey(devKey);
+    var map = getMorningRemarksMap();
+    var k = (periodType || 'general') + '_' + (periodId || 'default') + '_' + devKey;
+    if (map[k] !== undefined && map[k] !== null && map[k] !== '') return map[k];
+    return localStorage.getItem('bace_morning_remark_' + k) || '';
+  } catch(e) { return ''; }
+}
+function setMorningRemark(periodType, periodId, devKey, text) {
+  try {
+    if (typeof devKey === 'object') devKey = _morningDevKey(devKey);
+    var map = getMorningRemarksMap();
+    var k = (periodType || 'general') + '_' + (periodId || 'default') + '_' + devKey;
+    map[k] = text || '';
+    localStorage.setItem('bace_morning_remarks', JSON.stringify(map));
+    localStorage.setItem('bace_morning_remark_' + k, text || '');
+  } catch(e) {}
+}
+function canEditMorningRemarks(devId) {
+  var u = (APP && APP.user) || {};
+  if (!u || !u.role) return true;
+  var r = u.role;
+  var email = (u.email || '').toLowerCase().trim();
+  if (r === 'admin' || r === 'area_leader' || r === 'coordinator' || r === 'preaching_coord' || r === 'counsellor' || (typeof isBaceAdminEmail === 'function' && isBaceAdminEmail(email)) || (typeof isSuryaEmail === 'function' && isSuryaEmail(email))) return true;
+  if (devId && DB && DB.devotees) {
+    var dev = DB.devotees.find(function(x){ return x.id === devId || (x.name && x.name.toLowerCase().trim() === String(devId).toLowerCase().trim()); });
+    if (dev && dev.batch && DB.batches) {
+      var b = DB.batches.find(function(x){ return x.id === dev.batch; });
+      if (b && (b.coordinator === u.devotee || b.incharge === u.devotee || (Array.isArray(b.facilitators) && b.facilitators.includes(u.devotee)))) return true;
+    }
+  }
+  return false;
+}
+
+/* =========================================================================
+   MORNING PROGRAMME WARNING INDICATORS — attendance < 70% = red, >= 70% = green
+   ========================================================================= */
+function renderDevoteeWarningCell(d, isMonthly, isPdf) {
+  var barH = isPdf ? '4.5px' : '5px';
+  if (!isMonthly) {
+    var rate = (d && d.attendanceRate != null) ? d.attendanceRate : 0;
+    var isWarn = rate < 70;
+    var col = isWarn ? '#ef4444' : '#22c55e';
+    var w = isPdf ? '24px' : '26px';
+    var title = 'Weekly Attendance: ' + rate + '% (' + (isWarn ? 'Below 70% ⚠️ Warning' : 'OK ≥70% ✅') + ')';
+    return '<span title="' + title + '" style="display:inline-block;width:' + w + ';height:' + barH + ';border-radius:2.5px;background:' + col + ';vertical-align:middle"></span>';
+  }
+  // Monthly: exactly 4 small horizontal lines stacked horizontally for Week 1, Week 2, Week 3, Week 4
+  var weeks = [[], [], [], []];
+  var punches = (d && d.dailyPunches) ? d.dailyPunches : [];
+  punches.forEach(function(p) {
+    if (!p.date) return;
+    var day = new Date(p.date).getDate();
+    var idx = Math.min(3, Math.floor((day - 1) / 7));
+    weeks[idx].push(p);
+  });
+  return '<span style="display:inline-flex;align-items:center;gap:3px;vertical-align:middle;justify-content:center">' + weeks.map(function(wPunches, i) {
+    if (!wPunches.length) {
+      return '<span title="Week ' + (i + 1) + ': No sessions" style="display:inline-block;width:12px;height:' + barH + ';border-radius:2px;background:#cbd5e1"></span>';
+    }
+    var pres = wPunches.filter(function(p){ return p.status !== 'Absent'; }).length;
+    var pct = Math.round((pres / wPunches.length) * 100);
+    var isWarn = pct < 70;
+    var col = isWarn ? '#ef4444' : '#22c55e';
+    var title = 'Week ' + (i + 1) + ': ' + pct + '% (' + (isWarn ? 'Below 70% ⚠️ Warning' : 'OK ≥70% ✅') + ')';
+    return '<span title="' + title + '" style="display:inline-block;width:12px;height:' + barH + ';border-radius:2px;background:' + col + '"></span>';
+  }).join('') + '</span>';
+}
+function renderWarningBar(pct) {
+  var isWarn = (pct !== null && pct !== undefined) ? (pct < 70) : null;
+  var col = isWarn === null ? '#cbd5e1' : (isWarn ? '#ef4444' : '#22c55e');
+  var title_txt = isWarn === null ? 'No data' : (isWarn ? pct+'% — Below 70% warning ⚠️' : pct+'% — OK ≥70% ✅');
+  return '<span title="'+title_txt+'" style="width:26px;height:5px;border-radius:2.5px;background:'+col+';display:inline-block;vertical-align:middle"></span>';
+}
+function renderWarningBarPDF(pct) {
+  var isWarn = (pct !== null && pct !== undefined) ? (pct < 70) : null;
+  var col = isWarn === null ? '#cbd5e1' : (isWarn ? '#ef4444' : '#22c55e');
+  return '<span style="display:inline-block;width:24px;height:4.5px;border-radius:2px;background:'+col+';vertical-align:middle"></span>';
+}
+function renderMonthlyWarningBars(devId, devName, monthDates, byDateRows) {
+  return renderDevoteeWarningCell({ devotee: { id: devId }, name: devName, dailyPunches: (monthDates||[]).map(function(dt){
+    var rows = (byDateRows && byDateRows[dt]) || [];
+    var row = rows.find(function(r){ return (r.devoteeId && r.devoteeId === devId) || (devName && matchDevoteeFirstName(r.name, devName)); });
+    return { date: dt, status: (row && row.status !== 'Absent') ? 'Present' : 'Absent' };
+  }) }, true, false);
+}
+function renderMonthlyWarningBarsPDF(devId, devName, monthDates, byDateRows) {
+  return renderDevoteeWarningCell({ devotee: { id: devId }, name: devName, dailyPunches: (monthDates||[]).map(function(dt){
+    var rows = (byDateRows && byDateRows[dt]) || [];
+    var row = rows.find(function(r){ return (r.devoteeId && r.devoteeId === devId) || (devName && matchDevoteeFirstName(r.name, devName)); });
+    return { date: dt, status: (row && row.status !== 'Absent') ? 'Present' : 'Absent' };
+  }) }, true, true);
+}
+
+/* =========================================================================
+   MORNING PROGRAMME BATCH FILTER — multi-select for PDF export & reports
+   ========================================================================= */
+function getMorningPdfBatchFilter() {
+  try { var raw = localStorage.getItem('bace_morning_pdf_batch_filter'); return raw ? JSON.parse(raw) : []; } catch(e) { return []; }
+}
+function setMorningPdfBatchFilter(arr) {
+  try { localStorage.setItem('bace_morning_pdf_batch_filter', JSON.stringify(arr || [])); } catch(e) {}
+}
+function toggleMorningPdfBatch(batchId) {
+  var sel = getMorningPdfBatchFilter();
+  var idx = sel.indexOf(batchId);
+  if (idx >= 0) {
+    sel.splice(idx, 1);
+  } else {
+    sel.push(batchId);
+  }
+  setMorningPdfBatchFilter(sel);
+  render();
+}
+function devoteeBelongsToBatches(devItem, selectedBatchIds) {
+  if (!selectedBatchIds || !selectedBatchIds.length) return true;
+  var dObj = devItem.devotee || devItem;
+  var devId = dObj.id || devItem.id;
+  var devName = devItem.name || dObj.name;
+  var dbDev = (DB && DB.devotees || []).find(function(x) {
+    return (devId && x.id === devId) ||
+           (devName && x.name && x.name.toLowerCase().trim() === devName.toLowerCase().trim()) ||
+           (devName && typeof matchDevoteeFirstName === 'function' && matchDevoteeFirstName(devName, x.name));
+  });
+  if (!dbDev) return false;
+  var bId = dbDev.batch;
+  if (bId && selectedBatchIds.includes(bId)) return true;
+  if (Array.isArray(dbDev.batches) && dbDev.batches.some(function(b){ return selectedBatchIds.includes(b); })) return true;
+  return false;
+}
+function renderMorningBatchFilterUI() {
+  var batches = (DB && DB.batches) ? DB.batches.filter(function(b){ return b.status !== 'Archived'; }) : [];
+  if (!batches.length) return '';
+  var selected = getMorningPdfBatchFilter();
+  var allSel = !selected.length;
+  var chips = batches.map(function(b) {
+    var isSel = selected.includes(b.id);
+    return '<button type="button" class="chip '+(isSel?'on':'')+'" data-act="morning-pdf-batch-toggle" data-bid="'+b.id+'" style="font-size:11.5px;padding:3px 9px;cursor:pointer">'+esc(b.name)+'</button>';
+  }).join('');
+  var clearBtn = selected.length ? '<button type="button" class="btn sm ghost" data-act="morning-pdf-batch-clear" style="font-size:11px;padding:2px 8px;margin-left:4px">✕ Clear</button>' : '';
+  return '<div class="morning-batch-filter-strip" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 12px;background:var(--paper-2);border:1px solid var(--line-2);border-radius:8px;margin-bottom:12px">'
+    +'<div style="font-size:12px;font-weight:700;color:var(--ink-2);display:inline-flex;align-items:center;gap:5px;white-space:nowrap">🏷️ <span>Batch Filter:</span></div>'
+    +'<div style="display:flex;flex-wrap:wrap;gap:5px;align-items:center;flex:1">'
+    +'<button type="button" class="chip '+(allSel?'on':'')+'" data-act="morning-pdf-batch-all" style="font-size:11.5px;padding:3px 9px;cursor:pointer">All Batches</button>'
+    +chips+clearBtn
+    +'</div>'
+    +(selected.length ? '<span style="font-size:11px;color:var(--indigo);font-weight:600">('+selected.length+' batch'+(selected.length>1?'es':'')+' selected)</span>' : '')
+    +'</div>';
+}
+
 function exportMorningPeriodReportPDF(periodType) {
   if (!APP.morningData) {
     toast('No morning program data loaded', '⚠️');
@@ -16810,13 +16979,24 @@ function exportMorningPeriodReportPDF(periodType) {
   const starDevs = pData.devStats.filter(d => d.attendanceRate >= 80);
 
   // Apply current active filters and sorting so PDF matches what's visible on screen
-  const visibleDevs = filterAndSortMorningPeriodDevs(
+  let visibleDevs = filterAndSortMorningPeriodDevs(
     pData.devStats,
     APP.morningSearch || '',
     APP.morningAttFilter || '',
     APP.morningPuncFilter || '',
     APP.morningSort || 'att_desc'
   );
+
+  // Apply batch filter if selected
+  const selectedBatches = getMorningPdfBatchFilter();
+  if (selectedBatches && selectedBatches.length) {
+    visibleDevs = visibleDevs.filter(d => devoteeBelongsToBatches(d, selectedBatches));
+  }
+
+  // Determine periodId for remark lookup
+  const periodId = isWeekly ? (APP.morningSelectedWeek || 'latest_7') : (APP.morningSelectedMonth || (pData.startDate || '').substring(0, 7));
+  const byDateRows = (APP.morningData && APP.morningData.byDateRows) || {};
+  const monthDates = pData.periodDates || pData.dates || [];
 
   const durationStr = `${fmtExactDate(pData.startDate)} — ${fmtExactDate(pData.endDate)}`;
 
@@ -16914,23 +17094,33 @@ function exportMorningPeriodReportPDF(periodType) {
       <thead>
         <tr>
           <th style="width:4%;text-align:center">#</th>
-          <th style="width:26%">Devotee Name</th>
-          <th style="width:10%;text-align:center">Standard</th>
-          <th style="width:12%;text-align:center">Days Present</th>
-          <th style="width:8%;text-align:center">On Time</th>
-          <th style="width:8%;text-align:center">Grace</th>
-          <th style="width:8%;text-align:center">Late</th>
-          <th style="width:8%;text-align:center">Absent</th>
-          <th style="width:12%;text-align:center">Attendance %</th>
-          <th style="width:12%;text-align:center">Punctuality %</th>
+          <th style="width:22%">Devotee Name</th>
+          <th style="width:9%;text-align:center">Standard</th>
+          <th style="width:10%;text-align:center">Days Present</th>
+          <th style="width:6%;text-align:center">On Time</th>
+          <th style="width:6%;text-align:center">Grace</th>
+          <th style="width:6%;text-align:center">Late</th>
+          <th style="width:6%;text-align:center">Absent</th>
+          <th style="width:9%;text-align:center">Att%</th>
+          <th style="width:9%;text-align:center">Punct%</th>
+          <th style="width:8%;text-align:center">Warning</th>
+          <th style="width:15%">Remarks</th>
         </tr>
       </thead>
       <tbody>
-        ${visibleDevs.map((d, i) => `
+        ${visibleDevs.map((d, i) => {
+          const devKey = _morningDevKey(d);
+          const remark = getMorningRemark(periodType, periodId, devKey);
+          const warningCell = renderDevoteeWarningCell(d, !isWeekly, true);
+          const devId = (d.devotee && d.devotee.id) || d.id || '';
+          const dbDev = (DB && DB.devotees || []).find(x => x.id === devId);
+          const batchName = dbDev && dbDev.batch ? ((DB && DB.batches || []).find(b => b.id === dbDev.batch) || {}).name || '' : '';
+          return `
           <tr>
             <td style="text-align:center;color:#64748b;font-weight:600">${i + 1}</td>
             <td>
               <b>${esc(d.name)}</b>
+              ${batchName ? `<div style="font-size:9px;color:#94a3b8">${esc(batchName)}</div>` : ''}
               <div style="font-size:9.5px;color:#64748b">${esc(d.appointment)}</div>
             </td>
             <td style="text-align:center;font-family:monospace;font-weight:600">${d.standardTime}</td>
@@ -16945,8 +17135,10 @@ function exportMorningPeriodReportPDF(periodType) {
             <td style="text-align:center">
               <span class="pill ${d.punctualityRate >= 80 ? 'pill-green' : (d.punctualityRate >= 50 ? 'pill-amber' : 'pill-red')}">${d.punctualityRate}%</span>
             </td>
-          </tr>
-        `).join('')}
+            <td style="text-align:center">${warningCell}</td>
+            <td style="font-size:9.5px;color:#374151">${esc(remark)}</td>
+          </tr>`;
+        }).join('')}
       </tbody>
     </table>
   </div>
@@ -18143,6 +18335,10 @@ function filterAndSortMorningPeriodDevs(devList, q = '', attFilter = '', puncFil
   sortMode = sortMode || APP.morningSort || 'att_desc';
 
   let list = (devList || []).slice();
+  const selectedBatches = getMorningPdfBatchFilter();
+  if (selectedBatches && selectedBatches.length) {
+    list = list.filter(d => devoteeBelongsToBatches(d, selectedBatches));
+  }
   if (q) {
     const ql = q.toLowerCase().trim();
     list = list.filter(d => d.name.toLowerCase().includes(ql) || (d.appointment || '').toLowerCase().includes(ql));
@@ -18285,6 +18481,16 @@ function renderMorningDevoteeMobileRow(d, i, periodKey, totalSessions) {
         <div>⏱️ <b>Punctuality:</b> <b style="color:${d.punctualityRate>=80?'var(--green)':'var(--mustard)'}">${d.punctualityRate}%</b></div>
         <div>🏷️ <b>Badge:</b> ${d.statusBadge || 'Regular'}</div>
         ${d.attendanceGrowthDelta !== undefined ? `<div>📈 <b>Trend:</b> <span style="color:${d.attendanceGrowthDelta>=0?'var(--green)':'var(--danger)'};font-weight:700">${d.attendanceGrowthDelta>=0?'+':''}${d.attendanceGrowthDelta}%</span></div>` : ''}
+      </div>
+
+      <!-- Warning & Remarks (Mobile) -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;padding:6px 8px;background:var(--surface);border-radius:6px;border:1px solid var(--line-2);gap:8px">
+        <div style="font-size:11px;color:var(--ink-2);font-weight:600">⚠️ Warning (Att < 70%):</div>
+        <div>${renderDevoteeWarningCell(d, periodKey === 'monthly', false)}</div>
+      </div>
+      <div style="margin-bottom:8px">
+        <div style="font-size:10.5px;font-weight:700;color:var(--ink-3);margin-bottom:3px">📝 Remarks:</div>
+        <input type="text" value="${esc(getMorningRemark(periodKey, periodKey==='weekly'?(APP.morningSelectedWeek||'latest_7'):(APP.morningSelectedMonth||'current_month'), _morningDevKey(d)))}" placeholder="Add remarks for this devotee…" oninput="setMorningRemark('${periodKey}', '${periodKey==='weekly'?(APP.morningSelectedWeek||'latest_7'):(APP.morningSelectedMonth||'current_month')}', '${esc(_morningDevKey(d))}', this.value)" style="width:100%;padding:5px 8px;font-size:12px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink)" ${canEditMorningRemarks(_morningDevKey(d))?'':'readonly'}>
       </div>
 
       <!-- Daily punches -->
@@ -18814,30 +19020,39 @@ function morningProgramPanel(){
           ` : ''}
         </div>
 
+        ${renderMorningBatchFilterUI()}
+
         <div class="card-h click" data-act="toggle-morning-table" style="cursor:pointer;padding:10px 14px;border:1px solid var(--line);border-radius:10px;display:flex;align-items:center;justify-content:space-between;background:var(--surface);margin-bottom:10px;-webkit-tap-highlight-color:transparent">
-          <span style="font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px">👥 Weekly Devotee Summary (${weekly.devStats ? weekly.devStats.length : 0})</span>
+          <span style="font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px">👥 Weekly Devotee Summary (${filterAndSortMorningPeriodDevs(weekly.devStats, q, APP.morningAttFilter, APP.morningPuncFilter, APP.morningSort).length})</span>
           <button type="button" class="btn sm ghost" style="font-size:11.5px;padding:3px 8px;font-weight:600;pointer-events:none">${APP.morningTableCollapsed ? 'Show Table ▼' : 'Hide Table ▲'}</button>
         </div>
         <div class="tbl-wrap morning-desktop-table" id="morning-report-table" style="${APP.morningTableCollapsed ? 'display:none' : ''}">
           <table class="tbl">
             <thead>
               <tr>
-                <th style="width:4%;text-align:center">#</th>
-                <th style="width:24%">Devotee Name</th>
-                <th style="width:11%;text-align:center">Standard</th>
-                <th style="width:12%;text-align:center">Days Present</th>
-                <th style="width:8%;text-align:center">On Time</th>
-                <th style="width:8%;text-align:center">Grace</th>
-                <th style="width:8%;text-align:center">Late</th>
-                <th style="width:8%;text-align:center">Absent</th>
-                <th style="width:11%;text-align:center">Punctuality %</th>
-                <th style="width:11%;text-align:center">Edit Std</th>
-                <th style="width:4%;text-align:center">View</th>
+                <th style="width:3%;text-align:center">#</th>
+                <th style="width:20%">Devotee Name</th>
+                <th style="width:8%;text-align:center">Standard</th>
+                <th style="width:9%;text-align:center">Days Present</th>
+                <th style="width:6%;text-align:center">On Time</th>
+                <th style="width:6%;text-align:center">Grace</th>
+                <th style="width:6%;text-align:center">Late</th>
+                <th style="width:6%;text-align:center">Absent</th>
+                <th style="width:7%;text-align:center">Att %</th>
+                <th style="width:7%;text-align:center">Punct %</th>
+                <th style="width:7%;text-align:center">Warning</th>
+                <th style="width:14%">Remarks</th>
+                <th style="width:4%;text-align:center">Std</th>
+                <th style="width:3%;text-align:center">View</th>
               </tr>
             </thead>
             <tbody>
               ${filterAndSortMorningPeriodDevs(weekly.devStats, q, APP.morningAttFilter, APP.morningPuncFilter, APP.morningSort)
-                .map((d, i) => `<tr>
+                .map((d, i) => {
+                  const devKey = _morningDevKey(d);
+                  const curRemark = getMorningRemark('weekly', selectedWeekId, devKey);
+                  const canEdit = canEditMorningRemarks(devKey);
+                  return `<tr>
                   <td class="center" data-l="#" style="color:var(--ink-3);font-weight:600">${i + 1}</td>
                   <td data-l="Devotee">
                     <div class="who">
@@ -18858,8 +19073,23 @@ function morningProgramPanel(){
                   <td class="center" data-l="Grace" style="color:var(--mustard);font-weight:600">${d.graceCount}</td>
                   <td class="center" data-l="Late" style="color:${d.lateCount>0?'var(--danger)':'var(--ink-3)'};font-weight:${d.lateCount>0?'700':'normal'}">${d.lateCount}</td>
                   <td class="center" data-l="Absent" style="color:${d.absentCount>0?'var(--danger)':'var(--ink-3)'};font-weight:${d.absentCount>0?'700':'normal'}">${d.absentCount}</td>
-                  <td class="center" data-l="Punctuality %">
+                  <td class="center" data-l="Att %">
+                    <b style="color:${d.attendanceRate>=80?'var(--green)':(d.attendanceRate>=60?'var(--mustard)':'var(--danger)')}">${d.attendanceRate}%</b>
+                  </td>
+                  <td class="center" data-l="Punct %">
                     <b style="color:${d.punctualityRate>=80?'var(--green)':(d.punctualityRate>=60?'var(--mustard)':'var(--danger)')}">${d.punctualityRate}%</b>
+                  </td>
+                  <td class="center" data-l="Warning">
+                    ${renderDevoteeWarningCell(d, false, false)}
+                  </td>
+                  <td data-l="Remarks">
+                    <input type="text"
+                           value="${esc(curRemark)}"
+                           placeholder="Add remark…"
+                           class="morning-remark-input"
+                           oninput="setMorningRemark('weekly','${esc(selectedWeekId)}','${esc(devKey)}',this.value)"
+                           style="width:100%;min-width:90px;padding:3px 7px;font-size:11.5px;border:1px solid var(--line);border-radius:5px;background:var(--surface);color:var(--ink)"
+                           ${canEdit?'':'readonly title="Read-only"'} />
                   </td>
                   <td class="center" data-l="Edit Std">
                     <button class="btn sm" data-act="edit-devotee-morning-std" data-id="${d.devotee.id}" style="padding:2px 7px;font-size:11px">✏️ Std</button>
@@ -18867,7 +19097,8 @@ function morningProgramPanel(){
                   <td class="center" data-l="View">
                     <a class="btn sm icon-only" href="#/devotee/${d.devotee.id}" title="View profile">👤</a>
                   </td>
-                </tr>`).join('')}
+                </tr>`;
+                }).join('')}
             </tbody>
           </table>
         </div>
@@ -18951,31 +19182,39 @@ function morningProgramPanel(){
           ` : ''}
         </div>
 
+        ${renderMorningBatchFilterUI()}
+
         <div class="card-h click" data-act="toggle-morning-table" style="cursor:pointer;padding:10px 14px;border:1px solid var(--line);border-radius:10px;display:flex;align-items:center;justify-content:space-between;background:var(--surface);margin-bottom:10px;-webkit-tap-highlight-color:transparent">
-          <span style="font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px">👥 Monthly Devotee Summary (${monthly.devStats ? monthly.devStats.length : 0})</span>
+          <span style="font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px">👥 Monthly Devotee Summary (${filterAndSortMorningPeriodDevs(monthly.devStats, q, APP.morningAttFilter, APP.morningPuncFilter, APP.morningSort).length})</span>
           <button type="button" class="btn sm ghost" style="font-size:11.5px;padding:3px 8px;font-weight:600;pointer-events:none">${APP.morningTableCollapsed ? 'Show Table ▼' : 'Hide Table ▲'}</button>
         </div>
         <div class="tbl-wrap morning-desktop-table" id="morning-report-table-monthly" style="${APP.morningTableCollapsed ? 'display:none' : ''}">
           <table class="tbl">
             <thead>
               <tr>
-                <th style="width:4%;text-align:center">#</th>
-                <th style="width:23%">Devotee Name</th>
-                <th style="width:10%;text-align:center">Standard</th>
-                <th style="width:12%;text-align:center">Days Present</th>
-                <th style="width:8%;text-align:center">On Time</th>
-                <th style="width:8%;text-align:center">Grace</th>
-                <th style="width:8%;text-align:center">Late</th>
-                <th style="width:8%;text-align:center">Absent</th>
-                <th style="width:11%;text-align:center">Attendance %</th>
-                <th style="width:11%;text-align:center">Punctuality %</th>
-                <th style="width:8%;text-align:center">Edit Std</th>
-                <th style="width:4%;text-align:center">View</th>
+                <th style="width:3%;text-align:center">#</th>
+                <th style="width:19%">Devotee Name</th>
+                <th style="width:7%;text-align:center">Standard</th>
+                <th style="width:8%;text-align:center">Days Present</th>
+                <th style="width:5%;text-align:center">On Time</th>
+                <th style="width:5%;text-align:center">Grace</th>
+                <th style="width:5%;text-align:center">Late</th>
+                <th style="width:5%;text-align:center">Absent</th>
+                <th style="width:7%;text-align:center">Att %</th>
+                <th style="width:7%;text-align:center">Punct %</th>
+                <th style="width:9%;text-align:center">Warning</th>
+                <th style="width:14%">Remarks</th>
+                <th style="width:5%;text-align:center">Std</th>
+                <th style="width:3%;text-align:center">View</th>
               </tr>
             </thead>
             <tbody>
               ${filterAndSortMorningPeriodDevs(monthly.devStats, q, APP.morningAttFilter, APP.morningPuncFilter, APP.morningSort)
-                .map((d, i) => `<tr>
+                .map((d, i) => {
+                  const devKey = _morningDevKey(d);
+                  const curRemark = getMorningRemark('monthly', selectedMonthId, devKey);
+                  const canEdit = canEditMorningRemarks(devKey);
+                  return `<tr>
                   <td class="center" data-l="#" style="color:var(--ink-3);font-weight:600">${i + 1}</td>
                   <td data-l="Devotee">
                     <div class="who">
@@ -19002,13 +19241,26 @@ function morningProgramPanel(){
                   <td class="center" data-l="Punctuality %">
                     <b style="color:${d.punctualityRate>=80?'var(--green)':(d.punctualityRate>=60?'var(--mustard)':'var(--danger)')}">${d.punctualityRate}%</b>
                   </td>
+                  <td class="center" data-l="Warning">
+                    ${renderDevoteeWarningCell(d, true, false)}
+                  </td>
+                  <td data-l="Remarks">
+                    <input type="text"
+                           value="${esc(curRemark)}"
+                           placeholder="Add remark…"
+                           class="morning-remark-input"
+                           oninput="setMorningRemark('monthly','${esc(selectedMonthId)}','${esc(devKey)}',this.value)"
+                           style="width:100%;min-width:90px;padding:3px 7px;font-size:11.5px;border:1px solid var(--line);border-radius:5px;background:var(--surface);color:var(--ink)"
+                           ${canEdit?'':'readonly title="Read-only"'} />
+                  </td>
                   <td class="center" data-l="Edit Std">
                     <button class="btn sm" data-act="edit-devotee-morning-std" data-id="${d.devotee.id}" style="padding:2px 7px;font-size:11px">✏️ Std</button>
                   </td>
                   <td class="center" data-l="View">
                     <a class="btn sm icon-only" href="#/devotee/${d.devotee.id}" title="View profile">👤</a>
                   </td>
-                </tr>`).join('')}
+                </tr>`;
+                }).join('')}
             </tbody>
           </table>
         </div>
@@ -29514,7 +29766,7 @@ function openBatchForm(id){
   openForm(b?'Edit batch':'Create batch',[
     FLD('name','Batch name','text',{v:b?.name,ph:'e.g. Sreshtha'}),
     FLD('desc','Description','textarea',{v:b?.desc}),
-    FLD('level','Level','select',{v:b?.level||1,opts:[[1,'Level 1'],[2,'Level 2'],[3,'Level 3']],half:1}),
+    FLD('level','Level','select',{v:b?.level||1,opts:[[1,'Level 1'],[2,'Level 2'],[3,'Level 3'],[4,'Level 4']],half:1}),
     FLD('incharge','Incharge (senior responsible)','select',{v:b?.incharge||'',opts:[['','— None —'],...allDevs],half:1}),
     FLD('coordinator','Coordinator','select',{v:b?.coordinator,opts:DB.devotees.map(x=>[x.id,x.name]),half:1}),
     FLD('facilitators','Facilitators (from hierarchy)','multiselect',{v:facIds,opts:hFacs.map(x=>[x.id,x.name]),hint:'Select all facilitators who guide devotees in this batch'}),
@@ -32192,6 +32444,21 @@ document.addEventListener('click',e=>{
       }
     }).catch(e => console.warn('Clear backend error:', e));
     toast('Morning attendance data cleared from MongoDB & ready for fresh upload.', '🗑️');
+    render();
+    break;
+  }
+  case 'morning-pdf-batch-toggle':stop();{
+    const bid = t.dataset.bid;
+    if(bid) toggleMorningPdfBatch(bid);
+    break;
+  }
+  case 'morning-pdf-batch-all':stop();{
+    setMorningPdfBatchFilter([]);
+    render();
+    break;
+  }
+  case 'morning-pdf-batch-clear':stop();{
+    setMorningPdfBatchFilter([]);
     render();
     break;
   }
