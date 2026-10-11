@@ -16360,7 +16360,8 @@ function computePeriodMorningMetrics(byDate, availableDates, targetDate, numDays
   const buckets = [
     { label: '≤ 05:30 AM', count: totalOnTime, rawCount: totalOnTime, sub: 'On Time (≤ 05:30)', color: '#059669' },
     { label: '05:30–06:00', count: totalGrace, rawCount: totalGrace, sub: 'Grace (05:30–06:00)', color: '#10B981' },
-    { label: '06:00–07:00', count: totalLate + totalVeryLate, rawCount: totalLate + totalVeryLate, sub: 'Late (06:00–07:00)', color: '#F59E0B' }
+    { label: '06:00–07:00', count: totalLate + totalVeryLate, rawCount: totalLate + totalVeryLate, sub: 'Late (06:00–07:00)', color: '#F59E0B' },
+    { label: 'Absent', count: totalMissed, rawCount: totalMissed, sub: 'Absent (Missed)', color: '#94A3B8' }
   ];
 
   // Arrival punch timings from attending non-hidden devotees
@@ -17098,9 +17099,10 @@ function exportMorningPeriodReportPDF(periodType) {
   const repAvgAbsent = repTotalSessions > 0 ? Number((repAbsent / repTotalSessions).toFixed(1)) : 0;
 
   const repBuckets = [
-    { label: '≤ 05:30 AM', count: repAvgOnTime, sub: 'On Time (≤ 05:30)' },
-    { label: '05:30–06:00', count: repAvgGrace, sub: 'Grace (05:30–06:00)' },
-    { label: '06:00–07:00', count: repAvgLate, sub: 'Late (06:00–07:00)' }
+    { label: '≤ 05:30 AM', count: repAvgOnTime, rawCount: repOnTime, sub: 'On Time (≤ 05:30)' },
+    { label: '05:30–06:00', count: repAvgGrace, rawCount: repGrace, sub: 'Grace (05:30–06:00)' },
+    { label: '06:00–07:00', count: repAvgLate, rawCount: repLate, sub: 'Late (06:00–07:00)' },
+    { label: 'Absent', count: repAvgAbsent, rawCount: repMissed, sub: 'Absent (Missed)' }
   ];
 
   const starDevs = visibleDevs.filter(d => d.attendanceRate >= 70);
@@ -17750,14 +17752,13 @@ function computeMorningMetrics(rows, date){
     { label: '≤ 05:30 AM', count: 0, sub: 'On Time (\u2264 05:30)', color: '#059669' },
     { label: '05:30–06:00', count: 0, sub: 'Grace (05:30–06:00)', color: '#10B981' },
     { label: '06:00–07:00', count: 0, sub: 'Late (06:00–07:00)', color: '#F59E0B' },
-    { label: '> 07:00 AM', count: 0, sub: 'Absent (> 07:00)', color: '#DC2626' }
+    { label: 'Absent', count: absentTotal || absentCount, sub: 'Absent (Missed)', color: '#94A3B8' }
   ];
 
   validTimes.forEach(m => {
     if(m <= 330) buckets[0].count++;
     else if(m <= 360) buckets[1].count++;
     else if(m <= 420) buckets[2].count++;
-    else buckets[3].count++;
   });
 
   const met = {
@@ -18362,7 +18363,8 @@ function renderMorningCharts(m, dateLabel, filterSt = '', activeBucket = '', isP
   const buckets = (m.buckets || [
     { label: '≤ 05:30 AM', count: m.onTimeCount, color: '#059669', sub: 'On Time (≤ 05:30)' },
     { label: '05:30–06:00', count: m.graceCount, color: '#10B981', sub: 'Grace (05:30–06:00)' },
-    { label: '06:00–07:00', count: m.lateCount, color: '#F59E0B', sub: 'Late (06:00–07:00)' }
+    { label: '06:00–07:00', count: m.lateCount, color: '#F59E0B', sub: 'Late (06:00–07:00)' },
+    { label: 'Absent', count: m.absentCount, color: '#94A3B8', sub: 'Absent (Missed)' }
   ]).filter(b => !b.label.includes('> 07:00') && !b.sub?.includes('Very late'));
   const maxBucket = Math.max(...buckets.map(b => Number(b.count) || 0), 1);
   const attendedCount = (m.onTimeCount || 0) + (m.graceCount || 0); // Days present & grace included as attended
@@ -18484,19 +18486,23 @@ function filterAndSortMorningPeriodDevs(devList, q = '', attFilter = '', puncFil
   }
   // Interactive drill-down from Arrival Distribution Timeline bars
   if (activeBucket) {
-    list = list.filter(d => {
-      if (!d.dailyPunches || !d.dailyPunches.length) return false;
-      return d.dailyPunches.some(p => {
-        if (p.status === 'Absent' || !p.time || p.time === '—') return false;
-        const m = parseTimeMinutes(p.time);
-        if (m == null) return false;
-        if (activeBucket === '≤ 05:30 AM' || activeBucket === '< 04:30 AM' || activeBucket === '< 05:30 AM') return m <= 330;
-        if (activeBucket === '05:30–06:00' || activeBucket === '04:30–05:30') return m > 330 && m <= 360;
-        if (activeBucket === '06:00–07:00' || activeBucket === '05:30–06:30' || activeBucket === '06:30–07:00') return m > 360 && m <= 420;
-        if (activeBucket === '> 07:00 AM') return m > 420;
-        return false;
+    if (activeBucket === 'Absent' || activeBucket.includes('Absent')) {
+      list = list.filter(d => d.absentCount > 0);
+    } else {
+      list = list.filter(d => {
+        if (!d.dailyPunches || !d.dailyPunches.length) return false;
+        return d.dailyPunches.some(p => {
+          if (p.status === 'Absent' || !p.time || p.time === '—') return false;
+          const m = parseTimeMinutes(p.time);
+          if (m == null) return false;
+          if (activeBucket === '≤ 05:30 AM' || activeBucket === '< 04:30 AM' || activeBucket === '< 05:30 AM') return m <= 330;
+          if (activeBucket === '05:30–06:00' || activeBucket === '04:30–05:30') return m > 330 && m <= 360;
+          if (activeBucket === '06:00–07:00' || activeBucket === '05:30–06:30' || activeBucket === '06:30–07:00') return m > 360 && m <= 420;
+          if (activeBucket === '> 07:00 AM') return m > 420;
+          return false;
+        });
       });
-    });
+    }
   }
   if (attFilter) {
     if (attFilter === 'star' || attFilter === 'regular') list = list.filter(d => d.attendanceRate >= 70);
@@ -26275,12 +26281,12 @@ function loadPreachingFilters(){
 }
 
 function getRowBucket(r){
-  if(!r || r.status === 'Absent' || r.timeInMin == null) return '> 07:00 AM';
+  if(!r || r.status === 'Absent' || r.timeInMin == null) return 'Absent';
   const m = r.timeInMin;
   if(m <= 330) return '≤ 05:30 AM';
   if(m <= 360) return '05:30–06:00';
   if(m <= 420) return '06:00–07:00';
-  return '> 07:00 AM';
+  return 'Absent';
 }
 
 function devoteeBatchAttPct(d, batchId){
