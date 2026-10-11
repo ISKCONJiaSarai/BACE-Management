@@ -11745,10 +11745,10 @@ async function handleGoogleAuthResponse(response){
       const displayName = isCounsellor ? counsellorInfo.name : (isSurya ? 'Surya Narayana Das' : ((d && d.name && d.name !== 'Google Devotee') ? d.name : data.user.name));
       const displayRole = isCounsellor ? 'counsellor' : (isSurya ? 'area_leader' : (data.user.role || (d ? devoteeRole(d) : 'devotee')));
 
-      // Only active devotees already in database (or Area Leader Surya / Counsellor) or server-approved users are auto-approved:
-      const isActiveInDb = !!(d && d.status === 'Active');
+      // Active devotees, database-configured devotees, or server-approved accounts are auto-approved:
+      const isKnownInDb = !!(d && d.status !== 'Inactive' && d.status !== 'Pending Approval');
       const isServerApproved = data.user.isApproved || data.user.approvalStatus === 'approved';
-      const isAutoApproved = isSurya || isCounsellor || (isActiveInDb && isServerApproved);
+      const isAutoApproved = isSurya || isCounsellor || isServerApproved || isKnownInDb;
       const finalApproval = isAutoApproved ? 'approved' : (data.user.approvalStatus || (d && d.status === 'Pending Approval' ? 'pending_approval' : 'pending_profile'));
       const finalProfileCompleted = isAutoApproved ? true : !!data.user.profileCompleted;
 
@@ -11771,7 +11771,7 @@ async function handleGoogleAuthResponse(response){
         if(isCounsellor) { d.name = counsellorInfo.name; d.appointment = 'Senior Facilitator'; d.status = 'Active'; }
         else if(isSurya) { d.name = 'Surya Narayana Das'; d.appointment = 'Area Leader'; d.status = 'Active'; }
         else if(finalApproval === 'approved') d.status='Active';
-        else if(finalApproval === 'pending_approval' || finalApproval === 'pending_profile') d.status='Pending Approval';
+        else if((finalApproval === 'pending_approval' || finalApproval === 'pending_profile') && d.status !== 'Active') d.status='Pending Approval';
         normalizeDevotee(d);
       }
 
@@ -30110,16 +30110,17 @@ function render(){
 
   if (!isMasterOrLeader) {
     if (!curDevotee) {
-      APP.user.approvalStatus = 'pending_profile';
-      APP.user.profileCompleted = false;
-      APP.user.devotee = null;
-    } else if (curDevotee && curDevotee.status === 'Pending Approval') {
-      if (APP.user.approvalStatus === 'approved') {
-        APP.user.approvalStatus = APP.user.profileCompleted ? 'pending_approval' : 'pending_profile';
+      if (APP.user.approvalStatus !== 'approved') {
+        APP.user.approvalStatus = 'pending_profile';
+        APP.user.profileCompleted = false;
+        APP.user.devotee = null;
       }
-    } else if (curDevotee && curDevotee.status === 'Active' && !['pending_profile', 'pending_approval', 'rejected'].includes(APP.user.approvalStatus)) {
+    } else if (curDevotee.status === 'Active' || (curDevotee.status !== 'Pending Approval' && curDevotee.status !== 'Inactive')) {
       APP.user.approvalStatus = 'approved';
       APP.user.profileCompleted = true;
+      curDevotee.status = 'Active';
+    } else if (curDevotee.status === 'Pending Approval' && APP.user.approvalStatus !== 'approved') {
+      APP.user.approvalStatus = APP.user.profileCompleted ? 'pending_approval' : 'pending_profile';
     }
   }
 
@@ -30320,11 +30321,11 @@ async function syncDevoteeToBackend(d, roleKey){
       customId: d.customId || d.id
     };
 
-    let targetId = d._id;
+    let targetId = d._id || d.customId || d.id;
     let savedDevDoc = null;
 
     if (targetId) {
-      // Devotee already has MongoDB _id: update via PUT
+      // Devotee already has ID: update via PUT
       const res = await fetch(`/api/devotees/${targetId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
@@ -30356,6 +30357,7 @@ async function syncDevoteeToBackend(d, roleKey){
       if (savedDevDoc._id) d._id = String(savedDevDoc._id);
       if (savedDevDoc.customId) d.customId = String(savedDevDoc.customId);
       targetId = d._id;
+      if (d.status === 'Pending Approval' || !d.status) d.status = 'Active';
       saveDevoteesToStorage();
     }
 
@@ -31601,13 +31603,15 @@ document.addEventListener('click',e=>{
       if(v.careGroup){const g=group(v.careGroup);if(g && !g.members.includes(d.id))g.members.push(d.id)}
       if(roleKey==='dept_head'&&d.dept){const dp=dept(d.dept);if(dp)dp.head=d.id;}
       if(roleKey==='preaching_coord'&&d.batch){const b=batch(d.batch);if(b)b.coordinator=d.id;}
-      let u=DB.users.find(x=>x.devotee===d.id);
+      if(!d.status || d.status === 'Pending Approval') d.status = 'Active';
+      let u=DB.users.find(x=>x.devotee===d.id || (x.email && d.email && x.email.toLowerCase().trim() === d.email.toLowerCase().trim()));
       if(u){
         u.role=roleKey;
+        if(d.email) { u.approvalStatus='approved'; u.profileCompleted=true; u.devotee=d.id; }
         if(roleKey==='dept_head')u.dept=d.dept||undefined;
         if(roleKey==='preaching_coord')u.batch=d.batch||undefined;
       } else if(roleKey!=='devotee'||d.email){
-        DB.users.push({id:uid('u'),role:roleKey,devotee:d.id,dept:roleKey==='dept_head'?d.dept:undefined,batch:roleKey==='preaching_coord'?d.batch:undefined});
+        DB.users.push({id:uid('u'),role:roleKey,devotee:d.id,approvalStatus:'approved',profileCompleted:true,email:d.email,dept:roleKey==='dept_head'?d.dept:undefined,batch:roleKey==='preaching_coord'?d.batch:undefined});
       }
       const isMeEdit = APP.user && (
         APP.user.devotee === d.id ||

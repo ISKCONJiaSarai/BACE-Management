@@ -278,21 +278,35 @@ router.post('/', async (req, res) => {
     }
     const resolvedData = await resolveDevoteeRelations(req.body);
 
-    // If customId already exists on an existing devotee, check whether to update or assign fresh customId
+    // If customId already exists on an existing devotee, update that devotee
     if (resolvedData.customId) {
       const existingWithCustomId = await Devotee.findOne({ customId: resolvedData.customId });
       if (existingWithCustomId) {
-        if ((resolvedData.email && existingWithCustomId.email && resolvedData.email.toLowerCase().trim() === existingWithCustomId.email.toLowerCase().trim()) ||
-            (resolvedData.name && existingWithCustomId.name && resolvedData.name.toLowerCase().trim() === existingWithCustomId.name.toLowerCase().trim())) {
-          const updated = await Devotee.findByIdAndUpdate(existingWithCustomId._id, resolvedData, { new: true, runValidators: true });
-          return res.status(200).json({ success: true, data: updated, isUpdate: true });
-        } else {
-          resolvedData.customId = 'd_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
+        const updated = await Devotee.findByIdAndUpdate(existingWithCustomId._id, resolvedData, { new: true, runValidators: true });
+        if (updated.email) {
+          const userEmail = updated.email.toLowerCase().trim();
+          await User.updateMany(
+            { $or: [{ devotee: updated._id }, { email: userEmail }] },
+            { $set: { devotee: updated._id, approvalStatus: 'approved', profileCompleted: true } }
+          );
         }
+        return res.status(200).json({ success: true, data: updated, isUpdate: true });
       }
     }
 
     const devotee = await Devotee.create(resolvedData);
+    if (devotee.email) {
+      const userEmail = devotee.email.toLowerCase().trim();
+      await User.updateMany(
+        { $or: [{ devotee: devotee._id }, { email: userEmail }] },
+        { $set: { devotee: devotee._id, approvalStatus: 'approved', profileCompleted: true } }
+      );
+      await Devotee.deleteMany({
+        _id: { $ne: devotee._id },
+        email: userEmail,
+        customId: /^d_g_/
+      });
+    }
     res.status(201).json({ success: true, data: devotee });
   } catch (err) {
     console.error('Error in POST /api/devotees:', err);
@@ -324,6 +338,13 @@ router.put('/:id', async (req, res) => {
       }
       const resolvedData = await resolveDevoteeRelations(req.body);
       const devotee = await Devotee.create(resolvedData);
+      if (devotee.email) {
+        const userEmail = devotee.email.toLowerCase().trim();
+        await User.updateMany(
+          { $or: [{ devotee: devotee._id }, { email: userEmail }] },
+          { $set: { devotee: devotee._id, approvalStatus: 'approved', profileCompleted: true } }
+        );
+      }
       return res.status(201).json({ success: true, data: devotee, createdViaPut: true });
     }
 
@@ -333,6 +354,13 @@ router.put('/:id', async (req, res) => {
 
     const resolvedData = await resolveDevoteeRelations(req.body);
 
+    // If devotee was edited with an email and was previously Pending Approval or New, make sure status is Active (unless explicitly set to Inactive/Alumni)
+    if (!resolvedData.status || resolvedData.status === 'Pending Approval' || resolvedData.status === 'New') {
+      if (existing.status !== 'Inactive' && existing.status !== 'Alumni') {
+        resolvedData.status = 'Active';
+      }
+    }
+
     const devotee = await Devotee.findByIdAndUpdate(
       existing._id,
       resolvedData,
@@ -340,13 +368,37 @@ router.put('/:id', async (req, res) => {
     );
 
     const roleToSet = req.body.role || (req.body.appointment ? getRoleFromAppointment(req.body.appointment, devotee.isFacilitator) : null);
+    const userUpdate = {};
     if (roleToSet && roleToSet !== 'admin') {
-      const userUpdate = { role: roleToSet };
-      if (Array.isArray(req.body.roles)) {
-        userUpdate.roles = req.body.roles;
-      }
+      userUpdate.role = roleToSet;
+    }
+    if (Array.isArray(req.body.roles) && req.body.roles.length) {
+      userUpdate.roles = req.body.roles;
+    }
+
+    const devoteeEmail = devotee.email ? devotee.email.toLowerCase().trim() : '';
+
+    // CRITICAL: When an individual devotee has an email configured/edited by leadership,
+    // their user account MUST be approved and linked to this devotee profile!
+    if (devoteeEmail) {
+      userUpdate.devotee = devotee._id;
+      userUpdate.approvalStatus = 'approved';
+      userUpdate.profileCompleted = true;
+
       await User.updateMany(
-        { $or: [{ devotee: devotee._id }, ...(devotee.email ? [{ email: devotee.email.toLowerCase().trim() }] : [])] },
+        { $or: [{ devotee: devotee._id }, { email: devoteeEmail }] },
+        { $set: userUpdate }
+      );
+
+      // Clean up any stray dummy devotee records that were created for this email during previous login attempts
+      await Devotee.deleteMany({
+        _id: { $ne: devotee._id },
+        email: devoteeEmail,
+        customId: /^d_g_/
+      });
+    } else if (Object.keys(userUpdate).length > 0) {
+      await User.updateMany(
+        { devotee: devotee._id },
         { $set: userUpdate }
       );
     }
@@ -424,9 +476,15 @@ router.post('/:id/assign-role', protect, async (req, res) => {
     devotee.isFacilitator = selectedRoles.includes('facilitator');
     await devotee.save();
 
+    const userUpdateSet = { role: primaryRole, roles: selectedRoles };
+    if (devotee.email) {
+      userUpdateSet.devotee = devotee._id;
+      userUpdateSet.approvalStatus = 'approved';
+      userUpdateSet.profileCompleted = true;
+    }
     await User.updateMany(
       { $or: [{ devotee: devotee._id }, ...(devotee.email ? [{ email: devotee.email.toLowerCase().trim() }] : [])] },
-      { $set: { role: primaryRole, roles: selectedRoles } }
+      { $set: userUpdateSet }
     );
 
     res.json({
