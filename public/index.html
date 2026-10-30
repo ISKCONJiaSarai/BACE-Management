@@ -10936,6 +10936,7 @@ const PILLARS=[
    {t:'Attendance',em:'✅',r:'#/batch-attendance',m:'preaching'}]}
 ];
 const NAV_BOTTOM=[
+  {t:'Community calendar',em:'📅',r:'#/calendar',m:'calendar'},
   {t:'Notifications',em:'🔔',r:'#/notifications',m:'dashboard'},
   {t:'Administration',em:'⚙️',r:'#/admin',m:'admin',badge:'pendingApprovals'}
 ];
@@ -11005,6 +11006,7 @@ function appHeader(){
       {t:'Classes & Events',em:'✨',r:'#/classes',m:'preaching'},
       {t:'Batch Attendance',em:'✅',r:'#/batch-attendance',m:'preaching'}
     ]},
+    {t:'Calendar',r:'#/calendar',m:'calendar'},
   ];
   const currentPillar = typeof pillarOf === 'function' ? pillarOf(APP.route) : '';
   const cleanRoute=(APP.route||'').replace(/^#\/?/,'');
@@ -11297,6 +11299,7 @@ function mobileNavDropdown(){
 
   ];
   const bottomItems=[
+    {t:'Calendar',em:'📅',r:'#/calendar',on:route==='calendar'},
     {t:'Notifications',em:'🔔',r:'#/notifications'},
     {t:'Administration',em:'⚙️',r:'#/admin',m:'admin'},
   ];
@@ -12694,7 +12697,7 @@ function prabhupadaNectarCard(){
   setTimeout(startNectarAutoSwipe, 200);
 
   return `
-    <div class="card pad nectar-card-wrapper" style="position:relative;overflow:hidden;border:1px solid rgba(245,158,11,0.35);background:linear-gradient(135deg,rgba(254,243,199,0.25) 0%,var(--surface) 60%,rgba(254,243,199,0.18) 100%);box-shadow:0 8px 24px -4px rgba(245,158,11,0.12)">
+    <div class="card pad nectar-card-wrapper" style="position:relative;overflow:hidden;border:1px solid rgba(245,158,11,0.35);background:linear-gradient(135deg,rgba(254,243,199,0.25) 0%,var(--surface) 60%,rgba(254,243,199,0.18) 100%);box-shadow:0 8px 24px -4px rgba(245,158,11,0.12);margin-bottom:0;display:flex;flex-direction:column;height:100%;justify-content:space-between">
       <div style="position:absolute;right:-15px;bottom:-20px;font-size:120px;opacity:0.04;pointer-events:none;user-select:none">🪷</div>
 
       <div class="nectar-card-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid rgba(245,158,11,0.2)">
@@ -13140,19 +13143,24 @@ function dashboardCalendarWidget(){
       </div>`;
   }
   const isTodayActive = (offset === 0) && (!APP.filters.dashCalSelectedDate || APP.filters.dashCalSelectedDate === iso(TODAY));
-  return section('📅 Calendar',`<div class="card-b">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-      <div style="display:flex;gap:4px">
-        <button class="btn sm ${calView==='day'?'pri':''}" data-act="dash-cal-view" data-v="day">Day</button>
-        <button class="btn sm ${calView==='week'?'pri':''}" data-act="dash-cal-view" data-v="week">Week</button>
-        <button class="btn sm ${calView==='month'?'pri':''}" data-act="dash-cal-view" data-v="month">Month</button>
+    return `<div class="card" style="margin-bottom:0;display:flex;flex-direction:column;height:100%">
+    <div class="card-h"><h3 style="display:inline-flex;align-items:center">📅 Calendar</h3><div class="r"><a class="btn sm" href="#/calendar">Full calendar →</a></div></div>
+    <div class="card-b" style="display:flex;flex-direction:column;flex:1">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div style="display:flex;gap:4px">
+          <button class="btn sm ${calView==='day'?'pri':''}" data-act="dash-cal-view" data-v="day">Day</button>
+          <button class="btn sm ${calView==='week'?'pri':''}" data-act="dash-cal-view" data-v="week">Week</button>
+          <button class="btn sm ${calView==='month'?'pri':''}" data-act="dash-cal-view" data-v="month">Month</button>
+        </div>
+        <div style="display:flex;gap:4px;align-items:center">
+          <button class="btn sm" data-act="dash-cal-nav" data-d="-1" title="Previous period">‹</button>
+          <button class="btn sm" data-act="dash-cal-nav" data-d="0" style="font-size:11px;font-weight:${isTodayActive?'700':'500'};${isTodayActive?'border-color:var(--accent);color:var(--accent);background:var(--accent-soft)':''}" title="${isTodayActive?'Viewing today':'Jump to Today'}">Today</button>
+          <button class="btn sm" data-act="dash-cal-nav" data-d="1" title="Next period">›</button>
+        </div>
       </div>
-      <div style="display:flex;gap:4px;align-items:center">
-        <button class="btn sm" data-act="dash-cal-nav" data-d="-1" title="Previous period">‹</button>
-        <button class="btn sm" data-act="dash-cal-nav" data-d="0" style="font-size:11px;font-weight:${isTodayActive?'700':'500'};${isTodayActive?'border-color:var(--accent);color:var(--accent);background:var(--accent-soft)':''}" title="${isTodayActive?'Viewing today':'Jump to Today'}">Today</button>
-        <button class="btn sm" data-act="dash-cal-nav" data-d="1" title="Next period">›</button>
-      </div>
-    </div>${content}</div>`,`<a class="btn sm" href="#/calendar">Full calendar</a>`);
+      ${content}
+    </div>
+  </div>`;
 }
 const growthPoints=()=>{
   const m=monthsBack(6);
@@ -13326,7 +13334,7 @@ function viewDashboard(){
   return hero()+
     `<div class="grid g2" style="margin-bottom:15px">${mgmtCard}${preachCard}</div>`+
     (attnSection||'')+
-    `<div style="margin-top:15px">${prabhupadaNectarCard()}</div>`;
+    `<div class="grid g2" style="margin-top:15px">${dashboardCalendarWidget()}${prabhupadaNectarCard()}</div>`;
 }
 function funnelRows(){
   const s=STATS();
