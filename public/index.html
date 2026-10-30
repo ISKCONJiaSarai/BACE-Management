@@ -8400,57 +8400,60 @@ html.theme-transitioning .pillar-item {
 }
 .reveal-section { animation: fadeUp 0.4s ease-out both; }
 
-/* Hero Stat Cards (Under quote) */
+/* Hero Stat Cards (Under quote - high-contrast styling) */
 .hero-stat-cards {
   display: flex;
   align-items: stretch;
   gap: 10px;
   flex-wrap: wrap;
-  margin-top: 16px;
+  margin-top: 18px;
 }
 .hero-stat-card {
   display: flex;
   align-items: center;
-  gap: 9px;
-  padding: 8px 14px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  gap: 10px;
+  padding: 10px 16px;
+  border-radius: 14px;
+  /* Contrasting card background that pops against dark hero gradient */
+  background: rgba(255, 255, 255, 0.16);
+  border: 1.5px solid rgba(255, 255, 255, 0.32);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   text-decoration: none;
   color: #fff !important;
   cursor: pointer;
   transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
   flex: 1 1 auto;
-  min-width: 110px;
+  min-width: 125px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.25);
 }
 .hero-stat-card:hover {
-  background: rgba(255, 255, 255, 0.16);
-  border-color: rgba(245, 158, 11, 0.5);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px -4px rgba(0, 0, 0, 0.35), 0 0 12px rgba(245, 158, 11, 0.2);
+  background: rgba(255, 255, 255, 0.26);
+  border-color: #F59E0B;
+  transform: translateY(-3px);
+  box-shadow: 0 10px 24px -2px rgba(0, 0, 0, 0.4), 0 0 16px rgba(245, 158, 11, 0.4);
 }
 .hero-stat-card:active {
   transform: scale(0.97) !important;
 }
 .hsc-icon-wrap {
-  width: 30px;
-  height: 30px;
-  border-radius: 8px;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
   flex-shrink: 0;
-  font-size: 14px;
+  font-size: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
 }
 .hsc-dot {
   position: absolute;
   top: -2px;
   right: -2px;
-  width: 6px;
-  height: 6px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   animation: pulse-dot 2s infinite;
 }
@@ -8460,18 +8463,22 @@ html.theme-transitioning .pillar-item {
   min-width: 0;
 }
 .hsc-val {
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 800;
   line-height: 1.2;
-  color: #fff;
+  color: #FFFFFF;
   font-family: var(--f-head);
   white-space: nowrap;
+  letter-spacing: -0.01em;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.35);
 }
 .hsc-lbl {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.65);
-  font-weight: 500;
+  font-size: 11.5px;
+  color: #FDE68A; /* warm high-contrast golden amber */
+  font-weight: 700;
   white-space: nowrap;
+  letter-spacing: 0.02em;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.3);
 }
 
 /* Alert strip */
@@ -8517,37 +8524,20 @@ html.theme-transitioning .pillar-item {
   transition: transform 0.2s ease, color 0.2s ease;
 }
 
-/* Sub-action pills inside cards */
-.sub-action-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 5px 11px;
-  border-radius: 50px;
-  font-size: 11.5px;
-  font-weight: 600;
-  border: 1px solid var(--line-2);
-  background: var(--surface);
-  color: var(--ink-2);
-  text-decoration: none;
-  transition: all 0.18s cubic-bezier(0.16,1,0.3,1);
-  white-space: nowrap;
+/* Clickable list rows inside Management & Preaching cards */
+.dash-list-row {
+  transition: all 0.18s cubic-bezier(0.16,1,0.3,1) !important;
 }
-.sub-action-pill:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-  transform: translateY(-1.5px);
-  box-shadow: 0 4px 12px -2px rgba(255,102,0,0.22);
-}
-.sub-action-pill:active {
-  transform: scale(0.96);
+.dash-list-row:hover {
+  background: var(--surface) !important;
+  border-color: var(--accent) !important;
+  transform: translateX(2px) !important;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.06) !important;
 }
 
-.btn:active { transform: scale(0.96) !important; }
-.btn { transition: all 0.2s cubic-bezier(0.16,1,0.3,1) !important; }
-/* Refined compact styles for 4-column layout */
+/* Quad grid card styling */
 .dash-quad-grid .card {
-  min-height: 380px;
+  min-height: 400px;
   border-radius: var(--r-xl, 14px);
 }
 .dash-quad-grid .nectar-card-wrapper {
@@ -8557,22 +8547,56 @@ html.theme-transitioning .pillar-item {
   flex-wrap: wrap;
   gap: 8px;
 }
-.dash-quad-grid .nectar-card-title {
-  font-size: 13.5px !important;
+
+/* Quote font size & readability enhancements */
+.nectar-quote-text, .dash-quad-grid .nectar-quote-text {
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif !important;
+  font-size: 15.5px !important;
+  line-height: 1.55 !important;
+  font-weight: 600 !important;
+  color: var(--ink) !important;
+  margin: 8px 0 8px 0 !important;
+  max-height: 130px !important;
+  overflow-y: auto !important;
+}
+.nectar-citation, .dash-quad-grid .nectar-citation {
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: #D97706 !important;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 6px !important;
+}
+.nectar-card-title, .dash-quad-grid .nectar-card-title {
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  color: var(--ink) !important;
+}
+.dash-quad-grid .nectar-topic-badge {
+  font-size: 11.5px !important;
+  font-weight: 600 !important;
+}
+.dash-quad-grid .nectar-acharya-tag {
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: var(--ink-3) !important;
 }
 .dash-quad-grid .nectar-portrait-wrap {
-  width: 52px !important;
-  height: 52px !important;
+  width: 58px !important;
+  height: 58px !important;
   flex-shrink: 0;
-}
-.dash-quad-grid .nectar-quote-text {
-  font-size: 12px !important;
-  line-height: 1.5 !important;
-  max-height: 110px;
-  overflow-y: auto;
+  border-radius: 50%;
+  overflow: hidden;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.15);
 }
 .dash-quad-grid .nectar-ambience-bar {
-  padding: 8px 10px !important;
+  padding: 10px 12px !important;
+}
+.dash-quad-grid .ambience-track-btn {
+  padding: 5px 9px !important;
+  font-size: 11.5px !important;
+  font-weight: 600 !important;
 }
 .dash-quad-grid .card-h {
   padding: 12px 14px;
@@ -8580,6 +8604,21 @@ html.theme-transitioning .pillar-item {
 .dash-quad-grid .card-b {
   padding: 14px;
 }
+
+.hero .quote {
+  font-size: 26px !important;
+  line-height: 1.4 !important;
+  color: #FEF08A !important;
+  font-weight: 700 !important;
+}
+.hero-header p {
+  font-size: 13.5px !important;
+  font-weight: 500 !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.btn:active { transform: scale(0.96) !important; }
+.btn { transition: all 0.2s cubic-bezier(0.16,1,0.3,1) !important; }
 /* ===== END VERSION C ===== */
 </style>
 </head>
@@ -13466,75 +13505,123 @@ function viewDashboard(){
     ? section('⚠️ Needs Attention',`<div class="list">${attnItems.join('')}</div>`,'','dash_attn',true)
     : '';
   // Management card
+  // Department list for Management card
+  const allDepts = typeof activeDepts === 'function' ? activeDepts() : (DB.departments || []).filter(d => d.status === 'Active');
+  const topDepts = allDepts.slice(0, 4);
+  const deptListHtml = topDepts.length ? topDepts.map(d => {
+    const dm = typeof deptMetrics === 'function' ? deptMetrics(d.id) : { done: 0, volunteers: 0, completion: 0 };
+    const icon = d.module === 'deity' ? 'ðŸª”' : (d.module === 'morning' ? 'ðŸŒ…' : (d.module === 'cleaning' ? 'ðŸ§¹' : ((d.name||'').toLowerCase().includes('kitchen') ? 'ðŸ›' : 'ðŸ›•')));
+    return `<a href="#/department/${d.id}" class="dash-list-row" style="display:flex;align-items:center;justify-content:space-between;padding:7px 9px;background:var(--paper-2);border-radius:9px;border:1px solid var(--line-2);text-decoration:none;color:var(--ink);margin-bottom:5px">
+      <div style="display:flex;align-items:center;gap:8px;min-width:0">
+        <span style="font-size:15px;flex-shrink:0">${icon}</span>
+        <div style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+          <div style="font-size:12px;font-weight:700;color:var(--ink);line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(d.name)}</div>
+          <div style="font-size:10.5px;color:var(--ink-3);margin-top:1px">${dm.volunteers || 0} in seva &middot; ${dm.completion || 0}% done</div>
+        </div>
+      </div>
+      <span style="font-size:11px;font-weight:700;color:var(--accent);flex-shrink:0;margin-left:6px">${dm.completion || 0}% &#x2192;</span>
+    </a>`;
+  }).join('') : `<div style="text-align:center;padding:12px;color:var(--ink-3);font-size:12px">No departments active</div>`;
+
+  // Batch list for Preaching card
+  const allBatches = typeof activeBatches === 'function' ? activeBatches() : (DB.batches || []).filter(b => b.status === 'Active');
+  const topBatches = allBatches.slice(0, 4);
+  const batchListHtml = topBatches.length ? topBatches.map(b => {
+    const bDevs = (DB.devotees || []).filter(d => d.batch === b.id || ((d.batches || []).includes(b.id)));
+    return `<a href="#/batch/${b.id}" class="dash-list-row" style="display:flex;align-items:center;justify-content:space-between;padding:7px 9px;background:var(--paper-2);border-radius:9px;border:1px solid var(--line-2);text-decoration:none;color:var(--ink);margin-bottom:5px">
+      <div style="display:flex;align-items:center;gap:8px;min-width:0">
+        <div style="width:24px;height:24px;border-radius:6px;background:rgba(79,70,229,0.12);color:var(--indigo);font-size:10.5px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">L${b.level || 1}</div>
+        <div style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+          <div style="font-size:12px;font-weight:700;color:var(--ink);line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(b.name)}</div>
+          <div style="font-size:10.5px;color:var(--ink-3);margin-top:1px">${bDevs.length} devotees &middot; Level ${b.level || 1}</div>
+        </div>
+      </div>
+      <span style="font-size:11px;font-weight:700;color:var(--indigo);flex-shrink:0;margin-left:6px">${bDevs.length} &#x1F465; &#x2192;</span>
+    </a>`;
+  }).join('') : `<div style="text-align:center;padding:12px;color:var(--ink-3);font-size:12px">No batches active</div>`;
+
+  // Management Card
   const mgmtCard=`<div class="card dash-hub-card" style="display:flex;flex-direction:column;justify-content:space-between;height:100%;margin-bottom:0">
-    <div class="card-b" style="display:flex;flex-direction:column;height:100%;padding:16px">
+    <div class="card-b" style="display:flex;flex-direction:column;height:100%;padding:15px">
       <a href="#/mgmt" style="display:flex;align-items:center;justify-content:space-between;text-decoration:none;color:inherit;margin-bottom:12px" title="Open BACE Management">
         <div style="display:flex;align-items:center;gap:10px">
           <div style="width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,#EA580C,#C2410C);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;box-shadow:0 3px 10px rgba(234,88,12,.25);color:#fff">&#x1F6D5;</div>
           <div>
             <div style="font-weight:800;font-size:14.5px;font-family:var(--f-head);color:var(--ink);line-height:1.2">BACE Management</div>
-            <div style="font-size:11px;color:var(--ink-3);margin-top:2px">Operations &amp; seva rosters</div>
+            <div style="font-size:11px;color:var(--ink-3);margin-top:2px">Key Departments &amp; Seva</div>
           </div>
         </div>
         <span style="font-size:16px;color:var(--ink-3)" class="hub-arr">&#x2192;</span>
       </a>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:14px">
-        <div style="background:var(--paper-2);border-radius:9px;padding:7px 4px;border:1px solid var(--line-2);text-align:center">
-          <div style="font-size:9.5px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em">Done</div>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px">
+        <div style="background:var(--paper-2);border-radius:9px;padding:6px 4px;border:1px solid var(--line-2);text-align:center">
+          <div style="font-size:9.5px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em">Completion</div>
           <div style="font-size:16px;font-weight:800;font-family:var(--f-head);color:${completionPct<75?'var(--danger)':'var(--accent)'}">${completionPct}%</div>
         </div>
-        <div style="background:var(--paper-2);border-radius:9px;padding:7px 4px;border:1px solid var(--line-2);text-align:center">
+        <div style="background:var(--paper-2);border-radius:9px;padding:6px 4px;border:1px solid var(--line-2);text-align:center">
           <div style="font-size:9.5px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em">In Seva</div>
           <div style="font-size:16px;font-weight:800;font-family:var(--f-head);color:var(--ink)">${tot.vol}</div>
         </div>
-        <div style="background:var(--paper-2);border-radius:9px;padding:7px 4px;border:1px solid var(--line-2);text-align:center">
+        <div style="background:var(--paper-2);border-radius:9px;padding:6px 4px;border:1px solid var(--line-2);text-align:center">
           <div style="font-size:9.5px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em">Open</div>
           <div style="font-size:16px;font-weight:800;font-family:var(--f-head);color:${unfilled>0?'var(--danger)':'var(--green)'}">${unfilled}</div>
         </div>
       </div>
-      <div style="margin-top:auto;display:flex;flex-wrap:wrap;gap:6px">
-        ${can('management')?`<a class="sub-action-pill" href="#/mgmt">&#x1F6D5; Dept Hub</a>`:''}
-        ${can('assign')?`<a class="sub-action-pill" href="#/assign">&#x1F64F; Assign Seva</a>`:''}
-        <a class="sub-action-pill" href="#/sops">&#x1F4D8; SOPs</a>
-        ${can('reports')?`<a class="sub-action-pill" href="#/reports">&#x1F4CA; Reports</a>`:''}
+
+      <div style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-3);margin-bottom:7px">Important Departments</div>
+      <div style="display:flex;flex-direction:column;gap:1px;margin-bottom:6px;flex:1">
+        ${deptListHtml}
+      </div>
+
+      <div style="margin-top:auto;padding-top:10px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--line-2)">
+        <a href="#/mgmt" style="font-size:12px;font-weight:700;color:var(--accent);text-decoration:none">All ${allDepts.length} departments &#x2192;</a>
+        ${can('assign')?`<a class="btn sm pri" href="#/assign" style="font-size:11px;padding:3px 9px;border-radius:50px">&#x1F64F; Assign</a>`:''}
       </div>
     </div>
   </div>`;
-  // Preaching card
+
+  // Preaching Card
   const preachCard=`<div class="card dash-hub-card" style="display:flex;flex-direction:column;justify-content:space-between;height:100%;margin-bottom:0">
-    <div class="card-b" style="display:flex;flex-direction:column;height:100%;padding:16px">
+    <div class="card-b" style="display:flex;flex-direction:column;height:100%;padding:15px">
       <a href="#/preaching" style="display:flex;align-items:center;justify-content:space-between;text-decoration:none;color:inherit;margin-bottom:12px" title="Open BACE Preaching">
         <div style="display:flex;align-items:center;gap:10px">
           <div style="width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,#4F46E5,#3730A3);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;box-shadow:0 3px 10px rgba(79,70,229,.25);color:#fff">&#x1F4D6;</div>
           <div>
             <div style="font-weight:800;font-size:14.5px;font-family:var(--f-head);color:var(--ink);line-height:1.2">BACE Preaching</div>
-            <div style="font-size:11px;color:var(--ink-3);margin-top:2px">Batches &amp; outreach</div>
+            <div style="font-size:11px;color:var(--ink-3);margin-top:2px">Batches &amp; Outreach</div>
           </div>
         </div>
         <span style="font-size:16px;color:var(--ink-3)" class="hub-arr">&#x2192;</span>
       </a>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:14px">
-        <div style="background:var(--paper-2);border-radius:9px;padding:7px 4px;border:1px solid var(--line-2);text-align:center">
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px">
+        <div style="background:var(--paper-2);border-radius:9px;padding:6px 4px;border:1px solid var(--line-2);text-align:center">
           <div style="font-size:9.5px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em">Batches</div>
           <div style="font-size:16px;font-weight:800;font-family:var(--f-head);color:var(--ink)">${batches.length}</div>
         </div>
-        <div style="background:var(--paper-2);border-radius:9px;padding:7px 4px;border:1px solid var(--line-2);text-align:center">
+        <div style="background:var(--paper-2);border-radius:9px;padding:6px 4px;border:1px solid var(--line-2);text-align:center">
           <div style="font-size:9.5px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em">Contacts</div>
           <div style="font-size:16px;font-weight:800;font-family:var(--f-head);color:var(--ink)">${s.contacts||0}</div>
         </div>
-        <div style="background:var(--paper-2);border-radius:9px;padding:7px 4px;border:1px solid var(--line-2);text-align:center">
+        <div style="background:var(--paper-2);border-radius:9px;padding:6px 4px;border:1px solid var(--line-2);text-align:center">
           <div style="font-size:9.5px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em">Follow-up</div>
           <div style="font-size:16px;font-weight:800;font-family:var(--f-head);color:${fuOverdue>0?'var(--danger)':'var(--green)'}">${fuOverdue}</div>
         </div>
       </div>
-      <div style="margin-top:auto;display:flex;flex-wrap:wrap;gap:6px">
-        ${can('preaching')?`<a class="sub-action-pill" href="#/preaching">&#x1F4D6; Batch Hub</a>`:''}
-        ${can('preaching')?`<a class="sub-action-pill" href="#/contacts">&#x1F465; Contacts</a>`:''}
-        ${can('preaching')?`<a class="sub-action-pill" href="#/followups">&#x1F4DE; Follow-ups ${fuOverdue>0?`<span class="bdot">${fuOverdue}</span>`:''}</a>`:''}
-        <a class="sub-action-pill" href="#/care-followups">&#x1F33F; Care</a>
+
+      <div style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-3);margin-bottom:7px">Respective Batches</div>
+      <div style="display:flex;flex-direction:column;gap:1px;margin-bottom:6px;flex:1">
+        ${batchListHtml}
+      </div>
+
+      <div style="margin-top:auto;padding-top:10px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--line-2)">
+        <a href="#/preaching" style="font-size:12px;font-weight:700;color:var(--indigo);text-decoration:none">All ${batches.length} batches &#x2192;</a>
+        ${can('contacts')?`<a class="btn sm" href="#/contacts" style="font-size:11px;padding:3px 9px;border-radius:50px">&#x1F465; Contacts</a>`:''}
       </div>
     </div>
   </div>`;
+
   return hero()+
     (attnItems.length?`<div class="dash-alert-strip reveal-section">&#x23F0; <strong>${attnItems.length}</strong>&nbsp;item${attnItems.length>1?'s':''} need${attnItems.length===1?'s':''} attention <a class="btn sm" href="#/followups" style="margin-left:auto;flex-shrink:0">View &#x2192;</a></div>`:'')+
     `<div class="reveal-section" style="margin-top:8px">
