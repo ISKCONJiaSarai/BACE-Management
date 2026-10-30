@@ -8391,108 +8391,195 @@ html.theme-transitioning .pillar-item {
 
 /* ===== VERSION C: Progressive Reveal Dashboard ===== */
 @keyframes fadeUp {
-  from { opacity: 0; transform: translateY(20px); }
+  from { opacity: 0; transform: translateY(16px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 @keyframes pulse-dot {
   0%, 100% { opacity: 1; transform: scale(1); }
-  50%       { opacity: 0.6; transform: scale(1.3); }
+  50%       { opacity: 0.5; transform: scale(1.3); }
 }
-@keyframes bounce-arrow {
-  0%, 100% { transform: translateY(0); }
-  50%       { transform: translateY(5px); }
-}
-.reveal-section { animation: fadeUp 0.45s ease-out both; }
-.reveal-section:nth-child(1) { animation-delay: 0s; }
-.reveal-section:nth-child(2) { animation-delay: 0.08s; }
-.reveal-section:nth-child(3) { animation-delay: 0.16s; }
-.reveal-section:nth-child(4) { animation-delay: 0.24s; }
-.reveal-section:nth-child(5) { animation-delay: 0.32s; }
+.reveal-section { animation: fadeUp 0.4s ease-out both; }
 
-.pill-cta {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 9px 20px; border-radius: 50px; font-size: 13.5px; font-weight: 600;
-  border: 1.5px solid var(--line); background: var(--surface);
-  cursor: pointer; transition: all 0.22s cubic-bezier(0.16,1,0.3,1);
-  text-decoration: none; color: var(--ink-2); white-space: nowrap;
+/* Hero Stat Cards (Under quote) */
+.hero-stat-cards {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 16px;
 }
-.pill-cta:hover {
-  border-color: var(--accent); color: var(--accent);
+.hero-stat-card {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  text-decoration: none;
+  color: #fff !important;
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  flex: 1 1 auto;
+  min-width: 110px;
+}
+.hero-stat-card:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(245, 158, 11, 0.5);
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px -4px rgba(255,102,0,0.25);
+  box-shadow: 0 8px 20px -4px rgba(0, 0, 0, 0.35), 0 0 12px rgba(245, 158, 11, 0.2);
 }
-.pill-cta .pill-arrow { transition: transform 0.2s ease; display: inline-block; }
-.pill-cta:hover .pill-arrow { transform: translateX(3px); }
-.pill-cta.pri {
-  background: linear-gradient(135deg, #FF6A00 0%, #EA580C 100%);
-  color: #fff !important; border-color: transparent;
-  box-shadow: 0 4px 14px -2px rgba(234,88,12,0.35), inset 0 1px 2px rgba(255,255,255,0.25);
+.hero-stat-card:active {
+  transform: scale(0.97) !important;
 }
-.pill-cta.pri:hover {
-  box-shadow: 0 10px 25px -4px rgba(234,88,12,0.5), inset 0 1px 2px rgba(255,255,255,0.25);
-  border-color: transparent;
-  transform: translateY(-2px);
+.hsc-icon-wrap {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  flex-shrink: 0;
+  font-size: 14px;
 }
-.pill-cta:active { transform: scale(0.96) !important; }
+.hsc-dot {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  animation: pulse-dot 2s infinite;
+}
+.hsc-content {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.hsc-val {
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.2;
+  color: #fff;
+  font-family: var(--f-head);
+  white-space: nowrap;
+}
+.hsc-lbl {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.65);
+  font-weight: 500;
+  white-space: nowrap;
+}
 
-.stat-chips {
-  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
-  font-size: 12.5px; color: var(--ink-3); margin-top: 14px;
-}
-.stat-chip-dot {
-  width: 7px; height: 7px; border-radius: 50%; background: var(--green);
-  display: inline-block; margin-right: 4px; flex-shrink: 0;
-  animation: pulse-dot 2.2s ease-in-out infinite;
-}
-.stat-sep { opacity: 0.3; font-size: 14px; }
-
-.dash-section-sep {
-  height: 1px; background: var(--line); margin: 28px 0 20px; opacity: 0.45;
-}
-
+/* Alert strip */
 .dash-alert-strip {
   display: flex; align-items: center; gap: 10px;
   padding: 10px 16px; border-radius: 10px; min-height: 44px;
   background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2);
-  font-size: 12.5px; color: var(--danger); font-weight: 500; margin-bottom: 20px;
+  font-size: 12.5px; color: var(--danger); font-weight: 500; margin-bottom: 16px;
 }
 
-.scroll-cue {
-  text-align: center; padding: 16px 0 4px;
-  color: rgba(255,255,255,0.4); font-size: 11.5px; letter-spacing: .03em;
-  animation: bounce-arrow 2s ease-in-out infinite; user-select: none;
+/* 4-Card Single Line Dashboard Grid */
+.dash-quad-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  align-items: stretch;
+}
+@media (max-width: 1200px) {
+  .dash-quad-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 640px) {
+  .dash-quad-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
-.module-pills { display: flex; flex-wrap: wrap; gap: 10px; }
-.module-pill {
-  display: inline-flex; align-items: center; gap: 7px;
-  padding: 8px 16px; border-radius: 50px; font-size: 13px; font-weight: 600;
-  border: 1.5px solid var(--line); background: var(--surface);
-  text-decoration: none; color: var(--ink-2); white-space: nowrap;
-  transition: all 0.2s cubic-bezier(0.16,1,0.3,1); cursor: pointer;
+/* Dash Hub Cards (BACE Management & BACE Preaching) */
+.dash-hub-card {
+  transition: transform 0.22s cubic-bezier(0.16,1,0.3,1), box-shadow 0.22s cubic-bezier(0.16,1,0.3,1) !important;
+  border: 1px solid var(--line-2);
 }
-.module-pill:hover {
-  border-color: var(--accent); color: var(--accent);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px -4px rgba(255,102,0,0.22);
+.dash-hub-card:hover {
+  transform: translateY(-3px) !important;
+  box-shadow: 0 12px 28px -6px rgba(0,0,0,0.12) !important;
 }
-.module-pill:active { transform: scale(0.96) !important; }
-
-.dash-sec-lbl {
-  font-size: 11px; font-weight: 700; text-transform: uppercase;
-  letter-spacing: .08em; color: var(--ink-3); margin-bottom: 12px;
+.dash-hub-card:hover .hub-arr {
+  transform: translateX(3px);
+  color: var(--accent);
+}
+.hub-arr {
+  transition: transform 0.2s ease, color 0.2s ease;
 }
 
-.hero-pills-row {
-  display: flex; align-items: center; gap: 10px;
-  flex-wrap: wrap; margin-top: 20px;
+/* Sub-action pills inside cards */
+.sub-action-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 11px;
+  border-radius: 50px;
+  font-size: 11.5px;
+  font-weight: 600;
+  border: 1px solid var(--line-2);
+  background: var(--surface);
+  color: var(--ink-2);
+  text-decoration: none;
+  transition: all 0.18s cubic-bezier(0.16,1,0.3,1);
+  white-space: nowrap;
 }
-.hero .stat-chips { color: rgba(255,255,255,0.5); margin-top: 10px; }
-.hero .stat-sep   { color: rgba(255,255,255,0.2); opacity: 1; }
-.hero .stat-chip-dot { background: #4ade80; }
+.sub-action-pill:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  transform: translateY(-1.5px);
+  box-shadow: 0 4px 12px -2px rgba(255,102,0,0.22);
+}
+.sub-action-pill:active {
+  transform: scale(0.96);
+}
 
 .btn:active { transform: scale(0.96) !important; }
 .btn { transition: all 0.2s cubic-bezier(0.16,1,0.3,1) !important; }
+/* Refined compact styles for 4-column layout */
+.dash-quad-grid .card {
+  min-height: 380px;
+  border-radius: var(--r-xl, 14px);
+}
+.dash-quad-grid .nectar-card-wrapper {
+  padding: 16px !important;
+}
+.dash-quad-grid .nectar-card-header {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.dash-quad-grid .nectar-card-title {
+  font-size: 13.5px !important;
+}
+.dash-quad-grid .nectar-portrait-wrap {
+  width: 52px !important;
+  height: 52px !important;
+  flex-shrink: 0;
+}
+.dash-quad-grid .nectar-quote-text {
+  font-size: 12px !important;
+  line-height: 1.5 !important;
+  max-height: 110px;
+  overflow-y: auto;
+}
+.dash-quad-grid .nectar-ambience-bar {
+  padding: 8px 10px !important;
+}
+.dash-quad-grid .card-h {
+  padding: 12px 14px;
+}
+.dash-quad-grid .card-b {
+  padding: 14px;
+}
 /* ===== END VERSION C ===== */
 </style>
 </head>
@@ -12440,19 +12527,53 @@ function hero(){
        <h1><span class="hero-greeting">Hare Krishna,</span> <span class="hero-name">${esc(displayName)} &#x1F64F;</span></h1>
        <p>${esc(ROLES[APP.user.role].name)} &middot; ${fmtLong(iso(TODAY))}</p>
        <div class="quote"><span class="quote-script">${dayQuote}</span></div>
-       <div class="hero-pills-row">
-         ${can('assign')?`<a class="pill-cta pri" href="#/assign">&#x1F4CB; Assign Seva <span class="pill-arrow">&#x2192;</span></a>`:`<a class="pill-cta pri" href="#/calendar">&#x1F4C5; Today <span class="pill-arrow">&#x2192;</span></a>`}
-         ${can('preaching')?`<a class="pill-cta" href="#/followups">&#x1F4DE; Follow-ups <span class="pill-arrow">&#x2192;</span></a>`:''}
-         <a class="pill-cta" href="#/devotees">&#x1F465; Devotees <span class="pill-arrow">&#x2192;</span></a>
-       </div>
-       <div class="stat-chips">
-         <span><span class="stat-chip-dot"></span>${overallBaceHealth}% Health</span>
-         <span class="stat-sep">|</span>
-         <span>&#x1F465; ${s.total} Devotees</span>
-         <span class="stat-sep">|</span>
-         <span>&#x1F3EB; ${actBatches} Batches</span>
-         <span class="stat-sep">|</span>
-         <span>&#x1F91D; ${s.volunteers} Volunteers</span>
+       <div class="hero-stat-cards">
+         <a class="hero-stat-card" href="#/attendance" title="Weekly BACE Health: Morning ${avgMorning}%, Deity ${avgDeity}%, Cleaning ${avgCleaning}%">
+           <div class="hsc-icon-wrap" style="background:rgba(34,197,94,0.18);color:#4ade80">
+             <span class="hsc-dot" style="background:#4ade80"></span>
+             <span>&#x1F6D5;</span>
+           </div>
+           <div class="hsc-content">
+             <div class="hsc-val">${overallBaceHealth}%</div>
+             <div class="hsc-lbl">BACE Health</div>
+           </div>
+         </a>
+         <a class="hero-stat-card" href="#/devotees" title="${s.active} active devotees">
+           <div class="hsc-icon-wrap" style="background:rgba(59,130,246,0.18);color:#60a5fa">
+             <span>&#x1F465;</span>
+           </div>
+           <div class="hsc-content">
+             <div class="hsc-val">${s.total}</div>
+             <div class="hsc-lbl">Devotees</div>
+           </div>
+         </a>
+         <a class="hero-stat-card" href="#/batches" title="${(DB.batches||[]).length} batches with ${inBatchesDevs} devotees">
+           <div class="hsc-icon-wrap" style="background:rgba(168,85,247,0.18);color:#c084fc">
+             <span>&#x1F3EB;</span>
+           </div>
+           <div class="hsc-content">
+             <div class="hsc-val">${actBatches}</div>
+             <div class="hsc-lbl">Batches</div>
+           </div>
+         </a>
+         <a class="hero-stat-card" href="#/assign" title="Volunteers in seva across ${s.depts} departments">
+           <div class="hsc-icon-wrap" style="background:rgba(245,158,11,0.18);color:#fbbf24">
+             <span>&#x1F91D;</span>
+           </div>
+           <div class="hsc-content">
+             <div class="hsc-val">${s.volunteers}</div>
+             <div class="hsc-lbl">Volunteers</div>
+           </div>
+         </a>
+         <a class="hero-stat-card" href="#/contacts" title="${s.newContacts} new contacts this month">
+           <div class="hsc-icon-wrap" style="background:rgba(236,72,153,0.18);color:#f472b6">
+             <span>&#x1F4C7;</span>
+           </div>
+           <div class="hsc-content">
+             <div class="hsc-val">${s.contacts||0}</div>
+             <div class="hsc-lbl">Contacts</div>
+           </div>
+         </a>
        </div>
      </div>
      <div class="hero-art-col">
@@ -12460,7 +12581,6 @@ function hero(){
        ${HERO_ART}
      </div>
    </div>
-   <div class="scroll-cue">&#x25BC; scroll to explore</div>
   </div>`;
 }
 function myToday(){
@@ -13346,86 +13466,87 @@ function viewDashboard(){
     ? section('⚠️ Needs Attention',`<div class="list">${attnItems.join('')}</div>`,'','dash_attn',true)
     : '';
   // Management card
-  const mgmtCard=`<div class="card pad" style="cursor:pointer;transition:box-shadow .18s ease,transform .18s ease" data-act="go" data-r="#/mgmt"
-    onmouseenter="this.style.boxShadow='0 8px 28px -6px rgba(234,88,12,0.22)';this.style.transform='translateY(-2px)'"
-    onmouseleave="this.style.boxShadow='';this.style.transform=''">
-    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
-      <div style="display:flex;align-items:center;gap:13px">
-        <div style="width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,#EA580C,#C2410C);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;box-shadow:0 4px 12px rgba(234,88,12,.22)">🛕</div>
-        <div>
-          <div style="font-weight:800;font-size:16px;font-family:var(--f-head);color:var(--ink)">BACE Management</div>
-          <div style="font-size:12px;color:var(--ink-3);margin-top:2px">Operations, seva rosters &amp; temple administration</div>
+  const mgmtCard=`<div class="card dash-hub-card" style="display:flex;flex-direction:column;justify-content:space-between;height:100%;margin-bottom:0">
+    <div class="card-b" style="display:flex;flex-direction:column;height:100%;padding:16px">
+      <a href="#/mgmt" style="display:flex;align-items:center;justify-content:space-between;text-decoration:none;color:inherit;margin-bottom:12px" title="Open BACE Management">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,#EA580C,#C2410C);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;box-shadow:0 3px 10px rgba(234,88,12,.25);color:#fff">&#x1F6D5;</div>
+          <div>
+            <div style="font-weight:800;font-size:14.5px;font-family:var(--f-head);color:var(--ink);line-height:1.2">BACE Management</div>
+            <div style="font-size:11px;color:var(--ink-3);margin-top:2px">Operations &amp; seva rosters</div>
+          </div>
+        </div>
+        <span style="font-size:16px;color:var(--ink-3)" class="hub-arr">&#x2192;</span>
+      </a>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:14px">
+        <div style="background:var(--paper-2);border-radius:9px;padding:7px 4px;border:1px solid var(--line-2);text-align:center">
+          <div style="font-size:9.5px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em">Done</div>
+          <div style="font-size:16px;font-weight:800;font-family:var(--f-head);color:${completionPct<75?'var(--danger)':'var(--accent)'}">${completionPct}%</div>
+        </div>
+        <div style="background:var(--paper-2);border-radius:9px;padding:7px 4px;border:1px solid var(--line-2);text-align:center">
+          <div style="font-size:9.5px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em">In Seva</div>
+          <div style="font-size:16px;font-weight:800;font-family:var(--f-head);color:var(--ink)">${tot.vol}</div>
+        </div>
+        <div style="background:var(--paper-2);border-radius:9px;padding:7px 4px;border:1px solid var(--line-2);text-align:center">
+          <div style="font-size:9.5px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em">Open</div>
+          <div style="font-size:16px;font-weight:800;font-family:var(--f-head);color:${unfilled>0?'var(--danger)':'var(--green)'}">${unfilled}</div>
         </div>
       </div>
-      <span style="font-size:18px;color:var(--ink-3);line-height:1;margin-top:2px">›</span>
-    </div>
-    <div class="grid g3" style="margin-top:16px;gap:10px">
-      <div style="background:var(--paper-2);border-radius:12px;padding:10px 12px;border:1px solid var(--line-2)">
-        <div style="font-size:11px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Completion</div>
-        <div style="font-size:22px;font-weight:800;font-family:var(--f-head);color:${completionPct<75?'var(--danger)':'var(--ink)'}">${completionPct}%</div>
-        <div style="font-size:11px;color:var(--ink-3)">this period</div>
+      <div style="margin-top:auto;display:flex;flex-wrap:wrap;gap:6px">
+        ${can('management')?`<a class="sub-action-pill" href="#/mgmt">&#x1F6D5; Dept Hub</a>`:''}
+        ${can('assign')?`<a class="sub-action-pill" href="#/assign">&#x1F64F; Assign Seva</a>`:''}
+        <a class="sub-action-pill" href="#/sops">&#x1F4D8; SOPs</a>
+        ${can('reports')?`<a class="sub-action-pill" href="#/reports">&#x1F4CA; Reports</a>`:''}
       </div>
-      <div style="background:var(--paper-2);border-radius:12px;padding:10px 12px;border:1px solid var(--line-2)">
-        <div style="font-size:11px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Volunteers</div>
-        <div style="font-size:22px;font-weight:800;font-family:var(--f-head);color:var(--ink)">${tot.vol}</div>
-        <div style="font-size:11px;color:var(--ink-3)">in seva across ${s.depts} depts</div>
-      </div>
-      <div style="background:var(--paper-2);border-radius:12px;padding:10px 12px;border:1px solid var(--line-2)">
-        <div style="font-size:11px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Unfilled</div>
-        <div style="font-size:22px;font-weight:800;font-family:var(--f-head);color:${unfilled>0?'var(--danger)':'var(--green)'}">${unfilled}</div>
-        <div style="font-size:11px;color:var(--ink-3)">seva slots open</div>
-      </div>
-    </div>
-    <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
-      ${can('management')?`<button class="btn sm" data-act="go" data-r="#/mgmt" onclick="event.stopPropagation()">🏛️ Dept Hub</button>`:''}
-      ${can('assign')?`<button class="btn sm" data-act="open-assign" data-type="Seva" onclick="event.stopPropagation()">📋 Assign Seva</button>`:''}
-      <button class="btn sm" data-act="go" data-r="#/sops" onclick="event.stopPropagation()">📘 SOPs</button>
-      <button class="btn sm" data-act="go" data-r="#/org" onclick="event.stopPropagation()">🧭 Hierarchy</button>
     </div>
   </div>`;
   // Preaching card
-  const preachCard=`<div class="card pad" style="cursor:pointer;transition:box-shadow .18s ease,transform .18s ease" data-act="go" data-r="#/preaching"
-    onmouseenter="this.style.boxShadow='0 8px 28px -6px rgba(79,70,229,0.22)';this.style.transform='translateY(-2px)'"
-    onmouseleave="this.style.boxShadow='';this.style.transform=''">
-    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
-      <div style="display:flex;align-items:center;gap:13px">
-        <div style="width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,#4F46E5,#3730A3);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;box-shadow:0 4px 12px rgba(79,70,229,.22)">📖</div>
-        <div>
-          <div style="font-weight:800;font-size:16px;font-family:var(--f-head);color:var(--ink)">BACE Preaching</div>
-          <div style="font-size:12px;color:var(--ink-3);margin-top:2px">Batches, contacts &amp; outreach</div>
+  const preachCard=`<div class="card dash-hub-card" style="display:flex;flex-direction:column;justify-content:space-between;height:100%;margin-bottom:0">
+    <div class="card-b" style="display:flex;flex-direction:column;height:100%;padding:16px">
+      <a href="#/preaching" style="display:flex;align-items:center;justify-content:space-between;text-decoration:none;color:inherit;margin-bottom:12px" title="Open BACE Preaching">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,#4F46E5,#3730A3);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;box-shadow:0 3px 10px rgba(79,70,229,.25);color:#fff">&#x1F4D6;</div>
+          <div>
+            <div style="font-weight:800;font-size:14.5px;font-family:var(--f-head);color:var(--ink);line-height:1.2">BACE Preaching</div>
+            <div style="font-size:11px;color:var(--ink-3);margin-top:2px">Batches &amp; outreach</div>
+          </div>
+        </div>
+        <span style="font-size:16px;color:var(--ink-3)" class="hub-arr">&#x2192;</span>
+      </a>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:14px">
+        <div style="background:var(--paper-2);border-radius:9px;padding:7px 4px;border:1px solid var(--line-2);text-align:center">
+          <div style="font-size:9.5px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em">Batches</div>
+          <div style="font-size:16px;font-weight:800;font-family:var(--f-head);color:var(--ink)">${batches.length}</div>
+        </div>
+        <div style="background:var(--paper-2);border-radius:9px;padding:7px 4px;border:1px solid var(--line-2);text-align:center">
+          <div style="font-size:9.5px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em">Contacts</div>
+          <div style="font-size:16px;font-weight:800;font-family:var(--f-head);color:var(--ink)">${s.contacts||0}</div>
+        </div>
+        <div style="background:var(--paper-2);border-radius:9px;padding:7px 4px;border:1px solid var(--line-2);text-align:center">
+          <div style="font-size:9.5px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em">Follow-up</div>
+          <div style="font-size:16px;font-weight:800;font-family:var(--f-head);color:${fuOverdue>0?'var(--danger)':'var(--green)'}">${fuOverdue}</div>
         </div>
       </div>
-      <span style="font-size:18px;color:var(--ink-3);line-height:1;margin-top:2px">›</span>
-    </div>
-    <div class="grid g3" style="margin-top:16px;gap:10px">
-      <div style="background:var(--paper-2);border-radius:12px;padding:10px 12px;border:1px solid var(--line-2)">
-        <div style="font-size:11px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Batches</div>
-        <div style="font-size:22px;font-weight:800;font-family:var(--f-head);color:var(--ink)">${batches.length}</div>
-        <div style="font-size:11px;color:var(--ink-3)">${totalBatchDevs} devotees</div>
+      <div style="margin-top:auto;display:flex;flex-wrap:wrap;gap:6px">
+        ${can('preaching')?`<a class="sub-action-pill" href="#/preaching">&#x1F4D6; Batch Hub</a>`:''}
+        ${can('preaching')?`<a class="sub-action-pill" href="#/contacts">&#x1F465; Contacts</a>`:''}
+        ${can('preaching')?`<a class="sub-action-pill" href="#/followups">&#x1F4DE; Follow-ups ${fuOverdue>0?`<span class="bdot">${fuOverdue}</span>`:''}</a>`:''}
+        <a class="sub-action-pill" href="#/care-followups">&#x1F33F; Care</a>
       </div>
-      <div style="background:var(--paper-2);border-radius:12px;padding:10px 12px;border:1px solid var(--line-2)">
-        <div style="font-size:11px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Contacts</div>
-        <div style="font-size:22px;font-weight:800;font-family:var(--f-head);color:var(--ink)">${s.contacts||0}</div>
-        <div style="font-size:11px;color:var(--ink-3)">${newContacts} new this month</div>
-      </div>
-      <div style="background:var(--paper-2);border-radius:12px;padding:10px 12px;border:1px solid var(--line-2)">
-        <div style="font-size:11px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Follow-ups</div>
-        <div style="font-size:22px;font-weight:800;font-family:var(--f-head);color:${fuOverdue>0?'var(--danger)':'var(--green)'}">${fuOverdue}</div>
-        <div style="font-size:11px;color:var(--ink-3)">overdue today</div>
-      </div>
-    </div>
-    <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
-      ${can('preaching')?`<button class="btn sm" data-act="go" data-r="#/preaching" onclick="event.stopPropagation()">🏫 Batch Hub</button>`:''}
-      ${can('preaching')?`<button class="btn sm" data-act="go" data-r="#/contacts" onclick="event.stopPropagation()">🌱 Contacts</button>`:''}
-      ${can('preaching')?`<button class="btn sm" data-act="go" data-r="#/followups" onclick="event.stopPropagation()">${fuOverdue>0?`⏰ Follow-ups <i class="bdot">${fuOverdue}</i>`:'⏰ Follow-ups'}</button>`:''}
     </div>
   </div>`;
   return hero()+
     (attnItems.length?`<div class="dash-alert-strip reveal-section">&#x23F0; <strong>${attnItems.length}</strong>&nbsp;item${attnItems.length>1?'s':''} need${attnItems.length===1?'s':''} attention <a class="btn sm" href="#/followups" style="margin-left:auto;flex-shrink:0">View &#x2192;</a></div>`:'')+
-    `<div class="reveal-section" style="margin-top:8px"><div class="grid g2" style="align-items:start">${dashboardCalendarWidget()}${prabhupadaNectarCard()}</div></div>` +
-    `<div class="reveal-section dash-section-sep"></div>` +
-    `<div class="reveal-section" style="margin-top:4px"><div class="dash-sec-lbl">&#x26A1; Quick Access</div><div class="module-pills">${can('management')?`<a class="module-pill" href="#/mgmt">&#x1F6D5; Management</a>`:''}${can('preaching')?`<a class="module-pill" href="#/preaching">&#x1F4D6; Preaching</a>`:''}${can('directory')?`<a class="module-pill" href="#/devotees">&#x1F465; Devotees</a>`:''}<a class="module-pill" href="#/calendar">&#x1F4C5; Calendar</a><a class="module-pill" href="#/sops">&#x1F4D8; SOPs</a>${can('assign')?`<a class="module-pill" href="#/assign">&#x1F64F; Assign Seva</a>`:''}${can('reports')?`<a class="module-pill" href="#/reports">&#x1F4CA; Reports</a>`:''}</div></div>`;
+    `<div class="reveal-section" style="margin-top:8px">
+      <div class="dash-quad-grid">
+        ${mgmtCard}
+        ${preachCard}
+        ${dashboardCalendarWidget()}
+        ${prabhupadaNectarCard()}
+      </div>
+    </div>`;
 }
+
 function funnelRows(){
   const s=STATS();
   return funnel([
