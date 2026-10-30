@@ -13523,22 +13523,77 @@ function viewDashboard(){
     </a>`;
   }).join('') : `<div style="text-align:center;padding:12px;color:var(--ink-3);font-size:12px">No departments active</div>`;
 
-  // Batch list for Preaching card
+  // 4 Level buttons for Preaching card (Level 1, Level 2, Level 3, Level 4)
   const allBatches = typeof activeBatches === 'function' ? activeBatches() : (DB.batches || []).filter(b => b.status === 'Active');
-  const topBatches = allBatches.slice(0, 4);
-  const batchListHtml = topBatches.length ? topBatches.map(b => {
-    const bDevs = (DB.devotees || []).filter(d => d.batch === b.id || ((d.batches || []).includes(b.id)));
-    return `<a href="#/batch/${b.id}" class="dash-list-row" style="display:flex;align-items:center;justify-content:space-between;padding:7px 9px;background:var(--paper-2);border-radius:9px;border:1px solid var(--line-2);text-decoration:none;color:var(--ink);margin-bottom:5px">
-      <div style="display:flex;align-items:center;gap:8px;min-width:0">
-        <div style="width:24px;height:24px;border-radius:6px;background:rgba(79,70,229,0.12);color:var(--indigo);font-size:10.5px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">L${b.level || 1}</div>
-        <div style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
-          <div style="font-size:12px;font-weight:700;color:var(--ink);line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(b.name)}</div>
-          <div style="font-size:10.5px;color:var(--ink-3);margin-top:1px">${bDevs.length} devotees &middot; Level ${b.level || 1}</div>
+  
+  const getLvlData = (lvl) => {
+    const bs = allBatches.filter(b => b.level === lvl || Number(b.level) === lvl);
+    const devs = (DB.devotees || []).filter(d => {
+      if (Number(d.level) === lvl) return true;
+      const b = (DB.batches || []).find(x => x.id === d.batch || ((d.batches || []).includes(x.id)));
+      return b && (b.level === lvl || Number(b.level) === lvl);
+    }).length;
+    return { count: bs.length, devs };
+  };
+
+  const lvlConfigs = [
+    {
+      lvl: 1,
+      name: 'Level 1',
+      bg: 'linear-gradient(135deg, rgba(37,99,235,0.08) 0%, rgba(59,130,246,0.16) 100%)',
+      border: 'rgba(37,99,235,0.36)',
+      badgeBg: '#2563EB',
+      textColor: '#1E40AF',
+      subColor: '#2563EB',
+      hoverBorder: '#2563EB'
+    },
+    {
+      lvl: 2,
+      name: 'Level 2',
+      bg: 'linear-gradient(135deg, rgba(124,58,237,0.08) 0%, rgba(139,92,246,0.16) 100%)',
+      border: 'rgba(124,58,237,0.36)',
+      badgeBg: '#7C3AED',
+      textColor: '#5B21B6',
+      subColor: '#6D28D9',
+      hoverBorder: '#7C3AED'
+    },
+    {
+      lvl: 3,
+      name: 'Level 3',
+      bg: 'linear-gradient(135deg, rgba(217,119,6,0.08) 0%, rgba(245,158,11,0.16) 100%)',
+      border: 'rgba(217,119,6,0.38)',
+      badgeBg: '#D97706',
+      textColor: '#92400E',
+      subColor: '#B45309',
+      hoverBorder: '#D97706'
+    },
+    {
+      lvl: 4,
+      name: 'Level 4',
+      bg: 'linear-gradient(135deg, rgba(5,150,105,0.08) 0%, rgba(16,185,129,0.16) 100%)',
+      border: 'rgba(5,150,105,0.38)',
+      badgeBg: '#059669',
+      textColor: '#065F46',
+      subColor: '#047857',
+      hoverBorder: '#059669'
+    }
+  ];
+
+  const levelButtonsHtml = lvlConfigs.map(c => {
+    const data = getLvlData(c.lvl);
+    return `<a href="#/batches" class="dash-level-btn" style="display:flex;align-items:center;justify-content:space-between;padding:8px 11px;background:${c.bg};border:1.5px solid ${c.border};border-radius:10px;text-decoration:none;margin-bottom:6px;transition:all .18s ease;cursor:pointer"
+      onmouseenter="this.style.borderColor='${c.hoverBorder}';this.style.transform='translateY(-1.5px)';this.style.boxShadow='0 4px 14px rgba(0,0,0,0.08)'"
+      onmouseleave="this.style.borderColor='${c.border}';this.style.transform='';this.style.boxShadow=''">
+      <div style="display:flex;align-items:center;gap:9px">
+        <span style="background:${c.badgeBg};color:#fff;font-weight:800;font-size:11px;padding:3px 7px;border-radius:6px;line-height:1">L${c.lvl}</span>
+        <div>
+          <div style="font-size:13px;font-weight:800;color:${c.textColor};line-height:1.2">${c.name}</div>
+          <div style="font-size:10.5px;color:${c.subColor};font-weight:600;margin-top:1px">${data.count} ${data.count===1?'batch':'batches'} &middot; ${data.devs} devotees</div>
         </div>
       </div>
-      <span style="font-size:11px;font-weight:700;color:var(--indigo);flex-shrink:0;margin-left:6px">${bDevs.length} &#x1F465; &#x2192;</span>
+      <span style="font-size:12px;font-weight:700;color:${c.textColor};display:flex;align-items:center;gap:3px">View &#x2192;</span>
     </a>`;
-  }).join('') : `<div style="text-align:center;padding:12px;color:var(--ink-3);font-size:12px">No batches active</div>`;
+  }).join('');
 
   // Management Card
   const mgmtCard=`<div class="card dash-hub-card" style="display:flex;flex-direction:column;justify-content:space-between;height:100%;margin-bottom:0">
@@ -13581,7 +13636,7 @@ function viewDashboard(){
     </div>
   </div>`;
 
-  // Preaching Card
+  // Preaching Card (4 horizontal contrasting colored buttons for L1, L2, L3, L4)
   const preachCard=`<div class="card dash-hub-card" style="display:flex;flex-direction:column;justify-content:space-between;height:100%;margin-bottom:0">
     <div class="card-b" style="display:flex;flex-direction:column;height:100%;padding:15px">
       <a href="#/preaching" style="display:flex;align-items:center;justify-content:space-between;text-decoration:none;color:inherit;margin-bottom:12px" title="Open BACE Preaching">
@@ -13610,18 +13665,17 @@ function viewDashboard(){
         </div>
       </div>
 
-      <div style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-3);margin-bottom:7px">Respective Batches</div>
+      <!-- 4 Horizontal Level Buttons -->
       <div style="display:flex;flex-direction:column;gap:1px;margin-bottom:6px;flex:1">
-        ${batchListHtml}
+        ${levelButtonsHtml}
       </div>
 
       <div style="margin-top:auto;padding-top:10px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--line-2)">
-        <a href="#/preaching" style="font-size:12px;font-weight:700;color:var(--indigo);text-decoration:none">All ${batches.length} batches &#x2192;</a>
+        <a href="#/batches" style="font-size:12px;font-weight:700;color:var(--indigo);text-decoration:none">All ${batches.length} batches &#x2192;</a>
         ${can('contacts')?`<a class="btn sm" href="#/contacts" style="font-size:11px;padding:3px 9px;border-radius:50px">&#x1F465; Contacts</a>`:''}
       </div>
     </div>
   </div>`;
-
   return hero()+
     (attnItems.length?`<div class="dash-alert-strip reveal-section">&#x23F0; <strong>${attnItems.length}</strong>&nbsp;item${attnItems.length>1?'s':''} need${attnItems.length===1?'s':''} attention <a class="btn sm" href="#/followups" style="margin-left:auto;flex-shrink:0">View &#x2192;</a></div>`:'')+
     `<div class="reveal-section" style="margin-top:8px">
