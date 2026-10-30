@@ -8398,7 +8398,8 @@ html.theme-transitioning .pillar-item {
   0%, 100% { opacity: 1; transform: scale(1); }
   50%       { opacity: 0.5; transform: scale(1.3); }
 }
-.reveal-section { animation: fadeUp 0.4s ease-out both; }
+/* No forced fade animations on reveal-section so updates are instant and never blink */
+.reveal-section { }
 
 /* Hero Stat Cards (Under quote - high-contrast styling) */
 .hero-stat-cards {
@@ -13309,6 +13310,14 @@ function pillarCards(withCalendar=false){
   </div>`;
 }
 /* ========== COMPACT DASHBOARD CALENDAR WIDGET ========== */
+function updateDashCalWidget(){
+  const el = document.getElementById('dashCalWidget');
+  if(el){
+    el.outerHTML = dashboardCalendarWidget();
+    return true;
+  }
+  return false;
+}
 function dashboardCalendarWidget(){
   const calView = APP.filters.dashCalView || 'month';
   const today = new Date(TODAY);
@@ -13391,7 +13400,7 @@ function dashboardCalendarWidget(){
       </div>`;
   }
   const isTodayActive = (offset === 0) && (!APP.filters.dashCalSelectedDate || APP.filters.dashCalSelectedDate === iso(TODAY));
-    return `<div class="card" style="margin-bottom:0;display:flex;flex-direction:column;height:100%">
+    return `<div class="card" id="dashCalWidget" style="margin-bottom:0;display:flex;flex-direction:column;height:100%">
     <div class="card-h"><h3 style="display:inline-flex;align-items:center">📅 Calendar</h3><div class="r"><a class="btn sm" href="#/calendar">Full calendar →</a></div></div>
     <div class="card-b" style="display:flex;flex-direction:column;flex:1">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
@@ -31655,7 +31664,14 @@ document.addEventListener('click',e=>{
     }
     break;
   }
-  case 'dash-cal-view':{stop();APP.filters.dashCalView=t.dataset.v;APP.filters.dashCalOff=0;APP.filters.dashCalSelectedDate=iso(TODAY);render();break}
+  case 'dash-cal-view':{
+    stop();
+    APP.filters.dashCalView=t.dataset.v;
+    APP.filters.dashCalOff=0;
+    APP.filters.dashCalSelectedDate=iso(TODAY);
+    if(!updateDashCalWidget()) render();
+    break;
+  }
   case 'dash-cal-nav':{
     stop();
     if(!APP.filters) APP.filters={};
@@ -31666,12 +31682,12 @@ document.addEventListener('click',e=>{
       APP.filters.dashCalOff = 0;
       APP.filters.dashCalSelectedDate = iso(TODAY);
       if(isAlreadyOnToday){
-        toast("Today is " + fmtLong(iso(TODAY)), '📅');
+        toast("Today is " + fmtLong(iso(TODAY)), 'ðŸ“…');
       }
     } else {
       APP.filters.dashCalOff=(APP.filters.dashCalOff||0)+d;
     }
-    render();
+    if(!updateDashCalWidget()) render();
     break;
   }
   case 'dash-cal-day':{
@@ -31683,7 +31699,7 @@ document.addEventListener('click',e=>{
         go('#/calendar');
       } else {
         APP.filters.dashCalSelectedDate=dt;
-        render();
+        if(!updateDashCalWidget()) render();
       }
     }
     break;
