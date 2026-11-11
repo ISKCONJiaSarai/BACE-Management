@@ -41,24 +41,17 @@ const DEFAULT_CAMPS = [
   }
 ];
 
-// Seed initial camps if none exist
-async function ensureSeedCamps() {
+// Clean up any historical dummy seed camps
+(async function cleanupDummySeedCamps() {
   try {
-    const count = await Camp.countDocuments();
-    if (count === 0) {
-      await Camp.insertMany(DEFAULT_CAMPS);
-      console.log('Seeded initial flagship camps into MongoDB');
-    }
-  } catch (err) {
-    console.error('Error seeding initial camps:', err.message);
-  }
-}
+    await Camp.deleteMany({ customId: { $in: ['camp_1', 'camp_2', 'camp_3'] } });
+  } catch (e) {}
+})();
 
 // @route   GET /api/camps
 // @desc    Get all flagship camps / retreats
 router.get('/', async (req, res) => {
   try {
-    await ensureSeedCamps();
     const camps = await Camp.find().sort({ createdAt: -1 });
     res.json({
       success: true,

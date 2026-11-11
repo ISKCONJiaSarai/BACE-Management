@@ -83,24 +83,17 @@ const DEFAULT_OUTINGS = [
   }
 ];
 
-// Seed initial outings if none exist
-async function ensureSeedOutings() {
+// Clean up any historical dummy seed outings
+(async function cleanupDummySeedOutings() {
   try {
-    const count = await Outing.countDocuments();
-    if (count === 0) {
-      await Outing.insertMany(DEFAULT_OUTINGS);
-      console.log('Seeded initial community outings into MongoDB');
-    }
-  } catch (err) {
-    console.error('Error seeding initial outings:', err.message);
-  }
-}
+    await Outing.deleteMany({ customId: { $in: ['out1', 'out2', 'out3', 'out4', 'out5', 'out6'] } });
+  } catch (e) {}
+})();
 
 // @route   GET /api/outings
 // @desc    Get all community outings
 router.get('/', async (req, res) => {
   try {
-    await ensureSeedOutings();
     const outings = await Outing.find().sort({ date: -1 });
     res.json({
       success: true,

@@ -9833,21 +9833,20 @@ Object.defineProperty(DB,'events',{get:()=>DB.activities});
 const logAudit=(action,record)=>DB.audit.unshift({id:uid('au'),user:(APP.user?nameOf(APP.user.devotee):'System'),action,record,at:'Just now',ts:Date.now()});
 
 (function seed(){
-  /* departments */
+  /* departments: 20 Official BACE Departments initialized clean */
   DEPT_SEED.forEach(([name,desc,icon,color,category,freq,module],i)=>DB.departments.push({
     id:'dp'+(i+1),name,desc,icon,color,category,reportFreq:freq,module:module||null,
-    head:null,assistants:[],status:'Active',perf:ri(75,95),
-    budget:{allocated:ri(10,60)*1000,spent:0},created:iso(dayOff(-ri(200,700)))}));
-  DB.departments.forEach(d=>d.budget.spent=Math.round(d.budget.allocated*(ri(35,75)/100)));
+    head:'d1',assistants:[],status:'Active',perf:0,
+    budget:{allocated:0,spent:0},created:iso(dayOff(-200))}));
 
-  /* batches: Taksharya (sample Level 1), Narad Sabha (Level 3), Gaurvani Sabha (Level 3) */
+  /* batches: Official BACE Batches initialized clean */
   BATCH_SEED.forEach(([name,level,desc,day,time,budget,bid])=>DB.batches.push({
     id:bid,name,level,desc,day,time,freq:'Weekly',status:'Active',
     coordinator:null,facilitators:[],start:iso(dayOff(-360)),
-    budget:{allocated:budget,spent:Math.round(budget*0.45)}}));
+    budget:{allocated:0,spent:0}}));
 
-  /* devotees: Only Surya Narayana Das (Area Leader) is seeded locally.
-     All other devotees are loaded from the server via syncDevoteesFromServer(). */
+  /* devotees: Real leadership accounts seeded initially.
+     All other devotees are synced live from the server/Google Sheet. */
 
   // 1. Surya Narayana Das (Area Leader & Gaurvani Sabha)
   const surya = {
@@ -9940,765 +9939,57 @@ const logAudit=(action,record)=>DB.audit.unshift({id:uid('au'),user:(APP.user?na
   DB.devotees.push(counsellor1);
   DB.devotees.push(counsellor2);
 
-  // All other devotees are loaded from the server — no fake seed data.
-  // These are null so downstream seed references fall back to 'd1' (Area Leader).
-  let audaryaId = null, dhirendraId = null, prashantId = null, sureshId = null;
-
-  // Batch coordinators/facilitators will be set after server sync.
-
   DB.batches.forEach(b => {
     if (!b.coordinator) b.coordinator = 'd1';
     if (!b.facilitators) b.facilitators = [];
     if (!b.incharge) b.incharge = 'd1';
-    if (!b.volunteers) {
-      b.volunteers = [];
-    }
-  });
-  // Assign department heads
-  DB.departments.forEach((dp) => {
-    if (dp.name.includes('Morning') || dp.name.includes('Area Leader') || dp.name.includes('Deity') || dp.name.includes('OC')) {
-      dp.head = 'd1';
-    } else if (dp.name.includes('Preaching') || dp.name.includes('Sankirtan')) {
-      dp.head = audaryaId || 'd1';
-    } else {
-      dp.head = 'd1';
-    }
+    if (!b.volunteers) b.volunteers = [];
   });
 
-  /* 1 Sample Care Group (Group 1 · Gaura) */
-  DB.careGroups.push({
-    id: 'cg1',
-    name: 'Group 1 · Gaura',
-    leader: audaryaId || 'd1',
-    facilitator: audaryaId || 'd1',
-    freq: 'Weekly',
-    day: 'Mon',
-    time: '7:30 pm',
-    place: 'Temple Hall',
-    status: 'Active',
-    desc: 'Weekly gathering with japa, reading and prasadam.',
-    last: iso(dayOff(-7)),
-    next: iso(dayOff(1)),
-    members: ['d_sample'],
-    attendance: 85,
-    meetings: [
-      { date: iso(dayOff(-7)), present: 6, note: 'Inspiring discussion on Bhagavad-gita Chapter 2.' }
-    ]
-  });
-
-  /* Seed Contacts across batches & stages */
-  DB.contacts.push({
-    id: 'c1',
-    name: 'Amit Verma',
-    phone: '+91 9876543210',
-    email: 'amit.verma@example.in',
-    org: 'IIT Delhi',
-    year: '2nd',
-    profession: 'B.Tech 2nd year',
-    source: 'Campus stall',
-    firstContact: iso(dayOff(-15)),
-    firstInteraction: 'Took a Bhagavad-gita at the campus stall',
-    interests: 'Philosophy, Meditation, Prasadam',
-    stage: 'Interested',
-    batch: 'b1',
-    preacher: dhirendraId || 'd1',
-    facilitator: audaryaId || 'd1',
-    last: iso(dayOff(-2)),
-    classes: 1,
-    events: 1,
-    notes: 'Interested in the philosophy behind karma and yoga.',
-    timeline: [
-      { date: iso(dayOff(-15)), title: 'First contact', desc: 'Met through campus stall.', tone: 'saffron' },
-      { date: iso(dayOff(-2)), title: 'Attended introductory session', desc: 'Joined Sunday youth gathering.', tone: 'teal' }
-    ]
-  });
-  DB.contacts.push({
-    id: 'c2',
-    name: 'Rahul Mishra',
-    phone: '+91 9811223344',
-    email: 'rahul.mishra@iitd.ac.in',
-    org: 'IIT Delhi',
-    year: '1st',
-    profession: 'B.Tech 1st year',
-    source: 'Campus stall',
-    firstContact: iso(dayOff(-30)),
-    firstInteraction: 'Invited to evening discussion on science and spirituality',
-    interests: 'Science & Spirituality, Meditation',
-    stage: 'Attending class',
-    batch: 'b1',
-    preacher: dhirendraId || 'd1',
-    facilitator: null,
-    last: iso(dayOff(-3)),
-    classes: 3,
-    events: 1,
-    notes: 'Very receptive, regularly brings questions to class.',
-    timeline: [{ date: iso(dayOff(-30)), title: 'First contact', desc: 'Book table interaction.', tone: 'saffron' }]
-  });
-  DB.contacts.push({
-    id: 'c3',
-    name: 'Dr. Saurabh Sharma',
-    phone: '+91 9711882233',
-    email: 'saurabh.faculty@iitd.ac.in',
-    org: 'IIT Delhi (staff)',
-    year: '—',
-    profession: 'Faculty / Assistant Professor',
-    source: 'Friend referral',
-    firstContact: iso(dayOff(-60)),
-    firstInteraction: 'Referred by senior devotee for faculty circle',
-    interests: 'Bhagavad Gita, Leadership, Stress Management',
-    stage: 'Regular participant',
-    batch: 'b3',
-    preacher: 'd1',
-    facilitator: audaryaId || 'd1',
-    last: iso(dayOff(-5)),
-    classes: 6,
-    events: 2,
-    notes: 'Keen on hosting weekend study circle for colleagues.',
-    timeline: [{ date: iso(dayOff(-60)), title: 'Introduced', desc: 'Connected through academic circle.', tone: 'indigo' }]
-  });
-  DB.contacts.push({
-    id: 'c4',
-    name: 'Vikram Patel',
-    phone: '+91 9955443322',
-    email: 'vikram.dtu@example.org',
-    org: 'DTU',
-    year: '3rd',
-    profession: 'B.Tech 3rd year',
-    source: 'Instagram',
-    firstContact: iso(dayOff(-20)),
-    firstInteraction: 'DM asking about youth meditation classes',
-    interests: 'Kirtan, Youth Camp',
-    stage: 'Interested',
-    batch: 'b2',
-    preacher: audaryaId || 'd1',
-    facilitator: null,
-    last: iso(dayOff(-6)),
-    classes: 2,
-    events: 1,
-    notes: 'Interested in visiting the BACE during the weekend.',
-    timeline: [{ date: iso(dayOff(-20)), title: 'Online inquiry', desc: 'Responded on Instagram.', tone: 'saffron' }]
-  });
-  DB.contacts.push({
-    id: 'c5',
-    name: 'Aniket Gupta',
-    phone: '+91 9877665544',
-    email: 'aniket.gupta@nsut.ac.in',
-    org: 'NSUT',
-    year: '4th',
-    profession: 'B.Tech 4th year',
-    source: 'Festival',
-    firstContact: iso(dayOff(-45)),
-    firstInteraction: 'Janmashtami festival youth volunteer',
-    interests: 'Preaching, Book Distribution, Management',
-    stage: 'Attending class',
-    batch: 'b7',
-    preacher: dhirendraId || 'd1',
-    facilitator: null,
-    last: iso(dayOff(-4)),
-    classes: 4,
-    events: 2,
-    notes: 'Wants to join Narad Sabha preacher training programme.',
-    timeline: [{ date: iso(dayOff(-45)), title: 'Festival seva', desc: 'Volunteered during festival.', tone: 'green' }]
-  });
-
-  /* Follow-ups start empty — only real created follow-ups are retained */
-
-  /* 1 Sample Seva Template & Activity + Narad & Gaurvani weekly classes + 1 Event + 1 Task */
-  const kitchenDept = DB.departments.find(d => d.name.includes('Kitchen')) || DB.departments[0];
-  const tplKitchen = {
-    id: 'tpl1',
-    name: 'Sunday Feast Prasadam Cooking',
-    type: 'Seva',
-    dept: kitchenDept.id,
-    batch: null,
-    freq: 'Weekly',
-    start: '08:00',
-    end: '13:00',
-    location: 'BACE Kitchen',
-    need: 2,
-    skills: ['Cooking'],
-    priority: 'High',
-    desc: 'Prasadam preparation for Sunday feast.',
-    status: 'Active',
-    created: iso(dayOff(-60))
-  };
-  DB.templates.push(tplKitchen);
-
-  let deletedActIds = new Set();
-  try {
-    const delRaw = localStorage.getItem('bace_deleted_activities_store');
-    if(delRaw) deletedActIds = new Set(JSON.parse(delRaw));
-  } catch(e){}
-  const addSeedAct = a => {
-    if(!a.prasadamMenu) a.prasadamMenu = '';
-    if(!deletedActIds.has(a.id)) DB.activities.push(a);
-  };
-
-  addSeedAct({
-    id: 'ac_s1',
-    type: 'Seva',
-    name: 'Sunday Feast Prasadam Cooking',
-    title: 'Sunday Feast Prasadam Cooking',
-    cat: 'Services',
-    dept: tplKitchen.dept,
-    batch: null,
-    date: iso(TODAY),
-    start: '08:00',
-    end: '13:00',
-    location: 'BACE Kitchen',
-    desc: 'Prasadam cooking for Sunday feast.',
-    priority: 'High',
-    need: 2,
-    vols: 2,
-    skills: ['Cooking'],
-    responsible: 'd1',
-    owner: 'd1',
-    templateId: 'tpl1',
-    recurrence: 'Weekly',
-    overridden: false,
-    status: 'In Progress',
-    actionItems: [],
-    budget: { allocated: 5000, spent: 3200 },
-    report: null,
-    proof: null
-  });
-  DB.assignments.push({
-    id: 'as1',
-    activity: 'ac_s1',
-    devotee: 'd_sample',
-    state: 'Accepted',
-    actualPerformer: null,
-    completedAt: null
-  });
-
-  addSeedAct({
-    id: 'ac_e1',
-    type: 'Event',
-    name: 'Sunday Love Feast & Kirtan',
-    title: 'Sunday Love Feast & Kirtan',
-    cat: 'Festivals',
-    dept: null,
-    batch: null,
-    date: iso(dayOff(3)),
-    start: '16:00',
-    end: '20:00',
-    location: 'Temple Hall',
-    desc: 'Weekly community gathering with kirtan, spiritual discourse and sanctified feast.',
-    priority: 'High',
-    need: 4,
-    vols: 4,
-    skills: ['Hospitality'],
-    responsible: 'd1',
-    owner: 'd1',
-    status: 'Scheduled',
-    actionItems: [
-      { t: 'Confirm hall setup', done: true },
-      { t: 'Coordinate prasadam menu', done: true },
-      { t: 'Kirtan lead confirmed', done: false }
-    ],
-    budget: { allocated: 10000, spent: 0 },
-    recurrence: 'One time',
-    templateId: null,
-    expected: 60
-  });
-
-  addSeedAct({
-    id: 'ac_c1',
-    type: 'Class',
-    name: 'Narad Sabha Weekly Study',
-    title: 'Narad Sabha Weekly Study',
-    cat: 'Classes',
-    dept: null,
-    batch: 'b7',
-    date: iso(dayOff(0)),
-    start: '18:00',
-    end: '19:30',
-    location: 'Jia Sarai BACE',
-    desc: 'Weekly scriptural study and discussion for Narad Sabha.',
-    priority: 'High',
-    need: 2,
-    vols: 2,
-    skills: ['Teaching'],
-    responsible: dhirendraId || 'd1',
-    owner: dhirendraId || 'd1',
-    templateId: null,
-    recurrence: 'Weekly',
-    status: 'Scheduled',
-    actionItems: [],
-    budget: { allocated: 2000, spent: 0 },
-    report: null,
-    expected: 19
-  });
-
-  addSeedAct({
-    id: 'ac_c2',
-    type: 'Class',
-    name: 'Gaurvani Sabha Weekly Study',
-    title: 'Gaurvani Sabha Weekly Study',
-    cat: 'Classes',
-    dept: null,
-    batch: 'b8',
-    date: iso(dayOff(4)),
-    start: '18:30',
-    end: '20:00',
-    location: 'Jia Sarai BACE',
-    desc: 'Weekly discourse and sadhana circle for Gaurvani Sabha.',
-    priority: 'High',
-    need: 2,
-    vols: 2,
-    skills: ['Teaching'],
-    responsible: audaryaId || 'd1',
-    owner: audaryaId || 'd1',
-    templateId: null,
-    recurrence: 'Weekly',
-    status: 'Scheduled',
-    actionItems: [],
-    budget: { allocated: 2000, spent: 0 },
-    report: null,
-    expected: 18
-  });
-
-  addSeedAct({
-    id: 'ac_c3',
-    type: 'Class',
-    name: 'Bhagavad-gita Foundation',
-    title: 'Bhagavad-gita Foundation',
-    cat: 'Classes',
-    dept: null,
-    batch: 'b1',
-    date: iso(dayOff(1)),
-    start: '18:30',
-    end: '20:00',
-    location: 'Seminar Room',
-    desc: 'Foundational class for newcomers.',
-    priority: 'Medium',
-    need: 1,
-    vols: 1,
-    skills: ['Teaching'],
-    responsible: audaryaId || 'd1',
-    owner: audaryaId || 'd1',
-    templateId: null,
-    recurrence: 'Weekly',
-    status: 'Scheduled',
-    actionItems: [],
-    budget: { allocated: 1500, spent: 0 },
-    report: null,
-    expected: 10
-  });
-
-  addSeedAct({
-    id: 'ac_t1',
-    type: 'Task',
-    name: 'Submit weekly seva report',
-    title: 'Submit weekly seva report',
-    cat: 'Management',
-    dept: tplKitchen.dept,
-    batch: null,
-    date: iso(TODAY),
-    start: '',
-    end: '',
-    location: '',
-    desc: 'Review completed services and enter report into the portal.',
-    priority: 'Medium',
-    need: 1,
-    vols: 1,
-    skills: [],
-    responsible: 'd1',
-    owner: 'd1',
-    status: 'In Progress',
-    actionItems: [],
-    budget: { allocated: 0, spent: 0 },
-    recurrence: 'One time',
-    templateId: null,
-    due: iso(dayOff(1))
-  });
-  DB.assignments.push({
-    id: 'as2',
-    activity: 'ac_t1',
-    devotee: 'd1',
-    state: 'Accepted',
-    actualPerformer: null,
-    completedAt: null
-  });
-
-  DB.activities.forEach(a => { if (!a.due) a.due = a.date; if (!a.title) a.title = a.name; });
-
-  /* 1 Sample Attendance Record per category */
-  DB.attendance.push({ id: 'at1', category: 'Seva', ref: 'ac_s1', devotee: 'd_sample', date: iso(dayOff(-7)), status: 'Present' });
-  DB.attendance.push({ id: 'at2', category: 'Preaching batch', ref: 'ac_c3', devotee: 'd_sample', date: iso(dayOff(-7)), status: 'Present' });
-  DB.attendance.push({ id: 'at3', category: 'Morning programme', ref: 'mp1', devotee: 'd1', date: iso(TODAY), status: 'Present' });
-
-  /* 1 Sample Inventory item & 1 BBT book + 1 Request */
-  DB.inventory.push({ id: 'inv1', name: 'Mridanga', cat: 'Sankirtan', total: 6, issued: 1, type: 'Item' });
-  DB.inventory.push({ id: 'inv2', name: 'Bhagavad-gita As It Is', cat: 'Book', total: 100, issued: 4, type: 'Book' });
-  DB.invRequests.push({
-    id: 'ir1',
-    item: 'inv2',
-    devotee: 'd_sample',
-    qty: 4,
-    purpose: 'Campus book distribution',
-    requested: iso(dayOff(-2)),
-    status: 'Issued',
-    approvedBy: audaryaId || 'd1',
-    due: iso(dayOff(12)),
-    returned: null
-  });
-
-  /* 1 Sample Kitchen menu, rebate & feedback */
-  DB.menus.push({
-    id: 'mn1',
-    date: iso(TODAY),
-    breakfast: 'Poha & milk, bananas',
-    lunch: 'Rice, dal, seasonal sabji, fresh salad',
-    dinner: 'Roti, dal, sabji',
-    announcement: '',
-    by: 'd1'
-  });
-  DB.rebates.push({
-    id: 'rb1',
-    devotee: 'd_sample',
-    from: iso(TODAY),
-    to: iso(dayOff(3)),
-    reason: 'Exams — eating at hostel mess',
-    status: 'Pending',
-    days: 3
-  });
-  DB.feedback.push({
-    id: 'fb1',
-    devotee: 'd_sample',
-    date: iso(TODAY),
-    meal: 'Lunch',
-    rating: 5,
-    note: 'Prasadam was fresh and delicious.'
-  });
-
-  /* 1 Sample Morning Program QR session */
-  DB.qrSessions.push({
-    id: 'qr1',
-    date: iso(TODAY),
-    window: '04:25 – 05:05',
-    code: '108108',
-    rotateSec: 30,
-    checkins: [{ devotee: 'd1', at: '04:35', device: 'mobile' }],
-    corrections: []
-  });
-
-  /* 1 Sample SOP */
-  DB.sops.push({
-    id: 'sop1',
-    name: 'Deity Worship SOP',
-    cat: 'BACE Management',
-    owner: 'Deity Department',
-    freq: 'Daily',
-    status: 'Active',
-    version: 'v1.0',
-    updated: iso(dayOff(-30)),
-    responsible: 'd1',
-    purpose: 'Maintain highest standards of cleanliness and punctuality for deity worship.',
-    scope: 'Applies to everyone serving on the altar.',
-    procedure: [
-      'Check the board before starting.',
-      'Confirm bhoga offering is clean and punctual.',
-      'Carry out the aarti and seva to the written standard.',
-      'Hand over altar cleanly with a short log note.'
-    ],
-    checklist: [
-      { t: 'Altar cleaned', done: true },
-      { t: 'Bhoga offered on time', done: true },
-      { t: 'Aarti sung with devotion', done: true },
-      { t: 'Altar safely closed', done: false }
-    ],
-    standards: 'Nothing is considered done until it is recorded in the system.',
-    escalation: 'Unresolved in 24 hours → Head pujari → Area Leader.',
-    versions: [{ v: 'v1.0', at: iso(dayOff(-60)), by: 'Surya Narayana Das' }]
-  });
-
-  /* 1 Sample Report per category */
-  DB.reports.push({
-    id: 'rp1',
-    kind: 'Department weekly',
-    dept: tplKitchen.dept,
-    batch: null,
-    period: 'Week ending ' + fmtD(iso(dayOff(-2))),
-    submitted: iso(dayOff(-1)),
-    status: 'Approved',
-    by: 'd1',
-    activities: 'Daily prasadam cooking and distribution ran smoothly.',
-    attendance: 92,
-    volunteers: 5,
-    pending: 1,
-    challenges: 'None this week.',
-    needs: 'Nothing pending.',
-    next: 'Maintain schedule.'
-  });
-  DB.reports.push({
-    id: 'rp2',
-    kind: 'Preaching weekly',
-    batch: 'b7',
-    dept: null,
-    period: 'Week ending ' + fmtD(iso(dayOff(-2))),
-    submitted: iso(dayOff(-1)),
-    status: 'Submitted',
-    by: dhirendraId || 'd1',
-    newContacts: 1,
-    firstMeetings: 1,
-    followups: 2,
-    classes: 1,
-    attendanceTotal: 18,
-    newParticipants: 1,
-    regular: 17,
-    inactive: 1,
-    attendance: 95,
-    volunteers: 4,
-    story: 'Narad Sabha members actively engaged in scriptural study and evening service.',
-    challenges: 'None.',
-    next: 'Continue regular classes and seva training.'
-  });
-  DB.reports.push({
-    id: 'rp3',
-    kind: 'Care weekly',
-    batch: null,
-    dept: null,
-    period: 'Week ending ' + fmtD(iso(dayOff(-2))),
-    submitted: iso(dayOff(-1)),
-    status: 'Submitted',
-    by: audaryaId || 'd1',
-    activities: 'Group 1 meeting conducted with good turnout.',
-    attendance: 85,
-    volunteers: 2,
-    pending: 0,
-    challenges: 'None.',
-    needs: 'None.',
-    next: 'Follow up with sample devotee.'
-  });
-
-  /* 1 Sample Devotee Care record for each sub-section */
-  DB.meetings.push({
-    id: 'mt1',
-    devotee: 'd_sample',
-    date: iso(dayOff(-7)),
-    senior: audaryaId || 'd1',
-    type: 'Personal meeting',
-    area: 'Sadhana',
-    points: 'Discussion on morning japa meditation and college study schedule.',
-    actions: 'Maintain steady 4 rounds and attend morning program.',
-    next: iso(dayOff(14)),
-    confidential: true
-  });
-  DB.camps.push(
-    { id: 'cp1', devotee: 'd_sample', name: 'Vrindavan Yatra', date: iso(dayOff(-60)) },
-    { id: 'cp2', devotee: 'd1', name: 'Vrindavan Kartik Maha-Retreat', date: iso(dayOff(-330)) },
-    { id: 'cp3', devotee: 'd2', name: 'Vrindavan Kartik Maha-Retreat', date: iso(dayOff(-330)) },
-    { id: 'cp4', devotee: 'd3', name: 'Mayapur Gaur Purnima Camp', date: iso(dayOff(-180)) },
-    { id: 'cp5', devotee: 'd4', name: 'Mayapur Gaur Purnima Camp', date: iso(dayOff(-180)) },
-    { id: 'cp6', devotee: 'd5', name: 'Jagannath Puri Ratha Yatra Camp', date: iso(dayOff(-80)) },
-    { id: 'cp7', devotee: 'd6', name: 'Jagannath Puri Ratha Yatra Camp', date: iso(dayOff(-80)) },
-    { id: 'cp8', devotee: 'd7', name: 'Vrindavan Kartik Maha-Retreat', date: iso(dayOff(-330)) }
-  );
-
-  const sampleDevIds = (DB.devotees || []).map(d => d.id);
-  const getSlice = (start, count) => sampleDevIds.length ? sampleDevIds.slice(start, start + count) : ['d1','d2','d3'];
-
-  DB.majorRetreats = [
-    {
-      customId: 'camp_1',
-      name: 'Vrindavan Kartik Maha-Retreat',
-      type: '3-Day Annual Dham Retreat',
-      badge: 'Kartik Vrata',
-      dates: '18 – 20 Oct 2026',
-      loc: 'Sri Vrindavan Dham (Krishna Balaram Mandir & Govardhan)',
-      lead: 'HG Audarya Gour Das',
-      desc: 'Annual flagship Kartik retreat: Radha Damodar parikrama, Govardhan circumambulation, Deep Daan on Yamuna, and evening ecstatic kirtan.',
-      participants: 38,
-      status: 'Open'
-    },
-    {
-      customId: 'camp_2',
-      name: 'Mayapur Gaur Purnima International Camp',
-      type: '4-Day Spiritual Intensive',
-      badge: 'Navadvip Mandal',
-      dates: '21 – 25 Mar 2026',
-      loc: 'Sridham Mayapur (World Headquarters)',
-      lead: 'Madhava Das',
-      desc: 'Annual assembly at the spiritual capital: Navadvip parikrama on foot, darshan of Pancha Tattva, and participating in the international Kirtan Mela.',
-      participants: 32,
-      status: 'Annual'
-    },
-    {
-      customId: 'camp_3',
-      name: 'Jagannath Puri Dham Ratha Yatra Camp',
-      type: '3-Day Coastal Pilgrimage',
-      badge: 'Ratha Yatra',
-      dates: '02 – 05 Jul 2026',
-      loc: 'Sri Jagannath Puri Dham, Odisha',
-      lead: 'Sundar Gopal Das',
-      desc: 'Participating in the divine chariot festival: Gundicha Marjana, singing before Lord Jagannath, Tota Gopinath darshan, and ocean bathing.',
-      participants: 29,
-      status: 'Completed'
-    }
-  ];
-
-  DB.outings = [
-    {
-      id: 'out1',
-      name: 'Yamuna Ghat Harinam & Evening Boat Sankirtan',
-      category: 'Harinam & Sanga',
-      date: iso(dayOff(-40)),
-      location: 'Nigambodh Ghat, Yamuna River, Old Delhi',
-      coordinator: audaryaId || 'd1',
-      batch: 'all',
-      status: 'Completed',
-      highlights: ['Sunset Boat Kirtan', 'Harinam Japa Walk', 'Mahaprasadam Distribution'],
-      description: 'Devotees boarded traditional wooden boats at sunset on the Yamuna river for an ecstatic two-hour acoustic Harinam sankirtan, followed by distributing dry sweets prasadam to visitors at the ghat.',
-      attendees: getSlice(0, 34)
-    },
-    {
-      id: 'out2',
-      name: 'Deer Park Morning Japa Walk & Sloka Recitation Picnic',
-      category: 'Nature Walk & Picnic',
-      date: iso(dayOff(15)),
-      location: 'Deer Park & Lake, Hauz Khas (Near IIT Delhi)',
-      coordinator: 'd2',
-      batch: 'b7',
-      status: 'Upcoming',
-      highlights: ['16-Round Japa Session', 'Gita Chapter 12 Memorisation Quiz', 'Outdoor Fruit & Poha Feast'],
-      description: 'Annual autumn morning japa retreat in the lush wooded trails of Deer Park adjacent to Jia Sarai. Focus on focused attentive chanting in nature, memory verse contest, and breakfast prasadam on the lawn.',
-      attendees: getSlice(0, 28)
-    },
-    {
-      id: 'out3',
-      name: 'ISKCON Glory of India Cultural Centre & Vedic Museum Day Trip',
-      category: 'Temple Darshan',
-      date: iso(dayOff(-75)),
-      location: 'ISKCON Sant Nagar, East of Kailash',
-      coordinator: 'd3',
-      batch: 'b8',
-      status: 'Completed',
-      highlights: ['Gita Animatronics Show', 'Srila Prabhupada Museum', 'Govinda’s Prasadam Buffet'],
-      description: 'Full-day orientation and pilgrimage for youth and first-year BACE candidates. Guided tour of the world-famous animatronics Bhagavad Gita exhibition, darshan of Sri Sri Radha Parthasarathi, and lunch at Govinda’s.',
-      attendees: getSlice(0, 42)
-    },
-    {
-      id: 'out4',
-      name: 'Hauz Khas Rose Garden Devotee Bonding & Team Sanga',
-      category: 'Community Picnic',
-      date: iso(dayOff(-110)),
-      location: 'Rose Garden & Monument Lake, Hauz Khas',
-      coordinator: 'd4',
-      batch: 'all',
-      status: 'Completed',
-      highlights: ['Spiritual Icebreakers', 'Care Circles Check-in', 'Evening Acoustic Kirtan'],
-      description: 'A relaxed Sunday afternoon outing centered around devotee friendships, team bonding games, sharing student-life challenges and realizations, followed by outdoor kirtan as dusk settled.',
-      attendees: getSlice(0, 26)
-    },
-    {
-      id: 'out5',
-      name: 'Kurukshetra Gita Jayanti Holy Dham Day Pilgrimage',
-      category: 'Historic Dham Day Trip',
-      date: iso(dayOff(45)),
-      location: 'Jyotisar & Brahma Sarovar, Kurukshetra, Haryana',
-      coordinator: audaryaId || 'd1',
-      batch: 'all',
-      status: 'Upcoming',
-      highlights: ['700-Verse Gita Recitation', 'Brahma Sarovar Holy Dip', 'AC Bus Harinam Kirtan'],
-      description: 'Annual sacred day trip to the battlefield of Kurukshetra where Sri Krishna spoke the Bhagavad Gita to Arjuna. Reciting all 18 chapters together under the Akshaya Vata banyan tree at Jyotisar.',
-      attendees: getSlice(0, 45)
-    },
-    {
-      id: 'out6',
-      name: 'Sunder Nursery Heritage Garden Japa Walk & Picnic',
-      category: 'Nature Walk & Picnic',
-      date: iso(dayOff(-140)),
-      location: 'Sunder Nursery Gardens, Nizamuddin',
-      coordinator: 'd5',
-      batch: 'all',
-      status: 'Completed',
-      highlights: ['Lakeside Chanting', 'Canopy Kirtan', 'Summer Thandai & Packed Feast'],
-      description: 'Morning meditation walk through the 16th-century heritage park with over 300 tree species. Quiet japa by the lotus pond followed by reading Krishna Book pastimes under the garden pavilion.',
-      attendees: getSlice(0, 31)
-    }
-  ];
-  DB.templeVisits.push({ id: 'tv1', devotee: 'd_sample', date: iso(dayOff(-20)), temple: 'ISKCON Punjabi Bagh', notes: 'Attended Sunday feast and evening darshan.' });
-  DB.sadhana.push({ id: 'sd1', devotee: 'd_sample', week: 'This week', rounds: 4, avgWake: '5:30 am', reading: 'Daily', program: 75 });
-
-  /* 1 Sample Notification */
-  DB.notifications.push({
-    id: 'n0',
-    em: '🪔',
-    title: 'Seva assigned',
-    body: 'You are assigned to Sunday feast prasadam cooking',
-    date: iso(TODAY),
-    read: false,
-    cat: 'Management'
-  });
   DB.notifPrefs = { 'Seva & assignments': true, 'Attendance reminders': true, 'Follow-ups': true, 'Reports & approvals': true, 'Messages & chat': true, 'Events & festivals': true, 'Inventory approvals': false };
 
-  /* Messages: Batch chats for Narad & Gaurvani + 1 Community + 1 Direct message */
-  const gaurIds = DB.devotees.filter(d => d.batch === 'b8').map(d => d.id);
-  const naradIds = DB.devotees.filter(d => d.batch === 'b7').map(d => d.id);
-  DB.threads.push({
-    id: 'th_gaur',
-    type: 'batch',
-    name: 'Gaurvani Sabha chat',
-    members: gaurIds,
-    ref: 'b8',
-    messages: [
-      { id: 'm_g1', from: audaryaId || 'd1', text: "Hare Krishna Prabhus 🙏 Welcome to the Gaurvani Sabha communication group.", at: '18:30', date: iso(TODAY), pinned: true }
-    ],
-    pinnedNote: null
-  });
-  DB.threads.push({
-    id: 'th_narad',
-    type: 'batch',
-    name: 'Narad Sabha chat',
-    members: naradIds,
-    ref: 'b7',
-    messages: [
-      { id: 'm_n1', from: dhirendraId || 'd1', text: "Hare Krishna Prabhus 🙏 Class this week starts at 6:00 pm.", at: '18:00', date: iso(TODAY), pinned: true }
-    ],
-    pinnedNote: null
-  });
-  DB.threads.push({
-    id: 'th_comm',
-    type: 'community',
-    name: 'Community announcements',
-    members: DB.devotees.map(d => d.id),
-    ref: null,
-    messages: [
-      { id: 'm_c1', from: 'd1', text: 'Sunday feast program this week starts at 4:00 pm in the Temple Hall.', at: '10:00', date: iso(TODAY), pinned: true }
-    ],
-    pinnedNote: null
-  });
-  DB.threads.push({
-    id: 'th_dm',
-    type: 'dm',
-    name: 'Direct message',
-    members: ['d1', 'd_sample'],
-    ref: null,
-    messages: [
-      { id: 'm_d1', from: 'd1', text: 'Hare Krishna Rahul, hope your studies and sadhana are going well 🙏', at: '11:30', date: iso(TODAY), pinned: false }
-    ],
-    pinnedNote: null
-  });
-
-  /* Users: Admin, Surya Narayana Das, Coordinators + 1 sample user */
+  /* Real System Users */
   DB.users = [
     { id: 'u_admin', role: 'admin', devotee: null, name: 'BACE Administrator' },
     { id: 'u1', role: 'area_leader', devotee: 'd1', name: 'Surya Narayana Das' },
-    { id: 'u2', role: 'coordinator', devotee: audaryaId || 'd1', name: 'Audarya Gaur pr' },
-    { id: 'u3', role: 'preaching_coord', devotee: dhirendraId || 'd1', batch: 'b7', name: 'Dhirendra pr' },
-    { id: 'u4', role: 'devotee', devotee: 'd_sample', name: 'Rahul Sharma' }
+    { id: 'u_c1', role: 'counsellor', devotee: 'd_c1', name: 'HG Ashray Krishna Pr' },
+    { id: 'u_c2', role: 'counsellor', devotee: 'd_c2', name: 'HG Sarojmukha Madhav Pr' }
   ];
 
-  /* 1 Sample Audit Log */
-  DB.audit.push({
-    id: 'au0',
-    user: 'System Administrator',
-    action: 'System configured',
-    record: 'Narad Sabha, Gaurvani Sabha and departments loaded',
-    at: `${fmtD(iso(TODAY))}, 09:00`,
-    ts: Date.now()
-  });
+  /* Zero dummy data. Contacts, activities, attendance, care groups, reports, meetings, camps, retreats, outings, inventory, etc. start completely clean. */
+})();
+
+/* Clean up historical dummy seed items from localStorage on launch */
+(function purgeHistoricalDummyData(){
+  try{
+    const dummyIds = new Set([
+      'ac_s1','ac_e1','ac_c1','ac_c2','ac_c3','ac_t1','tpl1',
+      'c1','c2','c3','c4','c5',
+      'cg1','d_sample','mt1','cp1','cp2','cp3','cp4','cp5','cp6','cp7','cp8',
+      'out1','out2','out3','out4','out5','out6',
+      'camp_1','camp_2','camp_3',
+      'rp1','rp2','rp3','inv1','inv2','ir1','mn1','rb1','fb1','sop1',
+      'at1','at2','at3','tv1','sd1','n0','m_g1','m_n1','m_c1','m_d1','th_gaur','th_narad','th_comm','th_dm'
+    ]);
+    ['bace_activities_store','bace_assignments_store','bace_reports_store','bace_followups_store','bace_deleted_activities_store','bace_deleted_followups_store'].forEach(key=>{
+      const raw = localStorage.getItem(key);
+      if(raw){
+        try{
+          const list = JSON.parse(raw);
+          if(Array.isArray(list)){
+            const filtered = list.filter(item => {
+              if(!item) return false;
+              if(typeof item === 'string') return !dummyIds.has(item);
+              if(item.id && dummyIds.has(item.id)) return false;
+              if(item.devotee && item.devotee === 'd_sample') return false;
+              return true;
+            });
+            localStorage.setItem(key, JSON.stringify(filtered));
+          }
+        }catch(e){}
+      }
+    });
+  }catch(e){}
 })();
 
 /* ---------------- lookups ---------------- */
@@ -31249,25 +30540,23 @@ function calendarProgramModal(){
         <label style="display:block;font-size:11.5px;color:var(--ink-2);margin-bottom:5px;font-weight:600">
           Program Category <span style="color:var(--danger)">*</span>
         </label>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(95px, 1fr));gap:5px">
+                <div class="cal-cat-pills-row" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px">
           ${CAL_PROGRAM_CATS.map(c => {
             const isSel = c.key === d.cat;
-            return `<button type="button" class="btn sm" data-act="set-cal-program-cat" data-k="${c.key}"
-              style="padding:5px 6px;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;text-align:center;
+            return `<button type="button" class="cal-cat-pill" data-act="set-cal-program-cat" data-k="${c.key}"
+              style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:20px;
               border:${isSel ? `1.5px solid ${c.hex}` : '1px solid var(--line)'};
-              background:${isSel ? 'var(--surface)' : 'var(--surface-2)'};
-              box-shadow:${isSel ? `0 2px 8px ${c.hex}33` : 'none'};
-              cursor:pointer;transition:all .15s">
-              <div style="display:flex;align-items:center;gap:4px">
-                <span style="font-size:13px">${c.em}</span>
-                <i style="width:6px;height:6px;border-radius:50%;background:${c.hex};display:inline-block;flex:none"></i>
-              </div>
-              <span style="font-size:10.5px;font-weight:${isSel?'700':'500'};color:${isSel?c.hex:'var(--ink)'};line-height:1.2">${c.label}</span>
+              background:${isSel ? (c.hex + '18') : 'var(--surface)'};
+              color:${isSel ? c.hex : 'var(--ink)'};
+              font-size:12px;font-weight:${isSel ? '700' : '500'};
+              cursor:pointer;transition:all .15s ease;user-select:none;height:auto!important;min-height:30px!important;line-height:1.2;box-sizing:border-box">
+              <span style="font-size:13px">${c.em}</span>
+              <span>${c.label}</span>
             </button>`;
           }).join('')}
         </div>
-        <div class="note" style="margin-top:6px;padding:4px 8px;font-size:11px;border-left:3px solid ${activeCat.hex};background:var(--surface-2);border-radius:0 6px 6px 0;display:flex;align-items:center;gap:5px">
-          <i style="width:6px;height:6px;border-radius:50%;background:${activeCat.hex};flex:none"></i>
+        <div class="note" style="margin-top:4px;padding:5px 9px;font-size:11px;border-left:3px solid ${activeCat.hex};background:var(--surface-2);border-radius:0 6px 6px 0;display:flex;align-items:center;gap:6px">
+          <span style="font-size:13px">${activeCat.em}</span>
           <span><b>${activeCat.label}</b>: ${activeCat.desc}</span>
         </div>
       </div>
