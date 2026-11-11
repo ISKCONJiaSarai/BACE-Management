@@ -9248,6 +9248,49 @@ html.theme-transitioning .pillar-item {
   }
 }
 /* ===== END PRABHUPADA NECTAR CURSIVE ===== */
+/* NECTAR CARD TIGHT COMPACT WRAPPER - REMOVE EXCESS GAPS */
+.nectar-card-wrapper,
+.dash-quad-grid .nectar-card-wrapper {
+  height: auto !important;
+  min-height: 0 !important;
+  justify-content: flex-start !important;
+  gap: 8px !important;
+  padding: 12px 14px 10px !important;
+}
+.nectar-card-header,
+.dash-quad-grid .nectar-card-header {
+  margin-bottom: 4px !important;
+  padding-bottom: 6px !important;
+}
+.nectar-quote-row,
+.dash-quad-grid .nectar-quote-row {
+  margin-bottom: 4px !important;
+  gap: 10px !important;
+}
+.nectar-timer-bar-container,
+.dash-quad-grid .nectar-timer-bar-container {
+  margin-top: 2px !important;
+  margin-bottom: 2px !important;
+  height: 2px !important;
+}
+.nectar-ambience-bar,
+.dash-quad-grid .nectar-ambience-bar {
+  margin-top: 4px !important;
+  padding: 5px 8px !important;
+}
+@media (max-width: 768px) {
+  .nectar-card-wrapper,
+  .dash-quad-grid .nectar-card-wrapper {
+    height: auto !important;
+    min-height: 0 !important;
+    gap: 6px !important;
+    padding: 10px 12px 8px !important;
+  }
+  .nectar-quote-row,
+  .dash-quad-grid .nectar-quote-row {
+    margin-bottom: 2px !important;
+  }
+}
 
 </style>
 </head>
@@ -13574,7 +13617,7 @@ function prabhupadaNectarCard(){
   setTimeout(startNectarAutoSwipe, 200);
 
   return `
-    <div class="card pad nectar-card-wrapper" style="position:relative;overflow:hidden;border:1px solid rgba(245,158,11,0.35);background:linear-gradient(135deg,rgba(254,243,199,0.25) 0%,var(--surface) 60%,rgba(254,243,199,0.18) 100%);box-shadow:0 8px 24px -4px rgba(245,158,11,0.12);margin-bottom:0;display:flex;flex-direction:column;height:100%;justify-content:space-between">
+    <div class="card pad nectar-card-wrapper" style="position:relative;overflow:hidden;border:1px solid rgba(245,158,11,0.25);background:linear-gradient(135deg,rgba(254,243,199,0.2) 0%,var(--surface) 60%,rgba(254,243,199,0.12) 100%);box-shadow:0 4px 18px -4px rgba(245,158,11,0.08);margin-bottom:0;display:flex;flex-direction:column;height:auto">
       <div style="position:absolute;right:-15px;bottom:-20px;font-size:120px;opacity:0.04;pointer-events:none;user-select:none">🪷</div>
 
       <div class="nectar-card-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid rgba(245,158,11,0.2)">
