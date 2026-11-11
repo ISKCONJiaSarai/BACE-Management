@@ -8911,6 +8911,82 @@ html.theme-transitioning .pillar-item {
 }
 /* ===== END COASTOK MINIMALIST MOBILE ===== */
 
+/* =====================================================================
+   SIMPLIFIED PRABHUPADA NECTAR CARD (Mobile & Desktop)
+   ===================================================================== */
+/* Reduce font sizes and simplify header */
+.nectar-card-title {
+  font-size: 13.5px !important;
+  font-weight: 700 !important;
+}
+.nectar-vani-badge {
+  display: none !important; /* Remove redundant VANI AMRITA badge */
+}
+.nectar-acharya-tag {
+  display: none !important; /* Remove redundant Founder-Acharya tag */
+}
+.nectar-topic-badge {
+  font-size: 10px !important;
+  padding: 1.5px 6px !important;
+  font-weight: 600 !important;
+}
+.nectar-portrait-wrap {
+  width: 50px !important;
+  height: 50px !important;
+  border-width: 2px !important;
+  box-shadow: 0 0 10px rgba(245,158,11,0.25) !important;
+}
+.nectar-quote-text {
+  font-size: 17.5px !important;
+  line-height: 1.38 !important;
+  font-weight: 600 !important;
+  margin: 3px 0 5px 0 !important;
+}
+.nectar-citation {
+  font-size: 10.5px !important;
+  font-weight: 600 !important;
+}
+.nectar-ambience-bar {
+  padding: 8px 10px !important;
+  margin-top: 8px !important;
+  gap: 8px !important;
+  border-radius: 12px !important;
+}
+.ambience-track-btn {
+  padding: 3px 7px !important;
+  font-size: 11px !important;
+}
+#ambTrackDesc {
+  display: none !important; /* Hide long redundant track description to save space */
+}
+
+@media (max-width: 768px) {
+  .nectar-card-title {
+    font-size: 13px !important;
+  }
+  .nectar-portrait-wrap {
+    width: 42px !important;
+    height: 42px !important;
+  }
+  .nectar-quote-text {
+    font-size: 15.5px !important;
+    line-height: 1.34 !important;
+  }
+  .nectar-citation {
+    font-size: 9.5px !important;
+  }
+  .nectar-ambience-bar {
+    padding: 6px 8px !important;
+    gap: 6px !important;
+  }
+  .nectar-ambience-bar .btn.sm {
+    padding: 3px 6px !important;
+    font-size: 10.5px !important;
+  }
+}
+/* ===== END SIMPLIFIED PRABHUPADA NECTAR ===== */
+
+
 </style>
 </head>
 <body>
@@ -11121,12 +11197,12 @@ async function shareNectarQuote(){
   if(!len) return;
   const q = BACE_NECTAR_QUOTES[APP.nectarIdx % len];
   if(!q) return;
-  const shareText = `🪷 *Daily Srila Prabhupada Nectar*\n\n"${q.quote}"\n\n— *Srila Prabhupada*\n📜 _${q.citation || 'Srila Prabhupada Vani'}_\n\n(ISKCON BACE Jia Sarai)`;
+  const shareText = `🪷 *Prabhupada Nectar*\n\n"${q.quote}"\n\n— *Srila Prabhupada*\n📜 _${q.citation || 'Srila Prabhupada Vani'}_\n\n(ISKCON BACE Jia Sarai)`;
 
   if(navigator.share){
     try {
       await navigator.share({
-        title: 'Daily Srila Prabhupada Nectar',
+        title: 'Prabhupada Nectar',
         text: shareText
       });
       return;
@@ -13204,7 +13280,7 @@ function updateNectarQuoteDOM() {
 
   quoteBox.innerHTML = `
     <div class="nectar-quote-meta" style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
-      <span class="badge b-grey nectar-topic-badge" style="font-size:10px;padding:1px 6px">Topic: ${esc(q.topic || 'Srila Prabhupada Vani')}</span>
+      <span class="badge b-grey nectar-topic-badge" style="font-size:10px;padding:1px 6px">${esc(q.topic || 'Srila Prabhupada Vani')}</span>
       <span class="tiny nectar-acharya-tag" style="color:var(--ink-3)">Founder-Acharya ISKCON</span>
     </div>
     <div class="nectar-quote-text">
@@ -13242,11 +13318,11 @@ function prabhupadaNectarCard(){
       <div class="nectar-card-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid rgba(245,158,11,0.2)">
         <div style="display:flex;align-items:center;gap:8px">
           <span style="font-size:18px">🪷</span>
-          <span class="nectar-card-title" style="font-family:'Outfit',sans-serif;font-weight:700;font-size:15px;color:var(--ink);letter-spacing:-0.01em">Daily Srila Prabhupada Nectar</span>
+          <span class="nectar-card-title" style="font-family:'Outfit',sans-serif;font-weight:700;font-size:15px;color:var(--ink);letter-spacing:-0.01em">Prabhupada Nectar</span>
           <span class="badge nectar-vani-badge" style="background:rgba(245,158,11,0.15);color:#b45309;font-weight:700;font-size:10px;border:1px solid rgba(245,158,11,0.3)">VANI AMRITA</span>
         </div>
         <div style="display:flex;align-items:center;gap:5px">
-          <button class="btn sm" data-act="share-nectar-quote" title="Share quote to WhatsApp or other phone apps" style="padding:3px 8px;font-size:12px;border-color:rgba(245,158,11,0.3);display:inline-flex;align-items:center;gap:3px">📤 Share</button>
+          <button class="btn sm" data-act="share-nectar-quote" title="Share quote to WhatsApp or other phone apps" style="padding:3px 8px;font-size:12px;border-color:rgba(245,158,11,0.3);display:inline-flex;align-items:center;gap:3px">Share</button>
           <button class="btn sm" data-act="prev-nectar-quote" title="Previous quote (swipes every 20s)" style="padding:3px 8px;font-size:13px;border-color:rgba(245,158,11,0.3)">‹</button>
           <span class="tiny" id="nectarQuoteCount" style="font-weight:700;color:var(--ink-3);min-width:44px;text-align:center">${APP.nectarIdx + 1} / ${len}</span>
           <button class="btn sm" data-act="next-nectar-quote" title="Next quote (swipes every 20s)" style="padding:3px 8px;font-size:13px;border-color:rgba(245,158,11,0.3)">›</button>
@@ -13259,7 +13335,7 @@ function prabhupadaNectarCard(){
         </div>
         <div style="flex:1;min-width:0" id="nectarQuoteContent" class="nectar-quote-box">
           <div class="nectar-quote-meta" style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
-            <span class="badge b-grey nectar-topic-badge" style="font-size:10px;padding:1px 6px">Topic: ${esc(q.topic || 'Srila Prabhupada Vani')}</span>
+            <span class="badge b-grey nectar-topic-badge" style="font-size:10px;padding:1px 6px">${esc(q.topic || 'Srila Prabhupada Vani')}</span>
             <span class="tiny nectar-acharya-tag" style="color:var(--ink-3)">Founder-Acharya ISKCON</span>
           </div>
           <div class="nectar-quote-text">
@@ -13287,7 +13363,7 @@ function prabhupadaNectarCard(){
             <span class="audio-eq-bar"></span>
           </div>
           <div>
-            <div style="font-size:12px;font-weight:700;color:var(--ink)">Chanting &amp; Ashram Ambience</div>
+            <div style="font-size:12px;font-weight:700;color:var(--ink)">Ashram Ambience</div>
             <div class="tiny" style="color:var(--ink-3)" id="ambTrackDesc">
               ${esc(trackInfo.title)}
             </div>
