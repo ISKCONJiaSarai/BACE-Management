@@ -9248,6 +9248,21 @@ html.theme-transitioning .pillar-item {
   }
 }
 /* ===== END PRABHUPADA NECTAR CURSIVE ===== */
+
+/* HIDE REDUNDANT FLOATING TODAY'S UPDATES BUTTON ON MOBILE */
+.mobile-today-btn {
+  display: none !important;
+}
+.fab-menu {
+  width: 200px !important;
+  border-radius: 16px !important;
+  padding: 6px !important;
+}
+.fab-menu button {
+  padding: 8px 12px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+}
 /* NECTAR CARD TIGHT COMPACT WRAPPER - REMOVE EXCESS GAPS */
 .nectar-card-wrapper,
 .dash-quad-grid .nectar-card-wrapper {
@@ -12538,10 +12553,12 @@ function botnav(){
 }
 
 function fab(){
-  const acts=[['Assign seva','📋','open-assign','assign'],['Schedule class','🗓️','open-schedule','preaching'],['Create event / camp','✨','open-schedule-event','preaching'],['Add to calendar','📅','open-calendar-program','preaching'],['Add devotee','👥','add-devotee','directory'],
-   ['Add contact','🌱','add-contact','preaching'],['Mark attendance','✅','go-attendance','batch-attendance'],
-   ['Create follow-up','⏰','add-followup','preaching'],['Create group','🫂','add-group','care'],
-   ['New message','💬','go-messages','messages'],['Submit report','📄','add-report','reports']].filter(a=>can(a[3]));
+    const acts=[
+    ['Assign seva','📋','open-assign','assign'],
+    ['Add devotee','👥','add-devotee','directory'],
+    ['Add contact','🌱','add-contact','preaching'],
+    ['Mark attendance','✅','go-attendance','batch-attendance']
+  ].filter(a=>can(a[3]));
   if(!acts.length)return'';
   return `${APP.fabOpen?`<div class="fab-scrim" data-act="close-fab" aria-label="Close quick actions"></div><div class="fab-menu" role="menu">${acts.map(a=>`<button data-act="${a[2]}" role="menuitem"><span style="font-size:15px">${a[1]}</span>${a[0]}</button>`).join('')}</div>`:''}
    <button class="fab" data-act="fab" aria-label="Quick actions">${APP.fabOpen?ic('x'):ic('plus')}</button>`;
