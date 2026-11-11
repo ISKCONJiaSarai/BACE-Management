@@ -2017,33 +2017,75 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
 }
 .dash-vbar-labels {
   display: flex;
-  gap: 12px;
-  padding: 0 8px;
+  gap: 6px;
+  padding: 0 4px;
+  width: 100%;
+  box-sizing: border-box;
 }
 .dash-vbar-lbl-item {
-  flex: 1;
+  flex: 1 1 0;
+  min-width: 0 !important;
+  max-width: 25%;
   text-align: center;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 2px;
-  min-width: 0;
+  overflow: hidden;
 }
 .dash-vbar-lbl-title {
-  font-size: 11.5px;
+  width: 100%;
+  min-width: 0 !important;
+  font-size: 11px;
   font-weight: 700;
   color: var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  overflow: hidden;
+}
+.dash-vbar-lbl-text {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  display: flex;
-  align-items: center;
-  gap: 4px;
+  min-width: 0;
 }
 .dash-vbar-lbl-sub {
-  font-size: 10px;
+  font-size: 9.5px;
   color: var(--ink-3);
   font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+  text-align: center;
+}
+@media (max-width: 580px) {
+  .dash-vbar-labels {
+    gap: 4px !important;
+    padding: 0 2px !important;
+  }
+  .dash-vbar-lbl-title {
+    flex-direction: column !important;
+    gap: 1px !important;
+  }
+  .dash-vbar-lbl-icon {
+    font-size: 13px !important;
+    line-height: 1 !important;
+  }
+  .dash-vbar-lbl-text {
+    font-size: 9.5px !important;
+    line-height: 1.15 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    width: 100% !important;
+    text-align: center !important;
+  }
+  .dash-vbar-lbl-sub {
+    font-size: 8px !important;
+  }
 }
 
 /* Stepped Progression Funnel */
@@ -14604,7 +14646,7 @@ function devoteeVerticalBarChart(items, { filterKey = 'attendance' } = {}) {
       items.map(it => {
         const ic = iconMap[it.valKey] || '•';
         return '<div class="dash-vbar-lbl-item" data-act="dash-filter-devotees" data-filter-key="' + filterKey + '" data-filter-val="' + esc(it.valKey) + '" style="cursor:pointer">' +
-          '<div class="dash-vbar-lbl-title"><span>' + ic + '</span> <span>' + esc(it.label) + '</span></div>' +
+          '<div class="dash-vbar-lbl-title"><span class="dash-vbar-lbl-icon">' + ic + '</span><span class="dash-vbar-lbl-text">' + esc(it.label) + '</span></div>' +
           (it.sub ? '<div class="dash-vbar-lbl-sub">' + esc(it.sub) + '</div>' : '') +
         '</div>';
       }).join('') +
@@ -14767,9 +14809,9 @@ function viewDevoteeDashboard(devotees){
 
   const attTiers = [
     { label: 'Pillars', sub: '≥ 80%', count: attHigh, total: devotees.length, color: '#10B981', valKey: 'high' },
-    { label: 'Regular Attendees', sub: '60% – 79%', count: attReg, total: devotees.length, color: '#3B82F6', valKey: 'mid' },
-    { label: 'Developing Seekers', sub: '40% – 59%', count: attMid, total: devotees.length, color: '#F59E0B', valKey: 'low' },
-    { label: 'Needs Care & Follow-up', sub: '< 40%', count: attLow, total: devotees.length, color: '#EF4444', valKey: 'critical' }
+    { label: 'Regular', sub: '60% – 79%', count: attReg, total: devotees.length, color: '#3B82F6', valKey: 'mid' },
+    { label: 'Growing', sub: '40% – 59%', count: attMid, total: devotees.length, color: '#F59E0B', valKey: 'low' },
+    { label: 'Needs Care', sub: '< 40%', count: attLow, total: devotees.length, color: '#EF4444', valKey: 'critical' }
   ];
 
   // 4. Spiritual Level Progression Ladder
@@ -14884,84 +14926,78 @@ function viewDevoteeDashboard(devotees){
 
     <!-- 6 Rich, Modern, Non-Repetitive & Interactive Variety Graphs -->
     <div class="dev-dash-grid">
-      <!-- GRAPH 1: DONUT / RADIAL RING CHART (Japa Chanting Rounds) -->
+      <!-- GRAPH 1: JAPA ROUNDS -->
       <div class="dev-dash-card">
         <div class="dev-dash-card-header">
           <div>
-            <div class="dev-dash-card-title"><span>📿</span> Chanting Rounds (Japa Sadhana)</div>
-            <div class="dev-dash-card-sub">Devotees vs daily rounds chanted (Community avg: <b>${avgRounds} rounds/day</b>)</div>
+            <div class="dev-dash-card-title"><span>📿</span> Japa Rounds</div>
+            <div class="dev-dash-card-sub">Avg: <b>${avgRounds} rounds/day</b></div>
           </div>
-          <span class="badge sm" style="background:rgba(16,185,129,0.1);color:#10B981;font-weight:700">Donut Chart</span>
         </div>
         <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:4px 0">
           ${devoteePieChart(pieSlices, { size: 185, innerRadius: 52 })}
         </div>
       </div>
 
-      <!-- GRAPH 2: VERTICAL COLUMN BAR CHART (Attendance Performance Tiers) -->
+      <!-- GRAPH 2: ATTENDANCE TIERS -->
       <div class="dev-dash-card">
         <div class="dev-dash-card-header">
           <div>
-            <div class="dev-dash-card-title"><span>📈</span> Attendance Performance Tiers</div>
-            <div class="dev-dash-card-sub">Real community participation across morning & evening programs (Avg: <b>${avgAtt}%</b>)</div>
+            <div class="dev-dash-card-title"><span>📈</span> Attendance Tiers</div>
+            <div class="dev-dash-card-sub">Community avg: <b>${avgAtt}%</b></div>
           </div>
-          <span class="badge sm" style="background:rgba(59,130,246,0.1);color:#3B82F6;font-weight:700">Vertical Columns</span>
         </div>
         <div style="flex:1;display:flex;flex-direction:column;justify-content:center">
           ${devoteeVerticalBarChart(attTiers, { filterKey: 'attendance' })}
         </div>
       </div>
 
-      <!-- GRAPH 3: STEPPED PROGRESSION FUNNEL (Levels 0 to 3+) -->
+      <!-- GRAPH 3: SPIRITUAL LEVELS -->
       <div class="dev-dash-card">
         <div class="dev-dash-card-header">
           <div>
-            <div class="dev-dash-card-title"><span>🎓</span> Spiritual Level & Growth Funnel</div>
-            <div class="dev-dash-card-sub">Growth ladder from open connects to dedicated senior mentors</div>
+            <div class="dev-dash-card-title"><span>🎓</span> Spiritual Levels</div>
+            <div class="dev-dash-card-sub">Community progression ladder</div>
           </div>
-          <span class="badge sm" style="background:rgba(139,92,246,0.1);color:#8B5CF6;font-weight:700">Growth Funnel</span>
         </div>
         <div style="flex:1;display:flex;flex-direction:column;justify-content:center">
           ${devoteeFunnelChart(levelLadder)}
         </div>
       </div>
 
-      <!-- GRAPH 4: SEGMENTED RIBBON + DEMOGRAPHIC CARDS -->
+      <!-- GRAPH 4: DEMOGRAPHICS -->
       <div class="dev-dash-card">
         <div class="dev-dash-card-header">
           <div>
-            <div class="dev-dash-card-title"><span>🏛️</span> College & Professional Demographics</div>
-            <div class="dev-dash-card-sub">Devotees from IIT Delhi, other colleges, and working professionals</div>
+            <div class="dev-dash-card-title"><span>🏛️</span> Demographics</div>
+            <div class="dev-dash-card-sub">Campus & career background</div>
           </div>
-          <span class="badge sm" style="background:rgba(16,185,129,0.1);color:#10B981;font-weight:700">Campus & Career</span>
         </div>
         <div style="flex:1;display:flex;flex-direction:column;justify-content:center">
           ${devoteeDemographicsChart(demoItems)}
         </div>
       </div>
 
-      <!-- GRAPH 5: GEO-CLUSTER RESIDENCE MATRIX -->
+      <!-- GRAPH 5: RESIDENCE -->
       <div class="dev-dash-card">
         <div class="dev-dash-card-header">
           <div>
-            <div class="dev-dash-card-title"><span>📍</span> Residence & Geographical Clusters</div>
-            <div class="dev-dash-card-sub">Devotees stationed in BACE Ashram, Jia Sarai, nearby campuses & NCR</div>
+            <div class="dev-dash-card-title"><span>📍</span> Residence Clusters</div>
+            <div class="dev-dash-card-sub">Ashram, Jia Sarai & NCR</div>
           </div>
-          <span class="badge sm" style="background:rgba(255,102,0,0.1);color:#FF6600;font-weight:700">Geo Clusters</span>
         </div>
         <div style="flex:1;display:flex;flex-direction:column;justify-content:center">
           ${devoteeLocationMatrix(locationItems)}
         </div>
       </div>
 
-      <!-- GRAPH 6: SEVA WORKFORCE GRID TILES -->
+      <!-- GRAPH 6: SEVA -->
       <div class="dev-dash-card">
         <div class="dev-dash-card-header">
           <div>
-            <div class="dev-dash-card-title"><span>🛕</span> Department & Seva Workforce</div>
-            <div class="dev-dash-card-sub">Active volunteer engagement across temple & BACE seva departments</div>
+            <div class="dev-dash-card-title"><span>🛕</span> Seva Allocation</div>
+            <div class="dev-dash-card-sub">Active volunteer engagement</div>
           </div>
-          <span class="badge sm" style="background:rgba(236,72,153,0.1);color:#EC4899;font-weight:700">Seva Allocation</span>
         </div>
         <div style="flex:1;display:flex;flex-direction:column;justify-content:center">
           ${devoteeSevaGrid(formattedDeptData)}
@@ -14969,13 +15005,13 @@ function viewDevoteeDashboard(devotees){
       </div>
     </div>
 
-    <div style="margin-top:22px;padding:16px 20px;background:var(--surface);border:1px solid var(--line);border-radius:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
-      <div style="font-size:13px;color:var(--ink-2);display:flex;align-items:center;gap:8px">
+    <div style="margin-top:14px;padding:11px 15px;background:var(--surface);border:1px solid var(--line);border-radius:14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+      <div style="font-size:12px;color:var(--ink-2);display:flex;align-items:center;gap:6px">
         <span>💡</span>
-        <span>Every card and bar above is <b>clickable</b>. Click any metric to instantly filter the Devotees Directory!</span>
+        <span>Click any bar or chart metric to filter devotees</span>
       </div>
-      <button class="btn sm" data-act="tab" data-k="devoteeView" data-v="list" style="display:inline-flex;align-items:center;gap:6px">
-        ${ic('people')} Open Devotees Directory
+      <button class="btn sm" data-act="tab" data-k="devoteeView" data-v="list" style="display:inline-flex;align-items:center;gap:5px;font-size:11.5px;padding:4px 10px">
+        ${ic('people')} Directory
       </button>
     </div>`;
 }
@@ -31030,7 +31066,6 @@ function calendarProgramModal(){
         <span style="font-size:17px">📅</span>
         <div>
           <h2 style="font-size:14.5px;font-weight:700">Add Program to Calendar</h2>
-          <div class="tiny" style="font-size:11px;color:var(--ink-3);margin-top:1px">Schedule classes, festivals, camps, meetings, and temple visits</div>
         </div>
       </div>
       <button class="icon-btn" style="margin-left:auto;width:30px;height:30px;border-radius:8px" data-act="close-scrim">${ic('x')}</button>
@@ -31057,10 +31092,7 @@ function calendarProgramModal(){
             </button>`;
           }).join('')}
         </div>
-        <div class="note" style="margin-top:4px;padding:5px 9px;font-size:11px;border-left:3px solid ${activeCat.hex};background:var(--surface-2);border-radius:0 6px 6px 0;display:flex;align-items:center;gap:6px">
-          <span style="font-size:13px">${activeCat.em}</span>
-          <span><b>${activeCat.label}</b>: ${activeCat.desc}</span>
-        </div>
+
       </div>
 
       <!-- Program Name -->
@@ -32608,7 +32640,7 @@ document.addEventListener('click',e=>{
       APP.filters.dashCalOff = 0;
       APP.filters.dashCalSelectedDate = iso(TODAY);
       if(isAlreadyOnToday){
-        toast("Today is " + fmtLong(iso(TODAY)), '📅');
+        toast("Today is " + fmtLong(iso(TODAY)), '\uD83D\uDCC5');
       }
     } else {
       APP.filters.dashCalOff=(APP.filters.dashCalOff||0)+d;
