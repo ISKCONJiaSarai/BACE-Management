@@ -8941,6 +8941,344 @@ html.theme-transitioning .pillar-item {
 /* ===== END COASTOK MINIMALIST MOBILE ===== */
 
 /* =====================================================================
+   MOBILE CONTRAST & DARK BLOCKS / CARDS / PILLS ENHANCEMENTS
+   Applies to Mobile & Tablet View (<= 900px), with cohesive Light & Night Modes
+   ===================================================================== */
+@media (max-width: 900px) {
+  /* 1. Ashram Ambience Audio Console on Mobile */
+  .nectar-ambience-bar {
+    background: #0F172A !important;
+    border: 1px solid #1E293B !important;
+    color: #F8FAFC !important;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.16) !important;
+  }
+  .nectar-ambience-bar > div:first-child > div:last-child {
+    color: #CBD5E1 !important;
+    font-weight: 700 !important;
+  }
+  .ambience-track-btn,
+  .dash-quad-grid .ambience-track-btn {
+    background: #1E293B !important;
+    color: #E2E8F0 !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    font-weight: 600 !important;
+  }
+  .ambience-track-btn:hover {
+    background: #334155 !important;
+  }
+  .ambience-track-btn.active {
+    background: #EA580C !important;
+    color: #FFFFFF !important;
+    border-color: #EA580C !important;
+  }
+  .nectar-ambience-bar .btn.sm {
+    background: #EA580C !important;
+    color: #FFFFFF !important;
+    border: none !important;
+    font-weight: 700 !important;
+  }
+
+  /* 2. Prabhupada Nectar Card Topic Badge & Focus Tag */
+  .nectar-topic-badge {
+    background: #0F172A !important;
+    color: #F8FAFC !important;
+    border: 1px solid #1E293B !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.2px !important;
+  }
+  .nectar-card-header {
+    border-bottom: 1px solid rgba(15, 23, 42, 0.08) !important;
+  }
+
+  /* 3. Batch Tile Stats Row: Dark Contrast Boxes */
+  .batch-stats-row > div {
+    background: #0F172A !important;
+    border: 1px solid #1E293B !important;
+    border-radius: 8px !important;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08) !important;
+  }
+  .batch-stats-row > div > div:first-child {
+    color: #FFFFFF !important;
+  }
+  .batch-stats-row > div > div:last-child {
+    color: #94A3B8 !important;
+    font-weight: 700 !important;
+  }
+
+  /* 4. Preaching Level Badges: Deep, rich contrast */
+  .preach-level-header .badge.b-indigo {
+    background: #1E1B4B !important;
+    color: #E0E7FF !important;
+    border: 1px solid #3730A3 !important;
+  }
+  .preach-level-header .badge.b-green {
+    background: #064E3B !important;
+    color: #D1FAE5 !important;
+    border: 1px solid #065F46 !important;
+  }
+  .preach-level-header .badge.b-mustard {
+    background: #78350F !important;
+    color: #FEF3C7 !important;
+    border: 1px solid #92400E !important;
+  }
+  .preach-level-header .badge.b-danger {
+    background: #7F1D1D !important;
+    color: #FEE2E2 !important;
+    border: 1px solid #991B1B !important;
+  }
+
+  /* 5. Stat Tiles: Dark Roundels & Hero Card */
+  .grid:has(> .stat) .stat:first-child,
+  .stat.hero-stat {
+    background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%) !important;
+    border: 1px solid #334155 !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 4px 18px rgba(15, 23, 42, 0.16) !important;
+  }
+  .grid:has(> .stat) .stat:first-child .lbl,
+  .stat.hero-stat .lbl {
+    color: #94A3B8 !important;
+  }
+  .grid:has(> .stat) .stat:first-child .val,
+  .stat.hero-stat .val {
+    color: #FFFFFF !important;
+  }
+  .grid:has(> .stat) .stat:first-child .foot,
+  .stat.hero-stat .foot {
+    color: #CBD5E1 !important;
+  }
+  .stat .em {
+    background: #0F172A;
+    color: #FFFFFF;
+    border-radius: 8px;
+    padding: 2px 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* 6. Active Tabs, Filter Chips & Category Pills */
+  .tabs button.on,
+  .tabs button.active {
+    background: #0F172A !important;
+    color: #FFFFFF !important;
+    border-radius: 9px !important;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.18) !important;
+  }
+  .chip.on,
+  .chip.active {
+    background: #0F172A !important;
+    color: #FFFFFF !important;
+    border-color: #0F172A !important;
+  }
+  .cal-cat-pill.on {
+    background: #0F172A !important;
+    color: #FFFFFF !important;
+    border-color: #0F172A !important;
+  }
+  [data-act="toggle-all-preach-levels"] {
+    background: #0F172A !important;
+    color: #F8FAFC !important;
+    border: 1px solid #1E293B !important;
+    font-weight: 600 !important;
+  }
+
+  /* 7. Drawers and Bottom Sheets */
+  .sheet-header,
+  .mobile-today-drawer .sheet-header {
+    background: #0F172A !important;
+    color: #F8FAFC !important;
+    border-bottom: 1px solid #1E293B !important;
+  }
+  .sheet-header h3 {
+    color: #FFFFFF !important;
+  }
+  .sheet-header .icon-btn {
+    color: #CBD5E1 !important;
+  }
+}
+
+/* =====================================================================
+   NIGHT MODE (DARK THEME) MOBILE CONTRAST OVERRIDES
+   Ensures elevated visibility, crisp luminous borders, and sharp text
+   ===================================================================== */
+@media (max-width: 900px) {
+  [data-theme="dark"] body {
+    background: #090D16 !important;
+  }
+
+  /* Elevated cards against deep canvas */
+  [data-theme="dark"] .card,
+  [data-theme="dark"] .stat,
+  [data-theme="dark"] .dash-hub-card,
+  [data-theme="dark"] .preach-level-card,
+  [data-theme="dark"] .batch-tile-card,
+  [data-theme="dark"] .dev-hero-card {
+    background: #141C2E !important;
+    border: 1px solid rgba(255, 255, 255, 0.11) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45) !important;
+  }
+
+  /* Card headers */
+  [data-theme="dark"] .card-h,
+  [data-theme="dark"] .preach-level-header {
+    background: #172238 !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+    color: #F8FAFC !important;
+  }
+
+  /* Preaching Accordion body & arrows */
+  [data-theme="dark"] .preach-level-body {
+    background: #0E1524 !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+  }
+  [data-theme="dark"] .preach-level-arrow {
+    background: #1E293B !important;
+    color: #F8FAFC !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  }
+  [data-theme="dark"] .preach-level-card.is-open .preach-level-arrow {
+    background: rgba(255, 122, 0, 0.22) !important;
+    color: #FFA040 !important;
+    border-color: rgba(255, 122, 0, 0.45) !important;
+  }
+
+  /* Batch stats boxes in Night Mode */
+  [data-theme="dark"] .batch-stats-row > div {
+    background: #0B111E !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+  }
+  [data-theme="dark"] .batch-stats-row > div > div:first-child {
+    color: #FFFFFF !important;
+  }
+  [data-theme="dark"] .batch-stats-row > div > div:last-child {
+    color: #94A3B8 !important;
+  }
+
+  /* Badges in Night Mode */
+  [data-theme="dark"] .preach-level-header .badge.b-indigo {
+    background: rgba(99, 102, 241, 0.25) !important;
+    color: #C7D2FE !important;
+    border: 1px solid rgba(129, 140, 248, 0.45) !important;
+  }
+  [data-theme="dark"] .preach-level-header .badge.b-green {
+    background: rgba(16, 185, 129, 0.25) !important;
+    color: #A7F3D0 !important;
+    border: 1px solid rgba(52, 211, 153, 0.45) !important;
+  }
+  [data-theme="dark"] .preach-level-header .badge.b-mustard {
+    background: rgba(217, 119, 6, 0.25) !important;
+    color: #FDE68A !important;
+    border: 1px solid rgba(251, 191, 36, 0.45) !important;
+  }
+  [data-theme="dark"] .preach-level-header .badge.b-danger {
+    background: rgba(220, 38, 38, 0.25) !important;
+    color: #FECACA !important;
+    border: 1px solid rgba(248, 113, 113, 0.45) !important;
+  }
+
+  /* Hero stat in Night Mode */
+  [data-theme="dark"] .grid:has(> .stat) .stat:first-child,
+  [data-theme="dark"] .stat.hero-stat {
+    background: linear-gradient(135deg, #1C273F 0%, #101828 100%) !important;
+    border: 1.5px solid rgba(255, 122, 0, 0.4) !important;
+    box-shadow: 0 4px 22px rgba(0, 0, 0, 0.55), 0 0 16px rgba(255, 122, 0, 0.15) !important;
+  }
+  [data-theme="dark"] .grid:has(> .stat) .stat:first-child .val,
+  [data-theme="dark"] .stat.hero-stat .val {
+    color: #FFA040 !important;
+  }
+  [data-theme="dark"] .grid:has(> .stat) .stat:first-child .lbl,
+  [data-theme="dark"] .stat.hero-stat .lbl {
+    color: #CBD5E1 !important;
+  }
+  [data-theme="dark"] .stat .em {
+    background: #1E293B !important;
+    color: #FFA040 !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  }
+
+  /* Ashram Ambience Bar in Night Mode */
+  [data-theme="dark"] .nectar-ambience-bar {
+    background: #0B1220 !important;
+    border: 1px solid rgba(255, 255, 255, 0.14) !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 4px 16px rgba(0, 0, 0, 0.4) !important;
+  }
+  [data-theme="dark"] .nectar-ambience-bar > div:first-child > div:last-child {
+    color: #CBD5E1 !important;
+  }
+  [data-theme="dark"] .ambience-track-btn,
+  [data-theme="dark"] .dash-quad-grid .ambience-track-btn {
+    background: #162034 !important;
+    color: #CBD5E1 !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  }
+  [data-theme="dark"] .ambience-track-btn.active {
+    background: #FF7A00 !important;
+    color: #FFFFFF !important;
+    border-color: #FF7A00 !important;
+  }
+  [data-theme="dark"] .nectar-ambience-bar .btn.sm {
+    background: #FF7A00 !important;
+    color: #FFFFFF !important;
+  }
+
+  /* Nectar topic badge in Night Mode */
+  [data-theme="dark"] .nectar-topic-badge {
+    background: #1E2A40 !important;
+    color: #F8FAFC !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  }
+  [data-theme="dark"] .nectar-citation {
+    color: #FDE68A !important;
+  }
+
+  /* Active pills & chips in Night Mode */
+  [data-theme="dark"] .tabs button.on,
+  [data-theme="dark"] .tabs button.active {
+    background: #1E2A42 !important;
+    color: #FFFFFF !important;
+    border: 1px solid rgba(255, 255, 255, 0.25) !important;
+    box-shadow: 0 0 14px rgba(255, 102, 0, 0.2) !important;
+  }
+  [data-theme="dark"] .chip.on,
+  [data-theme="dark"] .chip.active {
+    background: #1E2A42 !important;
+    color: #FFFFFF !important;
+    border-color: rgba(255, 255, 255, 0.3) !important;
+  }
+  [data-theme="dark"] .cal-cat-pill.on {
+    background: #1E2A42 !important;
+    color: #FFFFFF !important;
+    border-color: rgba(255, 255, 255, 0.3) !important;
+  }
+  [data-theme="dark"] [data-act="toggle-all-preach-levels"] {
+    background: #1E293B !important;
+    color: #F8FAFC !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  }
+
+  /* Drawer / Sheet in Night Mode */
+  [data-theme="dark"] .sheet-header,
+  [data-theme="dark"] .mobile-today-drawer .sheet-header {
+    background: #0B111E !important;
+    color: #F8FAFC !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12) !important;
+  }
+  [data-theme="dark"] .sheet-header h3 {
+    color: #FFFFFF !important;
+  }
+  [data-theme="dark"] .sheet-header .icon-btn {
+    color: #CBD5E1 !important;
+  }
+  [data-theme="dark"] .mobile-today-drawer .sheet {
+    background: #0E1524 !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.14) !important;
+  }
+}
+
+/* =====================================================================
    SIMPLIFIED PRABHUPADA NECTAR CARD (Mobile & Desktop)
    ===================================================================== */
 /* Reduce font sizes and simplify header */
