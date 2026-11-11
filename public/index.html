@@ -9101,6 +9101,23 @@ html.theme-transitioning .pillar-item {
   to { opacity: 1; transform: translateY(0); }
 }
 /* ===== END ADDITIONAL SIMPLIFICATIONS ===== */
+/* FIX: Mobile Collapsed State height reset */
+@media (max-width: 768px) {
+  .dash-quad-grid .dash-hub-card,
+  .dash-hub-card {
+    height: auto !important;
+    min-height: 0 !important;
+    margin-bottom: 10px !important;
+  }
+  .dash-hub-card .card-b {
+    height: auto !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+  }
+  .dash-hub-card .dash-hub-header {
+    min-height: 60px !important;
+  }
+}
 
 
 
@@ -14169,8 +14186,8 @@ function viewDashboard(){
     </a>`;
   }).join('');
 
-    const mgmtCard=`<div class="card dash-hub-card" data-act="toggle-hub-card" style="display:flex;flex-direction:column;justify-content:space-between;height:100%;margin-bottom:0">
-    <div class="card-b" style="display:flex;flex-direction:column;height:100%">
+    const mgmtCard=`<div class="card dash-hub-card" data-act="toggle-hub-card" style="display:flex;flex-direction:column;justify-content:space-between;margin-bottom:0">
+    <div class="card-b" style="display:flex;flex-direction:column">
       <div class="dash-hub-header" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer">
         <div style="display:flex;align-items:center;gap:10px">
           <div style="width:36px;height:36px;border-radius:11px;background:linear-gradient(135deg,#EA580C,#C2410C);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;box-shadow:0 3px 10px rgba(234,88,12,.25);color:#fff">&#x1F6D5;</div>
@@ -14210,8 +14227,8 @@ function viewDashboard(){
       </div>
     </div>
   </div>`;
-  const preachCard=`<div class="card dash-hub-card" data-act="toggle-hub-card" style="display:flex;flex-direction:column;justify-content:space-between;height:100%;margin-bottom:0">
-    <div class="card-b" style="display:flex;flex-direction:column;height:100%">
+  const preachCard=`<div class="card dash-hub-card" data-act="toggle-hub-card" style="display:flex;flex-direction:column;justify-content:space-between;margin-bottom:0">
+    <div class="card-b" style="display:flex;flex-direction:column">
       <div class="dash-hub-header" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer">
         <div style="display:flex;align-items:center;gap:10px">
           <div style="width:36px;height:36px;border-radius:11px;background:linear-gradient(135deg,#4F46E5,#3730A3);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;box-shadow:0 3px 10px rgba(79,70,229,.25);color:#fff">&#x1F4D6;</div>
