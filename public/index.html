@@ -2606,6 +2606,19 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
 .qr{width:186px;height:186px;image-rendering:pixelated;border-radius:10px;border:8px solid #fff;box-shadow:var(--sh-2)}
 .countdown{font-family:var(--f-head);font-size:22px;margin-top:12px}
 
+/* Preaching Accordion & Batch Stats Row */
+.preach-level-card{overflow:hidden;transition:box-shadow .2s ease,border-color .2s ease}
+.preach-level-header{user-select:none;transition:background .15s ease}
+.preach-level-header:hover{background:var(--surface-2)}
+.preach-level-arrow{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--paper-2);color:var(--ink-2);font-size:11px;transition:transform .22s cubic-bezier(0.16,1,0.3,1),background .18s;line-height:1}
+.preach-level-card.is-open .preach-level-arrow{transform:rotate(180deg);background:var(--line-2)}
+.batch-tile-card{padding:10px 12px!important;border-radius:11px!important;background:var(--surface)!important;border:1px solid var(--line)!important;box-shadow:0 1px 3px rgba(15,23,42,0.04);transition:transform .18s ease,box-shadow .18s ease}
+.batch-tile-card:hover{transform:translateY(-2px);box-shadow:var(--sh-2)}
+.batch-stats-row{display:grid!important;grid-template-columns:repeat(3,1fr)!important;gap:6px!important}
+@media(max-width:480px){
+  .batch-stats-row{grid-template-columns:repeat(3,1fr)!important}
+}
+
 /* fab + bottom nav */
 .fab{position:fixed;right:22px;bottom:22px;z-index:85;width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,var(--saffron),var(--saffron-2));color:#fff;display:grid;place-items:center;box-shadow:0 4px 16px rgba(224,96,18,.35);transition:transform .2s,box-shadow .2s}
 .fab:hover{transform:scale(1.08);box-shadow:0 6px 24px rgba(224,96,18,.4)}
@@ -26198,51 +26211,46 @@ function viewPreaching(){
     {key:'l3',num:3,label:'Level 3',sub:'Advanced',color:'#D97706',badge:'b-mustard'},
     {key:'l4',num:4,label:'Level 4',sub:'Discipleship',color:'#DC2626',badge:'b-danger'},
   ];
-  const selLevel=APP.tab.preachingLevel||1;
   // Member count per batch
   function batchMemberCount(bid){
     return DB.devotees.filter(d=>d.batch===bid||(Array.isArray(d.batches)&&d.batches.includes(bid))).length;
   }
-  // Batch tile
+  // Batch tile - sleek, compact, 3 columns strictly preserved on mobile
   function batchTile(b){
     const members=batchMemberCount(b.id);
     const m=batchMetrics(b.id);
     const attPct=m.attendance||0;
     const attColor=attPct>=75?'var(--green)':attPct>=50?'var(--amber)':'var(--danger)';
     const lvlInfo=levels.find(l=>l.num===(b.level||1))||levels[0];
-    const coord=b.coordinator?nameOf(b.coordinator):(b.incharge?nameOf(b.incharge):'—');
-    return `<a href="#/batch/${b.id}" class="card pad batch-tile-card" style="text-decoration:none;color:inherit;display:block;transition:box-shadow .18s ease,transform .18s ease;border-left:3px solid ${lvlInfo.color}"
-      onmouseenter="this.style.boxShadow='0 8px 28px -6px ${lvlInfo.color}33';this.style.transform='translateY(-2px)'"
-      onmouseleave="this.style.boxShadow='';this.style.transform=''">
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px">
-        <div>
-          <div style="font-weight:800;font-size:14.5px;font-family:var(--f-head);color:var(--ink);margin-bottom:2px">${esc(b.name)}</div>
-          <div style="font-size:11.5px;color:var(--ink-3)">Coordinator: ${esc(coord)}</div>
+    const coord=b.coordinator?nameOf(b.coordinator):(b.incharge?nameOf(b.incharge):'Surya Narayana Das');
+    return `<a href="#/batch/${b.id}" class="card batch-tile-card" style="text-decoration:none;color:inherit;display:block;border-left:3.5px solid ${lvlInfo.color};transition:all .18s ease">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px">
+        <div style="min-width:0;flex:1">
+          <div style="font-weight:800;font-size:14px;font-family:var(--f-head);color:var(--ink);line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(b.name)}</div>
+          <div style="font-size:11px;color:var(--ink-3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Coordinator: <span style="color:var(--ink-2);font-weight:600">${esc(coord)}</span></div>
         </div>
-        <span class="badge ${lvlInfo.badge}" style="font-size:10px;flex-shrink:0">${lvlInfo.label}</span>
+        <span class="badge ${lvlInfo.badge}" style="font-size:10px;padding:2px 7px;flex-shrink:0;font-weight:700">Level ${b.level||1}</span>
       </div>
-      <div class="grid g3" style="gap:8px;margin-bottom:10px">
-        <div style="background:var(--paper-2);border-radius:9px;padding:7px 10px;border:1px solid var(--line-2);text-align:center">
-          <div style="font-size:18px;font-weight:800;font-family:var(--f-head);color:var(--ink)">${members}</div>
-          <div style="font-size:10px;color:var(--ink-3)">Members</div>
+      <div class="batch-stats-row" style="margin:7px 0 6px">
+        <div style="background:var(--paper-2);border-radius:8px;padding:5px 4px;border:1px solid var(--line-2);text-align:center">
+          <div style="font-size:15px;font-weight:800;font-family:var(--f-head);color:var(--ink);line-height:1.2">${members}</div>
+          <div style="font-size:9.5px;color:var(--ink-3);font-weight:600;letter-spacing:0.2px">Members</div>
         </div>
-        <div style="background:var(--paper-2);border-radius:9px;padding:7px 10px;border:1px solid var(--line-2);text-align:center">
-          <div style="font-size:18px;font-weight:800;font-family:var(--f-head);color:${attColor}">${attPct}%</div>
-          <div style="font-size:10px;color:var(--ink-3)">Attendance</div>
+        <div style="background:var(--paper-2);border-radius:8px;padding:5px 4px;border:1px solid var(--line-2);text-align:center">
+          <div style="font-size:15px;font-weight:800;font-family:var(--f-head);color:${attColor};line-height:1.2">${attPct}%</div>
+          <div style="font-size:9.5px;color:var(--ink-3);font-weight:600;letter-spacing:0.2px">Attendance</div>
         </div>
-        <div style="background:var(--paper-2);border-radius:9px;padding:7px 10px;border:1px solid var(--line-2);text-align:center">
-          <div style="font-size:18px;font-weight:800;font-family:var(--f-head);color:var(--ink)">${m.classes.length||0}</div>
-          <div style="font-size:10px;color:var(--ink-3)">Classes</div>
+        <div style="background:var(--paper-2);border-radius:8px;padding:5px 4px;border:1px solid var(--line-2);text-align:center">
+          <div style="font-size:15px;font-weight:800;font-family:var(--f-head);color:var(--ink);line-height:1.2">${m.classes.length||0}</div>
+          <div style="font-size:9.5px;color:var(--ink-3);font-weight:600;letter-spacing:0.2px">Classes</div>
         </div>
       </div>
-      ${b.schedule?`<div style="font-size:11.5px;color:var(--ink-3);display:flex;align-items:center;gap:4px">📅 ${esc(b.schedule)}</div>`:''}
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:11px;color:var(--ink-3);padding-top:2px">
+        <span>${b.day ? `📅 ${esc(b.day)}${b.time ? ' · '+esc(b.time) : ''}` : (b.schedule ? `📅 ${esc(b.schedule)}` : '📅 Weekly')}</span>
+        <span style="color:var(--indigo);font-weight:700;font-size:11px;display:flex;align-items:center;gap:2px">View →</span>
+      </div>
     </a>`;
   }
-  // Filtered batches for selected level
-  const levelBatches=allBatches.filter(b=>Number(b.level||1)===Number(selLevel));
-  const levelBatchTiles=levelBatches.length
-    ? levelBatches.map(batchTile).join('')
-    : `<div style="grid-column:1/-1;padding:24px;text-align:center;color:var(--ink-3);font-size:13px">No batches at this level</div>`;
   // Community overview stats
   const totalDevs=allBatches.reduce((n,b)=>n+batchMemberCount(b.id),0);
   const fuOverdue=s.fuOverdue||0;
@@ -26259,22 +26267,50 @@ function viewPreaching(){
     ${stat('Follow-ups',fuOverdue,'overdue',{em:'⏰',tint:fuOverdue>0,act:'go',r:'#/followups'})}
     ${stat('Classes',DB.activities.filter(a=>a.type==='Class').length,'scheduled',{em:'📖',act:'go',r:'#/classes'})}
   </div>
-  <div class="card" style="margin-bottom:18px">
-    <div style="padding:4px 4px 0">
-      <div class="tabs" style="margin-bottom:0">
-        ${levels.map(l=>{
-          const lBatches=allBatches.filter(b=>Number(b.level||1)===l.num);
-          const isSelected=Number(selLevel)===l.num;
-          return `<button class="${isSelected?'on':''}" data-act="tab" data-k="preachingLevel" data-v="${l.num}" style="display:flex;flex-direction:column;align-items:center;padding:9px 14px;gap:2px">
-            <span style="font-weight:700;font-size:13px">${esc(l.label)}</span>
-            <span style="font-size:10.5px;color:${isSelected?'rgba(255,255,255,0.8)':'var(--ink-3)'};">${esc(l.sub)} · ${lBatches.length}${lBatches.length===1?' batch':' batches'}</span>
-          </button>`;
-        }).join('')}
-      </div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin:0 2px 10px;padding:0 2px">
+    <div style="font-size:12.5px;font-weight:700;color:var(--ink-2);text-transform:uppercase;letter-spacing:0.4px;display:flex;align-items:center;gap:6px">
+      <span>📚 Levels & Batches</span>
+      <span class="badge b-indigo" style="font-size:10px;padding:1px 6px">${allBatches.length} total</span>
     </div>
-    <div class="grid g3 g-batch-hub-tiles" style="padding:14px;gap:14px">
-      ${levelBatchTiles}
+    <div style="display:flex;gap:6px">
+      <button class="btn sm" data-act="toggle-all-preach-levels" data-expand="true" style="padding:3px 9px;font-size:11px;border-radius:6px">Expand all</button>
+      <button class="btn sm" data-act="toggle-all-preach-levels" data-expand="false" style="padding:3px 9px;font-size:11px;border-radius:6px">Collapse all</button>
     </div>
+  </div>
+  <div class="preach-levels-wrap" style="display:flex;flex-direction:column;gap:10px;margin-bottom:18px">
+    ${levels.map(l=>{
+      const lBatches=allBatches.filter(b=>Number(b.level||1)===l.num);
+      const lDevs=lBatches.reduce((n,b)=>n+batchMemberCount(b.id),0);
+      const isOpen=APP.preachLevelOpen ? (APP.preachLevelOpen[l.num]!==false) : (lBatches.length>0);
+      return `<div class="card preach-level-card ${isOpen?'is-open':''}" data-level="${l.num}" style="border-left:4px solid ${l.color}">
+        <div class="preach-level-header" data-act="toggle-preach-level" role="button" tabindex="0" style="display:flex;align-items:center;justify-content:space-between;padding:11px 13px;cursor:pointer">
+          <div style="display:flex;align-items:center;gap:9px;min-width:0">
+            <span class="badge ${l.badge}" style="font-size:11px;font-weight:700;padding:2px 7px;border-radius:6px">L${l.num}</span>
+            <div style="min-width:0">
+              <div style="display:flex;align-items:baseline;gap:6px">
+                <span style="font-weight:800;font-size:14px;font-family:var(--f-head);color:var(--ink)">${esc(l.label)}</span>
+                <span style="font-size:12px;color:var(--ink-3);font-weight:500">· ${esc(l.sub)}</span>
+              </div>
+              <div style="font-size:11px;color:var(--ink-3);margin-top:1px">
+                ${lBatches.length} ${lBatches.length===1?'batch':'batches'} · ${lDevs} ${lDevs===1?'devotee':'devotees'}
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="preach-level-arrow">▾</span>
+          </div>
+        </div>
+        <div class="preach-level-body" style="padding:10px 12px 12px;border-top:1px solid var(--line-2);background:var(--paper-2);display:${isOpen?'block':'none'}">
+          ${lBatches.length ? `
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:9px">
+              ${lBatches.map(batchTile).join('')}
+            </div>
+          ` : `
+            <div style="padding:16px;text-align:center;color:var(--ink-3);font-size:12px">No batches in this level yet</div>
+          `}
+        </div>
+      </div>`;
+    }).join('')}
   </div>
   <div class="grid g2" style="gap:14px">
     <div style="display:flex;flex-direction:column;gap:14px">
@@ -31516,7 +31552,30 @@ document.addEventListener('click',e=>{
     e.preventDefault();go(t.getAttribute('href'));return}
   const stop=()=>{e.preventDefault();e.stopPropagation()};
   switch(a){
-      case 'toggle-hub-card':{
+   case 'toggle-preach-level':{
+     const card = t.closest('.preach-level-card');
+     if(card){
+       const lvl = card.dataset.level;
+       const isOpen = card.classList.toggle('is-open');
+       const body = card.querySelector('.preach-level-body');
+       if(body) body.style.display = isOpen ? 'block' : 'none';
+       if(!APP.preachLevelOpen) APP.preachLevelOpen = {};
+       if(lvl) APP.preachLevelOpen[lvl] = isOpen;
+     }
+     break}
+   case 'toggle-all-preach-levels':{
+     const expand = t.dataset.expand === 'true';
+     if(!APP.preachLevelOpen) APP.preachLevelOpen = {};
+     document.querySelectorAll('.preach-level-card').forEach(c => {
+       if(expand) c.classList.add('is-open');
+       else c.classList.remove('is-open');
+       const body = c.querySelector('.preach-level-body');
+       if(body) body.style.display = expand ? 'block' : 'none';
+       const lvl = c.dataset.level;
+       if(lvl) APP.preachLevelOpen[lvl] = expand;
+     });
+     break}
+   case 'toggle-hub-card':{
      const hub = t.closest('.dash-hub-card');
      if(hub){
        hub.classList.toggle('is-open');
