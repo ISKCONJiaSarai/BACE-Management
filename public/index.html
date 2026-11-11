@@ -9121,6 +9121,134 @@ html.theme-transitioning .pillar-item {
 
 
 
+
+/* =====================================================================
+   PRABHUPADA NECTAR - CURSIVE, LIGHT, AIRY & COMPACT
+   ===================================================================== */
+/* Force cursive script font, lighter font-weight, smaller size, compact padding */
+.nectar-card-wrapper,
+.dash-quad-grid .nectar-card-wrapper {
+  padding: 12px 14px !important;
+  border-radius: 18px !important;
+}
+
+/* Card Header */
+.nectar-card-title,
+.dash-quad-grid .nectar-card-title {
+  font-family: var(--f-head) !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: var(--ink) !important;
+}
+
+/* Topic Tag - ultra subtle */
+.nectar-topic-badge,
+.dash-quad-grid .nectar-topic-badge {
+  font-size: 9.5px !important;
+  font-weight: 500 !important;
+  color: var(--ink-3) !important;
+  background: transparent !important;
+  border: 1px solid var(--line-2) !important;
+  padding: 1px 6px !important;
+  border-radius: 12px !important;
+}
+
+/* Quote Text - Beautiful cursive script, light weight, not bold */
+.nectar-quote-text,
+.dash-quad-grid .nectar-quote-text {
+  font-family: 'Caveat', cursive, var(--f-script) !important;
+  font-size: 18px !important;
+  line-height: 1.35 !important;
+  font-weight: 500 !important; /* Gentle, readable, elegant - NO heavy bold */
+  color: var(--ink) !important;
+  margin: 3px 0 4px 0 !important;
+  max-height: none !important;
+  overflow: visible !important;
+  letter-spacing: 0.01em !important;
+}
+
+/* Citation - smaller, soft warm amber, non-bold */
+.nectar-citation,
+.dash-quad-grid .nectar-citation {
+  font-size: 10.5px !important;
+  font-weight: 500 !important; /* Non-bold */
+  color: #B45309 !important;
+  margin-top: 3px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+
+/* Avatar Portrait - smaller & sleek */
+.nectar-portrait-wrap,
+.dash-quad-grid .nectar-portrait-wrap {
+  width: 44px !important;
+  height: 44px !important;
+  border-width: 1.5px !important;
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.2) !important;
+}
+
+/* Audio Ambience Bar - slim, minimal, non-bold */
+.nectar-ambience-bar,
+.dash-quad-grid .nectar-ambience-bar {
+  padding: 6px 10px !important;
+  margin-top: 6px !important;
+  border-radius: 12px !important;
+  background: var(--paper-2) !important;
+  border: 1px solid var(--line-2) !important;
+}
+.nectar-ambience-bar > div:first-child > div:last-child {
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  color: var(--ink-2) !important;
+}
+.ambience-track-btn,
+.dash-quad-grid .ambience-track-btn {
+  font-size: 10px !important;
+  font-weight: 500 !important;
+  padding: 2.5px 6.5px !important;
+  border-radius: 8px !important;
+}
+.nectar-ambience-bar .btn.sm {
+  font-size: 10.5px !important;
+  font-weight: 600 !important;
+  padding: 2.5px 8px !important;
+  border-radius: 8px !important;
+}
+
+/* Mobile specific tweaks */
+@media (max-width: 768px) {
+  .nectar-card-wrapper,
+  .dash-quad-grid .nectar-card-wrapper {
+    padding: 10px 12px !important;
+    border-radius: 16px !important;
+  }
+  .nectar-quote-text,
+  .dash-quad-grid .nectar-quote-text {
+    font-size: 17px !important;
+    line-height: 1.32 !important;
+  }
+  .nectar-citation,
+  .dash-quad-grid .nectar-citation {
+    font-size: 9.5px !important;
+  }
+  .nectar-portrait-wrap,
+  .dash-quad-grid .nectar-portrait-wrap {
+    width: 38px !important;
+    height: 38px !important;
+  }
+  .nectar-ambience-bar,
+  .dash-quad-grid .nectar-ambience-bar {
+    padding: 5px 8px !important;
+    margin-top: 5px !important;
+  }
+  .nectar-timer-bar-container {
+    margin-top: 5px !important;
+    height: 2px !important;
+  }
+}
+/* ===== END PRABHUPADA NECTAR CURSIVE ===== */
+
 </style>
 </head>
 <body>
