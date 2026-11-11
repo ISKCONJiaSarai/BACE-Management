@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
@@ -100,9 +100,10 @@ body{
 .shell,.view{max-width:100%;width:100%;overflow-x:hidden}
 .main{max-width:100%;min-width:0}
 h1,h2,h3,h4{font-family:var(--f-head);font-weight:700;letter-spacing:-.02em;margin:0}
-h1{font-size:28px;line-height:1.2}
-h2{font-size:20px;letter-spacing:-.015em}
-h3{font-size:16px;font-weight:600}
+h1{font-size:21px;line-height:1.25}
+h2{font-size:16.5px;letter-spacing:-.015em;line-height:1.3}
+h3{font-size:14px;font-weight:600}
+h4{font-size:12.5px;font-weight:600}
 .script-quote,.quote-script,.cursive{font-family:var(--f-script);font-style:normal}
 a{color:inherit;text-decoration:none}
 button{font-family:inherit;font-size:inherit;cursor:pointer;border:0;background:none;color:inherit}
@@ -1571,7 +1572,7 @@ a.card:hover,button.card:hover,.card.hoverable:hover{
 .card-b{padding:18px 20px}
 .card-b.flush{padding:0}
 .muted{color:var(--ink-2)}
-.tiny{font-size:12.5px;color:var(--ink-3)}
+.tiny{font-size:11px;color:var(--ink-3)}
 .stat{
   background:var(--surface);border:1px solid var(--line);border-radius:var(--r-l);
   padding:16px 18px;box-shadow:var(--sh-card);position:relative;overflow:hidden;
@@ -3356,20 +3357,35 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
    COMPREHENSIVE RESPONSIVE STYLES FOR ALL MOBILE PHONES (320px – 768px)
    ========================================================================= */
 @media(max-width:768px){
-  /* 1. iOS Safari Auto-Zoom Prevention: 16px minimum font on all form inputs and selects */
-  .field select, .modal select, .drawer select{
-    font-size:16px!important;
-    font-weight:400!important;
-    min-height:42px!important;
-    height:auto!important;
-    max-height:none!important;
-    padding:9px 12px!important;
-    border-radius:10px!important;
-    line-height:1.4!important;
-  }
+  /* 1. Ultra-Compact, Clean Mobile Form Inputs & Controls */
+  .field select, .modal select, .drawer select,
   .field input, .field textarea, .modal input, .modal textarea, .drawer input, .drawer textarea,
-  input[type="text"], input[type="search"], input[type="date"], input[type="time"], input[type="email"], input[type="password"], textarea{
-    font-size:16px!important;
+  input[type="text"], input[type="search"], input[type="date"], input[type="time"], input[type="email"], input[type="password"], input[type="number"], textarea{
+    font-size:12.5px!important;
+    font-weight:500!important;
+    line-height:1.35!important;
+  }
+  .field select, .modal select, .drawer select,
+  .field input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  .modal input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  .drawer input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  input[type="text"], input[type="search"], input[type="date"], input[type="time"], input[type="email"], input[type="password"], input[type="number"]{
+    min-height:35px!important;
+    height:35px!important;
+    padding:6px 10px!important;
+    border-radius:8px!important;
+    box-sizing:border-box!important;
+  }
+  .field textarea, .modal textarea, .drawer textarea, textarea{
+    min-height:56px!important;
+    padding:7px 10px!important;
+    border-radius:8px!important;
+    box-sizing:border-box!important;
+  }
+  .field label, .modal label, .drawer label{
+    font-size:11.5px!important;
+    font-weight:600!important;
+    margin-bottom:3.5px!important;
   }
 
   /* 2. Organization hierarchy tree & subgrid - preserved layout with NO horizontal scroll */
@@ -9310,6 +9326,198 @@ html.theme-transitioning .pillar-item {
   }
 }
 
+/* =========================================================================
+   COASTOK COMPACT, CLEAN & CRISP GLOBAL UI (MOBILE & LAPTOP)
+   ========================================================================= */
+/* Universal Compact Controls */
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+select,
+.field input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+.field select,
+.modal input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+.modal select,
+.drawer input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+.drawer select,
+.toolbar input,
+.toolbar select {
+  font-size: 12.5px !important;
+  font-weight: 500 !important;
+  height: 35px !important;
+  min-height: 35px !important;
+  padding: 6px 10px !important;
+  border-radius: 8px !important;
+  border: 1px solid var(--line) !important;
+  background: var(--surface) !important;
+  color: var(--ink) !important;
+  box-sizing: border-box !important;
+  line-height: 1.35 !important;
+}
+
+textarea,
+.field textarea,
+.modal textarea,
+.drawer textarea {
+  font-size: 12.5px !important;
+  font-weight: 500 !important;
+  padding: 7px 10px !important;
+  border-radius: 8px !important;
+  border: 1px solid var(--line) !important;
+  background: var(--surface) !important;
+  color: var(--ink) !important;
+  box-sizing: border-box !important;
+  line-height: 1.4 !important;
+  min-height: 56px !important;
+}
+
+.field {
+  margin-bottom: 9px !important;
+}
+.field label,
+.modal label,
+.drawer label,
+label {
+  font-size: 11.5px !important;
+  font-weight: 600 !important;
+  color: var(--ink-2) !important;
+  margin-bottom: 3.5px !important;
+  display: block;
+}
+.field .hint {
+  font-size: 10.5px !important;
+  color: var(--ink-3) !important;
+  margin-top: 3px !important;
+}
+.form-row {
+  gap: 9px !important;
+}
+
+/* Modals & Drawers */
+.modal {
+  width: min(500px, calc(100vw - 20px)) !important;
+  border-radius: 16px !important;
+  max-height: 88vh !important;
+}
+.modal.wide {
+  width: min(700px, calc(100vw - 20px)) !important;
+}
+.modal-h {
+  padding: 11px 16px !important;
+  gap: 8px !important;
+}
+.modal-h h2 {
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.01em !important;
+  margin: 0 !important;
+}
+.modal-h .tiny, .modal-h span.tiny {
+  font-size: 11px !important;
+  color: var(--ink-3) !important;
+  margin-top: 1px !important;
+}
+.modal-b {
+  padding: 13px 16px !important;
+}
+.modal-f {
+  padding: 9px 16px calc(9px + env(safe-area-inset-bottom, 0px)) !important;
+  gap: 8px !important;
+}
+.modal-f .btn {
+  height: 32px !important;
+  min-height: 32px !important;
+  padding: 4px 13px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  border-radius: 7px !important;
+}
+
+/* Buttons Compactness */
+.btn {
+  height: 33px !important;
+  min-height: 33px !important;
+  padding: 5px 12px !important;
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+  border-radius: 8px !important;
+}
+.btn.sm {
+  height: 27px !important;
+  min-height: 27px !important;
+  padding: 2.5px 8px !important;
+  font-size: 11px !important;
+  border-radius: 7px !important;
+}
+.btn.xs {
+  height: 24px !important;
+  min-height: 24px !important;
+  padding: 1.5px 6px !important;
+  font-size: 10px !important;
+  border-radius: 6px !important;
+}
+
+/* Page Headers & Headings */
+.page-head h1 {
+  font-size: 18.5px !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.015em !important;
+}
+.page-head .eyebrow {
+  font-size: 10.5px !important;
+}
+.page-head p.sub {
+  font-size: 12px !important;
+  margin-top: 3px !important;
+}
+
+/* Cards, Tables, Badges */
+.card-h {
+  padding: 10px 14px !important;
+}
+.card-h h3 {
+  font-size: 13.5px !important;
+  font-weight: 700 !important;
+}
+.card-b {
+  padding: 12px 14px !important;
+}
+.badge, .chip {
+  font-size: 10.5px !important;
+  padding: 2px 7px !important;
+  border-radius: 6px !important;
+}
+.tbl th {
+  padding: 7px 10px !important;
+  font-size: 10.5px !important;
+}
+.tbl td {
+  padding: 8px 10px !important;
+  font-size: 12px !important;
+}
+.toolbar {
+  padding: 8px 12px !important;
+  gap: 7px !important;
+}
+
+@media (max-width: 620px) {
+  .modal {
+    border-radius: 18px 18px 0 0 !important;
+    max-height: 88dvh !important;
+    width: 100% !important;
+  }
+  .modal-h {
+    padding: 10px 14px !important;
+  }
+  .modal-b {
+    padding: 11px 14px !important;
+  }
+  .modal-f {
+    padding: 9px 14px calc(11px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+  .page-head h1 {
+    font-size: 17px !important;
+  }
+}
+/* ===== END COASTOK COMPACT & CLEAN GLOBAL UI ===== */
 </style>
 </head>
 <body>
@@ -17918,7 +18126,199 @@ function getStandardReportHTMLHeader(opts) {
       .no-print-bar { display: none !important; }
     }
     ${extraStyles}
-  </style>
+  /* =========================================================================
+   COASTOK COMPACT, CLEAN & CRISP GLOBAL UI (MOBILE & LAPTOP)
+   ========================================================================= */
+/* Universal Compact Controls */
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+select,
+.field input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+.field select,
+.modal input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+.modal select,
+.drawer input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+.drawer select,
+.toolbar input,
+.toolbar select {
+  font-size: 12.5px !important;
+  font-weight: 500 !important;
+  height: 35px !important;
+  min-height: 35px !important;
+  padding: 6px 10px !important;
+  border-radius: 8px !important;
+  border: 1px solid var(--line) !important;
+  background: var(--surface) !important;
+  color: var(--ink) !important;
+  box-sizing: border-box !important;
+  line-height: 1.35 !important;
+}
+
+textarea,
+.field textarea,
+.modal textarea,
+.drawer textarea {
+  font-size: 12.5px !important;
+  font-weight: 500 !important;
+  padding: 7px 10px !important;
+  border-radius: 8px !important;
+  border: 1px solid var(--line) !important;
+  background: var(--surface) !important;
+  color: var(--ink) !important;
+  box-sizing: border-box !important;
+  line-height: 1.4 !important;
+  min-height: 56px !important;
+}
+
+.field {
+  margin-bottom: 9px !important;
+}
+.field label,
+.modal label,
+.drawer label,
+label {
+  font-size: 11.5px !important;
+  font-weight: 600 !important;
+  color: var(--ink-2) !important;
+  margin-bottom: 3.5px !important;
+  display: block;
+}
+.field .hint {
+  font-size: 10.5px !important;
+  color: var(--ink-3) !important;
+  margin-top: 3px !important;
+}
+.form-row {
+  gap: 9px !important;
+}
+
+/* Modals & Drawers */
+.modal {
+  width: min(500px, calc(100vw - 20px)) !important;
+  border-radius: 16px !important;
+  max-height: 88vh !important;
+}
+.modal.wide {
+  width: min(700px, calc(100vw - 20px)) !important;
+}
+.modal-h {
+  padding: 11px 16px !important;
+  gap: 8px !important;
+}
+.modal-h h2 {
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.01em !important;
+  margin: 0 !important;
+}
+.modal-h .tiny, .modal-h span.tiny {
+  font-size: 11px !important;
+  color: var(--ink-3) !important;
+  margin-top: 1px !important;
+}
+.modal-b {
+  padding: 13px 16px !important;
+}
+.modal-f {
+  padding: 9px 16px calc(9px + env(safe-area-inset-bottom, 0px)) !important;
+  gap: 8px !important;
+}
+.modal-f .btn {
+  height: 32px !important;
+  min-height: 32px !important;
+  padding: 4px 13px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  border-radius: 7px !important;
+}
+
+/* Buttons Compactness */
+.btn {
+  height: 33px !important;
+  min-height: 33px !important;
+  padding: 5px 12px !important;
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+  border-radius: 8px !important;
+}
+.btn.sm {
+  height: 27px !important;
+  min-height: 27px !important;
+  padding: 2.5px 8px !important;
+  font-size: 11px !important;
+  border-radius: 7px !important;
+}
+.btn.xs {
+  height: 24px !important;
+  min-height: 24px !important;
+  padding: 1.5px 6px !important;
+  font-size: 10px !important;
+  border-radius: 6px !important;
+}
+
+/* Page Headers & Headings */
+.page-head h1 {
+  font-size: 18.5px !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.015em !important;
+}
+.page-head .eyebrow {
+  font-size: 10.5px !important;
+}
+.page-head p.sub {
+  font-size: 12px !important;
+  margin-top: 3px !important;
+}
+
+/* Cards, Tables, Badges */
+.card-h {
+  padding: 10px 14px !important;
+}
+.card-h h3 {
+  font-size: 13.5px !important;
+  font-weight: 700 !important;
+}
+.card-b {
+  padding: 12px 14px !important;
+}
+.badge, .chip {
+  font-size: 10.5px !important;
+  padding: 2px 7px !important;
+  border-radius: 6px !important;
+}
+.tbl th {
+  padding: 7px 10px !important;
+  font-size: 10.5px !important;
+}
+.tbl td {
+  padding: 8px 10px !important;
+  font-size: 12px !important;
+}
+.toolbar {
+  padding: 8px 12px !important;
+  gap: 7px !important;
+}
+
+@media (max-width: 620px) {
+  .modal {
+    border-radius: 18px 18px 0 0 !important;
+    max-height: 88dvh !important;
+    width: 100% !important;
+  }
+  .modal-h {
+    padding: 10px 14px !important;
+  }
+  .modal-b {
+    padding: 11px 14px !important;
+  }
+  .modal-f {
+    padding: 9px 14px calc(11px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+  .page-head h1 {
+    font-size: 17px !important;
+  }
+}
+/* ===== END COASTOK COMPACT & CLEAN GLOBAL UI ===== */
+</style>
 </head>
 <body>
   <div class="no-print-bar">
@@ -30831,103 +31231,102 @@ function calendarProgramModal(){
   const d = calProgramDraft();
   const activeCat = CAL_PROGRAM_CATS.find(c => c.key === d.cat) || CAL_PROGRAM_CATS[0];
   
-  return `<div class="scrim"><div class="modal" data-stop="1" style="max-width:580px">
-    <div class="modal-h" style="border-bottom:1px solid var(--line)">
-      <div style="display:flex;align-items:center;gap:10px">
-        <span style="font-size:22px">📅</span>
+  return `<div class="scrim"><div class="modal" data-stop="1" style="max-width:480px">
+    <div class="modal-h" style="border-bottom:1px solid var(--line);padding:11px 15px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:17px">📅</span>
         <div>
-          <h2 style="font-size:18px">Add Program to Calendar</h2>
-          <div class="tiny">Schedule classes, festivals, camps, meetings, and temple visits</div>
+          <h2 style="font-size:14.5px;font-weight:700">Add Program to Calendar</h2>
+          <div class="tiny" style="font-size:11px;color:var(--ink-3);margin-top:1px">Schedule classes, festivals, camps, meetings, and temple visits</div>
         </div>
       </div>
-      <button class="icon-btn" style="margin-left:auto" data-act="close-scrim">${ic('x')}</button>
+      <button class="icon-btn" style="margin-left:auto;width:30px;height:30px;border-radius:8px" data-act="close-scrim">${ic('x')}</button>
     </div>
 
-    <form class="modal-b" id="calprogform" onsubmit="return false" style="padding:18px 20px;display:flex;flex-direction:column;gap:14px">
+    <form class="modal-b" id="calprogform" onsubmit="return false" style="padding:12px 15px;display:flex;flex-direction:column;gap:9px">
       <!-- Category selector with color coding -->
       <div>
-        <label style="display:block;font-size:12.5px;color:var(--ink-2);margin-bottom:7px;font-weight:600">
+        <label style="display:block;font-size:11.5px;color:var(--ink-2);margin-bottom:5px;font-weight:600">
           Program Category <span style="color:var(--danger)">*</span>
-          <span class="tiny" style="font-weight:normal;color:var(--ink-3);margin-left:6px">(Select category)</span>
         </label>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(105px, 1fr));gap:7px">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(95px, 1fr));gap:5px">
           ${CAL_PROGRAM_CATS.map(c => {
             const isSel = c.key === d.cat;
             return `<button type="button" class="btn sm" data-act="set-cal-program-cat" data-k="${c.key}"
-              style="padding:7px 8px;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;text-align:center;
-              border:${isSel ? `2px solid ${c.hex}` : '1px solid var(--line)'};
+              style="padding:5px 6px;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;text-align:center;
+              border:${isSel ? `1.5px solid ${c.hex}` : '1px solid var(--line)'};
               background:${isSel ? 'var(--surface)' : 'var(--surface-2)'};
               box-shadow:${isSel ? `0 2px 8px ${c.hex}33` : 'none'};
               cursor:pointer;transition:all .15s">
-              <div style="display:flex;align-items:center;gap:5px">
-                <span style="font-size:15px">${c.em}</span>
-                <i style="width:8px;height:8px;border-radius:50%;background:${c.hex};display:inline-block;flex:none"></i>
+              <div style="display:flex;align-items:center;gap:4px">
+                <span style="font-size:13px">${c.em}</span>
+                <i style="width:6px;height:6px;border-radius:50%;background:${c.hex};display:inline-block;flex:none"></i>
               </div>
-              <span style="font-size:11.5px;font-weight:${isSel?'700':'500'};color:${isSel?c.hex:'var(--ink)'};line-height:1.2">${c.label}</span>
+              <span style="font-size:10.5px;font-weight:${isSel?'700':'500'};color:${isSel?c.hex:'var(--ink)'};line-height:1.2">${c.label}</span>
             </button>`;
           }).join('')}
         </div>
-        <div class="note" style="margin-top:8px;padding:6px 10px;font-size:11.5px;border-left:3.5px solid ${activeCat.hex};background:var(--surface-2);border-radius:0 8px 8px 0;display:flex;align-items:center;gap:6px">
-          <i style="width:7px;height:7px;border-radius:50%;background:${activeCat.hex};flex:none"></i>
+        <div class="note" style="margin-top:6px;padding:4px 8px;font-size:11px;border-left:3px solid ${activeCat.hex};background:var(--surface-2);border-radius:0 6px 6px 0;display:flex;align-items:center;gap:5px">
+          <i style="width:6px;height:6px;border-radius:50%;background:${activeCat.hex};flex:none"></i>
           <span><b>${activeCat.label}</b>: ${activeCat.desc}</span>
         </div>
       </div>
 
       <!-- Program Name -->
       <div class="field" style="margin:0">
-        <label style="display:block;font-size:12.5px;color:var(--ink-2);margin-bottom:5px;font-weight:600">Program Name <span style="color:var(--danger)">*</span></label>
-        <input type="text" name="cal_prog_name" value="${esc(d.name)}" placeholder="e.g. Sri Krishna Janmashtami / Gita Chapter 7 Discussion" required style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-size:13.5px">
+        <label style="display:block;font-size:11.5px;color:var(--ink-2);margin-bottom:3.5px;font-weight:600">Program Name <span style="color:var(--danger)">*</span></label>
+        <input type="text" name="cal_prog_name" value="${esc(d.name)}" placeholder="e.g. Sri Krishna Janmashtami / Gita Chapter 7 Discussion" required style="width:100%;box-sizing:border-box;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);font-size:12.5px;height:35px">
       </div>
 
       <!-- Date & Venue -->
-      <div class="form-row" style="margin:0">
+      <div class="form-row" style="margin:0;gap:8px">
         <div class="field" style="margin:0">
-          <label style="display:block;font-size:12.5px;color:var(--ink-2);margin-bottom:5px;font-weight:500">Date <span style="color:var(--danger)">*</span></label>
-          <input type="date" name="cal_prog_date" value="${esc(d.date)}" required style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-size:13px">
+          <label style="display:block;font-size:11.5px;color:var(--ink-2);margin-bottom:3.5px;font-weight:600">Date <span style="color:var(--danger)">*</span></label>
+          <input type="date" name="cal_prog_date" value="${esc(d.date)}" required style="width:100%;box-sizing:border-box;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);font-size:12.5px;height:35px">
         </div>
         <div class="field" style="margin:0">
-          <label style="display:block;font-size:12.5px;color:var(--ink-2);margin-bottom:5px;font-weight:500">Location / Venue</label>
-          <input type="text" name="cal_prog_loc" value="${esc(d.location)}" placeholder="e.g. Temple Hall / BACE / IIT Delhi" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-size:13px">
+          <label style="display:block;font-size:11.5px;color:var(--ink-2);margin-bottom:3.5px;font-weight:600">Location / Venue</label>
+          <input type="text" name="cal_prog_loc" value="${esc(d.location)}" placeholder="e.g. Temple Hall / BACE / IIT Delhi" style="width:100%;box-sizing:border-box;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);font-size:12.5px;height:35px">
         </div>
       </div>
 
       <!-- Times -->
-      <div class="form-row" style="margin:0">
+      <div class="form-row" style="margin:0;gap:8px">
         <div class="field" style="margin:0">
-          <label style="display:block;font-size:12.5px;color:var(--ink-2);margin-bottom:5px;font-weight:500">Start Time</label>
-          <input type="text" name="cal_prog_start" value="${esc(d.start)}" placeholder="e.g. 07:00 am" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-size:13px">
+          <label style="display:block;font-size:11.5px;color:var(--ink-2);margin-bottom:3.5px;font-weight:600">Start Time</label>
+          <input type="text" name="cal_prog_start" value="${esc(d.start)}" placeholder="e.g. 07:00 am" style="width:100%;box-sizing:border-box;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);font-size:12.5px;height:35px">
         </div>
         <div class="field" style="margin:0">
-          <label style="display:block;font-size:12.5px;color:var(--ink-2);margin-bottom:5px;font-weight:500">End Time</label>
-          <input type="text" name="cal_prog_end" value="${esc(d.end)}" placeholder="e.g. 08:30 am" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-size:13px">
+          <label style="display:block;font-size:11.5px;color:var(--ink-2);margin-bottom:3.5px;font-weight:600">End Time</label>
+          <input type="text" name="cal_prog_end" value="${esc(d.end)}" placeholder="e.g. 08:30 am" style="width:100%;box-sizing:border-box;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);font-size:12.5px;height:35px">
         </div>
       </div>
 
       <!-- Lead Devotee & Expected count -->
-      <div class="form-row" style="margin:0">
+      <div class="form-row" style="margin:0;gap:8px">
         <div class="field" style="margin:0">
-          <label style="display:block;font-size:12.5px;color:var(--ink-2);margin-bottom:5px;font-weight:500">Program Lead / Speaker</label>
-          <select name="cal_prog_resp" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-size:13px">
+          <label style="display:block;font-size:11.5px;color:var(--ink-2);margin-bottom:3.5px;font-weight:600">Program Lead / Speaker</label>
+          <select name="cal_prog_resp" style="width:100%;box-sizing:border-box;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);font-size:12.5px;height:35px">
             <option value="">-- Select devotee in charge --</option>
             ${DB.devotees.map(x=>`<option value="${x.id}" ${d.responsible===x.id?'selected':''}>${esc(x.name)}</option>`).join('')}
           </select>
         </div>
         <div class="field" style="margin:0">
-          <label style="display:block;font-size:12.5px;color:var(--ink-2);margin-bottom:5px;font-weight:500">Expected Attendees</label>
-          <input type="number" name="cal_prog_exp" value="${esc(d.expected)}" min="0" max="5000" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-size:13px">
+          <label style="display:block;font-size:11.5px;color:var(--ink-2);margin-bottom:3.5px;font-weight:600">Expected Attendees</label>
+          <input type="number" name="cal_prog_exp" value="${esc(d.expected)}" min="0" max="5000" style="width:100%;box-sizing:border-box;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);font-size:12.5px;height:35px">
         </div>
       </div>
 
       <!-- Details / Notes -->
       <div class="field" style="margin:0">
-        <label style="display:block;font-size:12.5px;color:var(--ink-2);margin-bottom:5px;font-weight:500">Program Details & Agenda</label>
-        <textarea name="cal_prog_desc" placeholder="Schedule rundown, speaker topic, prasadam arrangements, or guidelines for devotees…" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-size:13px;min-height:68px;resize:vertical">${esc(d.desc)}</textarea>
+        <label style="display:block;font-size:11.5px;color:var(--ink-2);margin-bottom:3.5px;font-weight:600">Program Details & Agenda</label>
+        <textarea name="cal_prog_desc" placeholder="Schedule rundown, speaker topic, prasadam arrangements, or guidelines for devotees…" style="width:100%;box-sizing:border-box;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);font-size:12.5px;min-height:56px;resize:vertical">${esc(d.desc)}</textarea>
       </div>
     </form>
 
-    <div class="modal-f" style="padding:13px 20px;display:flex;justify-content:space-between;align-items:center;background:var(--surface-2);border-top:1px solid var(--line-2)">
-      <button class="btn" data-act="close-scrim">Cancel</button>
-      <button class="btn pri" data-act="save-calendar-program" style="background:${activeCat.hex};border-color:${activeCat.hex};display:inline-flex;align-items:center;gap:6px">
+    <div class="modal-f" style="padding:9px 15px;display:flex;justify-content:space-between;align-items:center;background:var(--surface-2);border-top:1px solid var(--line-2)">
+      <button class="btn" data-act="close-scrim" style="height:32px;padding:4px 12px;font-size:12px;border-radius:7px">Cancel</button>
+      <button class="btn pri" data-act="save-calendar-program" style="background:${activeCat.hex};border-color:${activeCat.hex};display:inline-flex;align-items:center;gap:5px;height:32px;padding:4px 14px;font-size:12px;border-radius:7px">
         ${ic('plus')} Add to Calendar
       </button>
     </div>
