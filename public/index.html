@@ -9278,11 +9278,16 @@ html.theme-transitioning .pillar-item {
 }
 /* ===== END PRABHUPADA NECTAR CURSIVE ===== */
 
-/* FLOATING TODAY'S UPDATES BUTTON ON MOBILE */
+/* FLOATING TODAY'S UPDATES BUTTON (MOBILE ONLY <=900px, HIDDEN ON LAPTOP/DESKTOP) */
 .mobile-today-btn {
-  display: flex !important;
-  align-items: center !important;
-  gap: 6px !important;
+  display: none !important;
+}
+@media(max-width: 900px) {
+  .mobile-today-btn {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+  }
 }
 .fab-menu {
   width: 220px !important;
