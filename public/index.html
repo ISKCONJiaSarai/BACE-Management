@@ -1615,17 +1615,17 @@
     .mobile-today-btn {
       display: none;
       position: fixed;
-      bottom: calc(76px + env(safe-area-inset-bottom, 0px)) !important;
+      bottom: calc(70px + env(safe-area-inset-bottom, 0px)) !important;
       left: 50% !important;
       transform: translateX(-50%) !important;
       z-index: 95 !important;
-      padding: 8px 18px !important;
-      border-radius: 24px !important;
-      background: var(--accent) !important;
+      padding: 6.5px 16px !important;
+      border-radius: 20px !important;
+      background: linear-gradient(135deg, #FF7A00, #EA580C) !important;
       color: #fff !important;
-      font-size: 13px !important;
+      font-size: 12px !important;
       font-weight: 700 !important;
-      box-shadow: 0 6px 20px rgba(234, 88, 12, 0.45) !important;
+      box-shadow: 0 4px 16px rgba(234, 88, 12, 0.45) !important;
       border: none !important;
       cursor: pointer !important;
       transition: transform .2s, box-shadow .2s !important;
@@ -15693,11 +15693,12 @@
 
     /* Quad grid card styling */
     .dash-quad-grid .card {
-      min-height: 400px;
+      min-height: 380px;
       border-radius: var(--r-xl, 14px);
     }
 
-    .dash-quad-grid .nectar-card-wrapper {
+    .dash-quad-grid .nectar-card-wrapper,
+    .dash-quad-grid #dashCalWidget {
       padding: 16px !important;
       align-self: flex-start !important;
       min-height: auto !important;
@@ -15946,14 +15947,23 @@
         display: inline-flex !important;
       }
 
-      /* 1. Global whitespace & background */
-      body {
-        background: #F8FAFC !important;
+      /* 1. Global whitespace & safe bottom spacing */
+      [data-theme="light"] body {
+        background: #F3F4F8 !important;
+      }
+
+      .view,
+      #view,
+      .main,
+      .shell {
+        padding-bottom: calc(145px + env(safe-area-inset-bottom, 0px)) !important;
+        max-width: 100% !important;
       }
 
       .view {
-        padding: 10px 12px 84px !important;
-        max-width: 100% !important;
+        padding-top: 10px !important;
+        padding-left: 12px !important;
+        padding-right: 12px !important;
       }
 
       /* 2. Transform the heavy dark hero banner into a COASTOK airy, white floating card */
@@ -16169,10 +16179,7 @@
       }
 
       .dash-hub-card {
-        background: #FFFFFF !important;
-        border: 1px solid rgba(226, 232, 240, 0.9) !important;
         border-radius: 20px !important;
-        box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.04) !important;
         padding: 0 !important;
         margin-bottom: 0 !important;
       }
@@ -16314,25 +16321,52 @@
         color: #3730A3 !important;
       }
 
-      /* 5. Minimalist Clean Calendar and Prabhupada Nectar Cards */
+      /* 5. Contrasting Professional Card Color Schemes (Light & Dark) */
+      /* Management Card (Warm Saffron / Amber Theme) */
+      [data-theme="light"] .dash-hub-card[data-mob-card="mgmt"],
+      [data-theme="light"] .dash-hub-card:first-of-type {
+        background: linear-gradient(155deg, #FFF9F3 0%, #FFF2E2 100%) !important;
+        border: 1px solid #FED7AA !important;
+        box-shadow: 0 6px 20px -4px rgba(234, 88, 12, 0.12), 0 2px 6px rgba(0, 0, 0, 0.02) !important;
+      }
+      [data-theme="dark"] .dash-hub-card[data-mob-card="mgmt"],
+      [data-theme="dark"] .dash-hub-card:first-of-type {
+        background: linear-gradient(155deg, #271A13 0%, #1A110D 100%) !important;
+        border: 1px solid rgba(249, 115, 22, 0.38) !important;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), 0 0 20px rgba(249, 115, 22, 0.08) !important;
+      }
+
+      /* Preaching Card (Royal Indigo / Violet Theme) */
+      [data-theme="light"] .dash-hub-card[data-mob-card="preach"] {
+        background: linear-gradient(155deg, #F6F8FF 0%, #EDF2FE 100%) !important;
+        border: 1px solid #C7D2FE !important;
+        box-shadow: 0 6px 20px -4px rgba(99, 102, 241, 0.12), 0 2px 6px rgba(0, 0, 0, 0.02) !important;
+      }
+      [data-theme="dark"] .dash-hub-card[data-mob-card="preach"] {
+        background: linear-gradient(155deg, #151930 0%, #0E1020 100%) !important;
+        border: 1px solid rgba(129, 140, 248, 0.38) !important;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), 0 0 20px rgba(99, 102, 241, 0.08) !important;
+      }
+
+      /* Calendar Widget Card (Oceanic Mint / Teal Theme) */
       #dashCalWidget {
-        background: var(--surface) !important;
         border-radius: 20px !important;
-        border: 1px solid var(--line) !important;
         box-shadow: var(--sh-card) !important;
         overflow: hidden !important;
       }
 
-      [data-theme="light"] #dashCalWidget {
-        background: #FFFFFF !important;
-        border: 1px solid rgba(226, 232, 240, 0.9) !important;
-        box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.04) !important;
+      [data-theme="light"] #dashCalWidget,
+      [data-theme="light"] [data-mob-card="calendar"] {
+        background: linear-gradient(155deg, #F0FDFB 0%, #E3F8F5 100%) !important;
+        border: 1px solid #99F6E4 !important;
+        box-shadow: 0 6px 20px -4px rgba(20, 184, 166, 0.12), 0 2px 6px rgba(0, 0, 0, 0.02) !important;
       }
 
-      [data-theme="dark"] #dashCalWidget {
-        background: linear-gradient(150deg, #2A2C38 0%, #20222D 100%) !important;
-        border: 1px solid rgba(255, 255, 255, 0.10) !important;
-        box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.45) !important;
+      [data-theme="dark"] #dashCalWidget,
+      [data-theme="dark"] [data-mob-card="calendar"] {
+        background: linear-gradient(155deg, #0F2026 0%, #0A151A 100%) !important;
+        border: 1px solid rgba(45, 212, 191, 0.38) !important;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), 0 0 20px rgba(20, 184, 166, 0.08) !important;
       }
 
       #dashCalWidget .card-h {
@@ -16359,17 +16393,145 @@
         color: var(--ink) !important;
       }
 
+      /* Calendar Widget Mobile Compactness: Tight hug around content with NO bottom empty space */
+      @media (max-width: 768px) {
+        #dashCalWidget,
+        .dash-quad-grid #dashCalWidget,
+        .dash-quad-grid .card[data-mob-card="calendar"] {
+          height: auto !important;
+          min-height: 0 !important;
+          align-self: flex-start !important;
+        }
+
+        #dashCalWidget .card-b,
+        .dash-quad-grid #dashCalWidget .card-b {
+          flex: none !important;
+          height: auto !important;
+          min-height: 0 !important;
+          padding-bottom: 10px !important;
+        }
+      }
+
+      /* Prabhupada Nectar Card (Sacred Lotus Rose Theme) */
       .nectar-card-wrapper {
-        background: var(--surface) !important;
         border-radius: 20px !important;
-        border: 1px solid rgba(245, 158, 11, 0.25) !important;
         box-shadow: var(--sh-card) !important;
       }
 
-      [data-theme="dark"] .nectar-card-wrapper {
-        background: linear-gradient(150deg, #2A2C38 0%, #20222D 100%) !important;
-        border: 1px solid rgba(245, 158, 11, 0.3) !important;
-        box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.45) !important;
+      [data-theme="light"] .nectar-card-wrapper,
+      [data-theme="light"] [data-mob-card="nectar"] {
+        background: linear-gradient(155deg, #FFF5F8 0%, #FEEDF2 100%) !important;
+        border: 1px solid #FBCFE8 !important;
+        box-shadow: 0 6px 20px -4px rgba(236, 72, 153, 0.12), 0 2px 6px rgba(0, 0, 0, 0.02) !important;
+      }
+
+      [data-theme="dark"] .nectar-card-wrapper,
+      [data-theme="dark"] [data-mob-card="nectar"] {
+        background: linear-gradient(155deg, #271422 0%, #1A0C16 100%) !important;
+        border: 1px solid rgba(244, 114, 182, 0.38) !important;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), 0 0 20px rgba(236, 72, 153, 0.08) !important;
+      }
+
+      /* Sub-card islands inside parent cards */
+      [data-theme="light"] .dash-hub-card[data-mob-card="mgmt"] .dash-level-btn,
+      [data-theme="light"] .dash-hub-card[data-mob-card="mgmt"] [style*="background:var(--paper-2)"] {
+        background: #FFFFFF !important;
+        border-color: #FED7AA !important;
+      }
+      [data-theme="light"] .dash-hub-card[data-mob-card="preach"] .dash-level-btn,
+      [data-theme="light"] .dash-hub-card[data-mob-card="preach"] [style*="background:var(--paper-2)"] {
+        background: #FFFFFF !important;
+        border-color: #C7D2FE !important;
+      }
+      [data-theme="light"] #dashCalWidget [style*="background:var(--paper-2)"] {
+        background: #FFFFFF !important;
+        border-color: #99F6E4 !important;
+      }
+
+      [data-theme="dark"] .dash-hub-card[data-mob-card="mgmt"] .dash-level-btn,
+      [data-theme="dark"] .dash-hub-card[data-mob-card="mgmt"] [style*="background:var(--paper-2)"] {
+        background: #171822 !important;
+        border-color: rgba(249, 115, 22, 0.22) !important;
+      }
+      [data-theme="dark"] .dash-hub-card[data-mob-card="preach"] .dash-level-btn,
+      [data-theme="dark"] .dash-hub-card[data-mob-card="preach"] [style*="background:var(--paper-2)"] {
+        background: #141624 !important;
+        border-color: rgba(129, 140, 248, 0.22) !important;
+      }
+      [data-theme="dark"] #dashCalWidget [style*="background:var(--paper-2)"] {
+        background: #0E181D !important;
+        border-color: rgba(45, 212, 191, 0.22) !important;
+      }
+
+      /* Distinct KPI Ribbon Colors in Light & Dark Mode */
+      [data-theme="light"] .grid.g5>.stat:nth-child(1),
+      [data-theme="light"] .grid.g6>.stat:nth-child(1),
+      [data-theme="light"] .hero-kpis>.stat:nth-child(1) {
+        background: linear-gradient(145deg, #FFF7ED 0%, #FFEDD5 100%) !important;
+        border: 1px solid #FDBA74 !important;
+      }
+      [data-theme="light"] .grid.g5>.stat:nth-child(2),
+      [data-theme="light"] .grid.g6>.stat:nth-child(2),
+      [data-theme="light"] .hero-kpis>.stat:nth-child(2) {
+        background: linear-gradient(145deg, #FEFCE8 0%, #FEF9C3 100%) !important;
+        border: 1px solid #FDE047 !important;
+      }
+      [data-theme="light"] .grid.g5>.stat:nth-child(3),
+      [data-theme="light"] .grid.g6>.stat:nth-child(3),
+      [data-theme="light"] .hero-kpis>.stat:nth-child(3) {
+        background: linear-gradient(145deg, #EEF2FF 0%, #E0E7FF 100%) !important;
+        border: 1px solid #A5B4FC !important;
+      }
+      [data-theme="light"] .grid.g5>.stat:nth-child(4),
+      [data-theme="light"] .grid.g6>.stat:nth-child(4),
+      [data-theme="light"] .hero-kpis>.stat:nth-child(4) {
+        background: linear-gradient(145deg, #F0FDFA 0%, #CCFBF1 100%) !important;
+        border: 1px solid #99F6E4 !important;
+      }
+      [data-theme="light"] .grid.g5>.stat:nth-child(5),
+      [data-theme="light"] .grid.g6>.stat:nth-child(5),
+      [data-theme="light"] .hero-kpis>.stat:nth-child(5) {
+        background: linear-gradient(145deg, #FFF1F2 0%, #FFE4E6 100%) !important;
+        border: 1px solid #FDA4AF !important;
+      }
+      [data-theme="light"] .grid.g6>.stat:nth-child(6) {
+        background: linear-gradient(145deg, #F0F9FF 0%, #E0F2FE 100%) !important;
+        border: 1px solid #7DD3FC !important;
+      }
+
+      [data-theme="dark"] .grid.g5>.stat:nth-child(1),
+      [data-theme="dark"] .grid.g6>.stat:nth-child(1),
+      [data-theme="dark"] .hero-kpis>.stat:nth-child(1) {
+        background: linear-gradient(145deg, #271A14 0%, #1D130E 100%) !important;
+        border: 1px solid rgba(249, 115, 22, 0.38) !important;
+      }
+      [data-theme="dark"] .grid.g5>.stat:nth-child(2),
+      [data-theme="dark"] .grid.g6>.stat:nth-child(2),
+      [data-theme="dark"] .hero-kpis>.stat:nth-child(2) {
+        background: linear-gradient(145deg, #262112 0%, #1B170B 100%) !important;
+        border: 1px solid rgba(245, 158, 11, 0.38) !important;
+      }
+      [data-theme="dark"] .grid.g5>.stat:nth-child(3),
+      [data-theme="dark"] .grid.g6>.stat:nth-child(3),
+      [data-theme="dark"] .hero-kpis>.stat:nth-child(3) {
+        background: linear-gradient(145deg, #151A2E 0%, #0F1222 100%) !important;
+        border: 1px solid rgba(129, 140, 248, 0.38) !important;
+      }
+      [data-theme="dark"] .grid.g5>.stat:nth-child(4),
+      [data-theme="dark"] .grid.g6>.stat:nth-child(4),
+      [data-theme="dark"] .hero-kpis>.stat:nth-child(4) {
+        background: linear-gradient(145deg, #102220 0%, #0B1716 100%) !important;
+        border: 1px solid rgba(45, 212, 191, 0.38) !important;
+      }
+      [data-theme="dark"] .grid.g5>.stat:nth-child(5),
+      [data-theme="dark"] .grid.g6>.stat:nth-child(5),
+      [data-theme="dark"] .hero-kpis>.stat:nth-child(5) {
+        background: linear-gradient(145deg, #261320 0%, #1A0D16 100%) !important;
+        border: 1px solid rgba(244, 114, 182, 0.38) !important;
+      }
+      [data-theme="dark"] .grid.g6>.stat:nth-child(6) {
+        background: linear-gradient(145deg, #131E2A 0%, #0C141D 100%) !important;
+        border: 1px solid rgba(56, 189, 248, 0.38) !important;
       }
 
       .dash-alert-strip {
@@ -17092,15 +17254,13 @@
         color: #FFFFFF !important;
       }
 
-      /* Elevated cards with crisp luminous borders */
-      [data-theme="dark"] .card,
-      [data-theme="dark"] .stat,
-      [data-theme="dark"] .dash-hub-card,
+      /* Elevated generic cards with crisp luminous borders */
+      [data-theme="dark"] .card:not(.dash-hub-card):not(#dashCalWidget):not(.nectar-card-wrapper),
       [data-theme="dark"] .preach-level-card,
       [data-theme="dark"] .batch-tile-card,
       [data-theme="dark"] .dev-hero-card {
-        background: linear-gradient(155deg, #2A2C38 0%, #21222C 100%) !important;
-        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        background: linear-gradient(155deg, #202230 0%, #171824 100%) !important;
+        border: 1px solid rgba(255, 255, 255, 0.10) !important;
         box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3), 0 1px 0 rgba(255, 255, 255, 0.06) inset !important;
         color: #F5F6F8 !important;
       }
@@ -22427,9 +22587,9 @@
       </div>`;
       }
       const isTodayActive = (offset === 0) && (!APP.filters.dashCalSelectedDate || APP.filters.dashCalSelectedDate === iso(TODAY));
-      return `<div class="card" id="dashCalWidget" data-mob-card="calendar" style="margin-bottom:0;display:flex;flex-direction:column;height:auto">
+      return `<div class="card" id="dashCalWidget" data-mob-card="calendar" style="margin-bottom:0;display:flex;flex-direction:column;height:auto!important;min-height:0!important">
     <div class="card-h"><h3 style="display:inline-flex;align-items:center">📅 Calendar</h3><div class="r"><a class="btn sm" href="#/calendar">Full calendar →</a></div></div>
-    <div class="card-b" style="display:flex;flex-direction:column;flex:1">
+    <div class="card-b" style="display:flex;flex-direction:column;height:auto">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
         <div style="display:flex;gap:4px">
           <button class="btn sm ${calView === 'day' ? 'pri' : ''}" data-act="dash-cal-view" data-v="day">Day</button>
