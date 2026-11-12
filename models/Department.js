@@ -33,13 +33,19 @@ const DepartmentSchema = new mongoose.Schema({
     default: 'Weekly'
   },
   head: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Devotee',
+    type: mongoose.Schema.Types.Mixed,
+    default: null
+  },
+  incharge: {
+    type: String,
+    default: ''
+  },
+  module: {
+    type: String,
     default: null
   },
   assistants: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Devotee'
+    type: mongoose.Schema.Types.Mixed
   }],
   status: {
     type: String,

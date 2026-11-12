@@ -16017,15 +16017,16 @@
       .pulse-chip {
         display: flex !important;
         align-items: center !important;
-        gap: 8px !important;
-        padding: 7px 11px !important;
+        gap: 9px !important;
+        padding: 8px 13px !important;
         background: #FFFFFF !important;
         border: 1px solid rgba(226, 232, 240, 0.9) !important;
         border-radius: 14px !important;
         box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04) !important;
         text-decoration: none !important;
         flex-shrink: 0 !important;
-        min-width: 104px !important;
+        min-width: 114px !important;
+        white-space: nowrap !important;
         transition: transform .18s ease, box-shadow .18s ease !important;
       }
 
@@ -16046,7 +16047,7 @@
       }
 
       .pulse-icon {
-        font-size: 17px !important;
+        font-size: 20px !important;
         line-height: 1 !important;
       }
 
@@ -16056,16 +16057,17 @@
       }
 
       .pulse-val {
-        font-size: 13.5px !important;
+        font-size: 15.5px !important;
         font-weight: 800 !important;
         font-family: var(--f-head) !important;
         color: var(--ink) !important;
         line-height: 1.1 !important;
+        white-space: nowrap !important;
       }
 
       .pulse-lbl {
-        font-size: 9.5px !important;
-        font-weight: 600 !important;
+        font-size: 11px !important;
+        font-weight: 700 !important;
         color: var(--ink-3) !important;
         letter-spacing: 0.02em !important;
         white-space: nowrap !important;
@@ -16075,9 +16077,9 @@
       .mobile-dash-segment-bar {
         display: flex !important;
         background: #F1F5F9 !important;
-        padding: 3.5px !important;
-        border-radius: 12px !important;
-        gap: 4px !important;
+        padding: 4px !important;
+        border-radius: 14px !important;
+        gap: 5px !important;
         margin-bottom: 12px !important;
       }
 
@@ -16088,11 +16090,11 @@
 
       .dash-seg-btn {
         flex: 1 1 0 !important;
-        padding: 8px 6px !important;
+        padding: 9px 8px !important;
         border: none !important;
         background: transparent !important;
-        border-radius: 9px !important;
-        font-size: 12px !important;
+        border-radius: 10px !important;
+        font-size: 13.5px !important;
         font-weight: 700 !important;
         color: var(--ink-2) !important;
         cursor: pointer !important;
@@ -16214,13 +16216,13 @@
 
       /* 4. Streamlined Department & Level Buttons: Crisp white rounded boxes with high-contrast text in all themes */
       .dash-level-btn {
-        padding: 10px 13px !important;
+        padding: 12px 14px !important;
         border-radius: 14px !important;
-        margin-bottom: 6px !important;
+        margin-bottom: 7px !important;
         background: #FFFFFF !important;
         border: 1px solid #E2E8F0 !important;
         box-shadow: 0 2px 6px rgba(15, 23, 42, 0.05) !important;
-        min-height: 44px !important;
+        min-height: 48px !important;
       }
 
       /* Hide verbose subtitles on mobile to achieve the clean, spacious look */
@@ -16229,25 +16231,30 @@
       }
 
       .dash-level-btn .btn-title {
-        font-size: 13.5px !important;
+        font-size: 14.5px !important;
         font-weight: 700 !important;
         line-height: 1.2 !important;
         color: #0F172A !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
       }
 
       .dash-level-btn .btn-badge {
-        font-size: 11px !important;
+        font-size: 12px !important;
         font-weight: 800 !important;
-        padding: 4px 8px !important;
+        padding: 4px 9px !important;
         border-radius: 7px !important;
-        min-width: 32px !important;
+        min-width: 34px !important;
         text-align: center !important;
+        white-space: nowrap !important;
       }
 
       .dash-level-btn .btn-arr {
-        font-size: 12.5px !important;
+        font-size: 13.5px !important;
         font-weight: 700 !important;
         color: #4338CA !important;
+        white-space: nowrap !important;
       }
 
       /* In Dark Mode: Crisp white rounded boxes with deep high-contrast text */
@@ -16372,22 +16379,24 @@
         border: 1px solid rgba(226, 232, 240, 0.9) !important;
         border-radius: 22px !important;
         box-shadow: 0 8px 32px rgba(15, 23, 42, 0.12), 0 2px 6px rgba(15, 23, 42, 0.04) !important;
-        height: 60px !important;
-        padding: 4px 6px !important;
+        height: 64px !important;
+        padding: 4px 8px !important;
         z-index: 100 !important;
       }
 
       .botnav button {
+        font-size: 11.5px !important;
         font-weight: 600 !important;
         color: var(--ink-3) !important;
         border-radius: 16px !important;
         padding: 5px 2px !important;
         position: relative !important;
+        white-space: nowrap !important;
         transition: all .2s cubic-bezier(0.16, 1, 0.3, 1) !important;
       }
 
       .botnav button .em {
-        font-size: 19px !important;
+        font-size: 20px !important;
         line-height: 1 !important;
         margin-bottom: 2px !important;
         transition: transform .2s ease !important;
@@ -17770,24 +17779,44 @@
 
       .nectar-citation,
       .dash-quad-grid .nectar-citation {
-        font-size: 9.5px !important;
+        font-size: 11.5px !important;
+        white-space: nowrap !important;
+      }
+
+      .nectar-card-title,
+      .dash-quad-grid .nectar-card-title {
+        font-size: 14.5px !important;
+        white-space: nowrap !important;
+      }
+
+      .nectar-topic-badge,
+      .dash-quad-grid .nectar-topic-badge {
+        font-size: 10.5px !important;
+        white-space: nowrap !important;
       }
 
       .nectar-portrait-wrap,
       .dash-quad-grid .nectar-portrait-wrap {
-        width: 38px !important;
-        height: 38px !important;
+        width: 40px !important;
+        height: 40px !important;
       }
 
       .nectar-ambience-bar,
       .dash-quad-grid .nectar-ambience-bar {
-        padding: 5px 8px !important;
-        margin-top: 5px !important;
+        padding: 6px 10px !important;
+        margin-top: 6px !important;
       }
 
       .nectar-timer-bar-container {
         margin-top: 5px !important;
         height: 2px !important;
+      }
+
+      /* Global Anti-Wrapping Rules for Mobile */
+      .btn, .btn.sm, .badge, .pill, .chip, .pulse-lbl, .pulse-val,
+      .dash-seg-btn, .btn-badge, .btn-arr, .botnav button,
+      .hstat .hstat-lbl, .stat-lbl, .tab-btn {
+        white-space: nowrap !important;
       }
     }
 
@@ -18447,12 +18476,27 @@
     const logAudit = (action, record) => DB.audit.unshift({ id: uid('au'), user: (APP.user ? nameOf(APP.user.devotee) : 'System'), action, record, at: 'Just now', ts: Date.now() });
 
     (function seed() {
-      /* departments: 20 Official BACE Departments initialized clean */
-      DEPT_SEED.forEach(([name, desc, icon, color, category, freq, module], i) => DB.departments.push({
-        id: 'dp' + (i + 1), name, desc, icon, color, category, reportFreq: freq, module: module || null,
-        head: 'd1', assistants: [], status: 'Active', perf: 0,
-        budget: { allocated: 0, spent: 0 }, created: iso(dayOff(-200))
-      }));
+      /* departments: 20 Official BACE Departments initialized clean, persisted in localStorage & MongoDB */
+      let loadedDepts = false;
+      try {
+        const cachedDepts = localStorage.getItem('bace_departments_store');
+        if (cachedDepts) {
+          const parsed = JSON.parse(cachedDepts);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            DB.departments = parsed;
+            loadedDepts = true;
+          }
+        }
+      } catch (e) {
+        console.warn('Notice reading bace_departments_store from localStorage:', e);
+      }
+      if (!loadedDepts) {
+        DEPT_SEED.forEach(([name, desc, icon, color, category, freq, module], i) => DB.departments.push({
+          id: 'dp' + (i + 1), name, desc, icon, color, category, reportFreq: freq, module: module || null,
+          head: 'd1', assistants: [], status: 'Active', perf: 0,
+          budget: { allocated: 0, spent: 0 }, created: iso(dayOff(-200))
+        }));
+      }
 
       /* batches: Official BACE Batches initialized clean */
       BATCH_SEED.forEach(([name, level, desc, day, time, budget, bid]) => DB.batches.push({
@@ -18626,6 +18670,84 @@
       if (typeof id === 'object') return id.name || id.id || id._id || 'Unassigned';
       const d = dv(id) || (DB.devotees || []).find(x => String(x.name || '').trim().toLowerCase() === String(id).trim().toLowerCase() || (x._id && String(x._id) === String(id)));
       return d ? d.name : id;
+    }
+
+    function saveDepartments(dToSync) {
+      try {
+        localStorage.setItem('bace_departments_store', JSON.stringify(DB.departments));
+      } catch (e) {
+        console.warn('Could not save bace_departments_store to localStorage:', e);
+      }
+      if (dToSync) {
+        if (dToSync.status === 'Archived') {
+          const targetId = dToSync.id || dToSync.customId || dToSync.name;
+          fetch('/api/departments/' + encodeURIComponent(targetId), {
+            method: 'DELETE'
+          }).catch(err => console.warn('DELETE /api/departments notice:', err));
+        } else {
+          fetch('/api/departments', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(dToSync)
+          }).catch(err => console.warn('POST /api/departments notice:', err));
+        }
+      } else {
+        fetch('/api/departments/sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ departments: DB.departments })
+        }).catch(err => console.warn('POST /api/departments/sync notice:', err));
+      }
+    }
+
+    async function loadDepartmentsFromBackend() {
+      try {
+        const res = await fetch('/api/departments');
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data && data.success && Array.isArray(data.departments) && data.departments.length > 0) {
+          data.departments.forEach(sd => {
+            const cid = sd.customId || sd.id || sd._id;
+            const existing = (DB.departments || []).find(d => d.id === cid || d.customId === cid || d.name === sd.name);
+            if (existing) {
+              existing.status = sd.status || existing.status;
+              existing.name = sd.name || existing.name;
+              existing.desc = sd.desc || existing.desc;
+              existing.icon = sd.icon || existing.icon;
+              existing.color = sd.color || existing.color;
+              existing.category = sd.category || existing.category;
+              existing.reportFreq = sd.reportFreq || existing.reportFreq;
+              existing.head = sd.head || existing.head;
+              existing.incharge = sd.incharge || existing.incharge;
+              existing.budget = sd.budget || existing.budget;
+            } else {
+              DB.departments.push({
+                id: cid,
+                name: sd.name,
+                desc: sd.desc || '',
+                icon: sd.icon || '🏛️',
+                color: sd.color || '#C9601B',
+                category: sd.category || 'Facilities',
+                reportFreq: sd.reportFreq || 'Weekly',
+                module: sd.module || null,
+                head: sd.head || null,
+                incharge: sd.incharge || '',
+                assistants: sd.assistants || [],
+                status: sd.status || 'Active',
+                perf: sd.perf || 80,
+                budget: sd.budget || { allocated: 0, spent: 0 },
+                created: sd.createdAt || iso(TODAY)
+              });
+            }
+          });
+          try {
+            localStorage.setItem('bace_departments_store', JSON.stringify(DB.departments));
+          } catch (e) {}
+          if (APP.route === 'mgmt' || APP.route === 'home' || APP.route === 'sops') render();
+        }
+      } catch (err) {
+        console.warn('Notice: /api/departments offline or unreachable:', err.message);
+      }
     }
     function devoteeDisplayName(id) {
       const d = dv(id);
@@ -21798,7 +21920,6 @@
           <span class="badge sm" style="background:rgba(245,158,11,0.14);color:var(--amber);font-size:9.5px;padding:1px 6px;font-weight:700">${esc(q.topic || 'Vani')}</span>
         </div>
         <div style="display:flex;align-items:center;gap:4px">
-          <button class="btn sm" data-act="share-nectar-quote" title="Share quote to WhatsApp" style="padding:2px 7px;font-size:11px;border-color:rgba(245,158,11,0.3);display:inline-flex;align-items:center;gap:4px;color:var(--ink-2)">${waIcon(12)} Share</button>
           <button class="btn sm" data-act="prev-nectar-quote" title="Previous quote" style="padding:2px 7px;font-size:12px;border-color:rgba(245,158,11,0.3);line-height:1">‹</button>
           <span class="tiny" id="nectarQuoteCount" style="font-weight:700;color:var(--ink-3);min-width:38px;text-align:center;font-size:10.5px">${APP.nectarIdx + 1} / ${len}</span>
           <button class="btn sm" data-act="next-nectar-quote" title="Next quote" style="padding:2px 7px;font-size:12px;border-color:rgba(245,158,11,0.3);line-height:1">›</button>
@@ -28476,8 +28597,8 @@ label {
         <!-- Filter & Search Toolbar (Daily) -->
         <div class="toolbar morning-filter-toolbar" style="gap:8px;align-items:center;flex-wrap:wrap;padding:0;margin-bottom:12px">
           <div style="position:relative;min-width:180px;flex:1 1 200px">
-            <input type="search" placeholder="Search devotee in report…" value="${esc(APP.morningSearch || '')}" data-act="morning-q" style="width:100%;padding:6px 10px 6px 32px;font-size:12.5px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)">
-            <span style="position:absolute;left:10px;top:7px;color:var(--ink-3)">${ic('search')}</span>
+            <input type="search" placeholder="Search devotee in report…" value="${esc(APP.morningSearch || '')}" data-act="morning-q" style="width:100%;padding:6px 10px 6px 38px !important;font-size:12.5px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)">
+            <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--ink-3);display:flex;align-items:center">${ic('search')}</span>
           </div>
           <div class="chips morning-chips-wrap" style="margin:0">
             ${['', 'Attended', 'On Time', 'Grace', 'Late', 'Very late', 'Absent'].map(st => {
@@ -28637,8 +28758,8 @@ label {
         <!-- Filter & Sort Toolbar (Weekly) -->
         <div class="morning-period-toolbar" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px">
           <div style="position:relative">
-            <input type="search" placeholder="Filter devotee in weekly report…" value="${esc(APP.morningSearch || '')}" data-act="morning-q" style="width:100%;padding:6px 10px 6px 32px;font-size:12.5px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)">
-            <span style="position:absolute;left:10px;top:7px;color:var(--ink-3)">${ic('search')}</span>
+            <input type="search" placeholder="Filter devotee in weekly report…" value="${esc(APP.morningSearch || '')}" data-act="morning-q" style="width:100%;padding:6px 10px 6px 38px !important;font-size:12.5px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)">
+            <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--ink-3);display:flex;align-items:center">${ic('search')}</span>
           </div>
 
           <select data-act="morning-att-filter" onchange="APP.morningAttFilter=this.value;render();" style="padding:6px 10px;font-size:12px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);cursor:pointer">
@@ -28787,8 +28908,8 @@ label {
         <!-- Filter & Sort Toolbar (Monthly) -->
         <div class="morning-period-toolbar" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px">
           <div style="position:relative">
-            <input type="search" placeholder="Filter devotee in monthly report…" value="${esc(APP.morningSearch || '')}" data-act="morning-q" style="width:100%;padding:6px 10px 6px 32px;font-size:12.5px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)">
-            <span style="position:absolute;left:10px;top:7px;color:var(--ink-3)">${ic('search')}</span>
+            <input type="search" placeholder="Filter devotee in monthly report…" value="${esc(APP.morningSearch || '')}" data-act="morning-q" style="width:100%;padding:6px 10px 6px 38px !important;font-size:12.5px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)">
+            <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--ink-3);display:flex;align-items:center">${ic('search')}</span>
           </div>
 
           <select data-act="morning-att-filter" onchange="APP.morningAttFilter=this.value;render();" style="padding:6px 10px;font-size:12px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);cursor:pointer">
@@ -28926,8 +29047,8 @@ label {
       <div class="morning-progress-toolbar" style="padding:10px 18px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;border-bottom:1px solid var(--line-2);background:var(--surface)">
         <div class="morning-progress-search-row" style="position:relative;flex:1 1 200px;min-width:160px;display:flex;align-items:center;gap:6px">
           <div style="position:relative;flex:1 1 auto;min-width:0">
-            <input type="search" placeholder="Filter devotee in growth report…" value="${esc(APP.morningProgressSearch || '')}" data-act="morning-progress-q" oninput="APP.morningProgressSearch=this.value;render();" style="width:100%;box-sizing:border-box;padding:5px 8px 5px 28px;font-size:12px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--ink)">
-            <span style="position:absolute;left:8px;top:6px;color:var(--ink-3);font-size:11px">${ic('search')}</span>
+            <input type="search" placeholder="Filter devotee in growth report…" value="${esc(APP.morningProgressSearch || '')}" data-act="morning-progress-q" oninput="APP.morningProgressSearch=this.value;render();" style="width:100%;box-sizing:border-box;padding:6px 10px 6px 36px !important;font-size:12px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--ink)">
+            <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--ink-3);display:flex;align-items:center">${ic('search')}</span>
           </div>
           ${(APP.morningProgressSearch || APP.morningProgressGrowthFilter || APP.morningProgressPunctFilter || (APP.morningProgressSort && APP.morningProgressSort !== 'growth_desc')) ? `
             <button class="btn sm ghost" data-act="morning-progress-reset" onclick="APP.morningProgressSearch='';APP.morningProgressGrowthFilter='';APP.morningProgressPunctFilter='';APP.morningProgressSort='growth_desc';render();" style="padding:4px 8px;font-size:11px;flex:none;white-space:nowrap">✕ Reset</button>
@@ -34523,7 +34644,7 @@ label {
      <div class="att-filter-collapse" id="att-filter-collapse">
      <div class="att-toolbar-row att-filter-controls-row" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:4px;padding-top:8px;border-top:1px solid var(--line-2)">
        <div style="position:relative;flex:1;min-width:170px;max-width:280px">
-         <input type="text" class="inp sm" data-act="att-q" value="${esc(APP.filters.attSearch || '')}" placeholder="Search devotee name..." style="width:100%;font-size:12.5px;padding:6px 10px 6px 28px;border-radius:8px;box-sizing:border-box">
+         <input type="text" class="inp sm" data-act="att-q" value="${esc(APP.filters.attSearch || '')}" placeholder="Search devotee name..." style="width:100%;font-size:12.5px;padding:6px 10px 6px 36px !important;border-radius:8px;box-sizing:border-box">
          <span style="position:absolute;left:9px;top:50%;transform:translateY(-50%);font-size:12px;opacity:0.55;pointer-events:none">🔍</span>
          ${APP.filters.attSearch ? `<button type="button" class="btn ghost sm" data-act="clear-att-q" style="position:absolute;right:3px;top:50%;transform:translateY(-50%);padding:2px 6px;font-size:11px;color:var(--ink-3);min-height:auto" title="Clear search">✕</button>` : ''}
        </div>
@@ -41544,25 +41665,31 @@ label {
           const v = collect();
           if (!v.name.trim()) { toast('A department needs a name', '⚠️'); break }
           const ctx = APP.modal.ctx;
+          let affectedDept = null;
           if (ctx.id) {
             const d = dept(ctx.id); Object.assign(d, {
               name: v.name, desc: v.desc, head: v.head, incharge: v.incharge || '', category: v.category, icon: v.icon,
               color: v.color, reportFreq: v.reportFreq, status: v.status, budget: { allocated: +v.allocated || 0, spent: +v.spent || 0 }
             });
+            affectedDept = d;
             logAudit('Department updated', d.name); toast('Department updated')
           }
           else {
-            DB.departments.push({
+            const newDept = {
               id: uid('dp'), name: v.name, desc: v.desc, icon: v.icon, color: v.color, category: v.category,
               reportFreq: v.reportFreq, module: null, head: v.head, assistants: [], status: v.status, perf: 0,
               budget: { allocated: +v.allocated || 0, spent: +v.spent || 0 }, created: iso(TODAY)
-            });
+            };
+            DB.departments.push(newDept);
+            affectedDept = newDept;
             logAudit('Department created', v.name); toast('Department created')
           }
+          saveDepartments(affectedDept);
           APP.modal = ''; render(); break
         }
         case 'archive-dept': stop(); {
           const d = dept(id); d.status = 'Archived'; logAudit('Department archived', d.name);
+          saveDepartments(d);
           toast(d.name + ' archived — history retained', '🗄'); render(); break
         }
         case 'remove-dept': stop(); {
@@ -41571,6 +41698,7 @@ label {
           if (!confirm(`Are you sure you want to remove the "${d.name}" department from Dept Hub?`)) break;
           d.status = 'Archived';
           logAudit('Department removed', d.name);
+          saveDepartments(d);
           toast(`${d.name} removed from Dept Hub`, '🗑️');
           render();
           break;
@@ -44964,6 +45092,7 @@ label {
     loadMorningAttendanceFromBackend();
     loadCampsFromBackend();
     loadOutingsFromBackend();
+    loadDepartmentsFromBackend();
     loadNotificationsFromBackend();
     setInterval(() => loadNotificationsFromBackend(false), 45000);
     render();

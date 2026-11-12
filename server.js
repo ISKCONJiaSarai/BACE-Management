@@ -84,6 +84,7 @@ app.use('/api/camps', require('./routes/campRoutes'));
 app.use('/api/outings', require('./routes/outingRoutes'));
 app.use('/api/nectar', require('./routes/nectarRoutes'));
 app.use('/api/notifications', require('./routes/notificationRoutes'));
+app.use('/api/departments', require('./routes/departmentRoutes'));
 
 
 // Error handling middleware
