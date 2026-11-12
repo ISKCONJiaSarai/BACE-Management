@@ -22092,6 +22092,13 @@
       const totalBatchDevs = batches.reduce((n, b) => { const batchDevs = DB.devotees.filter(d => d.batch === b.id || ((d.batches || []).includes(b.id))); return n + batchDevs.length; }, 0);
       const fuOverdue = s.fuOverdue || 0;
       const newContacts = s.newContacts || 0;
+      const baceHealthData = typeof getBaceHealthSummary === 'function' ? getBaceHealthSummary() : null;
+      const baceKpis = baceHealthData ? baceHealthData.stats : null;
+      const avgMorning = baceKpis && typeof baceKpis.avgMorning === 'number'
+        ? baceKpis.avgMorning
+        : ((DB.sadhana && DB.sadhana.length)
+          ? Math.round(DB.sadhana.reduce((sum, r) => sum + (r.program || r.morningProgram || 0), 0) / DB.sadhana.length)
+          : 0);
       // Status dot helper
       const dot = (ok, warn, danger, val) => {
         let c = 'var(--green)', tip = 'Good';
