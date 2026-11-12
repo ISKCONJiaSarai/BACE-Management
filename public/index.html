@@ -9100,13 +9100,135 @@ html.theme-transitioning .pillar-item {
     display: none !important;
   }
 
-  /* 3. COASTOK Whitespace-Heavy Floating Cards */
+  /* 3. COASTOK Whitespace-Heavy Floating Cards & Segmented Switcher */
+  .ashram-pulse-row {
+    display: flex !important;
+    gap: 8px !important;
+    overflow-x: auto !important;
+    padding: 2px 2px 10px !important;
+    margin-bottom: 4px !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+  }
+  .ashram-pulse-row::-webkit-scrollbar {
+    display: none !important;
+  }
+  .pulse-chip {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    padding: 7px 11px !important;
+    background: #FFFFFF !important;
+    border: 1px solid rgba(226, 232, 240, 0.9) !important;
+    border-radius: 14px !important;
+    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04) !important;
+    text-decoration: none !important;
+    flex-shrink: 0 !important;
+    min-width: 104px !important;
+    transition: transform .18s ease, box-shadow .18s ease !important;
+  }
+  [data-theme="dark"] .pulse-chip {
+    background: linear-gradient(145deg, #262734 0%, #1E1F29 100%) !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25) !important;
+  }
+  .pulse-chip.pulse-alert {
+    border-color: #EF4444 !important;
+    background: #FEF2F2 !important;
+  }
+  [data-theme="dark"] .pulse-chip.pulse-alert {
+    border-color: rgba(244, 63, 94, 0.45) !important;
+    background: rgba(244, 63, 94, 0.15) !important;
+  }
+  .pulse-icon {
+    font-size: 17px !important;
+    line-height: 1 !important;
+  }
+  .pulse-meta {
+    display: flex !important;
+    flex-direction: column !important;
+  }
+  .pulse-val {
+    font-size: 13.5px !important;
+    font-weight: 800 !important;
+    font-family: var(--f-head) !important;
+    color: var(--ink) !important;
+    line-height: 1.1 !important;
+  }
+  .pulse-lbl {
+    font-size: 9.5px !important;
+    font-weight: 600 !important;
+    color: var(--ink-3) !important;
+    letter-spacing: 0.02em !important;
+    white-space: nowrap !important;
+  }
+
+  /* Segmented Control Bar */
+  .mobile-dash-segment-bar {
+    display: flex !important;
+    background: #F1F5F9 !important;
+    padding: 3.5px !important;
+    border-radius: 12px !important;
+    gap: 4px !important;
+    margin-bottom: 12px !important;
+  }
+  [data-theme="dark"] .mobile-dash-segment-bar {
+    background: #21222C !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  }
+  .dash-seg-btn {
+    flex: 1 1 0 !important;
+    padding: 8px 6px !important;
+    border: none !important;
+    background: transparent !important;
+    border-radius: 9px !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    color: var(--ink-2) !important;
+    cursor: pointer !important;
+    transition: all .2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    text-align: center !important;
+    white-space: nowrap !important;
+  }
+  .dash-seg-btn.active {
+    background: #FFFFFF !important;
+    color: var(--saffron) !important;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08) !important;
+  }
+  [data-theme="dark"] .dash-seg-btn.active {
+    background: linear-gradient(135deg, #FF7A00 0%, #EA580C 100%) !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 2px 10px rgba(234, 88, 12, 0.4) !important;
+  }
+
+  /* Mobile Card Switching in dash-quad-grid */
   .dash-quad-grid {
     display: flex !important;
     flex-direction: column !important;
     gap: 12px !important;
     margin: 0 !important;
   }
+  .dash-quad-grid[data-active-tab="mgmt"] > :not([data-mob-card="mgmt"]) {
+    display: none !important;
+  }
+  .dash-quad-grid[data-active-tab="mgmt"] > [data-mob-card="mgmt"] {
+    display: flex !important;
+  }
+
+  .dash-quad-grid[data-active-tab="preach"] > :not([data-mob-card="preach"]) {
+    display: none !important;
+  }
+  .dash-quad-grid[data-active-tab="preach"] > [data-mob-card="preach"] {
+    display: flex !important;
+  }
+
+  .dash-quad-grid[data-active-tab="calendar"] > :not([data-mob-card="calendar"]) {
+    display: none !important;
+  }
+  .dash-quad-grid[data-active-tab="calendar"] > [data-mob-card="calendar"] {
+    display: flex !important;
+  }
+
   .dash-hub-card {
     background: #FFFFFF !important;
     border: 1px solid rgba(226, 232, 240, 0.9) !important;
@@ -9122,6 +9244,58 @@ html.theme-transitioning .pillar-item {
   /* Remove dense 3-box stat strips from both cards on mobile */
   .dash-hub-card .card-b > div[style*="grid-template-columns:repeat(3,1fr)"] {
     display: none !important;
+  }
+
+  /* 1-Tap Quick Actions on Devotee Rows */
+  .dmr-quick-actions {
+    display: flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+  }
+  .dmr-action-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 27px !important;
+    height: 27px !important;
+    border-radius: 8px !important;
+    font-size: 13px !important;
+    text-decoration: none !important;
+    line-height: 1 !important;
+    transition: transform .18s ease, filter .18s ease !important;
+  }
+  .dmr-action-btn.wa {
+    background: rgba(37, 211, 102, 0.15) !important;
+    border: 1px solid rgba(37, 211, 102, 0.35) !important;
+  }
+  .dmr-action-btn.call {
+    background: rgba(59, 130, 246, 0.12) !important;
+    border: 1px solid rgba(59, 130, 246, 0.3) !important;
+  }
+  .dmr-action-btn:hover {
+    transform: scale(1.1) !important;
+  }
+  .batch-wa-pill {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 3px !important;
+    padding: 2px 7px !important;
+    border-radius: 6px !important;
+    font-size: 10.5px !important;
+    font-weight: 700 !important;
+    background: rgba(37, 211, 102, 0.14) !important;
+    color: #15803D !important;
+    border: 1px solid rgba(37, 211, 102, 0.35) !important;
+    cursor: pointer !important;
+    transition: all .16s ease !important;
+  }
+  [data-theme="dark"] .batch-wa-pill {
+    background: rgba(37, 211, 102, 0.20) !important;
+    color: #4ADE80 !important;
+    border-color: rgba(37, 211, 102, 0.45) !important;
+  }
+  .batch-wa-pill:hover {
+    transform: scale(1.05) !important;
   }
 
   /* 4. Streamlined Department & Level Buttons: Compact, single-line, zero subtitle clutter */
@@ -13987,7 +14161,7 @@ function prabhupadaNectarCard(){
   setTimeout(startNectarAutoSwipe, 200);
 
   return `
-    <div class="card pad nectar-card-wrapper" style="position:relative;overflow:hidden;border:1px solid rgba(245,158,11,0.25);background:linear-gradient(135deg,rgba(254,243,199,0.2) 0%,var(--surface) 60%,rgba(254,243,199,0.12) 100%);box-shadow:0 4px 18px -4px rgba(245,158,11,0.08);margin-bottom:0;display:flex;flex-direction:column;height:auto">
+    <div class="card pad nectar-card-wrapper" data-mob-card="calendar" style="position:relative;overflow:hidden;border:1px solid rgba(245,158,11,0.25);background:linear-gradient(135deg,rgba(254,243,199,0.2) 0%,var(--surface) 60%,rgba(254,243,199,0.12) 100%);box-shadow:0 4px 18px -4px rgba(245,158,11,0.08);margin-bottom:0;display:flex;flex-direction:column;height:auto">
       <div style="position:absolute;right:-15px;bottom:-20px;font-size:120px;opacity:0.04;pointer-events:none;user-select:none">🪷</div>
 
       <div class="nectar-card-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid rgba(245,158,11,0.2)">
@@ -14441,7 +14615,7 @@ function dashboardCalendarWidget(){
       </div>`;
   }
   const isTodayActive = (offset === 0) && (!APP.filters.dashCalSelectedDate || APP.filters.dashCalSelectedDate === iso(TODAY));
-    return `<div class="card" id="dashCalWidget" style="margin-bottom:0;display:flex;flex-direction:column;height:100%">
+    return `<div class="card" id="dashCalWidget" data-mob-card="calendar" style="margin-bottom:0;display:flex;flex-direction:column;height:100%">
     <div class="card-h"><h3 style="display:inline-flex;align-items:center">📅 Calendar</h3><div class="r"><a class="btn sm" href="#/calendar">Full calendar →</a></div></div>
     <div class="card-b" style="display:flex;flex-direction:column;flex:1">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
@@ -14727,7 +14901,57 @@ function viewDashboard(){
     </a>`;
   }).join('');
 
-    const mgmtCard=`<div class="card dash-hub-card" data-act="toggle-hub-card" style="display:flex;flex-direction:column;justify-content:space-between;margin-bottom:0">
+    const mobTab = APP.mobDashTab || 'mgmt';
+
+    const ashramPulseHtml = `
+      <div class="ashram-pulse-row hide-desktop">
+        <a href="#/attendance" class="pulse-chip" title="Today's Morning Program Attendance">
+          <span class="pulse-icon">🌅</span>
+          <div class="pulse-meta">
+            <span class="pulse-val">${avgMorning}%</span>
+            <span class="pulse-lbl">Morning Att.</span>
+          </div>
+        </a>
+        <a href="#/assign" class="pulse-chip" title="Volunteers active in Seva">
+          <span class="pulse-icon">🛕</span>
+          <div class="pulse-meta">
+            <span class="pulse-val">${s.volunteers}</span>
+            <span class="pulse-lbl">In Seva</span>
+          </div>
+        </a>
+        <a href="#/batches" class="pulse-chip" title="Active Preaching Batches">
+          <span class="pulse-icon">📖</span>
+          <div class="pulse-meta">
+            <span class="pulse-val">${batches.length}</span>
+            <span class="pulse-lbl">Batches</span>
+          </div>
+        </a>
+        <a href="#/followups" class="pulse-chip ${fuOverdue > 0 ? 'pulse-alert' : ''}" title="Overdue Follow-ups">
+          <span class="pulse-icon">⏰</span>
+          <div class="pulse-meta">
+            <span class="pulse-val">${fuOverdue}</span>
+            <span class="pulse-lbl">Follow-ups</span>
+          </div>
+        </a>
+        <a href="#/devotees" class="pulse-chip" title="Total Community Devotees">
+          <span class="pulse-icon">👥</span>
+          <div class="pulse-meta">
+            <span class="pulse-val">${s.total}</span>
+            <span class="pulse-lbl">Devotees</span>
+          </div>
+        </a>
+      </div>
+    `;
+
+    const mobSegmentBarHtml = `
+      <div class="mobile-dash-segment-bar hide-desktop">
+        <button type="button" class="dash-seg-btn ${mobTab==='mgmt'?'active':''}" data-act="switch-mob-dash" data-tab="mgmt">🛕 Management</button>
+        <button type="button" class="dash-seg-btn ${mobTab==='preach'?'active':''}" data-act="switch-mob-dash" data-tab="preach">📖 Preaching</button>
+        <button type="button" class="dash-seg-btn ${mobTab==='calendar'?'active':''}" data-act="switch-mob-dash" data-tab="calendar">📅 Calendar</button>
+      </div>
+    `;
+
+    const mgmtCard=`<div class="card dash-hub-card" data-mob-card="mgmt" data-act="toggle-hub-card" style="display:flex;flex-direction:column;justify-content:space-between;margin-bottom:0">
     <div class="card-b" style="display:flex;flex-direction:column">
       <div class="dash-hub-header" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer">
         <div style="display:flex;align-items:center;gap:10px">
@@ -14768,7 +14992,7 @@ function viewDashboard(){
       </div>
     </div>
   </div>`;
-  const preachCard=`<div class="card dash-hub-card" data-act="toggle-hub-card" style="display:flex;flex-direction:column;justify-content:space-between;margin-bottom:0">
+  const preachCard=`<div class="card dash-hub-card" data-mob-card="preach" data-act="toggle-hub-card" style="display:flex;flex-direction:column;justify-content:space-between;margin-bottom:0">
     <div class="card-b" style="display:flex;flex-direction:column">
       <div class="dash-hub-header" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer">
         <div style="display:flex;align-items:center;gap:10px">
@@ -14812,7 +15036,9 @@ function viewDashboard(){
   return hero()+
     (attnItems.length?`<div class="dash-alert-strip reveal-section">&#x23F0; <strong>${attnItems.length}</strong>&nbsp;item${attnItems.length>1?'s':''} need${attnItems.length===1?'s':''} attention <a class="btn sm" href="#/followups" style="margin-left:auto;flex-shrink:0">View &#x2192;</a></div>`:'')+
     `<div class="reveal-section" style="margin-top:8px">
-      <div class="dash-quad-grid">
+      ${ashramPulseHtml}
+      ${mobSegmentBarHtml}
+      <div class="dash-quad-grid" data-active-tab="${mobTab}">
         ${mgmtCard}
         ${preachCard}
         ${dashboardCalendarWidget()}
@@ -15536,6 +15762,10 @@ function viewDevotees(){
         facName   ? `🤝 ${esc(facName)}`   : '',
         deptName  ? `🛕 ${esc(deptName)}`  : ''
       ].filter(Boolean).join(' · ');
+      const cleanPhone = (d.phone || '').replace(/[^0-9]/g, '');
+      const waPhone = cleanPhone.length === 10 ? '91' + cleanPhone : cleanPhone;
+      const waHref = waPhone ? `https://wa.me/${waPhone}?text=${encodeURIComponent('Hare Krishna Prabhu! 🙏')}` : '';
+      const callHref = d.phone ? `tel:${d.phone}` : '';
       const rowContent = `
         <div class="dev-mob-row" data-act="open-devotee" data-id="${d.id}">
           <div class="dmr-av">${av(d.name,'s')}</div>
@@ -15544,9 +15774,13 @@ function viewDevotees(){
             <div class="dmr-sub">${sbadge(d.status)}${subParts ? `<span style="color:var(--ink-3)">${subParts}</span>` : ''}</div>
           </div>
           <div class="dmr-right">
-            <div style="display:flex;align-items:center;gap:5px">
-              <div class="prog" style="width:44px;height:5px;background:var(--line-2);border-radius:3px;overflow:hidden"><i style="width:${Math.min(100,v)}%;background:${attCol};display:block;height:100%"></i></div>
-              <span style="font-size:11px;font-weight:700;color:${attCol}">${v}%</span>
+            <div class="dmr-quick-actions">
+              ${waHref ? `<a href="${waHref}" target="_blank" rel="noopener" onclick="event.stopPropagation()" class="dmr-action-btn wa" title="WhatsApp">💬</a>` : ''}
+              ${callHref ? `<a href="${callHref}" onclick="event.stopPropagation()" class="dmr-action-btn call" title="Call">📞</a>` : ''}
+            </div>
+            <div style="display:flex;align-items:center;gap:4px">
+              <div class="prog" style="width:36px;height:5px;background:var(--line-2);border-radius:3px;overflow:hidden"><i style="width:${Math.min(100,v)}%;background:${attCol};display:block;height:100%"></i></div>
+              <span style="font-size:10.5px;font-weight:700;color:${attCol}">${v}%</span>
             </div>
             <span style="font-size:18px;color:var(--ink-3);opacity:.35">›</span>
           </div>
@@ -27051,6 +27285,9 @@ function viewPreaching(){
     const attPct=m.attendance||0;
     const attColor=attPct>=75?'var(--green)':attPct>=50?'var(--amber)':'var(--danger)';
     const lvlInfo=levels.find(l=>l.num===(b.level||1))||levels[0];
+    const coordDev = b.coordinator ? (DB.devotees || []).find(d => d.id === b.coordinator) : null;
+    const coordPhone = coordDev ? (coordDev.phone || '').replace(/[^0-9]/g, '') : '';
+    const waCoord = coordPhone.length === 10 ? '91' + coordPhone : coordPhone;
     const coord=b.coordinator?nameOf(b.coordinator):(b.incharge?nameOf(b.incharge):'Surya Narayana Das');
     return `<a href="#/batch/${b.id}" class="card batch-tile-card" style="text-decoration:none;color:inherit;display:block;border-left:3.5px solid ${lvlInfo.color};transition:all .18s ease">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px">
@@ -27076,7 +27313,10 @@ function viewPreaching(){
       </div>
       <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:11px;color:var(--ink-3);padding-top:2px">
         <span>${b.day ? `📅 ${esc(b.day)}${b.time ? ' · '+esc(b.time) : ''}` : (b.schedule ? `📅 ${esc(b.schedule)}` : '📅 Weekly')}</span>
-        <span style="color:var(--indigo);font-weight:700;font-size:11px;display:flex;align-items:center;gap:2px">View →</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          ${waCoord ? `<span onclick="event.preventDefault();event.stopPropagation();window.open('https://wa.me/${waCoord}?text=${encodeURIComponent('Hare Krishna Prabhu! Regarding '+b.name)}','_blank')" class="batch-wa-pill" title="WhatsApp Coordinator">💬 WhatsApp</span>` : ''}
+          <span style="color:var(--indigo);font-weight:700;font-size:11px;display:flex;align-items:center;gap:2px">View →</span>
+        </div>
       </div>
     </a>`;
   }
@@ -32398,6 +32638,16 @@ document.addEventListener('click',e=>{
        if(body) body.style.display = expand ? 'block' : 'none';
        const lvl = c.dataset.level;
        if(lvl) APP.preachLevelOpen[lvl] = expand;
+     });
+     break}
+   case 'switch-mob-dash':{
+     stop();
+     const tab = t.dataset.tab || 'mgmt';
+     APP.mobDashTab = tab;
+     const quad = document.querySelector('.dash-quad-grid');
+     if(quad) quad.dataset.activeTab = tab;
+     document.querySelectorAll('.dash-seg-btn').forEach(b => {
+       b.classList.toggle('active', b.dataset.tab === tab);
      });
      break}
    case 'toggle-hub-card':{
