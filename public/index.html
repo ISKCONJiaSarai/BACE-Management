@@ -15841,15 +15841,16 @@
       display: flex !important;
       align-items: center !important;
       justify-content: space-between !important;
-      padding: 8px 11px !important;
-      background: var(--paper-2, #F8FAFC) !important;
-      border: 1px solid var(--line-2, #E2E8F0) !important;
-      border-radius: 10px !important;
+      padding: 10px 13px !important;
+      background: #FFFFFF !important;
+      border: 1px solid #CBD5E1 !important;
+      border-radius: 12px !important;
       text-decoration: none !important;
       margin-bottom: 6px !important;
       transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
       cursor: pointer !important;
-      color: var(--ink) !important;
+      color: #0F172A !important;
+      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.05) !important;
     }
 
     .dash-level-btn .btn-badge {
@@ -15864,29 +15865,43 @@
     }
 
     .dash-level-btn .btn-title {
-      font-size: 13px !important;
+      font-size: 13.5px !important;
       font-weight: 700 !important;
-      color: var(--ink) !important;
+      color: #0F172A !important;
       line-height: 1.2 !important;
       transition: color 0.22s ease !important;
     }
 
     .dash-level-btn .btn-sub {
       font-size: 10.5px !important;
-      color: var(--ink-3) !important;
+      color: #64748B !important;
       font-weight: 500 !important;
       margin-top: 1px !important;
       transition: color 0.22s ease !important;
     }
 
     .dash-level-btn .btn-arr {
-      font-size: 12px !important;
-      font-weight: 600 !important;
-      color: var(--ink-3) !important;
+      font-size: 12.5px !important;
+      font-weight: 700 !important;
+      color: #4338CA !important;
       display: flex !important;
       align-items: center !important;
       gap: 3px !important;
       transition: all 0.22s ease !important;
+    }
+
+    [data-theme="dark"] .dash-level-btn {
+      background: #FFFFFF !important;
+      border: 1px solid #CBD5E1 !important;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35) !important;
+    }
+
+    [data-theme="dark"] .dash-level-btn .btn-title {
+      color: #0F172A !important;
+    }
+
+    [data-theme="dark"] .dash-level-btn .btn-arr {
+      color: #4338CA !important;
     }
 
     /* Hover state: Vibrant colors dynamically appear on hover */
@@ -20067,7 +20082,7 @@
       ${topNavMusicBtn()}
     </nav>
     <div class="header-controls">
-      <div class="searchbox" style="margin:0;cursor:pointer;position:relative" onclick="openSpotlightSearch()" title="Search across BACE (Ctrl+K)">${ic('search')}<input type="search" placeholder="Search… (Ctrl+K)" value="${esc(APP.search)}" readonly style="cursor:pointer;padding-left:42px!important" aria-label="Global search"></div>
+      <div class="searchbox" style="margin:0;cursor:pointer;position:relative" onclick="openSpotlightSearch()" title="Search across BACE (Ctrl+K)">${ic('search')}<input type="search" placeholder="Search… (Ctrl+K)" value="${esc(APP.search)}" readonly style="cursor:pointer;padding-left:46px!important" aria-label="Global search"></div>
       <button class="icon-btn hide-desktop" onclick="openSpotlightSearch()" title="Spotlight search">${ic('search')}</button>
       ${topNavMusicBtn(true)}
       <button class="theme-toggle" data-act="toggle-theme" title="Toggle theme">${APP.theme === 'dark' ? sunSvg : moonSvg}</button>
@@ -22343,11 +22358,11 @@
       <div style="display:flex;align-items:center;gap:9px">
         <span class="btn-badge">${c.code}</span>
         <div>
-          <div class="btn-title">${c.name}</div>
+          <div class="btn-title" style="color:#0F172A!important;font-weight:700!important">${c.name}</div>
           <div class="btn-sub">${data.volunteers} in seva &middot; ${data.completion}% done</div>
         </div>
       </div>
-      <span class="btn-arr">View &#x2192;</span>
+      <span class="btn-arr" style="color:#4338CA!important;font-weight:700!important">View &#x2192;</span>
     </a>`;
       }).join('');
 
@@ -22421,11 +22436,11 @@
       <div style="display:flex;align-items:center;gap:9px">
         <span class="btn-badge">L${c.lvl}</span>
         <div>
-          <div class="btn-title">${c.name}</div>
+          <div class="btn-title" style="color:#0F172A!important;font-weight:700!important">${c.name}</div>
           <div class="btn-sub">${data.count} ${data.count === 1 ? 'batch' : 'batches'} &middot; ${data.devs} devotees</div>
         </div>
       </div>
-      <span class="btn-arr">View &#x2192;</span>
+      <span class="btn-arr" style="color:#4338CA!important;font-weight:700!important">View &#x2192;</span>
     </a>`;
       }).join('');
 
@@ -23226,8 +23241,8 @@
       const toolbar = `
     <div class="dev-toolbar-row" style="display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;width:100%">
       <div style="position:relative;flex:1;min-width:0" class="search-with-icon">
-        <input type="search" class="dev-search-input" placeholder="Search devotees..." value="${esc(f.q)}" data-act="f" data-k="dev" data-n="q" style="width:100%;padding:8px 14px 8px 40px !important;border-radius:9px;border:1px solid var(--line);font-size:13.5px;background:var(--surface)">
-        <span style="position:absolute;left:13px;top:50%;transform:translateY(-50%);font-size:14px;opacity:0.6;pointer-events:none;line-height:1">🔍</span>
+        <input type="search" class="dev-search-input" placeholder="Search devotees..." value="${esc(f.q)}" data-act="f" data-k="dev" data-n="q" style="width:100%;padding:8px 14px 8px 46px !important;border-radius:9px;border:1px solid var(--line);font-size:13.5px;background:var(--surface)">
+        <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:14px;opacity:0.6;pointer-events:none;line-height:1">🔍</span>
       </div>
       <div class="dev-toolbar-actions" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         ${activeFilterCount > 0 ? `<button class="btn sm" data-act="clear-dev-filters" title="Reset all filters" style="color:var(--danger);background:rgba(220,53,69,0.06);border-color:rgba(220,53,69,0.25);font-weight:600;display:inline-flex;align-items:center;gap:5px">${ic('x')} Reset (${activeFilterCount})</button>` : ''}
