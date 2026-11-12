@@ -16104,32 +16104,36 @@
       .dash-quad-grid {
         display: flex !important;
         flex-direction: column !important;
-        gap: 12px !important;
+        gap: 14px !important;
         margin: 0 !important;
       }
 
-      .dash-quad-grid[data-active-tab="mgmt"]> :not([data-mob-card="mgmt"]) {
+      .dash-quad-grid[data-active-tab="mgmt"] > [data-mob-card="preach"] {
         display: none !important;
       }
 
-      .dash-quad-grid[data-active-tab="mgmt"]>[data-mob-card="mgmt"] {
+      .dash-quad-grid[data-active-tab="mgmt"] > [data-mob-card="mgmt"] {
         display: flex !important;
+        order: 1 !important;
       }
 
-      .dash-quad-grid[data-active-tab="preach"]> :not([data-mob-card="preach"]) {
+      .dash-quad-grid[data-active-tab="preach"] > [data-mob-card="mgmt"] {
         display: none !important;
       }
 
-      .dash-quad-grid[data-active-tab="preach"]>[data-mob-card="preach"] {
+      .dash-quad-grid[data-active-tab="preach"] > [data-mob-card="preach"] {
         display: flex !important;
+        order: 1 !important;
       }
 
-      .dash-quad-grid[data-active-tab="calendar"]> :not([data-mob-card="calendar"]) {
-        display: none !important;
+      .dash-quad-grid > [data-mob-card="calendar"] {
+        display: flex !important;
+        order: 2 !important;
       }
 
-      .dash-quad-grid[data-active-tab="calendar"]>[data-mob-card="calendar"] {
+      .dash-quad-grid > [data-mob-card="nectar"] {
         display: flex !important;
+        order: 3 !important;
       }
 
       .dash-hub-card {
@@ -16173,11 +16177,21 @@
       .dmr-action-btn.wa {
         background: rgba(37, 211, 102, 0.15) !important;
         border: 1px solid rgba(37, 211, 102, 0.35) !important;
+        color: #25D366 !important;
+      }
+
+      .dmr-action-btn.wa svg {
+        fill: #25D366 !important;
       }
 
       .dmr-action-btn.call {
         background: rgba(59, 130, 246, 0.12) !important;
         border: 1px solid rgba(59, 130, 246, 0.3) !important;
+        color: #38BDF8 !important;
+      }
+
+      .dmr-action-btn.call svg {
+        stroke: #38BDF8 !important;
       }
 
       .dmr-action-btn:hover {
@@ -16249,19 +16263,60 @@
 
       /* 5. Minimalist Clean Calendar and Prabhupada Nectar Cards */
       #dashCalWidget {
-        background: #FFFFFF !important;
+        background: var(--surface) !important;
         border-radius: 20px !important;
-        border: 1px solid rgba(226, 232, 240, 0.9) !important;
-        box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.04) !important;
+        border: 1px solid var(--line) !important;
+        box-shadow: var(--sh-card) !important;
         overflow: hidden !important;
       }
 
-      .prabhupada-nectar-card {
+      [data-theme="light"] #dashCalWidget {
         background: #FFFFFF !important;
-        border-radius: 20px !important;
         border: 1px solid rgba(226, 232, 240, 0.9) !important;
         box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.04) !important;
-        overflow: hidden !important;
+      }
+
+      [data-theme="dark"] #dashCalWidget {
+        background: linear-gradient(150deg, #2A2C38 0%, #20222D 100%) !important;
+        border: 1px solid rgba(255, 255, 255, 0.10) !important;
+        box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.45) !important;
+      }
+
+      #dashCalWidget .card-h {
+        border-bottom: 1px solid var(--line-2) !important;
+      }
+
+      #dashCalWidget .dash-cal-month-title {
+        color: var(--ink) !important;
+        font-weight: 800 !important;
+        font-size: 15px !important;
+        text-align: center !important;
+        margin-bottom: 10px !important;
+      }
+
+      #dashCalWidget .dash-cal-day-header {
+        color: var(--ink-2) !important;
+        font-weight: 700 !important;
+        font-size: 11px !important;
+      }
+
+      #dashCalWidget .dash-cal-day-cell {
+        font-weight: 700 !important;
+        font-size: 13px !important;
+        color: var(--ink) !important;
+      }
+
+      .nectar-card-wrapper {
+        background: var(--surface) !important;
+        border-radius: 20px !important;
+        border: 1px solid rgba(245, 158, 11, 0.25) !important;
+        box-shadow: var(--sh-card) !important;
+      }
+
+      [data-theme="dark"] .nectar-card-wrapper {
+        background: linear-gradient(150deg, #2A2C38 0%, #20222D 100%) !important;
+        border: 1px solid rgba(245, 158, 11, 0.3) !important;
+        box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.45) !important;
       }
 
       .dash-alert-strip {
@@ -18820,6 +18875,10 @@
         targetBatch?.name
       ].filter(Boolean).map(x => String(x).toLowerCase().trim()));
       return (DB.devotees || []).filter(d => d.batch && valid.has(String(d.batch).toLowerCase().trim()));
+    };
+    const batchMemberCount = bid => {
+      if (!bid) return 0;
+      return (DB.devotees || []).filter(d => d.batch === bid || (Array.isArray(d.batches) && d.batches.includes(bid))).length;
     };
     function batchContacts(b) {
       if (!b) return [];
@@ -21532,84 +21591,40 @@
       }
       const len = PRABHUPADA_NECTAR_QUOTES.length || 1;
       const q = PRABHUPADA_NECTAR_QUOTES[APP.nectarIdx] || PRABHUPADA_NECTAR_QUOTES[0];
-      const isPlaying = BACE_AMB.playing;
-      const curTrack = BACE_AMB.track || 'kirtan';
-      const trackInfo = BACE_AMB.tracks[curTrack] || BACE_AMB.tracks.kirtan;
-
-      // Auto-swipe timer start
-      setTimeout(startNectarAutoSwipe, 200);
 
       return `
-    <div class="card pad nectar-card-wrapper" data-mob-card="calendar" style="position:relative;overflow:hidden;border:1px solid rgba(245,158,11,0.25);background:linear-gradient(135deg,rgba(254,243,199,0.2) 0%,var(--surface) 60%,rgba(254,243,199,0.12) 100%);box-shadow:0 4px 18px -4px rgba(245,158,11,0.08);margin-bottom:0;display:flex;flex-direction:column;height:auto">
-      <div style="position:absolute;right:-15px;bottom:-20px;font-size:120px;opacity:0.04;pointer-events:none;user-select:none">🪷</div>
-
-      <div class="nectar-card-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid rgba(245,158,11,0.2)">
-        <div style="display:flex;align-items:center;gap:8px">
-          <span style="font-size:18px">🪷</span>
-          <span class="nectar-card-title" style="font-family:'Outfit',sans-serif;font-weight:700;font-size:15px;color:var(--ink);letter-spacing:-0.01em">Prabhupada Nectar</span>
-          <span class="badge nectar-vani-badge" style="background:rgba(245,158,11,0.15);color:#b45309;font-weight:700;font-size:10px;border:1px solid rgba(245,158,11,0.3)">VANI AMRITA</span>
+    <div class="card pad nectar-card-wrapper" data-mob-card="nectar" style="position:relative;overflow:hidden;border:1px solid rgba(245,158,11,0.22);background:linear-gradient(135deg,rgba(254,243,199,0.12) 0%,var(--surface) 60%,rgba(254,243,199,0.08) 100%);box-shadow:0 4px 18px -4px rgba(245,158,11,0.06);margin-bottom:0;display:flex;flex-direction:column;height:auto;border-radius:18px">
+      <div class="nectar-card-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid rgba(245,158,11,0.18)">
+        <div style="display:flex;align-items:center;gap:7px">
+          <span style="font-size:16px">🪷</span>
+          <span class="nectar-card-title" style="font-family:'Outfit',sans-serif;font-weight:700;font-size:14.5px;color:var(--ink);letter-spacing:-0.01em">Prabhupada Nectar</span>
+          <span class="badge sm" style="background:rgba(245,158,11,0.14);color:var(--amber);font-size:9.5px;padding:1px 6px;font-weight:700">${esc(q.topic || 'Vani')}</span>
         </div>
-        <div style="display:flex;align-items:center;gap:5px">
-          <button class="btn sm" data-act="share-nectar-quote" title="Share quote to WhatsApp or other phone apps" style="padding:3px 8px;font-size:12px;border-color:rgba(245,158,11,0.3);display:inline-flex;align-items:center;gap:3px">Share</button>
-          <button class="btn sm" data-act="prev-nectar-quote" title="Previous quote (swipes every 20s)" style="padding:3px 8px;font-size:13px;border-color:rgba(245,158,11,0.3)">‹</button>
-          <span class="tiny" id="nectarQuoteCount" style="font-weight:700;color:var(--ink-3);min-width:44px;text-align:center">${APP.nectarIdx + 1} / ${len}</span>
-          <button class="btn sm" data-act="next-nectar-quote" title="Next quote (swipes every 20s)" style="padding:3px 8px;font-size:13px;border-color:rgba(245,158,11,0.3)">›</button>
+        <div style="display:flex;align-items:center;gap:4px">
+          <button class="btn sm" data-act="share-nectar-quote" title="Share quote to WhatsApp" style="padding:2px 7px;font-size:11px;border-color:rgba(245,158,11,0.3);display:inline-flex;align-items:center;gap:4px;color:var(--ink-2)">${waIcon(12)} Share</button>
+          <button class="btn sm" data-act="prev-nectar-quote" title="Previous quote" style="padding:2px 7px;font-size:12px;border-color:rgba(245,158,11,0.3);line-height:1">‹</button>
+          <span class="tiny" id="nectarQuoteCount" style="font-weight:700;color:var(--ink-3);min-width:38px;text-align:center;font-size:10.5px">${APP.nectarIdx + 1} / ${len}</span>
+          <button class="btn sm" data-act="next-nectar-quote" title="Next quote" style="padding:2px 7px;font-size:12px;border-color:rgba(245,158,11,0.3);line-height:1">›</button>
         </div>
       </div>
 
-      <div class="nectar-quote-row" style="display:flex;gap:14px;align-items:flex-start;margin-bottom:12px">
-        <div class="nectar-portrait-wrap" title="His Divine Grace A.C. Bhaktivedanta Swami Srila Prabhupada">
+      <div class="nectar-quote-row" style="display:flex;gap:12px;align-items:flex-start">
+        <div class="nectar-portrait-wrap" style="width:44px;height:44px;min-width:44px;border-radius:50%;overflow:hidden;border:2px solid #f59e0b;box-shadow:0 0 10px rgba(245,158,11,0.25)" title="His Divine Grace A.C. Bhaktivedanta Swami Srila Prabhupada">
           <img src="${BACE_PRABHUPADA_SRC}" alt="Srila Prabhupada" style="width:100%;height:100%;object-fit:cover;object-position:center 10%">
         </div>
         <div style="flex:1;min-width:0" id="nectarQuoteContent" class="nectar-quote-box">
-          <div class="nectar-quote-meta" style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
-            <span class="badge b-grey nectar-topic-badge" style="font-size:10px;padding:1px 6px">${esc(q.topic || 'Srila Prabhupada Vani')}</span>
-            <span class="tiny nectar-acharya-tag" style="color:var(--ink-3)">Founder-Acharya ISKCON</span>
-          </div>
-          <div class="nectar-quote-text">
+          <div class="nectar-quote-text" style="font-family:'Outfit',-apple-system,sans-serif;font-size:14px;line-height:1.48;font-weight:500;color:var(--ink);margin:0 0 6px 0;font-style:italic">
             “${esc(q.quote)}”
           </div>
-          <div class="nectar-citation">
+          <div class="nectar-citation" style="font-size:11px;font-weight:600;color:var(--accent);display:flex;align-items:center;gap:4px">
             <span>📜</span>
             <span>${esc(q.citation)}</span>
           </div>
         </div>
       </div>
-
-      <!-- 20s Auto-swipe progress indicator -->
-      <div class="nectar-timer-bar-container" title="Auto-swipes to next quote every 20 seconds">
-        <div class="nectar-timer-progress" id="nectarTimerProg"></div>
-      </div>
-
-      <div class="nectar-ambience-bar" style="background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.22);border-radius:10px;padding:10px 12px;margin-top:10px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
-        <div style="display:flex;align-items:center;gap:10px">
-          <div class="audio-equalizer ${isPlaying ? 'playing' : ''}" id="ambEqualizer" title="${isPlaying ? 'Ambience active' : 'Ambience paused'}">
-            <span class="audio-eq-bar"></span>
-            <span class="audio-eq-bar"></span>
-            <span class="audio-eq-bar"></span>
-            <span class="audio-eq-bar"></span>
-            <span class="audio-eq-bar"></span>
-          </div>
-          <div>
-            <div style="font-size:12px;font-weight:700;color:var(--ink)">Ashram Ambience</div>
-            <div class="tiny" style="color:var(--ink-3)" id="ambTrackDesc">
-              ${esc(trackInfo.title)}
-            </div>
-          </div>
-        </div>
-
-        <div style="display:flex;align-items:center;gap:6px">
-          <button class="btn sm ambience-track-btn ${curTrack === 'kirtan' ? 'on' : ''}" data-act="select-ambience" data-track="kirtan" title="Srila Prabhupada Hare Krishna Kirtan">🪕 Kirtan</button>
-          <button class="btn sm ambience-track-btn ${curTrack === 'japa' ? 'on' : ''}" data-act="select-ambience" data-track="japa" title="Srila Prabhupada Morning Japa">📿 Japa</button>
-          <button class="btn sm ambience-track-btn ${curTrack === 'govindam' ? 'on' : ''}" data-act="select-ambience" data-track="govindam" title="Sri Brahma Samhita (Govindam)">🪔 Govindam</button>
-
-          <button class="btn sm ${isPlaying ? 'pri' : ''}" data-act="toggle-ambience" id="ambPlayBtn" style="font-weight:700;min-width:74px">
-            ${isPlaying ? '⏸ Pause' : '▶ Play'}
-          </button>
-        </div>
-      </div>
     </div>
   `;
+    }
     }
 
     function getPillarIsOpen(key) {
@@ -21955,22 +21970,22 @@
         const selActs = DB.activities.filter(a => a.date === selDt).sort((a, b) => (a.start || '').localeCompare(b.start || ''));
         const selDateObj = parseDate(selDt);
         const dayName = selDateObj ? ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][selDateObj.getDay()] : '';
-        content = `<div style="text-align:center;font-weight:700;margin-bottom:7px;font-size:13.5px;color:var(--ink)">${monthLabel}</div>
-      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;font-size:11.5px;text-align:center">
-      ${['M', 'T', 'W', 'T', 'F', 'S', 'S'].map(d => `<div style="color:var(--ink-3);font-weight:700;font-size:10.5px;padding:2px 0">${d}</div>`).join('')}
+        content = `<div class="dash-cal-month-title" style="text-align:center;font-weight:800;margin-bottom:10px;font-size:15px;color:var(--ink);letter-spacing:-0.01em">${monthLabel}</div>
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;font-size:12px;text-align:center">
+      ${['M', 'T', 'W', 'T', 'F', 'S', 'S'].map(d => `<div class="dash-cal-day-header" style="color:var(--ink-2);font-weight:700;font-size:11px;padding:3px 0">${d}</div>`).join('')}
       ${Array.from({ length: weeks * 7 }, (_, i) => {
           const dayNum = i - firstDay + 1;
-          if (dayNum < 1 || dayNum > daysInMonth) return `<div style="padding:5px 0"></div>`;
+          if (dayNum < 1 || dayNum > daysInMonth) return `<div style="padding:6px 0"></div>`;
           const dt = `${yr}-${String(mo + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
           const isToday = dt === iso(TODAY);
           const isSelected = dt === selDt;
           const dayActs = DB.activities.filter(a => a.date === dt);
           const hasEvents = dayActs.length > 0;
           const actsTip = hasEvents ? `${dayActs.length} scheduled:\n` + dayActs.map(a => `${a.start || '—'} ${a.name} (${a.type})`).join('\n') : 'No activities';
-          return `<div style="padding:5.5px 0;border-radius:8px;cursor:pointer;position:relative;transition:all .15s ease;${isSelected ? 'background:var(--accent);color:#fff;font-weight:700;box-shadow:0 2px 7px rgba(234,88,12,0.35)' : isToday ? 'background:var(--accent-soft);color:var(--accent);font-weight:700;border:1px solid rgba(234,88,12,0.3)' : hasEvents ? 'font-weight:600;color:var(--ink)' : 'color:var(--ink-2)'}" data-act="dash-cal-day" data-d="${dt}" title="${esc(actsTip)}">
+          return `<div class="dash-cal-day-cell ${isSelected ? 'is-selected' : isToday ? 'is-today' : ''}" style="padding:7px 0;border-radius:9px;cursor:pointer;position:relative;transition:all .15s ease;font-size:13px;font-weight:700;${isSelected ? 'background:var(--indigo);color:#fff;box-shadow:0 2px 10px rgba(139,92,246,0.4)' : isToday ? 'background:var(--saffron);color:#fff;box-shadow:0 2px 10px rgba(255,122,0,0.45)' : hasEvents ? 'color:var(--ink);background:rgba(255,122,0,0.06)' : 'color:var(--ink)'}" data-act="dash-cal-day" data-d="${dt}" title="${esc(actsTip)}">
           ${dayNum}
-          ${hasEvents ? `<span style="position:absolute;bottom:2px;left:50%;transform:translateX(-50%);display:flex;gap:1.5px">
-            ${dayActs.slice(0, 3).map(a => `<span style="width:3.5px;height:3.5px;border-radius:50%;background:${isSelected ? '#fff' : a.type === 'Class' ? '#6366F1' : a.type === 'Seva' ? 'var(--accent)' : '#10B981'}"></span>`).join('')}
+          ${hasEvents ? `<span style="position:absolute;bottom:2px;left:50%;transform:translateX(-50%);display:flex;gap:2px">
+            ${dayActs.slice(0, 3).map(a => `<span style="width:4px;height:4px;border-radius:50%;background:${(isSelected || isToday) ? '#fff' : a.type === 'Class' ? '#8B5CF6' : a.type === 'Seva' ? 'var(--saffron)' : '#10B981'}"></span>`).join('')}
           </span>`: ''}
         </div>`;
         }).join('')}</div>
@@ -22334,7 +22349,6 @@
       <div class="mobile-dash-segment-bar hide-desktop">
         <button type="button" class="dash-seg-btn ${mobTab === 'mgmt' ? 'active' : ''}" data-act="switch-mob-dash" data-tab="mgmt">🛕 Management</button>
         <button type="button" class="dash-seg-btn ${mobTab === 'preach' ? 'active' : ''}" data-act="switch-mob-dash" data-tab="preach">📖 Preaching</button>
-        <button type="button" class="dash-seg-btn ${mobTab === 'calendar' ? 'active' : ''}" data-act="switch-mob-dash" data-tab="calendar">📅 Calendar</button>
       </div>
     `;
 
@@ -23164,8 +23178,8 @@
           </div>
           <div class="dmr-right">
             <div class="dmr-quick-actions">
-              ${waHref ? `<a href="${waHref}" target="_blank" rel="noopener" onclick="event.stopPropagation()" class="dmr-action-btn wa" title="WhatsApp">💬</a>` : ''}
-              ${callHref ? `<a href="${callHref}" onclick="event.stopPropagation()" class="dmr-action-btn call" title="Call">📞</a>` : ''}
+              ${waHref ? `<a href="${waHref}" target="_blank" rel="noopener" onclick="event.stopPropagation()" class="dmr-action-btn wa" title="WhatsApp">${waIcon(15)}</a>` : ''}
+              ${callHref ? `<a href="${callHref}" onclick="event.stopPropagation()" class="dmr-action-btn call" title="Call">${callIcon(14)}</a>` : ''}
             </div>
             <div style="display:flex;align-items:center;margin-left:4px" title="Attendance: ${v}%">
               ${circularProgressRing(v, attCol, 36, 3.5, true)}
@@ -23463,7 +23477,7 @@
           const _contactBody = `
   ${_phone10.length >= 10 ? `<div class="peek-quick-row">
     <a href="https://wa.me/${_waPhone}?text=${_waGreet}" target="_blank" rel="noopener" class="peek-quick-btn" style="color:#16a34a" onclick="event.stopPropagation()">
-      <span class="pq-em">💬</span>WhatsApp
+      <span class="pq-em">${waIcon(15)}</span>WhatsApp
     </a>
     <a href="tel:${_phone10}" class="peek-quick-btn" style="color:#2563eb" onclick="event.stopPropagation()">
       <span class="pq-em">📞</span>Call
@@ -34739,7 +34753,7 @@ label {
       <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:11px;color:var(--ink-3);padding-top:2px">
         <span>${b.day ? `📅 ${esc(b.day)}${b.time ? ' · ' + esc(b.time) : ''}` : (b.schedule ? `📅 ${esc(b.schedule)}` : '📅 Weekly')}</span>
         <div style="display:flex;align-items:center;gap:8px">
-          ${waCoord ? `<span onclick="event.preventDefault();event.stopPropagation();window.open('https://wa.me/${waCoord}?text=${encodeURIComponent('Hare Krishna Prabhu! Regarding ' + b.name)}','_blank')" class="batch-wa-pill" title="WhatsApp Coordinator">💬 WhatsApp</span>` : ''}
+          ${waCoord ? `<span onclick="event.preventDefault();event.stopPropagation();window.open('https://wa.me/${waCoord}?text=${encodeURIComponent('Hare Krishna Prabhu! Regarding ' + b.name)}','_blank')" class="batch-wa-pill" title="WhatsApp Coordinator">${waIcon(13)} WhatsApp</span>` : ''}
           <span style="color:var(--indigo);font-weight:700;font-size:11px;display:flex;align-items:center;gap:2px">View →</span>
         </div>
       </div>
@@ -34862,7 +34876,7 @@ label {
               </div>
             </div>
             <div style="display:flex;align-items:center;gap:8px">
-              ${leadWa ? `<button class="btn sm" onclick="event.stopPropagation();window.open('https://wa.me/${leadWa}?text=${encodeURIComponent('Hare Krishna Prabhu! 🙏')}','_blank')" style="background:rgba(37,211,102,0.12);color:#25D366;border-color:rgba(37,211,102,0.3);padding:4px 8px;font-size:11px">💬 WhatsApp</button>` : ''}
+              ${leadWa ? `<button class="btn sm" onclick="event.stopPropagation();window.open('https://wa.me/${leadWa}?text=${encodeURIComponent('Hare Krishna Prabhu! 🙏')}','_blank')" style="background:rgba(37,211,102,0.12);color:#25D366;border-color:rgba(37,211,102,0.3);padding:4px 8px;font-size:11px;display:inline-flex;align-items:center;gap:4px">${waIcon(13)} WhatsApp</button>` : ''}
               <span class="badge b-amber" style="font-size:10.5px">${batches.length} Batches</span>
             </div>
           </div>
