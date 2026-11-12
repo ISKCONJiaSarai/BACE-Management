@@ -2315,14 +2315,21 @@
       }
     }
 
+    input[type="search"]::-webkit-search-decoration,
+    input[type="search"]::-webkit-search-cancel-button,
+    input[type="search"]::-webkit-search-results-button,
+    input[type="search"]::-webkit-search-results-decoration {
+      -webkit-appearance: none;
+    }
+
     .searchbox {
       position: relative;
-      width: min(260px, 28vw)
+      width: min(260px, 28vw);
     }
 
     .searchbox input {
       width: 100%;
-      padding: 7px 12px 7px 32px;
+      padding: 7px 14px 7px 42px !important;
       border: 1px solid var(--line);
       border-radius: 10px;
       background: var(--surface-2);
@@ -2333,16 +2340,18 @@
     .searchbox input:focus {
       background: var(--surface);
       border-color: var(--accent);
-      box-shadow: 0 0 0 3px var(--accent-soft)
+      box-shadow: 0 0 0 3px var(--accent-soft);
     }
 
     .searchbox svg {
       position: absolute;
-      left: 10px;
-      top: 8px;
-      width: 14px;
-      height: 14px;
-      color: var(--ink-3)
+      left: 13px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 16px;
+      height: 16px;
+      color: var(--ink-3);
+      pointer-events: none;
     }
 
     .icon-btn {
@@ -16223,14 +16232,14 @@
         transform: scale(1.05) !important;
       }
 
-      /* 4. Streamlined Department & Level Buttons: Compact, single-line, zero subtitle clutter */
+      /* 4. Streamlined Department & Level Buttons: Crisp white rounded boxes with high-contrast text in all themes */
       .dash-level-btn {
-        padding: 11px 13px !important;
-        border-radius: 12px !important;
+        padding: 10px 13px !important;
+        border-radius: 14px !important;
         margin-bottom: 6px !important;
-        background: #F8FAFC !important;
-        border: 1px solid #EEF2F6 !important;
-        box-shadow: none !important;
+        background: #FFFFFF !important;
+        border: 1px solid #E2E8F0 !important;
+        box-shadow: 0 2px 6px rgba(15, 23, 42, 0.05) !important;
         min-height: 44px !important;
       }
 
@@ -16243,7 +16252,7 @@
         font-size: 13.5px !important;
         font-weight: 700 !important;
         line-height: 1.2 !important;
-        color: var(--ink) !important;
+        color: #0F172A !important;
       }
 
       .dash-level-btn .btn-badge {
@@ -16258,7 +16267,22 @@
       .dash-level-btn .btn-arr {
         font-size: 12.5px !important;
         font-weight: 700 !important;
-        color: var(--ink-3) !important;
+        color: #4338CA !important;
+      }
+
+      /* In Dark Mode: Crisp white rounded boxes with deep high-contrast text */
+      [data-theme="dark"] .dash-level-btn {
+        background: #FFFFFF !important;
+        border: 1px solid #CBD5E1 !important;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35) !important;
+      }
+
+      [data-theme="dark"] .dash-level-btn .btn-title {
+        color: #0F172A !important;
+      }
+
+      [data-theme="dark"] .dash-level-btn .btn-arr {
+        color: #4338CA !important;
       }
 
       /* 5. Minimalist Clean Calendar and Prabhupada Nectar Cards */
@@ -17796,13 +17820,13 @@
    COASTOK COMPACT, CLEAN & CRISP GLOBAL UI (MOBILE & LAPTOP)
    ========================================================================= */
     /* Universal Compact Controls */
-    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="search"]):not(.dev-search-input):not(.has-icon-input),
     select,
-    .field input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+    .field input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="search"]):not(.dev-search-input):not(.has-icon-input),
     .field select,
-    .modal input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+    .modal input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="search"]):not(.dev-search-input):not(.has-icon-input),
     .modal select,
-    .drawer input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+    .drawer input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="search"]):not(.dev-search-input):not(.has-icon-input),
     .drawer select,
     .toolbar input:not(.dev-search-input):not(.has-icon-input):not([type="search"]),
     .toolbar select {
@@ -17819,13 +17843,16 @@
       line-height: 1.35 !important;
     }
 
-    /* Search inputs with leading icons: Always preserve ample 40px left padding */
+    /* Search inputs with leading icons: Always preserve ample 44px left padding */
+    .searchbox input,
+    .searchbox input[type="search"],
     .toolbar input.dev-search-input,
     .toolbar input[type="search"],
     .toolbar .search-with-icon input,
     .search-with-icon input,
-    input.dev-search-input {
-      padding-left: 40px !important;
+    input.dev-search-input,
+    input[type="search"] {
+      padding-left: 44px !important;
     }
 
     textarea,
@@ -20040,7 +20067,7 @@
       ${topNavMusicBtn()}
     </nav>
     <div class="header-controls">
-      <div class="searchbox" style="margin:0;cursor:pointer" onclick="openSpotlightSearch()" title="Search across BACE (Ctrl+K)">${ic('search')}<input type="search" placeholder="Search… (Ctrl+K)" value="${esc(APP.search)}" readonly style="cursor:pointer" aria-label="Global search"></div>
+      <div class="searchbox" style="margin:0;cursor:pointer;position:relative" onclick="openSpotlightSearch()" title="Search across BACE (Ctrl+K)">${ic('search')}<input type="search" placeholder="Search… (Ctrl+K)" value="${esc(APP.search)}" readonly style="cursor:pointer;padding-left:42px!important" aria-label="Global search"></div>
       <button class="icon-btn hide-desktop" onclick="openSpotlightSearch()" title="Spotlight search">${ic('search')}</button>
       ${topNavMusicBtn(true)}
       <button class="theme-toggle" data-act="toggle-theme" title="Toggle theme">${APP.theme === 'dark' ? sunSvg : moonSvg}</button>
@@ -38016,17 +38043,18 @@ label {
       overlay = document.createElement('div');
       overlay.id = 'spotlightOverlay';
       overlay.className = 'spotlight-scrim';
+      overlay.style.cssText = 'position:fixed!important;top:0!important;left:0!important;right:0!important;bottom:0!important;width:100vw!important;height:100vh!important;background:rgba(10,14,23,0.75)!important;backdrop-filter:blur(14px)!important;-webkit-backdrop-filter:blur(14px)!important;z-index:999999!important;display:flex!important;align-items:flex-start!important;justify-content:center!important;padding:12vh 16px 24px!important;overflow-y:auto!important;box-sizing:border-box!important;';
       overlay.innerHTML = `
-        <div class="spotlight-card">
-          <div class="spotlight-input-row">
-            <span class="spotlight-icon">🔍</span>
-            <input type="search" id="spotlightInput" placeholder="Search devotees, batches, departments..." autocomplete="off">
-            <kbd class="spotlight-esc" onclick="closeSpotlightSearch()">ESC</kbd>
+        <div class="spotlight-card" style="width:100%!important;max-width:620px!important;background:var(--surface,#1C1E29)!important;border:1px solid var(--line,rgba(255,255,255,0.15))!important;border-radius:20px!important;box-shadow:0 25px 60px -15px rgba(0,0,0,0.75)!important;overflow:hidden!important;display:flex!important;flex-direction:column!important;box-sizing:border-box!important;margin:0 auto!important;">
+          <div class="spotlight-input-row" style="display:flex!important;align-items:center!important;padding:14px 18px!important;border-bottom:1px solid var(--line-2,rgba(255,255,255,0.1))!important;gap:12px!important;box-sizing:border-box!important;background:transparent!important;">
+            <span class="spotlight-icon" style="font-size:18px!important;line-height:1!important;opacity:0.8!important;flex-shrink:0!important;">🔍</span>
+            <input type="search" id="spotlightInput" placeholder="Search devotees, batches, departments..." autocomplete="off" style="flex:1!important;border:none!important;outline:none!important;font-size:16px!important;font-weight:500!important;background:transparent!important;color:var(--ink,#fff)!important;box-shadow:none!important;padding:4px 0!important;min-width:0!important;">
+            <kbd class="spotlight-esc" onclick="closeSpotlightSearch()" style="font-size:10.5px!important;font-weight:700!important;padding:3px 8px!important;background:var(--paper-2,rgba(255,255,255,0.1))!important;border:1px solid var(--line,rgba(255,255,255,0.15))!important;border-radius:6px!important;color:var(--ink-3,#94a3b8)!important;cursor:pointer!important;flex-shrink:0!important;">ESC</kbd>
           </div>
-          <div class="spotlight-results" id="spotlightResults">
-            <div class="spotlight-hint">Type a name, phone, batch, or department...</div>
+          <div class="spotlight-results" id="spotlightResults" style="max-height:380px!important;overflow-y:auto!important;padding:8px!important;display:flex!important;flex-direction:column!important;gap:4px!important;">
+            <div class="spotlight-hint" style="padding:32px 20px!important;text-align:center!important;font-size:13.5px!important;color:var(--ink-3,#94a3b8)!important;">Type a name, phone, batch, or department...</div>
           </div>
-          <div class="spotlight-footer">
+          <div class="spotlight-footer" style="display:flex!important;align-items:center!important;gap:16px!important;padding:10px 18px!important;background:var(--paper-2,#161822)!important;border-top:1px solid var(--line-2,rgba(255,255,255,0.08))!important;font-size:11.5px!important;color:var(--ink-3,#94a3b8)!important;box-sizing:border-box!important;">
             <span><b>↑↓</b> navigate</span>
             <span><b>Enter</b> select</span>
             <span><b>ESC</b> dismiss</span>
