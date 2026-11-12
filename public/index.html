@@ -15935,12 +15935,28 @@
       transform: scale(0.98) !important;
     }
 
+    /* Hide mobile-only components on laptop / desktop (> 768px) */
+    .hide-desktop,
+    .ashram-pulse-row,
+    .mobile-dash-segment-bar {
+      display: none !important;
+    }
+
     /* ===== END VERSION C ===== */
 
     /* =====================================================================
    COASTOK MINIMALIST MOBILE REDESIGN (max-width: 768px)
    ===================================================================== */
     @media (max-width: 768px) {
+
+      .hide-desktop {
+        display: block !important;
+      }
+
+      button.hide-desktop,
+      .icon-btn.hide-desktop {
+        display: inline-flex !important;
+      }
 
       /* 1. Global whitespace & background */
       body {
@@ -16222,30 +16238,6 @@
         transform: scale(1.1) !important;
       }
 
-      .batch-wa-pill {
-        display: inline-flex !important;
-        align-items: center !important;
-        gap: 3px !important;
-        padding: 2px 7px !important;
-        border-radius: 6px !important;
-        font-size: 10.5px !important;
-        font-weight: 700 !important;
-        background: rgba(37, 211, 102, 0.14) !important;
-        color: #15803D !important;
-        border: 1px solid rgba(37, 211, 102, 0.35) !important;
-        cursor: pointer !important;
-        transition: all .16s ease !important;
-      }
-
-      [data-theme="dark"] .batch-wa-pill {
-        background: rgba(37, 211, 102, 0.20) !important;
-        color: #4ADE80 !important;
-        border-color: rgba(37, 211, 102, 0.45) !important;
-      }
-
-      .batch-wa-pill:hover {
-        transform: scale(1.05) !important;
-      }
 
       /* 4. Streamlined Department & Level Buttons: Crisp white rounded boxes with high-contrast text in all themes */
       .dash-level-btn {
@@ -16442,6 +16434,55 @@
       [data-theme="dark"] .botnav button.on {
         color: #FFA040 !important;
         background: rgba(255, 122, 0, 0.16) !important;
+      }
+
+      /* Quick Action Plus Button integrated in Bottom Nav */
+      .botnav button.botnav-fab-btn {
+        color: var(--saffron) !important;
+        font-weight: 700 !important;
+      }
+
+      .botnav button.botnav-fab-btn .em {
+        color: #FFFFFF !important;
+        background: linear-gradient(135deg, #EA580C, #F97316) !important;
+        width: 28px !important;
+        height: 28px !important;
+        border-radius: 50% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        box-shadow: 0 2px 8px rgba(234, 88, 12, 0.4) !important;
+        margin: 0 auto 2px !important;
+        transition: all .2s ease !important;
+      }
+
+      .botnav button.botnav-fab-btn .em svg {
+        width: 16px !important;
+        height: 16px !important;
+        stroke: #FFFFFF !important;
+        stroke-width: 2.5 !important;
+      }
+
+      .botnav button.botnav-fab-btn.on .em {
+        background: #EF4444 !important;
+        box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4) !important;
+        transform: rotate(90deg) !important;
+      }
+
+      /* Hide floating circular action button on mobile - now integrated in bottom nav */
+      .fab,
+      .hide-mobile.fab {
+        display: none !important;
+      }
+
+      .fab-menu {
+        position: fixed !important;
+        right: 14px !important;
+        bottom: calc(76px + env(safe-area-inset-bottom, 0px)) !important;
+        z-index: 105 !important;
+        width: min(260px, calc(100vw - 28px)) !important;
+        border-radius: 18px !important;
+        box-shadow: 0 12px 36px rgba(0, 0, 0, 0.28) !important;
       }
 
       /* Native Swipeable Bottom Sheet Styling */
@@ -20646,8 +20687,8 @@
     ${can('management') ? btn('Mgmt', '🛕', onMgmt, '#/mgmt') : ''}
     ${can('preaching') ? btn('Preaching', '📖', onPreach, '#/preaching', fuOverdue) : ''}
     ${can('directory') ? btn('Devotees', '👥', onDev, '#/devotees') : btn('My Profile', '👤', onDev, '#/devotee/' + (APP.user.devotee || ''))}
-    <button class="${APP.mobileNavOpen ? 'on' : ''}" data-act="toggle-mobile-nav" title="More" aria-label="More menu">
-      <span class="em">☰</span><span>More</span>${pendingCount && can('admin') ? `<i class="bdot">${pendingCount > 9 ? '9+' : pendingCount}</i>` : ''}
+    <button class="botnav-fab-btn ${APP.fabOpen ? 'on' : ''}" data-act="fab" title="Quick Actions" aria-label="Quick actions">
+      <span class="em">${APP.fabOpen ? ic('x') : ic('plus')}</span><span>Quick</span>
     </button>
   </nav>`;
     }
@@ -20664,7 +20705,7 @@
       ].filter(a => can(a[3]));
       if (!acts.length) return '';
       return `${APP.fabOpen ? `<div class="fab-scrim" data-act="close-fab" aria-label="Close quick actions"></div><div class="fab-menu" role="menu">${acts.map(a => `<button data-act="${a[2]}" role="menuitem"><span style="font-size:15px">${a[1]}</span>${a[0]}</button>`).join('')}</div>` : ''}
-   <button class="fab" data-act="fab" aria-label="Quick actions">${APP.fabOpen ? ic('x') : ic('plus')}</button>`;
+   <button class="fab hide-mobile" data-act="fab" aria-label="Quick actions">${APP.fabOpen ? ic('x') : ic('plus')}</button>`;
     }
 
     /* ---------- PWA: runtime manifest + installability ---------- */
@@ -34891,12 +34932,9 @@ label {
           <div style="font-size:9.5px;color:var(--ink-3);font-weight:600;letter-spacing:0.2px">Classes</div>
         </div>
       </div>
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:11px;color:var(--ink-3);padding-top:2px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:11.5px;color:var(--ink-3);padding-top:2px">
         <span>${b.day ? `📅 ${esc(b.day)}${b.time ? ' · ' + esc(b.time) : ''}` : (b.schedule ? `📅 ${esc(b.schedule)}` : '📅 Weekly')}</span>
-        <div style="display:flex;align-items:center;gap:8px">
-          ${waCoord ? `<span onclick="event.preventDefault();event.stopPropagation();window.open('https://wa.me/${waCoord}?text=${encodeURIComponent('Hare Krishna Prabhu! Regarding ' + b.name)}','_blank')" class="batch-wa-pill" title="WhatsApp Coordinator">${waIcon(13)} WhatsApp</span>` : ''}
-          <span style="color:var(--indigo);font-weight:700;font-size:11px;display:flex;align-items:center;gap:2px">View →</span>
-        </div>
+        <span style="color:var(--indigo);font-weight:700;font-size:11.5px;display:flex;align-items:center;gap:2px">View →</span>
       </div>
     </a>`;
       }
