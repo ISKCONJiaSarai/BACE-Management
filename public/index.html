@@ -21625,7 +21625,6 @@
     </div>
   `;
     }
-    }
 
     function getPillarIsOpen(key) {
       if (APP.expandedPillars && APP.expandedPillars[key] !== undefined) {
@@ -44748,7 +44747,20 @@ label {
     loadOutingsFromBackend();
     loadNotificationsFromBackend();
     setInterval(() => loadNotificationsFromBackend(false), 45000);
-    render();
+    try {
+      render();
+    } catch (renderErr) {
+      console.error('Initial render error:', renderErr);
+      const appEl = document.getElementById('app');
+      if (appEl) {
+        appEl.innerHTML = `<div style="padding:40px;text-align:center;color:#fff;background:#0d1117;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center">
+          <div style="font-size:36px;margin-bottom:12px">⚠️</div>
+          <h2 style="color:#ef4444;margin-bottom:8px">Startup Error</h2>
+          <p style="color:#94a3b8;max-width:500px;margin-bottom:20px;font-size:14px">${esc(renderErr.message || 'Error initializing application')}</p>
+          <button class="btn pri" onclick="location.reload()">Reload Application</button>
+        </div>`;
+      }
+    }
     syncDevoteesFromServer(true); // forceImmediate on first page load
     verifyUserSessionFromServer();
     initBaceKirtanOnOpen();
