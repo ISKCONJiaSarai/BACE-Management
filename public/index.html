@@ -2315,14 +2315,21 @@
       }
     }
 
+    input[type="search"]::-webkit-search-decoration,
+    input[type="search"]::-webkit-search-cancel-button,
+    input[type="search"]::-webkit-search-results-button,
+    input[type="search"]::-webkit-search-results-decoration {
+      -webkit-appearance: none;
+    }
+
     .searchbox {
       position: relative;
-      width: min(260px, 28vw)
+      width: min(260px, 28vw);
     }
 
     .searchbox input {
       width: 100%;
-      padding: 7px 12px 7px 32px;
+      padding: 7px 12px 7px 36px !important;
       border: 1px solid var(--line);
       border-radius: 10px;
       background: var(--surface-2);
@@ -2333,16 +2340,18 @@
     .searchbox input:focus {
       background: var(--surface);
       border-color: var(--accent);
-      box-shadow: 0 0 0 3px var(--accent-soft)
+      box-shadow: 0 0 0 3px var(--accent-soft);
     }
 
     .searchbox svg {
       position: absolute;
-      left: 10px;
-      top: 8px;
-      width: 14px;
-      height: 14px;
-      color: var(--ink-3)
+      left: 11px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 15px;
+      height: 15px;
+      color: var(--ink-3);
+      pointer-events: none;
     }
 
     .icon-btn {
@@ -6993,16 +7002,36 @@
         box-shadow: 0 1px 4px rgba(220, 38, 38, 0.4);
       }
 
+      /* Mobile quick + action integrated into bottom-nav: hide floating .fab */
       .fab {
-        bottom: calc(76px + env(safe-area-inset-bottom));
-        right: 16px;
-        width: 50px;
-        height: 50px;
+        display: none !important;
       }
 
       .fab-menu {
-        bottom: calc(134px + env(safe-area-inset-bottom));
-        right: 16px;
+        bottom: calc(66px + env(safe-area-inset-bottom)) !important;
+        right: 10px !important;
+        z-index: 95 !important;
+      }
+
+      .botnav-fab-btn .botnav-fab-icon {
+        width: 27px;
+        height: 27px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--saffron), var(--saffron-2));
+        color: #fff;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        font-weight: 800;
+        line-height: 1;
+        box-shadow: 0 2px 8px rgba(234, 88, 12, 0.4);
+        transition: transform .18s ease, background .18s ease;
+      }
+
+      .botnav-fab-btn.on .botnav-fab-icon {
+        transform: rotate(90deg);
+        background: #EF4444;
       }
 
       .toast {
@@ -15911,12 +15940,26 @@
       transform: scale(0.98) !important;
     }
 
+    /* Desktop default: Hide mobile-only components on laptop/desktop screens */
+    .hide-desktop,
+    .ashram-pulse-row,
+    .mobile-dash-segment-bar {
+      display: none !important;
+    }
+
     /* ===== END VERSION C ===== */
 
     /* =====================================================================
    COASTOK MINIMALIST MOBILE REDESIGN (max-width: 768px)
    ===================================================================== */
     @media (max-width: 768px) {
+      .hide-desktop {
+        display: flex !important;
+      }
+
+      button.icon-btn.hide-desktop {
+        display: inline-flex !important;
+      }
 
       /* 1. Global whitespace & background */
       body {
@@ -16108,30 +16151,30 @@
         margin: 0 !important;
       }
 
-      .dash-quad-grid[data-active-tab="mgmt"] > [data-mob-card="preach"] {
+      .dash-quad-grid[data-active-tab="mgmt"]>[data-mob-card="preach"] {
         display: none !important;
       }
 
-      .dash-quad-grid[data-active-tab="mgmt"] > [data-mob-card="mgmt"] {
+      .dash-quad-grid[data-active-tab="mgmt"]>[data-mob-card="mgmt"] {
         display: flex !important;
         order: 1 !important;
       }
 
-      .dash-quad-grid[data-active-tab="preach"] > [data-mob-card="mgmt"] {
+      .dash-quad-grid[data-active-tab="preach"]>[data-mob-card="mgmt"] {
         display: none !important;
       }
 
-      .dash-quad-grid[data-active-tab="preach"] > [data-mob-card="preach"] {
+      .dash-quad-grid[data-active-tab="preach"]>[data-mob-card="preach"] {
         display: flex !important;
         order: 1 !important;
       }
 
-      .dash-quad-grid > [data-mob-card="calendar"] {
+      .dash-quad-grid>[data-mob-card="calendar"] {
         display: flex !important;
         order: 2 !important;
       }
 
-      .dash-quad-grid > [data-mob-card="nectar"] {
+      .dash-quad-grid>[data-mob-card="nectar"] {
         display: flex !important;
         order: 3 !important;
       }
@@ -16223,14 +16266,14 @@
         transform: scale(1.05) !important;
       }
 
-      /* 4. Streamlined Department & Level Buttons: Compact, single-line, zero subtitle clutter */
+      /* 4. Streamlined Department & Level Buttons: Crisp white rounded boxes with high-contrast text in all themes */
       .dash-level-btn {
-        padding: 11px 13px !important;
-        border-radius: 12px !important;
+        padding: 10px 13px !important;
+        border-radius: 14px !important;
         margin-bottom: 6px !important;
-        background: #F8FAFC !important;
-        border: 1px solid #EEF2F6 !important;
-        box-shadow: none !important;
+        background: #FFFFFF !important;
+        border: 1px solid #E2E8F0 !important;
+        box-shadow: 0 2px 6px rgba(15, 23, 42, 0.05) !important;
         min-height: 44px !important;
       }
 
@@ -16243,7 +16286,7 @@
         font-size: 13.5px !important;
         font-weight: 700 !important;
         line-height: 1.2 !important;
-        color: var(--ink) !important;
+        color: #0F172A !important;
       }
 
       .dash-level-btn .btn-badge {
@@ -16258,7 +16301,22 @@
       .dash-level-btn .btn-arr {
         font-size: 12.5px !important;
         font-weight: 700 !important;
-        color: var(--ink-3) !important;
+        color: #4338CA !important;
+      }
+
+      /* In Dark Mode: Crisp white rounded boxes with deep high-contrast text */
+      [data-theme="dark"] .dash-level-btn {
+        background: #FFFFFF !important;
+        border: 1px solid #CBD5E1 !important;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35) !important;
+      }
+
+      [data-theme="dark"] .dash-level-btn .btn-title {
+        color: #0F172A !important;
+      }
+
+      [data-theme="dark"] .dash-level-btn .btn-arr {
+        color: #4338CA !important;
       }
 
       /* 5. Minimalist Clean Calendar and Prabhupada Nectar Cards */
@@ -16368,6 +16426,7 @@
         color: var(--saffron) !important;
         background: rgba(255, 122, 0, 0.10) !important;
       }
+
       .botnav button.on .em {
         transform: translateY(-2px) scale(1.1) !important;
       }
@@ -16410,6 +16469,7 @@
         max-height: calc(90dvh - env(safe-area-inset-bottom, 0px)) !important;
         animation: slideUpSheet 0.24s cubic-bezier(0.16, 1, 0.3, 1) !important;
       }
+
       .modal:before {
         content: '';
         display: block;
@@ -16419,9 +16479,15 @@
         background: rgba(148, 163, 184, 0.4);
         margin: 8px auto 2px;
       }
+
       @keyframes slideUpSheet {
-        from { transform: translateY(100%); }
-        to { transform: translateY(0); }
+        from {
+          transform: translateY(100%);
+        }
+
+        to {
+          transform: translateY(0);
+        }
       }
 
       /* Pull to refresh pill */
@@ -16444,9 +16510,15 @@
         z-index: 9999;
         animation: bounce 0.6s infinite alternate;
       }
+
       @keyframes bounce {
-        from { transform: translateX(-50%) translateY(0); }
-        to { transform: translateX(-50%) translateY(6px); }
+        from {
+          transform: translateX(-50%) translateY(0);
+        }
+
+        to {
+          transform: translateX(-50%) translateY(6px);
+        }
       }
 
       /* Spotlight Search Overlay */
@@ -16461,6 +16533,7 @@
         justify-content: center;
         padding: 40px 14px 14px;
       }
+
       .spotlight-card {
         width: 100%;
         max-width: 540px;
@@ -16473,10 +16546,19 @@
         flex-direction: column;
         animation: slideDownSpot 0.2s cubic-bezier(0.16, 1, 0.3, 1);
       }
+
       @keyframes slideDownSpot {
-        from { transform: translateY(-16px); opacity: 0; }
-        to { transform: translateY(0); opacity: 1; }
+        from {
+          transform: translateY(-16px);
+          opacity: 0;
+        }
+
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
       }
+
       .spotlight-input-row {
         display: flex;
         align-items: center;
@@ -16484,6 +16566,7 @@
         border-bottom: 1px solid var(--line-2);
         gap: 10px;
       }
+
       .spotlight-input-row input {
         flex: 1;
         border: none !important;
@@ -16492,6 +16575,7 @@
         background: transparent !important;
         color: var(--ink) !important;
       }
+
       .spotlight-esc {
         font-size: 10px;
         padding: 2px 6px;
@@ -16501,6 +16585,7 @@
         color: var(--ink-3);
         cursor: pointer;
       }
+
       .spotlight-results {
         max-height: 340px;
         overflow-y: auto;
@@ -16509,6 +16594,7 @@
         flex-direction: column;
         gap: 3px;
       }
+
       .spotlight-group {
         font-size: 10.5px;
         font-weight: 800;
@@ -16517,6 +16603,7 @@
         color: var(--ink-3);
         padding: 6px 8px 3px;
       }
+
       .spotlight-item {
         display: flex;
         align-items: center;
@@ -16527,14 +16614,18 @@
         color: var(--ink);
         transition: background .15s ease;
       }
-      .spotlight-item:hover, .spotlight-item.active {
+
+      .spotlight-item:hover,
+      .spotlight-item.active {
         background: var(--accent-soft);
         color: var(--saffron);
       }
+
       .spotlight-item .spot-info {
         flex: 1;
         min-width: 0;
       }
+
       .spotlight-item .spot-title {
         font-size: 13.5px;
         font-weight: 700;
@@ -16542,6 +16633,7 @@
         overflow: hidden;
         text-overflow: ellipsis;
       }
+
       .spotlight-item .spot-sub {
         font-size: 11px;
         color: var(--ink-3);
@@ -16549,12 +16641,14 @@
         overflow: hidden;
         text-overflow: ellipsis;
       }
+
       .spotlight-hint {
         padding: 22px;
         text-align: center;
         font-size: 12.5px;
         color: var(--ink-3);
       }
+
       .spotlight-footer {
         display: flex;
         align-items: center;
@@ -16578,19 +16672,23 @@
         margin-bottom: 8px;
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
       }
+
       .ht-avatar {
         font-size: 20px;
         line-height: 1;
       }
+
       .ht-title {
         font-size: 13px;
         font-weight: 700;
         color: var(--ink);
       }
+
       .ht-sub {
         font-size: 11px;
         color: var(--ink-3);
       }
+
       .ht-branch {
         margin-left: 20px;
         position: relative;
@@ -16634,43 +16732,60 @@
         transform: scale(0.992) !important;
       }
 
-      /* ── 2. Stat Tiles: Clean, Balanced, Non-Heavy ── */
+      /* ── 2. Stat Tiles: Clean, Balanced, Single-Line Labels ── */
       .stat {
         background: #FFFFFF !important;
         border: 1px solid #E2E8F0 !important;
         border-radius: 13px !important;
         box-shadow: 0 2px 6px -2px rgba(15, 23, 42, 0.04) !important;
-        padding: 12px 13px !important;
+        padding: 9px 8px !important;
       }
 
       .stat .val {
         color: #0F172A !important;
-        font-size: 21px !important;
+        font-size: 20px !important;
         font-weight: 800 !important;
         line-height: 1.2 !important;
+        white-space: nowrap !important;
       }
 
       .stat .lbl {
         color: #64748B !important;
-        font-size: 11px !important;
+        font-size: 10px !important;
         font-weight: 600 !important;
-        letter-spacing: 0.2px !important;
+        letter-spacing: 0.1px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 3px !important;
+      }
+
+      .stat .lbl span:last-child {
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
       }
 
       .stat .foot {
         color: #94A3B8 !important;
-        font-size: 10px !important;
+        font-size: 9.5px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
       }
 
       .stat .em {
         background: #F1F5F9 !important;
         color: #0F172A !important;
-        border-radius: 8px !important;
-        padding: 2px 5px !important;
-        font-size: 13px !important;
+        border-radius: 6px !important;
+        padding: 1px 4px !important;
+        font-size: 12px !important;
         display: inline-flex !important;
         align-items: center !important;
         justify-content: center !important;
+        flex-shrink: 0 !important;
       }
 
       /* ── 3. Ashram Ambience Bar: Sleek, Subtle Audio Console ── */
@@ -17055,21 +17170,30 @@
 
       [data-theme="dark"] .stat .lbl {
         color: #D1D3DC !important;
+        font-size: 10px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
       }
 
       [data-theme="dark"] .stat .foot {
         color: #9A9CAE !important;
+        font-size: 9.5px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
       }
 
       [data-theme="dark"] .stat .lbl span {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: 22px;
-        height: 22px;
-        border-radius: 6px;
-        margin-right: 6px;
-        font-size: 12px;
+        width: 19px;
+        height: 19px;
+        border-radius: 5px;
+        margin-right: 4px;
+        font-size: 11px;
+        flex-shrink: 0;
       }
 
       [data-theme="dark"] .grid>.stat:nth-child(1) .lbl span {
@@ -20504,8 +20628,8 @@
     ${can('management') ? btn('Mgmt', '🛕', onMgmt, '#/mgmt') : ''}
     ${can('preaching') ? btn('Preaching', '📖', onPreach, '#/preaching', fuOverdue) : ''}
     ${can('directory') ? btn('Devotees', '👥', onDev, '#/devotees') : btn('My Profile', '👤', onDev, '#/devotee/' + (APP.user.devotee || ''))}
-    <button class="${APP.mobileNavOpen ? 'on' : ''}" data-act="toggle-mobile-nav" title="More" aria-label="More menu">
-      <span class="em">☰</span><span>More</span>${pendingCount && can('admin') ? `<i class="bdot">${pendingCount > 9 ? '9+' : pendingCount}</i>` : ''}
+    <button class="botnav-fab-btn ${APP.fabOpen ? 'on' : ''}" data-act="fab" title="Quick Actions" aria-label="Quick actions">
+      <span class="botnav-fab-icon">${APP.fabOpen ? '✕' : '＋'}</span><span>Add</span>
     </button>
   </nav>`;
     }
@@ -28423,7 +28547,7 @@ label {
         <!-- Filter & Sort Toolbar (Weekly) -->
         <div class="morning-period-toolbar" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px">
           <div style="position:relative">
-            <input type="search" placeholder="🔍 Filter devotee in weekly report…" value="${esc(APP.morningSearch || '')}" data-act="morning-q" style="width:100%;padding:6px 10px 6px 32px;font-size:12.5px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)">
+            <input type="search" placeholder="Filter devotee in weekly report…" value="${esc(APP.morningSearch || '')}" data-act="morning-q" style="width:100%;padding:6px 10px 6px 36px;font-size:12.5px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)">
             <span style="position:absolute;left:10px;top:7px;color:var(--ink-3)">${ic('search')}</span>
           </div>
 
@@ -28573,7 +28697,7 @@ label {
         <!-- Filter & Sort Toolbar (Monthly) -->
         <div class="morning-period-toolbar" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px">
           <div style="position:relative">
-            <input type="search" placeholder="🔍 Filter devotee in monthly report…" value="${esc(APP.morningSearch || '')}" data-act="morning-q" style="width:100%;padding:6px 10px 6px 32px;font-size:12.5px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)">
+            <input type="search" placeholder="Filter devotee in monthly report…" value="${esc(APP.morningSearch || '')}" data-act="morning-q" style="width:100%;padding:6px 10px 6px 36px;font-size:12.5px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)">
             <span style="position:absolute;left:10px;top:7px;color:var(--ink-3)">${ic('search')}</span>
           </div>
 
@@ -28712,7 +28836,7 @@ label {
       <div class="morning-progress-toolbar" style="padding:10px 18px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;border-bottom:1px solid var(--line-2);background:var(--surface)">
         <div class="morning-progress-search-row" style="position:relative;flex:1 1 200px;min-width:160px;display:flex;align-items:center;gap:6px">
           <div style="position:relative;flex:1 1 auto;min-width:0">
-            <input type="search" placeholder="🔍 Filter devotee in growth report…" value="${esc(APP.morningProgressSearch || '')}" data-act="morning-progress-q" oninput="APP.morningProgressSearch=this.value;render();" style="width:100%;box-sizing:border-box;padding:5px 8px 5px 28px;font-size:12px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--ink)">
+            <input type="search" placeholder="Filter devotee in growth report…" value="${esc(APP.morningProgressSearch || '')}" data-act="morning-progress-q" oninput="APP.morningProgressSearch=this.value;render();" style="width:100%;box-sizing:border-box;padding:5px 8px 5px 32px;font-size:12px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--ink)">
             <span style="position:absolute;left:8px;top:6px;color:var(--ink-3);font-size:11px">${ic('search')}</span>
           </div>
           ${(APP.morningProgressSearch || APP.morningProgressGrowthFilter || APP.morningProgressPunctFilter || (APP.morningProgressSort && APP.morningProgressSort !== 'growth_desc')) ? `
@@ -30068,7 +30192,7 @@ label {
             </label>
             <span class="tiny" style="color:var(--ink-3)">${(DB.devotees || []).length} registered</span>
           </div>
-          <input type="text" id="devotee-db-search" placeholder="🔍 Type to search database (e.g. Sai, Mayank, Sumit)..." oninput="filterDevoteeDropdown(this.value)" style="width:100%;box-sizing:border-box;padding:7px 10px;border:1px solid var(--line);border-radius:6px;font-size:13px;background:var(--surface);margin-bottom:8px">
+          <input type="text" id="devotee-db-search" placeholder="Type to search database (e.g. Sai, Mayank, Sumit)..." oninput="filterDevoteeDropdown(this.value)" style="width:100%;box-sizing:border-box;padding:7px 10px;border:1px solid var(--line);border-radius:6px;font-size:13px;background:var(--surface);margin-bottom:8px">
 
           <div id="devotee-dropdown-list" style="max-height:120px;overflow-y:auto;display:flex;flex-direction:column;gap:4px">
             ${(DB.devotees || []).slice(0, 15).map(d => `
@@ -31180,7 +31304,7 @@ label {
             </label>
             <span class="tiny" style="color:var(--ink-3)">${(DB.devotees || []).length} registered</span>
           </div>
-          <input type="text" placeholder="🔍 Type name to filter database devotees..." oninput="filterDressingDevoteeDropdown(this.value)" style="width:100%;box-sizing:border-box;padding:7px 10px;border:1px solid var(--line);border-radius:6px;font-size:13px;background:var(--surface);margin-bottom:8px">
+          <input type="text" placeholder="Type name to filter database devotees..." oninput="filterDressingDevoteeDropdown(this.value)" style="width:100%;box-sizing:border-box;padding:7px 10px;border:1px solid var(--line);border-radius:6px;font-size:13px;background:var(--surface);margin-bottom:8px">
 
           <div id="dressing-devotee-dropdown-list" style="max-height:110px;overflow-y:auto;display:flex;flex-direction:column;gap:4px">
             ${(DB.devotees || []).slice(0, 15).map(d => `
@@ -31910,7 +32034,7 @@ label {
             </div>
 
             <!-- Search input -->
-            <input type="text" id="filter-devotee-report-input" placeholder="🔍 Filter devotee name..." oninput="filterDevoteeReportTable(this.value)" style="padding:6px 10px;font-size:12.5px;border:1px solid var(--line);border-radius:6px;background:var(--surface);min-width:170px">
+            <input type="text" id="filter-devotee-report-input" placeholder="Filter devotee name..." oninput="filterDevoteeReportTable(this.value)" style="padding:6px 10px;font-size:12.5px;border:1px solid var(--line);border-radius:6px;background:var(--surface);min-width:170px">
 
             <!-- Export PDF Option -->
             <button class="btn pri sm" data-act="export-devotee-report-pdf" data-dept="${deptKey}" title="Export professional PDF report for all individual devotees for ${reportPeriod}">
@@ -34115,7 +34239,7 @@ label {
           </div>
 
           <!-- Search Input -->
-          <input type="text" placeholder="🔍 Search title, devotee, bill..." value="${esc(query)}"
+          <input type="text" placeholder="Search title, devotee, bill..." value="${esc(query)}"
                  oninput="window.setAccountsSearch(this.value)"
                  style="padding:5px 10px;font-size:12px;border:1px solid var(--line);border-radius:6px;background:var(--surface);min-width:180px">
         </div>
@@ -34749,12 +34873,9 @@ label {
           <div style="font-size:9.5px;color:var(--ink-3);font-weight:600;letter-spacing:0.2px">Classes</div>
         </div>
       </div>
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:11px;color:var(--ink-3);padding-top:2px">
-        <span>${b.day ? `📅 ${esc(b.day)}${b.time ? ' · ' + esc(b.time) : ''}` : (b.schedule ? `📅 ${esc(b.schedule)}` : '📅 Weekly')}</span>
-        <div style="display:flex;align-items:center;gap:8px">
-          ${waCoord ? `<span onclick="event.preventDefault();event.stopPropagation();window.open('https://wa.me/${waCoord}?text=${encodeURIComponent('Hare Krishna Prabhu! Regarding ' + b.name)}','_blank')" class="batch-wa-pill" title="WhatsApp Coordinator">${waIcon(13)} WhatsApp</span>` : ''}
-          <span style="color:var(--indigo);font-weight:700;font-size:11px;display:flex;align-items:center;gap:2px">View →</span>
-        </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:11.5px;color:var(--ink-3);padding-top:2px">
+        <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${b.day ? `📅 ${esc(b.day)}${b.time ? ' · ' + esc(b.time) : ''}` : (b.schedule ? `📅 ${esc(b.schedule)}` : '📅 Weekly')}</span>
+        <span style="color:var(--indigo);font-weight:700;font-size:11.5px;display:inline-flex;align-items:center;gap:2px;flex-shrink:0">View →</span>
       </div>
     </a>`;
       }
@@ -34857,7 +34978,7 @@ label {
       const leadMentor = mentors[0] || { name: 'Surya Narayana Das', phone: '919876543210' };
       const leadPhone = (leadMentor.phone || '').replace(/[^0-9]/g, '');
       const leadWa = leadPhone.length === 10 ? '91' + leadPhone : leadPhone;
-      
+
       const batches = DB.batches || [];
       const l1Batches = batches.filter(b => (b.level || 1) === 1);
       const l2Batches = batches.filter(b => b.level === 2);
@@ -34918,12 +35039,12 @@ label {
               </div>
               <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px">
                 ${l1Batches.map(b => {
-                  const mCount = batchMemberCount(b.id);
-                  return `<a href="#/batch/${b.id}" class="card" style="padding:6px 10px;border-radius:8px;font-size:11.5px;text-decoration:none;border-left:3px solid var(--saffron);background:var(--paper-2);display:inline-flex;align-items:center;gap:6px">
+        const mCount = batchMemberCount(b.id);
+        return `<a href="#/batch/${b.id}" class="card" style="padding:6px 10px;border-radius:8px;font-size:11.5px;text-decoration:none;border-left:3px solid var(--saffron);background:var(--paper-2);display:inline-flex;align-items:center;gap:6px">
                     <span style="font-weight:700;color:var(--ink)">${esc(b.name)}</span>
                     <span class="badge sm" style="font-size:9.5px;background:var(--saffron-soft);color:var(--saffron)">${mCount} devs</span>
                   </a>`;
-                }).join('')}
+      }).join('')}
               </div>
             </div>
           </div>
@@ -37843,7 +37964,7 @@ label {
     function celebrate() {
       try {
         if (navigator.vibrate) navigator.vibrate([25, 45, 25]);
-      } catch(e){}
+      } catch (e) { }
       try {
         let canvas = document.getElementById('celebrateCanvas');
         if (!canvas) {
@@ -37895,7 +38016,7 @@ label {
           }
         }
         requestAnimationFrame(anim);
-      } catch(e){}
+      } catch (e) { }
     }
 
     function circularProgressRing(pct, color = 'var(--saffron)', size = 52, stroke = 5, showText = true) {
@@ -37904,8 +38025,8 @@ label {
       const offset = circ - (Math.min(100, Math.max(0, pct)) / 100) * circ;
       const fontSize = Math.max(8, Math.round(size * 0.28));
       return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" class="circ-prog-ring" style="flex-shrink:0">
-        <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="currentColor" opacity="0.14" stroke-width="${stroke}"/>
-        <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${color}" stroke-width="${stroke}" stroke-dasharray="${circ}" stroke-dashoffset="${offset}" stroke-linecap="round" style="transform:rotate(-90deg);transform-origin:50% 50%;transition:stroke-dashoffset 0.6s cubic-bezier(0.16,1,0.3,1)"/>
+        <circle cx="${size / 2}" cy="${size / 2}" r="${r}" fill="none" stroke="currentColor" opacity="0.14" stroke-width="${stroke}"/>
+        <circle cx="${size / 2}" cy="${size / 2}" r="${r}" fill="none" stroke="${color}" stroke-width="${stroke}" stroke-dasharray="${circ}" stroke-dashoffset="${offset}" stroke-linecap="round" style="transform:rotate(-90deg);transform-origin:50% 50%;transition:stroke-dashoffset 0.6s cubic-bezier(0.16,1,0.3,1)"/>
         ${showText ? `<text x="50%" y="50%" text-anchor="middle" dominant-baseline="central" font-size="${fontSize}px" font-weight="800" fill="${color}">${Math.round(pct)}%</text>` : ''}
       </svg>`;
     }
@@ -37974,11 +38095,11 @@ label {
       let html = '';
       if (devs.length) {
         html += `<div class="spotlight-group">Devotees</div>` + devs.map((d, i) => `
-          <a href="#/devotee/${d.id}" onclick="closeSpotlightSearch()" class="spotlight-item ${i===0?'active':''}">
+          <a href="#/devotee/${d.id}" onclick="closeSpotlightSearch()" class="spotlight-item ${i === 0 ? 'active' : ''}">
             <span class="spot-icon">👤</span>
             <div class="spot-info">
               <div class="spot-title">${esc(d.name)}</div>
-              <div class="spot-sub">${esc(d.phone || d.email || 'Devotee')} · ${esc(d.appointment || 'Level '+(d.level||1))}</div>
+              <div class="spot-sub">${esc(d.phone || d.email || 'Devotee')} · ${esc(d.appointment || 'Level ' + (d.level || 1))}</div>
             </div>
             <span class="spot-arr">→</span>
           </a>
@@ -38020,7 +38141,7 @@ label {
     });
 
     // Mobile pull to refresh gesture
-    (function initPullToRefresh(){
+    (function initPullToRefresh() {
       let startY = 0;
       let isPulling = false;
       window.addEventListener('touchstart', (e) => {
@@ -38052,7 +38173,7 @@ label {
         isPulling = false;
         const ind = document.getElementById('pullRefreshIndicator');
         if (ind) {
-          try { if (navigator.vibrate) navigator.vibrate(18); } catch(err){}
+          try { if (navigator.vibrate) navigator.vibrate(18); } catch (err) { }
           toast('Community data refreshed', '🪷');
           setTimeout(() => {
             ind.remove();
@@ -40536,7 +40657,7 @@ label {
               let rec = DB.attendance.find(x => x.ref === q.ref && x.devotee === curDev.id);
               if (rec) rec.status = s;
               else DB.attendance.push({ id: uid('at'), category: 'Preaching batch', ref: q.ref, devotee: curDev.id, date: (act(q.ref) || {}).date || iso(TODAY), status: s });
-              try { if (navigator.vibrate) navigator.vibrate(18); } catch(err){}
+              try { if (navigator.vibrate) navigator.vibrate(18); } catch (err) { }
             }
             if (q.idx < members.length - 1) {
               q.idx++;
