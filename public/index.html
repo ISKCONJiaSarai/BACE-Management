@@ -2315,21 +2315,14 @@
       }
     }
 
-    input[type="search"]::-webkit-search-decoration,
-    input[type="search"]::-webkit-search-cancel-button,
-    input[type="search"]::-webkit-search-results-button,
-    input[type="search"]::-webkit-search-results-decoration {
-      -webkit-appearance: none;
-    }
-
     .searchbox {
       position: relative;
-      width: min(260px, 28vw);
+      width: min(260px, 28vw)
     }
 
     .searchbox input {
       width: 100%;
-      padding: 7px 12px 7px 36px !important;
+      padding: 7px 12px 7px 32px;
       border: 1px solid var(--line);
       border-radius: 10px;
       background: var(--surface-2);
@@ -2340,18 +2333,16 @@
     .searchbox input:focus {
       background: var(--surface);
       border-color: var(--accent);
-      box-shadow: 0 0 0 3px var(--accent-soft);
+      box-shadow: 0 0 0 3px var(--accent-soft)
     }
 
     .searchbox svg {
       position: absolute;
-      left: 11px;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 15px;
-      height: 15px;
-      color: var(--ink-3);
-      pointer-events: none;
+      left: 10px;
+      top: 8px;
+      width: 14px;
+      height: 14px;
+      color: var(--ink-3)
     }
 
     .icon-btn {
@@ -7002,36 +6993,16 @@
         box-shadow: 0 1px 4px rgba(220, 38, 38, 0.4);
       }
 
-      /* Mobile quick + action integrated into bottom-nav: hide floating .fab */
       .fab {
-        display: none !important;
+        bottom: calc(76px + env(safe-area-inset-bottom));
+        right: 16px;
+        width: 50px;
+        height: 50px;
       }
 
       .fab-menu {
-        bottom: calc(66px + env(safe-area-inset-bottom)) !important;
-        right: 10px !important;
-        z-index: 95 !important;
-      }
-
-      .botnav-fab-btn .botnav-fab-icon {
-        width: 27px;
-        height: 27px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, var(--saffron), var(--saffron-2));
-        color: #fff;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 16px;
-        font-weight: 800;
-        line-height: 1;
-        box-shadow: 0 2px 8px rgba(234, 88, 12, 0.4);
-        transition: transform .18s ease, background .18s ease;
-      }
-
-      .botnav-fab-btn.on .botnav-fab-icon {
-        transform: rotate(90deg);
-        background: #EF4444;
+        bottom: calc(134px + env(safe-area-inset-bottom));
+        right: 16px;
       }
 
       .toast {
@@ -15940,26 +15911,12 @@
       transform: scale(0.98) !important;
     }
 
-    /* Desktop default: Hide mobile-only components on laptop/desktop screens */
-    .hide-desktop,
-    .ashram-pulse-row,
-    .mobile-dash-segment-bar {
-      display: none !important;
-    }
-
     /* ===== END VERSION C ===== */
 
     /* =====================================================================
    COASTOK MINIMALIST MOBILE REDESIGN (max-width: 768px)
    ===================================================================== */
     @media (max-width: 768px) {
-      .hide-desktop {
-        display: flex !important;
-      }
-
-      button.icon-btn.hide-desktop {
-        display: inline-flex !important;
-      }
 
       /* 1. Global whitespace & background */
       body {
@@ -16266,14 +16223,14 @@
         transform: scale(1.05) !important;
       }
 
-      /* 4. Streamlined Department & Level Buttons: Crisp white rounded boxes with high-contrast text in all themes */
+      /* 4. Streamlined Department & Level Buttons: Compact, single-line, zero subtitle clutter */
       .dash-level-btn {
-        padding: 10px 13px !important;
-        border-radius: 14px !important;
+        padding: 11px 13px !important;
+        border-radius: 12px !important;
         margin-bottom: 6px !important;
-        background: #FFFFFF !important;
-        border: 1px solid #E2E8F0 !important;
-        box-shadow: 0 2px 6px rgba(15, 23, 42, 0.05) !important;
+        background: #F8FAFC !important;
+        border: 1px solid #EEF2F6 !important;
+        box-shadow: none !important;
         min-height: 44px !important;
       }
 
@@ -16286,7 +16243,7 @@
         font-size: 13.5px !important;
         font-weight: 700 !important;
         line-height: 1.2 !important;
-        color: #0F172A !important;
+        color: var(--ink) !important;
       }
 
       .dash-level-btn .btn-badge {
@@ -16301,22 +16258,7 @@
       .dash-level-btn .btn-arr {
         font-size: 12.5px !important;
         font-weight: 700 !important;
-        color: #4338CA !important;
-      }
-
-      /* In Dark Mode: Crisp white rounded boxes with deep high-contrast text */
-      [data-theme="dark"] .dash-level-btn {
-        background: #FFFFFF !important;
-        border: 1px solid #CBD5E1 !important;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35) !important;
-      }
-
-      [data-theme="dark"] .dash-level-btn .btn-title {
-        color: #0F172A !important;
-      }
-
-      [data-theme="dark"] .dash-level-btn .btn-arr {
-        color: #4338CA !important;
+        color: var(--ink-3) !important;
       }
 
       /* 5. Minimalist Clean Calendar and Prabhupada Nectar Cards */
@@ -16521,145 +16463,6 @@
         }
       }
 
-      /* Spotlight Search Overlay */
-      .spotlight-scrim {
-        position: fixed;
-        inset: 0;
-        background: rgba(15, 23, 42, 0.65);
-        backdrop-filter: blur(8px);
-        z-index: 99999;
-        display: flex;
-        align-items: flex-start;
-        justify-content: center;
-        padding: 40px 14px 14px;
-      }
-
-      .spotlight-card {
-        width: 100%;
-        max-width: 540px;
-        background: var(--surface);
-        border: 1px solid var(--line);
-        border-radius: 20px;
-        box-shadow: 0 16px 48px rgba(0, 0, 0, 0.35);
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
-        animation: slideDownSpot 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-      }
-
-      @keyframes slideDownSpot {
-        from {
-          transform: translateY(-16px);
-          opacity: 0;
-        }
-
-        to {
-          transform: translateY(0);
-          opacity: 1;
-        }
-      }
-
-      .spotlight-input-row {
-        display: flex;
-        align-items: center;
-        padding: 12px 16px;
-        border-bottom: 1px solid var(--line-2);
-        gap: 10px;
-      }
-
-      .spotlight-input-row input {
-        flex: 1;
-        border: none !important;
-        outline: none !important;
-        font-size: 15px !important;
-        background: transparent !important;
-        color: var(--ink) !important;
-      }
-
-      .spotlight-esc {
-        font-size: 10px;
-        padding: 2px 6px;
-        background: var(--paper-2);
-        border: 1px solid var(--line);
-        border-radius: 5px;
-        color: var(--ink-3);
-        cursor: pointer;
-      }
-
-      .spotlight-results {
-        max-height: 340px;
-        overflow-y: auto;
-        padding: 8px;
-        display: flex;
-        flex-direction: column;
-        gap: 3px;
-      }
-
-      .spotlight-group {
-        font-size: 10.5px;
-        font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: .06em;
-        color: var(--ink-3);
-        padding: 6px 8px 3px;
-      }
-
-      .spotlight-item {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 9px 12px;
-        border-radius: 12px;
-        text-decoration: none;
-        color: var(--ink);
-        transition: background .15s ease;
-      }
-
-      .spotlight-item:hover,
-      .spotlight-item.active {
-        background: var(--accent-soft);
-        color: var(--saffron);
-      }
-
-      .spotlight-item .spot-info {
-        flex: 1;
-        min-width: 0;
-      }
-
-      .spotlight-item .spot-title {
-        font-size: 13.5px;
-        font-weight: 700;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-
-      .spotlight-item .spot-sub {
-        font-size: 11px;
-        color: var(--ink-3);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-
-      .spotlight-hint {
-        padding: 22px;
-        text-align: center;
-        font-size: 12.5px;
-        color: var(--ink-3);
-      }
-
-      .spotlight-footer {
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        padding: 8px 16px;
-        background: var(--paper-2);
-        border-top: 1px solid var(--line-2);
-        font-size: 11px;
-        color: var(--ink-3);
-      }
-
       /* Hierarchy Tree */
       .ht-node {
         display: flex;
@@ -16699,6 +16502,196 @@
 
     /* ===== END COASTOK MINIMALIST MOBILE ===== */
 
+    /* =========================================================================
+       GLOBAL SPOTLIGHT COMMAND PALETTE (Laptop, Desktop, Tablet & Mobile)
+       ========================================================================= */
+    .spotlight-scrim {
+      position: fixed !important;
+      inset: 0 !important;
+      background: rgba(10, 14, 23, 0.72) !important;
+      backdrop-filter: blur(12px) !important;
+      -webkit-backdrop-filter: blur(12px) !important;
+      z-index: 999999 !important;
+      display: flex !important;
+      align-items: flex-start !important;
+      justify-content: center !important;
+      padding: 12vh 16px 24px !important;
+      overflow-y: auto !important;
+    }
+
+    .spotlight-card {
+      width: 100% !important;
+      max-width: 620px !important;
+      background: var(--surface, #FFFFFF) !important;
+      border: 1px solid var(--line, #E2E8F0) !important;
+      border-radius: 20px !important;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.1) !important;
+      overflow: hidden !important;
+      display: flex !important;
+      flex-direction: column !important;
+      animation: slideDownSpot 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    }
+
+    [data-theme="dark"] .spotlight-card {
+      background: #1C1E29 !important;
+      border: 1px solid rgba(255, 255, 255, 0.14) !important;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.08) !important;
+    }
+
+    @keyframes slideDownSpot {
+      from {
+        transform: translateY(-20px) scale(0.98);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+      }
+    }
+
+    .spotlight-input-row {
+      display: flex !important;
+      align-items: center !important;
+      padding: 14px 18px !important;
+      border-bottom: 1px solid var(--line-2, #E2E8F0) !important;
+      gap: 12px !important;
+      background: transparent !important;
+    }
+
+    .spotlight-input-row .spotlight-icon {
+      font-size: 18px !important;
+      line-height: 1 !important;
+      opacity: 0.8 !important;
+      flex-shrink: 0 !important;
+    }
+
+    .spotlight-input-row input {
+      flex: 1 !important;
+      border: none !important;
+      outline: none !important;
+      font-size: 16px !important;
+      font-weight: 500 !important;
+      background: transparent !important;
+      color: var(--ink) !important;
+      box-shadow: none !important;
+      padding: 4px 0 !important;
+      min-width: 0 !important;
+    }
+
+    .spotlight-esc {
+      font-size: 10.5px !important;
+      font-weight: 700 !important;
+      padding: 3px 8px !important;
+      background: var(--paper-2, #F1F5F9) !important;
+      border: 1px solid var(--line, #CBD5E1) !important;
+      border-radius: 6px !important;
+      color: var(--ink-3) !important;
+      cursor: pointer !important;
+      letter-spacing: 0.5px !important;
+      flex-shrink: 0 !important;
+    }
+
+    .spotlight-esc:hover {
+      background: var(--accent-soft) !important;
+      color: var(--saffron) !important;
+    }
+
+    .spotlight-results {
+      max-height: 380px !important;
+      overflow-y: auto !important;
+      padding: 8px !important;
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 4px !important;
+    }
+
+    .spotlight-group {
+      font-size: 11px !important;
+      font-weight: 800 !important;
+      text-transform: uppercase !important;
+      letter-spacing: .06em !important;
+      color: var(--ink-3) !important;
+      padding: 8px 10px 4px !important;
+    }
+
+    .spotlight-item {
+      display: flex !important;
+      align-items: center !important;
+      gap: 12px !important;
+      padding: 10px 14px !important;
+      border-radius: 12px !important;
+      text-decoration: none !important;
+      color: var(--ink) !important;
+      transition: all .15s ease !important;
+      cursor: pointer !important;
+    }
+
+    .spotlight-item:hover,
+    .spotlight-item.active {
+      background: var(--accent-soft, rgba(234, 88, 12, 0.12)) !important;
+      color: var(--saffron, #EA580C) !important;
+      transform: translateX(3px) !important;
+    }
+
+    .spotlight-item .spot-icon {
+      font-size: 18px !important;
+      flex-shrink: 0 !important;
+    }
+
+    .spotlight-item .spot-info {
+      flex: 1 !important;
+      min-width: 0 !important;
+    }
+
+    .spotlight-item .spot-title {
+      font-size: 14px !important;
+      font-weight: 700 !important;
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+    }
+
+    .spotlight-item .spot-sub {
+      font-size: 11.5px !important;
+      color: var(--ink-3) !important;
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+      margin-top: 1px !important;
+    }
+
+    .spotlight-hint {
+      padding: 32px 20px !important;
+      text-align: center !important;
+      font-size: 13.5px !important;
+      color: var(--ink-3) !important;
+    }
+
+    .spotlight-footer {
+      display: flex !important;
+      align-items: center !important;
+      gap: 16px !important;
+      padding: 10px 18px !important;
+      background: var(--paper-2, #F8FAFC) !important;
+      border-top: 1px solid var(--line-2, #E2E8F0) !important;
+      font-size: 11.5px !important;
+      color: var(--ink-3) !important;
+    }
+
+    [data-theme="dark"] .spotlight-footer {
+      background: #161822 !important;
+      border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+    }
+
+    @media (max-width: 768px) {
+      .spotlight-scrim {
+        padding: 24px 12px 14px !important;
+      }
+      .spotlight-card {
+        max-width: 100% !important;
+      }
+    }
+
     /* =====================================================================
    SUBTLE, FLUID & HIGH-CONTRAST MOBILE ENHANCEMENTS (<= 900px)
    Light Mode: Soft slate mist, luminous white cards, crisp ink typography
@@ -16732,60 +16725,43 @@
         transform: scale(0.992) !important;
       }
 
-      /* ── 2. Stat Tiles: Clean, Balanced, Single-Line Labels ── */
+      /* ── 2. Stat Tiles: Clean, Balanced, Non-Heavy ── */
       .stat {
         background: #FFFFFF !important;
         border: 1px solid #E2E8F0 !important;
         border-radius: 13px !important;
         box-shadow: 0 2px 6px -2px rgba(15, 23, 42, 0.04) !important;
-        padding: 9px 8px !important;
+        padding: 12px 13px !important;
       }
 
       .stat .val {
         color: #0F172A !important;
-        font-size: 20px !important;
+        font-size: 21px !important;
         font-weight: 800 !important;
         line-height: 1.2 !important;
-        white-space: nowrap !important;
       }
 
       .stat .lbl {
         color: #64748B !important;
-        font-size: 10px !important;
+        font-size: 11px !important;
         font-weight: 600 !important;
-        letter-spacing: 0.1px !important;
-        white-space: nowrap !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
-        display: flex !important;
-        align-items: center !important;
-        gap: 3px !important;
-      }
-
-      .stat .lbl span:last-child {
-        white-space: nowrap !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
+        letter-spacing: 0.2px !important;
       }
 
       .stat .foot {
         color: #94A3B8 !important;
-        font-size: 9.5px !important;
-        white-space: nowrap !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
+        font-size: 10px !important;
       }
 
       .stat .em {
         background: #F1F5F9 !important;
         color: #0F172A !important;
-        border-radius: 6px !important;
-        padding: 1px 4px !important;
-        font-size: 12px !important;
+        border-radius: 8px !important;
+        padding: 2px 5px !important;
+        font-size: 13px !important;
         display: inline-flex !important;
         align-items: center !important;
         justify-content: center !important;
-        flex-shrink: 0 !important;
       }
 
       /* ── 3. Ashram Ambience Bar: Sleek, Subtle Audio Console ── */
@@ -17170,30 +17146,21 @@
 
       [data-theme="dark"] .stat .lbl {
         color: #D1D3DC !important;
-        font-size: 10px !important;
-        white-space: nowrap !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
       }
 
       [data-theme="dark"] .stat .foot {
         color: #9A9CAE !important;
-        font-size: 9.5px !important;
-        white-space: nowrap !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
       }
 
       [data-theme="dark"] .stat .lbl span {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: 19px;
-        height: 19px;
-        border-radius: 5px;
-        margin-right: 4px;
-        font-size: 11px;
-        flex-shrink: 0;
+        width: 22px;
+        height: 22px;
+        border-radius: 6px;
+        margin-right: 6px;
+        font-size: 12px;
       }
 
       [data-theme="dark"] .grid>.stat:nth-child(1) .lbl span {
@@ -17837,7 +17804,7 @@
     .modal select,
     .drawer input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
     .drawer select,
-    .toolbar input,
+    .toolbar input:not(.dev-search-input):not(.has-icon-input):not([type="search"]),
     .toolbar select {
       font-size: 12.5px !important;
       font-weight: 500 !important;
@@ -17850,6 +17817,15 @@
       color: var(--ink) !important;
       box-sizing: border-box !important;
       line-height: 1.35 !important;
+    }
+
+    /* Search inputs with leading icons: Always preserve ample 40px left padding */
+    .toolbar input.dev-search-input,
+    .toolbar input[type="search"],
+    .toolbar .search-with-icon input,
+    .search-with-icon input,
+    input.dev-search-input {
+      padding-left: 40px !important;
     }
 
     textarea,
@@ -20628,8 +20604,8 @@
     ${can('management') ? btn('Mgmt', '🛕', onMgmt, '#/mgmt') : ''}
     ${can('preaching') ? btn('Preaching', '📖', onPreach, '#/preaching', fuOverdue) : ''}
     ${can('directory') ? btn('Devotees', '👥', onDev, '#/devotees') : btn('My Profile', '👤', onDev, '#/devotee/' + (APP.user.devotee || ''))}
-    <button class="botnav-fab-btn ${APP.fabOpen ? 'on' : ''}" data-act="fab" title="Quick Actions" aria-label="Quick actions">
-      <span class="botnav-fab-icon">${APP.fabOpen ? '✕' : '＋'}</span><span>Add</span>
+    <button class="${APP.mobileNavOpen ? 'on' : ''}" data-act="toggle-mobile-nav" title="More" aria-label="More menu">
+      <span class="em">☰</span><span>More</span>${pendingCount && can('admin') ? `<i class="bdot">${pendingCount > 9 ? '9+' : pendingCount}</i>` : ''}
     </button>
   </nav>`;
     }
@@ -23222,9 +23198,9 @@
 
       const toolbar = `
     <div class="dev-toolbar-row" style="display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;width:100%">
-      <div style="position:relative;flex:1;min-width:0">
-        <input type="search" placeholder="Search devotees..." value="${esc(f.q)}" data-act="f" data-k="dev" data-n="q" style="width:100%;padding:8px 12px 8px 34px;border-radius:9px;border:1px solid var(--line);font-size:13.5px;background:var(--surface)">
-        <span style="position:absolute;left:11px;top:9px;font-size:13px;opacity:0.55;pointer-events:none">🔍</span>
+      <div style="position:relative;flex:1;min-width:0" class="search-with-icon">
+        <input type="search" class="dev-search-input" placeholder="Search devotees..." value="${esc(f.q)}" data-act="f" data-k="dev" data-n="q" style="width:100%;padding:8px 14px 8px 40px !important;border-radius:9px;border:1px solid var(--line);font-size:13.5px;background:var(--surface)">
+        <span style="position:absolute;left:13px;top:50%;transform:translateY(-50%);font-size:14px;opacity:0.6;pointer-events:none;line-height:1">🔍</span>
       </div>
       <div class="dev-toolbar-actions" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         ${activeFilterCount > 0 ? `<button class="btn sm" data-act="clear-dev-filters" title="Reset all filters" style="color:var(--danger);background:rgba(220,53,69,0.06);border-color:rgba(220,53,69,0.25);font-weight:600;display:inline-flex;align-items:center;gap:5px">${ic('x')} Reset (${activeFilterCount})</button>` : ''}
@@ -28547,7 +28523,7 @@ label {
         <!-- Filter & Sort Toolbar (Weekly) -->
         <div class="morning-period-toolbar" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px">
           <div style="position:relative">
-            <input type="search" placeholder="Filter devotee in weekly report…" value="${esc(APP.morningSearch || '')}" data-act="morning-q" style="width:100%;padding:6px 10px 6px 36px;font-size:12.5px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)">
+            <input type="search" placeholder="🔍 Filter devotee in weekly report…" value="${esc(APP.morningSearch || '')}" data-act="morning-q" style="width:100%;padding:6px 10px 6px 32px;font-size:12.5px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)">
             <span style="position:absolute;left:10px;top:7px;color:var(--ink-3)">${ic('search')}</span>
           </div>
 
@@ -28697,7 +28673,7 @@ label {
         <!-- Filter & Sort Toolbar (Monthly) -->
         <div class="morning-period-toolbar" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px">
           <div style="position:relative">
-            <input type="search" placeholder="Filter devotee in monthly report…" value="${esc(APP.morningSearch || '')}" data-act="morning-q" style="width:100%;padding:6px 10px 6px 36px;font-size:12.5px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)">
+            <input type="search" placeholder="🔍 Filter devotee in monthly report…" value="${esc(APP.morningSearch || '')}" data-act="morning-q" style="width:100%;padding:6px 10px 6px 32px;font-size:12.5px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)">
             <span style="position:absolute;left:10px;top:7px;color:var(--ink-3)">${ic('search')}</span>
           </div>
 
@@ -28836,7 +28812,7 @@ label {
       <div class="morning-progress-toolbar" style="padding:10px 18px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;border-bottom:1px solid var(--line-2);background:var(--surface)">
         <div class="morning-progress-search-row" style="position:relative;flex:1 1 200px;min-width:160px;display:flex;align-items:center;gap:6px">
           <div style="position:relative;flex:1 1 auto;min-width:0">
-            <input type="search" placeholder="Filter devotee in growth report…" value="${esc(APP.morningProgressSearch || '')}" data-act="morning-progress-q" oninput="APP.morningProgressSearch=this.value;render();" style="width:100%;box-sizing:border-box;padding:5px 8px 5px 32px;font-size:12px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--ink)">
+            <input type="search" placeholder="🔍 Filter devotee in growth report…" value="${esc(APP.morningProgressSearch || '')}" data-act="morning-progress-q" oninput="APP.morningProgressSearch=this.value;render();" style="width:100%;box-sizing:border-box;padding:5px 8px 5px 28px;font-size:12px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--ink)">
             <span style="position:absolute;left:8px;top:6px;color:var(--ink-3);font-size:11px">${ic('search')}</span>
           </div>
           ${(APP.morningProgressSearch || APP.morningProgressGrowthFilter || APP.morningProgressPunctFilter || (APP.morningProgressSort && APP.morningProgressSort !== 'growth_desc')) ? `
@@ -30192,7 +30168,7 @@ label {
             </label>
             <span class="tiny" style="color:var(--ink-3)">${(DB.devotees || []).length} registered</span>
           </div>
-          <input type="text" id="devotee-db-search" placeholder="Type to search database (e.g. Sai, Mayank, Sumit)..." oninput="filterDevoteeDropdown(this.value)" style="width:100%;box-sizing:border-box;padding:7px 10px;border:1px solid var(--line);border-radius:6px;font-size:13px;background:var(--surface);margin-bottom:8px">
+          <input type="text" id="devotee-db-search" placeholder="🔍 Type to search database (e.g. Sai, Mayank, Sumit)..." oninput="filterDevoteeDropdown(this.value)" style="width:100%;box-sizing:border-box;padding:7px 10px;border:1px solid var(--line);border-radius:6px;font-size:13px;background:var(--surface);margin-bottom:8px">
 
           <div id="devotee-dropdown-list" style="max-height:120px;overflow-y:auto;display:flex;flex-direction:column;gap:4px">
             ${(DB.devotees || []).slice(0, 15).map(d => `
@@ -31304,7 +31280,7 @@ label {
             </label>
             <span class="tiny" style="color:var(--ink-3)">${(DB.devotees || []).length} registered</span>
           </div>
-          <input type="text" placeholder="Type name to filter database devotees..." oninput="filterDressingDevoteeDropdown(this.value)" style="width:100%;box-sizing:border-box;padding:7px 10px;border:1px solid var(--line);border-radius:6px;font-size:13px;background:var(--surface);margin-bottom:8px">
+          <input type="text" placeholder="🔍 Type name to filter database devotees..." oninput="filterDressingDevoteeDropdown(this.value)" style="width:100%;box-sizing:border-box;padding:7px 10px;border:1px solid var(--line);border-radius:6px;font-size:13px;background:var(--surface);margin-bottom:8px">
 
           <div id="dressing-devotee-dropdown-list" style="max-height:110px;overflow-y:auto;display:flex;flex-direction:column;gap:4px">
             ${(DB.devotees || []).slice(0, 15).map(d => `
@@ -32034,7 +32010,7 @@ label {
             </div>
 
             <!-- Search input -->
-            <input type="text" id="filter-devotee-report-input" placeholder="Filter devotee name..." oninput="filterDevoteeReportTable(this.value)" style="padding:6px 10px;font-size:12.5px;border:1px solid var(--line);border-radius:6px;background:var(--surface);min-width:170px">
+            <input type="text" id="filter-devotee-report-input" placeholder="🔍 Filter devotee name..." oninput="filterDevoteeReportTable(this.value)" style="padding:6px 10px;font-size:12.5px;border:1px solid var(--line);border-radius:6px;background:var(--surface);min-width:170px">
 
             <!-- Export PDF Option -->
             <button class="btn pri sm" data-act="export-devotee-report-pdf" data-dept="${deptKey}" title="Export professional PDF report for all individual devotees for ${reportPeriod}">
@@ -34239,7 +34215,7 @@ label {
           </div>
 
           <!-- Search Input -->
-          <input type="text" placeholder="Search title, devotee, bill..." value="${esc(query)}"
+          <input type="text" placeholder="🔍 Search title, devotee, bill..." value="${esc(query)}"
                  oninput="window.setAccountsSearch(this.value)"
                  style="padding:5px 10px;font-size:12px;border:1px solid var(--line);border-radius:6px;background:var(--surface);min-width:180px">
         </div>
@@ -34873,9 +34849,12 @@ label {
           <div style="font-size:9.5px;color:var(--ink-3);font-weight:600;letter-spacing:0.2px">Classes</div>
         </div>
       </div>
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:11.5px;color:var(--ink-3);padding-top:2px">
-        <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${b.day ? `📅 ${esc(b.day)}${b.time ? ' · ' + esc(b.time) : ''}` : (b.schedule ? `📅 ${esc(b.schedule)}` : '📅 Weekly')}</span>
-        <span style="color:var(--indigo);font-weight:700;font-size:11.5px;display:inline-flex;align-items:center;gap:2px;flex-shrink:0">View →</span>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:11px;color:var(--ink-3);padding-top:2px">
+        <span>${b.day ? `📅 ${esc(b.day)}${b.time ? ' · ' + esc(b.time) : ''}` : (b.schedule ? `📅 ${esc(b.schedule)}` : '📅 Weekly')}</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          ${waCoord ? `<span onclick="event.preventDefault();event.stopPropagation();window.open('https://wa.me/${waCoord}?text=${encodeURIComponent('Hare Krishna Prabhu! Regarding ' + b.name)}','_blank')" class="batch-wa-pill" title="WhatsApp Coordinator">${waIcon(13)} WhatsApp</span>` : ''}
+          <span style="color:var(--indigo);font-weight:700;font-size:11px;display:flex;align-items:center;gap:2px">View →</span>
+        </div>
       </div>
     </a>`;
       }
@@ -44868,20 +44847,7 @@ label {
     loadOutingsFromBackend();
     loadNotificationsFromBackend();
     setInterval(() => loadNotificationsFromBackend(false), 45000);
-    try {
-      render();
-    } catch (renderErr) {
-      console.error('Initial render error:', renderErr);
-      const appEl = document.getElementById('app');
-      if (appEl) {
-        appEl.innerHTML = `<div style="padding:40px;text-align:center;color:#fff;background:#0d1117;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center">
-          <div style="font-size:36px;margin-bottom:12px">⚠️</div>
-          <h2 style="color:#ef4444;margin-bottom:8px">Startup Error</h2>
-          <p style="color:#94a3b8;max-width:500px;margin-bottom:20px;font-size:14px">${esc(renderErr.message || 'Error initializing application')}</p>
-          <button class="btn pri" onclick="location.reload()">Reload Application</button>
-        </div>`;
-      }
-    }
+    render();
     syncDevoteesFromServer(true); // forceImmediate on first page load
     verifyUserSessionFromServer();
     initBaceKirtanOnOpen();
