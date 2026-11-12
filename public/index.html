@@ -3828,21 +3828,22 @@
     .col-filter-wrap {
       display: inline-flex;
       align-items: center;
-      gap: 4px;
-      width: 100%
+      gap: 5px;
+      width: 100%;
+      min-width: max-content;
+      flex-wrap: nowrap;
     }
 
     .col-filter-wrap>span {
       font-size: 11.5px;
       font-weight: 700;
       white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis
+      flex-shrink: 0;
     }
 
     .col-filter-select {
       font-family: inherit;
-      font-size: 11px;
+      font-size: 11.5px;
       line-height: 1.2;
       padding: 3px 6px;
       border-radius: 6px;
@@ -3853,14 +3854,20 @@
       outline: none;
       transition: all 0.15s ease;
       vertical-align: middle;
-      max-width: 100px;
-      min-width: 0;
+      max-width: 110px;
+      min-width: 58px;
       flex: 1;
+    }
+
+    [data-theme="dark"] .col-filter-select {
+      background: #242735 !important;
+      border-color: rgba(255, 255, 255, 0.15) !important;
+      color: var(--ink) !important;
     }
 
     .col-filter-select:hover {
       border-color: var(--ink-3);
-      color: var(--ink)
+      color: var(--ink);
     }
 
     .col-filter-select.active {
@@ -3891,7 +3898,17 @@
     }
 
     .tbl tbody tr:hover {
-      background: rgba(241, 245, 249, 0.75)
+      background: rgba(0, 0, 0, 0.035);
+    }
+
+    [data-theme="dark"] .tbl tbody tr:hover,
+    [data-theme="dark"] .tbl tr:hover,
+    [data-theme="dark"] tr:hover {
+      background: rgba(255, 255, 255, 0.07) !important;
+    }
+
+    [data-theme="dark"] .tbl tbody tr:hover td {
+      color: var(--ink) !important;
     }
 
     .tbl tbody tr.click {
@@ -15610,20 +15627,34 @@
     /* 4-Card Single Line Dashboard Grid */
     .dash-quad-grid {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) max-content minmax(0, 1.25fr);
       gap: 14px;
       align-items: stretch;
+    }
+
+    #dashCalWidget {
+      width: max-content !important;
+      max-width: 320px !important;
+      min-width: 275px !important;
     }
 
     @media (max-width: 1200px) {
       .dash-quad-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
+      #dashCalWidget {
+        width: 100% !important;
+        max-width: 100% !important;
+      }
     }
 
     @media (max-width: 640px) {
       .dash-quad-grid {
         grid-template-columns: 1fr;
+      }
+      #dashCalWidget {
+        width: 100% !important;
+        max-width: 100% !important;
       }
     }
 
@@ -21397,14 +21428,14 @@
        <p>${esc(ROLES[APP.user.role].name)} &middot; ${fmtLong(iso(TODAY))}</p>
        <div class="quote"><span class="quote-script">${dayQuote}</span></div>
        <div class="hero-stat-cards">
-         <a class="hero-stat-card" href="#/attendance" title="Weekly BACE Health: Morning ${avgMorning}%, Deity ${avgDeity}%, Cleaning ${avgCleaning}%">
-           <div class="hsc-icon-wrap" style="background:rgba(34,197,94,0.18);color:#4ade80">
-             <span class="hsc-dot" style="background:#4ade80"></span>
-             <span>&#x1F6D5;</span>
+         <a class="hero-stat-card" href="#/attendance" title="Morning Program Attendance Rate: ${avgMorning}%">
+           <div class="hsc-icon-wrap" style="background:rgba(234,88,12,0.18);color:#ea580c">
+             <span class="hsc-dot" style="background:#ea580c"></span>
+             <span>🌅</span>
            </div>
            <div class="hsc-content">
-             <div class="hsc-val">${overallBaceHealth}%</div>
-             <div class="hsc-lbl">BACE Health</div>
+             <div class="hsc-val">${avgMorning}%</div>
+             <div class="hsc-lbl">Morning Program</div>
            </div>
          </a>
          <a class="hero-stat-card" href="#/devotees" title="${s.active} active devotees">
@@ -23402,7 +23433,7 @@
         dataTable({
           id: 'dev', exportName: 'devotees', toolbar, mobList: devMobList(rows), cols: [
             {
-              w: '22%',
+              w: '20%',
               h: `<div class="col-filter-wrap">
          <span>Devotee</span>
          ${colSelect('sort', f.sort, [
@@ -23426,7 +23457,7 @@
               }
             },
             {
-              w: '8%',
+              w: '9%',
               h: `<div class="col-filter-wrap">
          <span>Status</span>
          ${colSelect('status', f.status, [
@@ -23440,8 +23471,8 @@
               c: d => sbadge(d.status)
             },
             {
-              w: '7%',
-              h: `<div class="col-filter-wrap">
+              w: '10%',
+              h: `<div class="col-filter-wrap" style="min-width:98px">
          <span>Gender</span>
          ${colSelect('gender', f.gender, [
                 ['Male', 'Male'],
@@ -23452,7 +23483,7 @@
               c: d => `<span class="badge ${d.gender === 'Female' ? 'b-amber' : 'b-indigo'}" style="font-size:10.5px">${d.gender || 'Male'}</span>`
             },
             {
-              w: '13%',
+              w: '12%',
               h: `<div class="col-filter-wrap">
          <span>Batch</span>
          ${colSelect('batch', f.batch, [
@@ -23476,7 +23507,7 @@
               c: d => d.dept ? `<span class="tbl-trunc" title="${esc(dept(d.dept)?.name || '')}">${esc(dept(d.dept)?.name || '')}</span>` : '<span class="tiny">—</span>'
             },
             {
-              w: '10%',
+              w: '9%',
               h: `<div class="col-filter-wrap">
          <span>Care</span>
          ${colSelect('careGroup', f.careGroup, [
