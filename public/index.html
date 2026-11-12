@@ -20588,7 +20588,7 @@
     }
     const CRUMBS = {
       '': 'Dashboard', today: 'Today', devotees: 'Devotees', devotee: 'Devotee', org: 'Organisation', mgmt: 'BACE Management',
-      depts: 'Dept Hub', dept: 'Department', accounts: 'Accounts & Budgets', assign: 'Assign Seva', attendance: 'BACE Pillars', 'dept-reports': 'Department reports',
+      depts: 'Dept Hub', dept: 'Department', accounts: 'Accounts & Budgets', assign: 'Assign Seva', attendance: 'Morning Program', 'dept-reports': 'Department reports',
       inventory: 'Inventory & BBT', sops: 'SOPs & standards', actions: 'Action items', preaching: 'BACE Preaching', batches: 'Batch management',
       batch: 'Batch', contacts: 'Contacts & pipeline', followups: 'Follow-ups', classes: 'Classes & events', 'batch-attendance': 'Batch attendance',
       'preaching-reports': 'Preaching reports', care: 'Devotee Care', friends: 'Friends & Groups', groups: 'Friends & Groups', group: 'Group', swabhav: 'Swabhav engagement',
@@ -21866,10 +21866,10 @@
               <span class="pillar-item-arrow">›</span>
             </a>
             <a class="pillar-item" href="#/attendance">
-              <span class="pillar-item-icon">🏛️</span>
+              <span class="pillar-item-icon">🌅</span>
               <div class="pillar-item-info">
-                <div class="pillar-item-title">BACE pillars</div>
-                <div class="pillar-item-sub">Foundation to healthy growth</div>
+                <div class="pillar-item-title">Morning Program</div>
+                <div class="pillar-item-sub">Daily sadhana &amp; punctuality</div>
               </div>
               <span class="pillar-item-arrow">›</span>
             </a>
@@ -22393,7 +22393,7 @@
         <span class="btn-badge">${c.code}</span>
         <div>
           <div class="btn-title" style="color:#0F172A!important;font-weight:700!important">${c.name}</div>
-          <div class="btn-sub">${data.volunteers} in seva &middot; ${data.completion}% done</div>
+          <div class="btn-sub" style="color:#475569!important;font-weight:600!important">${data.volunteers} in seva &middot; ${data.completion}% done</div>
         </div>
       </div>
       <span class="btn-arr" style="color:#4338CA!important;font-weight:700!important">View &#x2192;</span>
@@ -22471,7 +22471,7 @@
         <span class="btn-badge">L${c.lvl}</span>
         <div>
           <div class="btn-title" style="color:#0F172A!important;font-weight:700!important">${c.name}</div>
-          <div class="btn-sub">${data.count} ${data.count === 1 ? 'batch' : 'batches'} &middot; ${data.devs} devotees</div>
+          <div class="btn-sub" style="color:#475569!important;font-weight:600!important">${data.count} ${data.count === 1 ? 'batch' : 'batches'} &middot; ${data.devs} devotees</div>
         </div>
       </div>
       <span class="btn-arr" style="color:#4338CA!important;font-weight:700!important">View &#x2192;</span>
@@ -24432,30 +24432,10 @@
     }
     function viewMgmt() {
       const s = STATS();
-      const tot = activeDepts().reduce((o, d) => { const m = deptMetrics(d.id); o.done += m.done; o.missed += m.missed; o.pend += m.pending; o.vol += m.volunteers; return o }, { done: 0, missed: 0, pend: 0, vol: 0 });
+      const activeList = (DB.departments || []).filter(d => d.status === 'Active');
+      const tot = activeList.reduce((o, d) => { const m = deptMetrics(d.id); o.done += m.done; o.missed += m.missed; o.pend += m.pending; o.vol += m.volunteers; return o }, { done: 0, missed: 0, pend: 0, vol: 0 });
       const pendReports = DB.reports.filter(r => r.kind === 'Department weekly' && r.status === 'Pending').length;
       const completionPct = pct(tot.done, tot.done + tot.missed);
-
-      // The 7 departments you specified — looked up by module key or name
-      // Deity (module:'deity'), Morning Program (module:'morning'), Cleaning (module:'cleaning')
-      // are the BACE pillar departments — pulled directly from DB.departments by their module key.
-      // The rest are matched by name substring.
-      function findDept(moduleKey, nameFrag) {
-        return DB.departments.find(d =>
-          (moduleKey && d.module === moduleKey) ||
-          (nameFrag && d.name.toLowerCase().includes(nameFrag.toLowerCase()))
-        );
-      }
-
-      const FEATURED_DEPTS = [
-        findDept('morning', 'Morning Program'),
-        findDept('deity', 'Deity Department'),
-        findDept('cleaning', 'Cleaning'),
-        findDept('kitchen', 'Kitchen'),
-        findDept('bbt', 'Study and Academics'),
-        findDept('birthday', 'Birthday'),
-        findDept(null, 'Accounts'),
-      ].filter(Boolean);
 
       const colorMap = {
         saffron: ['#EA580C', '#C2410C'], indigo: ['#4F46E5', '#3730A3'],
@@ -24471,48 +24451,57 @@
         const isOk = m.completion >= 75;
         const isWarn = m.completion >= 50 && m.completion < 75;
         const dotColor = isOk ? 'var(--green)' : isWarn ? 'var(--amber)' : 'var(--danger)';
-        // For the 3 pillar departments, link to their dedicated routes
-        const pillarRoutes = { morning: '#/attendance', deity: '#/dept/' + d.id, cleaning: '#/dept/' + d.id };
-        const route = (d.module && pillarRoutes[d.module]) || '#/dept/' + d.id;
-        return `<a href="${route}" class="card pad dept-tile-card" style="text-decoration:none;color:inherit;display:block;transition:box-shadow .18s ease,transform .18s ease;position:relative;overflow:hidden;border-left:3px solid ${gFrom}"
+        const pillarRoutes = { morning: '#/attendance', deity: '#/dept/' + d.id, cleaning: '#/dept/' + d.id, accounts: '#/accounts' };
+        const route = (d.module && pillarRoutes[d.module]) || (d.name && d.name.toLowerCase().includes('accounts') ? '#/accounts' : '#/dept/' + d.id);
+        return `<div class="card pad dept-tile-card" style="display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden;border-left:3px solid ${gFrom};transition:box-shadow .18s ease,transform .18s ease"
       onmouseenter="this.style.boxShadow='0 8px 28px -6px ${gFrom}33';this.style.transform='translateY(-2px)'"
       onmouseleave="this.style.boxShadow='';this.style.transform=''">
       <div style="position:absolute;right:-10px;top:-10px;font-size:50px;opacity:0.07;pointer-events:none;line-height:1">${d.icon}</div>
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-        <div style="width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,${gFrom},${gTo});display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;box-shadow:0 3px 10px ${gFrom}44">${d.icon}</div>
-        <div style="min-width:0;flex:1">
-          <div style="font-weight:800;font-size:14px;font-family:var(--f-head);color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(d.name)}</div>
-          <div style="font-size:11.5px;color:var(--ink-3);margin-top:1px">${esc(d.desc.slice(0, 52))}${d.desc.length > 52 ? '…' : ''}</div>
+      <a href="${route}" style="text-decoration:none;color:inherit;display:block">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          <div style="width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,${gFrom},${gTo});display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;box-shadow:0 3px 10px ${gFrom}44">${d.icon}</div>
+          <div style="min-width:0;flex:1">
+            <div style="font-weight:800;font-size:14px;font-family:var(--f-head);color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(d.name)}</div>
+            <div style="font-size:11.5px;color:var(--ink-3);margin-top:1px">${esc(d.desc.slice(0, 52))}${d.desc.length > 52 ? '…' : ''}</div>
+          </div>
+          <span style="width:9px;height:9px;border-radius:50%;background:${dotColor};flex-shrink:0;margin-top:2px" title="${m.completion}% completion"></span>
         </div>
-        <span style="width:9px;height:9px;border-radius:50%;background:${dotColor};flex-shrink:0;margin-top:2px" title="${m.completion}% completion"></span>
+        <div style="display:flex;gap:8px;margin-bottom:8px">
+          <div style="flex:1;background:var(--paper-2);border-radius:8px;padding:6px 8px;border:1px solid var(--line-2);text-align:center">
+            <div style="font-size:16px;font-weight:800;font-family:var(--f-head);color:${isOk ? 'var(--ink)' : isWarn ? 'var(--amber)' : 'var(--danger)'}">${m.completion}%</div>
+            <div style="font-size:10px;color:var(--ink-3)">Done</div>
+          </div>
+          <div style="flex:1;background:var(--paper-2);border-radius:8px;padding:6px 8px;border:1px solid var(--line-2);text-align:center">
+            <div style="font-size:16px;font-weight:800;font-family:var(--f-head);color:var(--ink)">${m.volunteers}</div>
+            <div style="font-size:10px;color:var(--ink-3)">Sevaites</div>
+          </div>
+          <div style="flex:1;background:var(--paper-2);border-radius:8px;padding:6px 8px;border:1px solid var(--line-2);text-align:center">
+            <div style="font-size:16px;font-weight:800;font-family:var(--f-head);color:var(--ink)">${m.pending}</div>
+            <div style="font-size:10px;color:var(--ink-3)">Upcoming</div>
+          </div>
+        </div>
+        ${prog(m.completion, isOk ? 'var(--green)' : isWarn ? 'var(--amber)' : 'var(--danger)')}
+      </a>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:12px;padding-top:10px;border-top:1px solid var(--line-2)">
+        <a href="${route}" class="btn sm" style="text-decoration:none;font-weight:600">Open &rarr;</a>
+        <div style="display:flex;gap:5px">
+          <button class="btn sm" data-act="edit-dept" data-id="${d.id}" title="Edit department">✏️ Edit</button>
+          <button class="btn sm danger" data-act="remove-dept" data-id="${d.id}" title="Remove department from Dept Hub">🗑️ Remove</button>
+        </div>
       </div>
-      <div style="display:flex;gap:8px;margin-bottom:8px">
-        <div style="flex:1;background:var(--paper-2);border-radius:8px;padding:6px 8px;border:1px solid var(--line-2);text-align:center">
-          <div style="font-size:16px;font-weight:800;font-family:var(--f-head);color:${isOk ? 'var(--ink)' : isWarn ? 'var(--amber)' : 'var(--danger)'}">${m.completion}%</div>
-          <div style="font-size:10px;color:var(--ink-3)">Done</div>
-        </div>
-        <div style="flex:1;background:var(--paper-2);border-radius:8px;padding:6px 8px;border:1px solid var(--line-2);text-align:center">
-          <div style="font-size:16px;font-weight:800;font-family:var(--f-head);color:var(--ink)">${m.volunteers}</div>
-          <div style="font-size:10px;color:var(--ink-3)">Sevaites</div>
-        </div>
-        <div style="flex:1;background:var(--paper-2);border-radius:8px;padding:6px 8px;border:1px solid var(--line-2);text-align:center">
-          <div style="font-size:16px;font-weight:800;font-family:var(--f-head);color:var(--ink)">${m.pending}</div>
-          <div style="font-size:10px;color:var(--ink-3)">Upcoming</div>
-        </div>
-      </div>
-      ${prog(m.completion, isOk ? 'var(--green)' : isWarn ? 'var(--amber)' : 'var(--danger)')}
-    </a>`;
+    </div>`;
       }
 
-      const deptTiles = FEATURED_DEPTS.length
-        ? FEATURED_DEPTS.map(deptTile).join('')
-        : '<div style="padding:20px;color:var(--ink-3)">No departments found</div>';
+      const deptTiles = activeList.length
+        ? activeList.map(deptTile).join('')
+        : '<div style="padding:24px;text-align:center;color:var(--ink-3)">No active departments found. <button class="btn sm pri" data-act="add-dept" style="margin-left:8px">+ Add Department</button></div>';
 
-      return head('🛕 BACE Management', 'Dept Hub', 'Your 7 key departments — tap any to open its full dashboard',
+      return head('🛕 BACE Management', 'Dept Hub', 'Manage your departments — open any dashboard, or add, edit, and remove departments',
+        `<button class="btn pri" data-act="add-dept">${ic('plus')}Add Department</button>` +
         (can('assign') ? `<button class="btn" data-act="open-assign" data-type="Seva">📋 Assign Seva</button>` : '') +
         `<button class="btn" data-act="go" data-r="#/sops">📘 SOPs</button>`) +
         `<div class="grid g6" style="margin-bottom:18px">
-    ${stat('Departments', FEATURED_DEPTS.length, 'active', { em: '🏛️' })}
+    ${stat('Departments', activeList.length, 'active', { em: '🏛️' })}
     ${stat('Sevaites', tot.vol, 'in seva', { em: '🛠', act: 'go', r: '#/assign' })}
     ${stat('Completion', completionPct + '%', 'this period', { em: '📈' })}
     ${stat('Missed', tot.missed, 'activities', { em: '⚠️', tint: tot.missed > 0 })}
@@ -24775,6 +24764,34 @@
     function viewDept(id) {
       const dp = dept(id); if (!dp) return emptyState('Department not found', '', '<a class="btn" href="#/mgmt">Back to departments</a>');
       APP.crumbLeaf = dp.name;
+
+      // Pure dedicated panels for Deity and Cleaning departments
+      if (dp.module === 'deity' || dp.id === 'dp3' || (dp.name && dp.name.toLowerCase().includes('deity'))) {
+        return head(dp.icon + ' Department', dp.name, `${dp.desc} · head ${nameOf(dp.head)} · ${dp.status}`,
+          `${ownsDept(dp.id) ? `<button class="btn" data-act="edit-dept" data-id="${dp.id}">${ic('edit')}Edit</button>
+        <button class="btn" data-act="dept-report-range" data-id="${dp.id}">📄 Reports</button>
+        <button class="btn pri" data-act="open-assign" data-type="Seva" data-dept="${dp.id}">${ic('plus')}Assign seva</button>` : ''}`) +
+          deityDepartmentPanel() +
+          (ownsDept(dp.id) ? mobileStickyFooter([
+            { act: 'open-assign', type: 'Seva', dept: dp.id, label: 'Assign Seva', pri: true, icon: '➕ ' },
+            { act: 'dept-report-range', id: dp.id, label: 'Reports', icon: '📄 ' },
+            { act: 'edit-dept', id: dp.id, label: 'Edit', icon: '✏️ ' }
+          ]) : '');
+      }
+
+      if (dp.module === 'cleaning' || dp.id === 'dp8' || (dp.name && dp.name.toLowerCase().includes('cleaning'))) {
+        return head(dp.icon + ' Department', dp.name, `${dp.desc} · head ${nameOf(dp.head)} · ${dp.status}`,
+          `${ownsDept(dp.id) ? `<button class="btn" data-act="edit-dept" data-id="${dp.id}">${ic('edit')}Edit</button>
+        <button class="btn" data-act="dept-report-range" data-id="${dp.id}">📄 Reports</button>
+        <button class="btn pri" data-act="open-assign" data-type="Seva" data-dept="${dp.id}">${ic('plus')}Assign seva</button>` : ''}`) +
+          cleaningDepartmentPanel() +
+          (ownsDept(dp.id) ? mobileStickyFooter([
+            { act: 'open-assign', type: 'Seva', dept: dp.id, label: 'Assign Seva', pri: true, icon: '➕ ' },
+            { act: 'dept-report-range', id: dp.id, label: 'Reports', icon: '📄 ' },
+            { act: 'edit-dept', id: dp.id, label: 'Edit', icon: '✏️ ' }
+          ]) : '');
+      }
+
       return head(dp.icon + ' Department', dp.name, `${dp.desc} · head ${nameOf(dp.head)} · ${dp.status}`,
         `${ownsDept(dp.id) ? `<button class="btn" data-act="edit-dept" data-id="${dp.id}">${ic('edit')}Edit</button>
       <button class="btn" data-act="dept-report-range" data-id="${dp.id}">📄 Reports</button>
@@ -28599,7 +28616,7 @@ label {
         <!-- Filter & Sort Toolbar (Weekly) -->
         <div class="morning-period-toolbar" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px">
           <div style="position:relative">
-            <input type="search" placeholder="🔍 Filter devotee in weekly report…" value="${esc(APP.morningSearch || '')}" data-act="morning-q" style="width:100%;padding:6px 10px 6px 32px;font-size:12.5px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)">
+            <input type="search" placeholder="Filter devotee in weekly report…" value="${esc(APP.morningSearch || '')}" data-act="morning-q" style="width:100%;padding:6px 10px 6px 32px;font-size:12.5px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)">
             <span style="position:absolute;left:10px;top:7px;color:var(--ink-3)">${ic('search')}</span>
           </div>
 
@@ -28749,7 +28766,7 @@ label {
         <!-- Filter & Sort Toolbar (Monthly) -->
         <div class="morning-period-toolbar" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px">
           <div style="position:relative">
-            <input type="search" placeholder="🔍 Filter devotee in monthly report…" value="${esc(APP.morningSearch || '')}" data-act="morning-q" style="width:100%;padding:6px 10px 6px 32px;font-size:12.5px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)">
+            <input type="search" placeholder="Filter devotee in monthly report…" value="${esc(APP.morningSearch || '')}" data-act="morning-q" style="width:100%;padding:6px 10px 6px 32px;font-size:12.5px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)">
             <span style="position:absolute;left:10px;top:7px;color:var(--ink-3)">${ic('search')}</span>
           </div>
 
@@ -28888,7 +28905,7 @@ label {
       <div class="morning-progress-toolbar" style="padding:10px 18px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;border-bottom:1px solid var(--line-2);background:var(--surface)">
         <div class="morning-progress-search-row" style="position:relative;flex:1 1 200px;min-width:160px;display:flex;align-items:center;gap:6px">
           <div style="position:relative;flex:1 1 auto;min-width:0">
-            <input type="search" placeholder="🔍 Filter devotee in growth report…" value="${esc(APP.morningProgressSearch || '')}" data-act="morning-progress-q" oninput="APP.morningProgressSearch=this.value;render();" style="width:100%;box-sizing:border-box;padding:5px 8px 5px 28px;font-size:12px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--ink)">
+            <input type="search" placeholder="Filter devotee in growth report…" value="${esc(APP.morningProgressSearch || '')}" data-act="morning-progress-q" oninput="APP.morningProgressSearch=this.value;render();" style="width:100%;box-sizing:border-box;padding:5px 8px 5px 28px;font-size:12px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--ink)">
             <span style="position:absolute;left:8px;top:6px;color:var(--ink-3);font-size:11px">${ic('search')}</span>
           </div>
           ${(APP.morningProgressSearch || APP.morningProgressGrowthFilter || APP.morningProgressPunctFilter || (APP.morningProgressSort && APP.morningProgressSort !== 'growth_desc')) ? `
@@ -30244,7 +30261,7 @@ label {
             </label>
             <span class="tiny" style="color:var(--ink-3)">${(DB.devotees || []).length} registered</span>
           </div>
-          <input type="text" id="devotee-db-search" placeholder="🔍 Type to search database (e.g. Sai, Mayank, Sumit)..." oninput="filterDevoteeDropdown(this.value)" style="width:100%;box-sizing:border-box;padding:7px 10px;border:1px solid var(--line);border-radius:6px;font-size:13px;background:var(--surface);margin-bottom:8px">
+          <input type="text" id="devotee-db-search" placeholder="Type to search database (e.g. Sai, Mayank, Sumit)..." oninput="filterDevoteeDropdown(this.value)" style="width:100%;box-sizing:border-box;padding:7px 10px;border:1px solid var(--line);border-radius:6px;font-size:13px;background:var(--surface);margin-bottom:8px">
 
           <div id="devotee-dropdown-list" style="max-height:120px;overflow-y:auto;display:flex;flex-direction:column;gap:4px">
             ${(DB.devotees || []).slice(0, 15).map(d => `
@@ -31356,7 +31373,7 @@ label {
             </label>
             <span class="tiny" style="color:var(--ink-3)">${(DB.devotees || []).length} registered</span>
           </div>
-          <input type="text" placeholder="🔍 Type name to filter database devotees..." oninput="filterDressingDevoteeDropdown(this.value)" style="width:100%;box-sizing:border-box;padding:7px 10px;border:1px solid var(--line);border-radius:6px;font-size:13px;background:var(--surface);margin-bottom:8px">
+          <input type="text" placeholder="Type name to filter database devotees..." oninput="filterDressingDevoteeDropdown(this.value)" style="width:100%;box-sizing:border-box;padding:7px 10px;border:1px solid var(--line);border-radius:6px;font-size:13px;background:var(--surface);margin-bottom:8px">
 
           <div id="dressing-devotee-dropdown-list" style="max-height:110px;overflow-y:auto;display:flex;flex-direction:column;gap:4px">
             ${(DB.devotees || []).slice(0, 15).map(d => `
@@ -32086,7 +32103,7 @@ label {
             </div>
 
             <!-- Search input -->
-            <input type="text" id="filter-devotee-report-input" placeholder="🔍 Filter devotee name..." oninput="filterDevoteeReportTable(this.value)" style="padding:6px 10px;font-size:12.5px;border:1px solid var(--line);border-radius:6px;background:var(--surface);min-width:170px">
+            <input type="text" id="filter-devotee-report-input" placeholder="Filter devotee name..." oninput="filterDevoteeReportTable(this.value)" style="padding:6px 10px;font-size:12.5px;border:1px solid var(--line);border-radius:6px;background:var(--surface);min-width:170px">
 
             <!-- Export PDF Option -->
             <button class="btn pri sm" data-act="export-devotee-report-pdf" data-dept="${deptKey}" title="Export professional PDF report for all individual devotees for ${reportPeriod}">
@@ -32809,6 +32826,10 @@ label {
     }
 
     function deptAttendanceMatrix() {
+      return '';
+    }
+
+    function _deprecatedDeptAttendanceMatrix() {
       initDepartmentRosters();
       APP.summaryMatrixPeriod = APP.summaryMatrixPeriod || 'weekly';
       const period = APP.summaryMatrixPeriod;
@@ -34291,7 +34312,7 @@ label {
           </div>
 
           <!-- Search Input -->
-          <input type="text" placeholder="🔍 Search title, devotee, bill..." value="${esc(query)}"
+          <input type="text" placeholder="Search title, devotee, bill..." value="${esc(query)}"
                  oninput="window.setAccountsSearch(this.value)"
                  style="padding:5px 10px;font-size:12px;border:1px solid var(--line);border-radius:6px;background:var(--surface);min-width:180px">
         </div>
@@ -34412,20 +34433,12 @@ label {
     }
 
     function viewAttendance() {
-      let tab = APP.tab.att || 'Morning programme';
-      const tabs = ['Morning programme', 'Deity Department', 'Cleaning', 'Department Matrix'];
-      if (!tabs.includes(tab)) tab = 'Morning programme';
-
-      if (tab === 'Morning programme' && !APP.morningData) {
+      if (!APP.morningData) {
         loadMorningAttendanceFromBackend();
       }
 
-      return head('🏛️ Temple Operations', 'BACE Pillars', 'Morning program punctuality, Deity & Cleaning rosters, and Department Matrix') +
-        `<div class="tabs bace-pillars-tabs">${tabs.map(t => `<button class="${t === tab ? 'on' : ''}" data-act="tab" data-k="att" data-v="${t}">${t}</button>`).join('')}</div>` +
-        (tab === 'Morning programme' ? morningProgramPanel()
-          : tab === 'Deity Department' ? deityDepartmentPanel()
-            : tab === 'Cleaning' ? cleaningDepartmentPanel()
-              : deptAttendanceMatrix());
+      return head('🌅 Sadhana & Punctuality', 'Morning Program', 'Biometric log, daily punctuality, attendance trends, and progress growth tracking') +
+        morningProgramPanel();
     }
 
     function batchAttendancePanel() {
@@ -40039,6 +40052,7 @@ label {
           case 'depts': go('#/mgmt'); return '';
           case 'dept': return guard('management', () => viewDept(arg));
           case 'assign': return guard('assign', viewAssign);
+          case 'morning':
           case 'attendance':
           case 'att': return guard('management', viewAttendance);
           case 'accounts': return guard('management', viewAccountsPage);
@@ -41529,6 +41543,16 @@ label {
         case 'archive-dept': stop(); {
           const d = dept(id); d.status = 'Archived'; logAudit('Department archived', d.name);
           toast(d.name + ' archived — history retained', '🗄'); render(); break
+        }
+        case 'remove-dept': stop(); {
+          const d = dept(id);
+          if (!d) break;
+          if (!confirm(`Are you sure you want to remove the "${d.name}" department from Dept Hub?`)) break;
+          d.status = 'Archived';
+          logAudit('Department removed', d.name);
+          toast(`${d.name} removed from Dept Hub`, '🗑️');
+          render();
+          break;
         }
         case 'add-dept-member': {
           const d = dept(id);
