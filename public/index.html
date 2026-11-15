@@ -15502,35 +15502,214 @@
       margin-bottom: 16px;
     }
 
-    /* 4-Card Single Line Dashboard Grid */
-    .dash-quad-grid {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 14px;
-      align-items: stretch;
+    /* =========================================================================
+       MODERN DEVOTIONAL BENTO GRID SYSTEM & TACTILE DEPTH
+       ========================================================================= */
+    .dash-bento-grid {
+      display: grid !important;
+      grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+      gap: 16px !important;
+      align-items: stretch !important;
     }
 
-    @media (max-width: 1200px) {
-      .dash-quad-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+    .dash-bento-col {
+      display: flex !important;
+      flex-direction: column !important;
+      min-width: 0 !important;
+    }
+
+    .dash-bento-mgmt {
+      grid-column: 1 !important;
+    }
+
+    .dash-bento-preach {
+      grid-column: 2 !important;
+    }
+
+    .dash-bento-side-stack {
+      grid-column: 3 !important;
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 16px !important;
+      justify-content: flex-start !important;
+    }
+
+    .dash-bento-mgmt .dash-hub-card,
+    .dash-bento-preach .dash-hub-card {
+      height: 100% !important;
+      display: flex !important;
+      flex-direction: column !important;
+      min-height: 480px !important;
+    }
+
+    .dash-bento-side-stack #dashCalWidget,
+    .dash-bento-side-stack .nectar-card-wrapper {
+      width: 100% !important;
+      margin-bottom: 0 !important;
+      height: auto !important;
+    }
+
+    @media (max-width: 1079px) and (min-width: 641px) {
+      .dash-bento-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      }
+      .dash-bento-mgmt {
+        grid-column: 1 !important;
+      }
+      .dash-bento-preach {
+        grid-column: 2 !important;
+      }
+      .dash-bento-side-stack {
+        grid-column: span 2 !important;
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 16px !important;
       }
     }
 
     @media (max-width: 640px) {
-      .dash-quad-grid {
-        grid-template-columns: 1fr;
+      .dash-bento-grid {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 14px !important;
+      }
+      .dash-bento-mgmt,
+      .dash-bento-preach,
+      .dash-bento-side-stack {
+        width: 100% !important;
+      }
+      .dash-bento-grid[data-active-tab="mgmt"] .dash-bento-preach {
+        display: none !important;
+      }
+      .dash-bento-grid[data-active-tab="mgmt"] .dash-bento-mgmt {
+        display: flex !important;
+        order: 1 !important;
+      }
+      .dash-bento-grid[data-active-tab="preach"] .dash-bento-mgmt {
+        display: none !important;
+      }
+      .dash-bento-grid[data-active-tab="preach"] .dash-bento-preach {
+        display: flex !important;
+        order: 1 !important;
+      }
+      .dash-bento-grid .dash-bento-side-stack {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 14px !important;
+        order: 2 !important;
+      }
+      .dash-bento-mgmt .dash-hub-card,
+      .dash-bento-preach .dash-hub-card {
+        min-height: auto !important;
       }
     }
 
-    /* Dash Hub Cards (BACE Management & BACE Preaching) */
+    /* Bento Hub Cards Tactile Depth */
     .dash-hub-card {
-      transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
-      border: 1px solid var(--line-2);
+      border-radius: 18px !important;
+      transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.22s ease !important;
     }
 
     .dash-hub-card:hover {
-      transform: translateY(-3px) !important;
-      box-shadow: 0 12px 28px -6px rgba(0, 0, 0, 0.12) !important;
+      transform: translateY(-2.5px) !important;
+    }
+
+    /* Light Mode Thematic Bento Cards */
+    [data-theme="light"] .dash-hub-card[data-mob-card="mgmt"] {
+      background: linear-gradient(180deg, #FFFFFF 0%, #FFFBF5 100%) !important;
+      border: 1.5px solid #FED7AA !important;
+      border-top: 4px solid #EA580C !important;
+      box-shadow: 0 4px 20px -2px rgba(234, 88, 12, 0.08), 0 2px 6px rgba(15, 23, 42, 0.04) !important;
+    }
+    [data-theme="light"] .dash-hub-card[data-mob-card="mgmt"]:hover {
+      box-shadow: 0 10px 28px -4px rgba(234, 88, 12, 0.16), 0 4px 10px rgba(15, 23, 42, 0.06) !important;
+    }
+
+    [data-theme="light"] .dash-hub-card[data-mob-card="preach"] {
+      background: linear-gradient(180deg, #FFFFFF 0%, #F8FAFF 100%) !important;
+      border: 1.5px solid #C7D2FE !important;
+      border-top: 4px solid #4F46E5 !important;
+      box-shadow: 0 4px 20px -2px rgba(79, 70, 229, 0.08), 0 2px 6px rgba(15, 23, 42, 0.04) !important;
+    }
+    [data-theme="light"] .dash-hub-card[data-mob-card="preach"]:hover {
+      box-shadow: 0 10px 28px -4px rgba(79, 70, 229, 0.16), 0 4px 10px rgba(15, 23, 42, 0.06) !important;
+    }
+
+    [data-theme="light"] #dashCalWidget {
+      background: linear-gradient(180deg, #FFFFFF 0%, #F0FDFB 100%) !important;
+      border: 1.5px solid #CCFBF1 !important;
+      border-top: 4px solid #0D9488 !important;
+      border-radius: 18px !important;
+      box-shadow: 0 4px 20px -2px rgba(13, 148, 136, 0.08), 0 2px 6px rgba(15, 23, 42, 0.04) !important;
+      transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    }
+    [data-theme="light"] #dashCalWidget:hover {
+      transform: translateY(-2.5px) !important;
+      box-shadow: 0 10px 28px -4px rgba(13, 148, 136, 0.16), 0 4px 10px rgba(15, 23, 42, 0.06) !important;
+    }
+
+    [data-theme="light"] .nectar-card-wrapper {
+      background: linear-gradient(180deg, #FFFFFA 0%, #FFFDF5 100%) !important;
+      border: 1.5px solid #FDE68A !important;
+      border-top: 4px solid #D97706 !important;
+      border-radius: 18px !important;
+      box-shadow: 0 4px 20px -2px rgba(217, 119, 6, 0.08), 0 2px 6px rgba(15, 23, 42, 0.04) !important;
+      transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    }
+    [data-theme="light"] .nectar-card-wrapper:hover {
+      transform: translateY(-2.5px) !important;
+      box-shadow: 0 10px 28px -4px rgba(217, 119, 6, 0.16), 0 4px 10px rgba(15, 23, 42, 0.06) !important;
+    }
+
+    /* Dark Mode Thematic Bento Cards */
+    [data-theme="dark"] .dash-hub-card[data-mob-card="mgmt"] {
+      background: linear-gradient(180deg, #181926 0%, #1D1822 100%) !important;
+      border: 1.5px solid rgba(249, 115, 22, 0.32) !important;
+      border-top: 4px solid #EA580C !important;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 8px 24px rgba(0, 0, 0, 0.4) !important;
+    }
+    [data-theme="dark"] .dash-hub-card[data-mob-card="mgmt"]:hover {
+      border-color: rgba(249, 115, 22, 0.5) !important;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 12px 32px rgba(234, 88, 12, 0.15) !important;
+    }
+
+    [data-theme="dark"] .dash-hub-card[data-mob-card="preach"] {
+      background: linear-gradient(180deg, #181926 0%, #15182B 100%) !important;
+      border: 1.5px solid rgba(129, 140, 248, 0.3) !important;
+      border-top: 4px solid #6366F1 !important;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 8px 24px rgba(0, 0, 0, 0.4) !important;
+    }
+    [data-theme="dark"] .dash-hub-card[data-mob-card="preach"]:hover {
+      border-color: rgba(129, 140, 248, 0.5) !important;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 12px 32px rgba(79, 70, 229, 0.15) !important;
+    }
+
+    [data-theme="dark"] #dashCalWidget {
+      background: linear-gradient(180deg, #181926 0%, #0F1A1C 100%) !important;
+      border: 1.5px solid rgba(45, 212, 191, 0.28) !important;
+      border-top: 4px solid #0D9488 !important;
+      border-radius: 18px !important;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 8px 24px rgba(0, 0, 0, 0.4) !important;
+      transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    }
+    [data-theme="dark"] #dashCalWidget:hover {
+      transform: translateY(-2.5px) !important;
+      border-color: rgba(45, 212, 191, 0.5) !important;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 12px 32px rgba(13, 148, 136, 0.15) !important;
+    }
+
+    [data-theme="dark"] .nectar-card-wrapper {
+      background: linear-gradient(180deg, #181926 0%, #1E1B15 100%) !important;
+      border: 1.5px solid rgba(251, 191, 36, 0.35) !important;
+      border-top: 4px solid #F59E0B !important;
+      border-radius: 18px !important;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 8px 24px rgba(0, 0, 0, 0.4) !important;
+      transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    }
+    [data-theme="dark"] .nectar-card-wrapper:hover {
+      transform: translateY(-2.5px) !important;
+      border-color: rgba(251, 191, 36, 0.55) !important;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 12px 32px rgba(245, 158, 11, 0.15) !important;
     }
 
     .dash-hub-card:hover .hub-arr {
@@ -16013,25 +16192,30 @@
         margin: 0 !important;
       }
 
-      .dash-quad-grid[data-active-tab="mgmt"]>[data-mob-card="preach"] {
+      .dash-quad-grid[data-active-tab="mgmt"]>[data-mob-card="preach"],
+      .dash-bento-grid[data-active-tab="mgmt"] .dash-bento-preach {
         display: none !important;
       }
 
-      .dash-quad-grid[data-active-tab="mgmt"]>[data-mob-card="mgmt"] {
+      .dash-quad-grid[data-active-tab="mgmt"]>[data-mob-card="mgmt"],
+      .dash-bento-grid[data-active-tab="mgmt"] .dash-bento-mgmt {
         display: flex !important;
         order: 1 !important;
       }
 
-      .dash-quad-grid[data-active-tab="preach"]>[data-mob-card="mgmt"] {
+      .dash-quad-grid[data-active-tab="preach"]>[data-mob-card="mgmt"],
+      .dash-bento-grid[data-active-tab="preach"] .dash-bento-mgmt {
         display: none !important;
       }
 
-      .dash-quad-grid[data-active-tab="preach"]>[data-mob-card="preach"] {
+      .dash-quad-grid[data-active-tab="preach"]>[data-mob-card="preach"],
+      .dash-bento-grid[data-active-tab="preach"] .dash-bento-preach {
         display: flex !important;
         order: 1 !important;
       }
 
-      .dash-quad-grid>[data-mob-card="calendar"] {
+      .dash-quad-grid>[data-mob-card="calendar"],
+      .dash-bento-grid .dash-bento-side-stack {
         display: flex !important;
         order: 2 !important;
       }
@@ -23014,11 +23198,17 @@
         `<div class="reveal-section" style="margin-top:8px">
       ${ashramPulseHtml}
       ${mobSegmentBarHtml}
-      <div class="dash-quad-grid" data-active-tab="${mobTab}">
-        ${mgmtCard}
-        ${preachCard}
-        ${dashboardCalendarWidget()}
-        ${prabhupadaNectarCard()}
+      <div class="dash-bento-grid dash-quad-grid" data-active-tab="${mobTab}">
+        <div class="dash-bento-col dash-bento-mgmt" data-mob-card="mgmt">
+          ${mgmtCard}
+        </div>
+        <div class="dash-bento-col dash-bento-preach" data-mob-card="preach">
+          ${preachCard}
+        </div>
+        <div class="dash-bento-col dash-bento-side-stack" data-mob-card="side-stack">
+          ${dashboardCalendarWidget()}
+          ${prabhupadaNectarCard()}
+        </div>
       </div>
     </div>`;
     }
@@ -24900,7 +25090,7 @@
         `<button class="btn pri" data-act="add-dept">${ic('plus')}Add Department</button>` +
         (can('assign') ? `<button class="btn" data-act="open-assign" data-type="Seva">📋 Assign Seva</button>` : '') +
         `<button class="btn" data-act="go" data-r="#/sops">📘 SOPs</button>`) +
-        `<div class="grid g6" style="margin-bottom:18px">
+        `<div class="grid g6 bento-kpi-grid" style="margin-bottom:18px">
     ${stat('Departments', activeList.length, 'active', { em: '🏛️' })}
     ${stat('Sevaites', tot.vol, 'in seva', { em: '🛠', act: 'go', r: '#/assign' })}
     ${stat('Completion', completionPct + '%', 'this period', { em: '📈' })}
@@ -35352,7 +35542,7 @@ label {
       ${can('preaching') ? `<button class="btn" data-act="go" data-r="#/contacts">🌱 Contacts</button>` : ''}
       ${can('preaching') ? `<button class="btn" data-act="go" data-r="#/followups">⏰ Follow-ups${fuOverdue ? `<i class="bdot">${fuOverdue}</i>` : ''}</button>` : ''}
     </div>`) +
-        `<div class="grid g6" style="margin-bottom:18px">
+        `<div class="grid g6 bento-kpi-grid" style="margin-bottom:18px">
     ${stat('Active batches', allBatches.length, 'total', { em: '🏫' })}
     ${stat('Devotees', totalDevs, 'in batches', { em: '👥' })}
     ${stat('Contacts', s.contacts || 0, 'total', { em: '🌱', act: 'go', r: '#/contacts' })}
@@ -41171,7 +41361,7 @@ label {
           stop();
           const tab = t.dataset.tab || 'mgmt';
           APP.mobDashTab = tab;
-          const quad = document.querySelector('.dash-quad-grid');
+          const quad = document.querySelector('.dash-bento-grid, .dash-quad-grid');
           if (quad) quad.dataset.activeTab = tab;
           document.querySelectorAll('.dash-seg-btn').forEach(b => {
             b.classList.toggle('active', b.dataset.tab === tab);
