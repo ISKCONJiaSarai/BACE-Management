@@ -22467,10 +22467,6 @@
       quoteBox.classList.add('nectar-quote-box');
 
       quoteBox.innerHTML = `
-    <div class="nectar-quote-meta" style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
-      <span class="badge b-grey nectar-topic-badge" style="font-size:10px;padding:1px 6px">${esc(q.topic || 'Srila Prabhupada Vani')}</span>
-      <span class="tiny nectar-acharya-tag" style="color:var(--ink-3)">Founder-Acharya ISKCON</span>
-    </div>
     <div class="nectar-quote-text">
       “${esc(q.quote)}”
     </div>
@@ -22499,7 +22495,6 @@
         <div style="display:flex;align-items:center;gap:7px">
           <span style="font-size:16px">🪷</span>
           <span class="nectar-card-title" style="font-family:'Outfit',sans-serif;font-weight:700;font-size:14.5px;color:var(--ink);letter-spacing:-0.01em">Prabhupada Nectar</span>
-          <span class="badge sm" style="background:rgba(245,158,11,0.14);color:var(--amber);font-size:9.5px;padding:1px 6px;font-weight:700">${esc(q.topic || 'Vani')}</span>
         </div>
         <div style="display:flex;align-items:center;gap:4px">
           <button class="btn sm" data-act="prev-nectar-quote" title="Previous quote" style="padding:2px 7px;font-size:12px;border-color:rgba(245,158,11,0.3);line-height:1">‹</button>
