@@ -10451,12 +10451,12 @@
     }
 
     /* ── Phase 3. Mobile Devotee List ── */
-    /* On ≤640px hide the desktop .tbl-wrap inside the devotee card, show .dev-mob-list instead */
+    /* On ≤768px hide the desktop .tbl-wrap inside the devotee card, show .dev-mob-list instead */
     .dev-mob-list {
       display: none
     }
 
-    @media(max-width:640px) {
+    @media(max-width:768px) {
 
       .tbl-wrap.tbl-wrap-dev,
       .tbl-wrap.tbl-wrap-has-mob {
@@ -10568,6 +10568,272 @@
       margin-left: auto;
       display: flex;
       gap: 5px
+    }
+
+    /* ── Mobile Devotee Directory Redesign ── */
+    @media(max-width:768px) {
+      .devotee-page-head .eyebrow { display: none !important; }
+      .devotee-page-head .sub { display: none !important; }
+    }
+
+    /* Segmented pill tabs */
+    .dev-segmented-tabs {
+      display: flex;
+      background: var(--surface-2, rgba(15, 23, 42, 0.05));
+      padding: 3px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      margin-bottom: 12px;
+      gap: 3px;
+    }
+    .dev-segmented-tabs button {
+      flex: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 7px 12px;
+      font-size: 13px;
+      font-weight: 600;
+      border-radius: 9px;
+      border: none;
+      background: transparent;
+      color: var(--ink-2);
+      cursor: pointer;
+      transition: all .15s ease;
+      white-space: nowrap;
+    }
+    .dev-segmented-tabs button.on {
+      background: var(--surface);
+      color: var(--ink);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+    [data-theme="dark"] .dev-segmented-tabs {
+      background: rgba(255, 255, 255, 0.04);
+      border-color: rgba(255, 255, 255, 0.08);
+    }
+    [data-theme="dark"] .dev-segmented-tabs button.on {
+      background: #1E293B;
+      color: #F8FAFC;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+    }
+
+    /* Quick horizontal filter chips */
+    .dev-quick-chips-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 4px 2px 6px 2px;
+      margin-top: 6px;
+      scrollbar-width: none;
+    }
+    .dev-quick-chips-row::-webkit-scrollbar {
+      display: none;
+    }
+    .dev-qchip {
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      border: 1px solid var(--line);
+      background: var(--surface);
+      color: var(--ink-2);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all .15s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .dev-qchip:active {
+      transform: scale(0.97);
+    }
+    .dev-qchip.on {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      box-shadow: 0 2px 6px rgba(255, 102, 0, 0.25);
+    }
+    .dev-qchip.mob-filter-btn {
+      margin-left: auto;
+      background: var(--surface-2);
+    }
+    .dev-qchip.mob-filter-btn.has-f {
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+    [data-theme="dark"] .dev-qchip {
+      background: #1E293B;
+      border-color: rgba(255, 255, 255, 0.1);
+      color: #CBD5E1;
+    }
+    [data-theme="dark"] .dev-qchip.on {
+      background: #FF7700;
+      color: #FFFFFF;
+      border-color: #FF7700;
+    }
+    [data-theme="dark"] .dev-qchip.mob-filter-btn {
+      background: #0F172A;
+    }
+
+    /* Devotee Mobile Bento Card */
+    .dev-mob-card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      margin-bottom: 9px;
+      padding: 12px 13px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+      position: relative;
+    }
+    .dev-mob-card:active {
+      background: var(--surface-2);
+    }
+    [data-theme="dark"] .dev-mob-card {
+      background: linear-gradient(145deg, #182234 0%, #111A2E 100%);
+      border-color: rgba(255, 255, 255, 0.08);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+    }
+    .dmc-top {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+    }
+    .dmc-av {
+      flex-shrink: 0;
+    }
+    .dmc-main {
+      flex: 1;
+      min-width: 0;
+    }
+    .dmc-name-row {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      flex-wrap: wrap;
+      line-height: 1.3;
+    }
+    .dmc-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--ink);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .dmc-leader-tag {
+      font-size: 11px;
+      color: var(--accent);
+    }
+    .dmc-meta-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 3px;
+      font-size: 11.5px;
+      color: var(--ink-3);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .dmc-meta {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .dmc-att-pill {
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 700;
+      border: 1px solid currentColor;
+      background: rgba(0, 0, 0, 0.02);
+    }
+    [data-theme="dark"] .dmc-att-pill {
+      background: rgba(255, 255, 255, 0.04);
+    }
+    .dmc-att-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+    .dmc-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1.2fr;
+      gap: 7px;
+      margin-top: 10px;
+      padding-top: 9px;
+      border-top: 1px solid var(--line-2);
+    }
+    .dmc-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      height: 32px;
+      padding: 0 10px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      border: 1px solid transparent;
+      text-decoration: none;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: all .12s ease;
+    }
+    .dmc-btn:active {
+      transform: scale(0.97);
+    }
+    .dmc-btn.wa {
+      background: rgba(37, 211, 102, 0.1);
+      color: #16A34A;
+      border-color: rgba(37, 211, 102, 0.3);
+    }
+    [data-theme="dark"] .dmc-btn.wa {
+      background: rgba(37, 211, 102, 0.15);
+      color: #4ADE80;
+      border-color: rgba(37, 211, 102, 0.35);
+    }
+    .dmc-btn.call {
+      background: rgba(14, 165, 233, 0.1);
+      color: #0284C7;
+      border-color: rgba(14, 165, 233, 0.3);
+    }
+    [data-theme="dark"] .dmc-btn.call {
+      background: rgba(14, 165, 233, 0.15);
+      color: #38BDF8;
+      border-color: rgba(14, 165, 233, 0.35);
+    }
+    .dmc-btn.info {
+      background: var(--surface-2);
+      color: var(--ink);
+      border-color: var(--line);
+    }
+    [data-theme="dark"] .dmc-btn.info {
+      background: rgba(255, 255, 255, 0.06);
+      color: #F1F5F9;
+      border-color: rgba(255, 255, 255, 0.12);
+    }
+    .dmc-btn.dis {
+      opacity: 0.35;
+      cursor: not-allowed;
+      pointer-events: none;
+      background: var(--surface-2);
+      color: var(--ink-3);
+      border-color: var(--line);
     }
 
     /* ── 1j. Typography Polish ── */
@@ -23947,7 +24213,13 @@
           ].filter(Boolean).join(' ').toLowerCase();
           if (!searchable.includes(query)) return false;
         }
-        if (f.role && !devoteeRoles(d).includes(f.role)) return false;
+        if (f.role) {
+          if (f.role === 'leader') {
+            if (!devoteeRoles(d).some(r => r !== 'devotee')) return false;
+          } else if (!devoteeRoles(d).includes(f.role)) {
+            return false;
+          }
+        }
         if (f.status && d.status !== f.status) return false;
         if (f.gender && d.gender !== f.gender) return false;
         if (f.level) {
@@ -24041,6 +24313,22 @@
     </div>`;
       };
 
+      const isAllChips = !f.status && !f.level && !f.role;
+      const totalDevoteesCount = DB.devotees.filter(d => !isBaceAdminEmail(d.email)).length;
+      const quickChipsHtml = `
+    <div class="dev-quick-chips-row">
+      <button type="button" class="dev-qchip ${isAllChips ? 'on' : ''}" data-act="dev-chip" data-chip="all">All (${totalDevoteesCount})</button>
+      <button type="button" class="dev-qchip ${f.status === 'Active' ? 'on' : ''}" data-act="dev-chip" data-chip="active">🟢 Active</button>
+      <button type="button" class="dev-qchip ${f.level === '1' ? 'on' : ''}" data-act="dev-chip" data-chip="l1">Level 1</button>
+      <button type="button" class="dev-qchip ${f.level === '2' ? 'on' : ''}" data-act="dev-chip" data-chip="l2">Level 2</button>
+      <button type="button" class="dev-qchip ${f.level === '3' ? 'on' : ''}" data-act="dev-chip" data-chip="l3">Level 3</button>
+      <button type="button" class="dev-qchip ${f.level === '4' ? 'on' : ''}" data-act="dev-chip" data-chip="l4">Level 4</button>
+      <button type="button" class="dev-qchip ${f.role === 'leader' ? 'on' : ''}" data-act="dev-chip" data-chip="leaders">👑 Leaders</button>
+      <button type="button" class="dev-qchip mob-filter-btn ${activeFilterCount > 0 ? 'has-f' : ''} ${mobFilterOpen ? 'open' : ''}" data-act="toggle-mob-filters">
+        ⚙️ Filters${activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}
+      </button>
+    </div>`;
+
       const toolbar = `
     <div class="dev-toolbar-row" style="display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;width:100%">
       <div style="position:relative;flex:1;min-width:0" class="search-with-icon">
@@ -24049,14 +24337,11 @@
       </div>
       <div class="dev-toolbar-actions" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         ${activeFilterCount > 0 ? `<button class="btn sm" data-act="clear-dev-filters" title="Reset all filters" style="color:var(--danger);background:rgba(220,53,69,0.06);border-color:rgba(220,53,69,0.25);font-weight:600;display:inline-flex;align-items:center;gap:5px">${ic('x')} Reset (${activeFilterCount})</button>` : ''}
-        ${can('directory') ? `<button class="btn sm" data-act="export-devotees" title="Export CSV" style="display:inline-flex;align-items:center;gap:4px">${ic('download')}Export CSV</button>` : ''}
-        <button class="mob-filter-toggle ${activeFilterCount > 0 ? 'has-filters' : ''} ${mobFilterOpen ? 'open' : ''}" data-act="toggle-mob-filters" style="display:none">
-          <span>${ic('sliders')} Filters${activeFilterCount > 0 ? ` <span class="mob-f-count">${activeFilterCount}</span>` : ''}</span>
-          <span class="mob-f-arrow">▼</span>
-        </button>
+        ${can('directory') ? `<button class="btn sm hide-mobile" data-act="export-devotees" title="Export CSV" style="display:inline-flex;align-items:center;gap:4px">${ic('download')}Export CSV</button>` : ''}
       </div>
     </div>
-    <div class="mob-filter-bar" style="padding-top:8px">
+    ${quickChipsHtml}
+    <div class="mob-filter-bar" style="padding-top:4px">
       <div class="mob-filter-grid ${mobFilterOpen ? '' : 'hidden'}">
         ${mobSelect('sort', f.sort, [['name_asc', 'A→Z'], ['name_desc', 'Z→A'], ['date_desc', 'Newest'], ['date_asc', 'Oldest'], ['sadhana_desc', 'Rounds']], 'Sort by', true)}
         ${mobSelect('role', f.role, Object.entries(ROLES).filter(([k]) => k !== 'admin').map(([k, r]) => [k, r.name]), 'Role')}
@@ -24094,7 +24379,7 @@
         const items = slice.map(d => {
           const att = getDevoteeRealAttendance(d);
           const v = att.overall;
-          const attCol = v >= 75 ? '#10B981' : (v >= 50 ? '#F59E0B' : (v > 0 ? '#EF4444' : 'var(--line)'));
+          const attCol = v >= 75 ? '#10B981' : (v >= 50 ? '#F59E0B' : (v > 0 ? '#EF4444' : 'var(--ink-3)'));
           const batchName = d.batch && batch(d.batch) ? batch(d.batch).name : '';
           const deptName = d.dept && dept(d.dept) ? dept(d.dept).name : '';
           const rawFac = d.facilitator ? nameOf(d.facilitator) : '';
@@ -24113,25 +24398,33 @@
           const callHref = d.phone ? `tel:${d.phone}` : '';
           const lvlBadge = d.level ? `<span class="badge sm b-indigo" style="font-size:9.5px;padding:1px 5px">L${d.level}</span>` : '';
           const sadhanaPill = d.rounds ? `<span class="badge sm" style="font-size:9.5px;padding:1px 5px;background:rgba(245,158,11,0.12);color:var(--amber)">📿 ${d.rounds}</span>` : '';
-          const rowContent = `
-        <div class="dev-mob-row" data-act="open-devotee" data-id="${d.id}">
-          <div class="dmr-av">${av(d.name, 's')}</div>
-          <div class="dmr-main">
-            <div class="dmr-name">${esc(d.name)}${leaderEmojis ? ` <span style="font-size:10px;color:var(--accent)">${leaderEmojis}</span>` : ''} ${lvlBadge} ${sadhanaPill}</div>
-            <div class="dmr-sub">${sbadge(d.status)}${subParts ? `<span style="color:var(--ink-3)">${subParts}</span>` : ''}</div>
+          const cardContent = `
+        <div class="dev-mob-card" data-act="open-devotee" data-id="${d.id}">
+          <div class="dmc-top">
+            <div class="dmc-av">${av(d.name, 's')}</div>
+            <div class="dmc-main">
+              <div class="dmc-name-row">
+                <span class="dmc-name">${esc(d.name)}</span>
+                ${leaderEmojis ? `<span class="dmc-leader-tag">${leaderEmojis}</span>` : ''}
+                ${lvlBadge}
+                ${sadhanaPill}
+              </div>
+              <div class="dmc-meta-row">
+                ${sbadge(d.status)}
+                ${subParts ? `<span class="dmc-meta">${subParts}</span>` : ''}
+              </div>
+            </div>
+            <div class="dmc-att-pill" style="border-color:${attCol};color:${attCol}" title="Attendance: ${v}%">
+              <span class="dmc-att-dot" style="background:${attCol}"></span> ${v}%
+            </div>
           </div>
-          <div class="dmr-right">
-            <div class="dmr-quick-actions">
-              ${waHref ? `<a href="${waHref}" target="_blank" rel="noopener" onclick="event.stopPropagation()" class="dmr-action-btn wa" title="WhatsApp">${waIcon(15)}</a>` : ''}
-              ${callHref ? `<a href="${callHref}" onclick="event.stopPropagation()" class="dmr-action-btn call" title="Call">${callIcon(14)}</a>` : ''}
-            </div>
-            <div style="display:flex;align-items:center;margin-left:4px" title="Attendance: ${v}%">
-              ${circularProgressRing(v, attCol, 36, 3.5, true)}
-            </div>
-            <span style="font-size:18px;color:var(--ink-3);opacity:.35">›</span>
+          <div class="dmc-actions" onclick="event.stopPropagation()">
+            ${waHref ? `<a href="${waHref}" target="_blank" rel="noopener" class="dmc-btn wa" title="WhatsApp">${waIcon(14)} <span>Chat</span></a>` : `<span class="dmc-btn dis">${waIcon(14)} <span>Chat</span></span>`}
+            ${callHref ? `<a href="${callHref}" class="dmc-btn call" title="Call">${callIcon(14)} <span>Call</span></a>` : `<span class="dmc-btn dis">${callIcon(14)} <span>Call</span></span>`}
+            <button type="button" class="dmc-btn info" data-act="open-devotee" data-id="${d.id}">Details →</button>
           </div>
         </div>`;
-          return swipeRow(rowContent, [
+          return swipeRow(cardContent, [
             { cls: 'sa-edit', icon: '✏️', label: 'Edit', act: 'edit-devotee', id: d.id },
             { cls: 'sa-msg', icon: '💬', label: 'Message', act: 'dm', id: d.id }
           ]);
@@ -24142,26 +24435,26 @@
       const currentTab = APP.tab?.devoteeView || 'list';
 
       const viewTabs = `
-     <div class="tabs" style="margin-bottom:16px">
-       <button class="${currentTab === 'list' ? 'on' : ''}" data-act="tab" data-k="devoteeView" data-v="list" style="display:inline-flex;align-items:center;gap:6px">
-         <span>👥 Devotees List</span>
+     <div class="dev-segmented-tabs tabs" style="margin-bottom:14px">
+       <button class="${currentTab === 'list' ? 'on' : ''}" data-act="tab" data-k="devoteeView" data-v="list">
+         <span>👥 Devotees</span>
          <span class="badge sm" style="background:var(--accent-soft);color:var(--accent);font-weight:700">${rows.length}</span>
        </button>
-       <button class="${currentTab === 'dashboard' ? 'on' : ''}" data-act="tab" data-k="devoteeView" data-v="dashboard" style="display:inline-flex;align-items:center;gap:6px">
-         <span>📊 <span class="hide-mobile">Devotee </span>Dashboard</span>
-         <span class="badge sm" style="background:rgba(16,185,129,0.12);color:#10B981;font-weight:700">Analytics</span>
+       <button class="${currentTab === 'dashboard' ? 'on' : ''}" data-act="tab" data-k="devoteeView" data-v="dashboard">
+         <span>📊 Analytics</span>
+         <span class="badge sm" style="background:rgba(16,185,129,0.12);color:#10B981;font-weight:700">Dashboard</span>
        </button>
      </div>`;
 
-      const topActions = `${canImportCsv() ? `<button class="btn" data-act="open-import-csv" style="margin-right:8px">${ic('upload')}Import CSV</button>` : ''}<button class="btn pri" data-act="add-devotee">${ic('plus')}Add devotee</button>`;
+      const topActions = `${canImportCsv() ? `<button class="btn hide-mobile" data-act="open-import-csv" style="margin-right:8px">${ic('upload')}Import CSV</button>` : ''}<button class="btn pri" data-act="add-devotee">${ic('plus')}Add devotee</button>`;
 
       const pageHead = head('👥 Devotee Community', currentTab === 'dashboard' ? 'Devotee Analytics Dashboard' : 'Devotee directory',
         currentTab === 'dashboard'
           ? `Holistic community analytics across japa sadhana, attendance health, spiritual milestones, and department engagement (${rows.length} devotees)`
           : `${rows.length} devotee${rows.length !== 1 ? 's' : ''} matching filters — searchable by everyone with an operational role; sensitive care information stays restricted`,
-        topActions);
+        topActions, 'devotee-page-head');
 
-      const scopedNotice = scoped ? `<div class="note" style="margin-bottom:14px">You can search and view the whole community directory. You can only <b>edit</b> people inside your own ${APP.user.role === 'dept_head' ? 'department' : APP.user.role === 'preaching_coord' ? 'batch' : 'care list'}.</div>` : '';
+      const scopedNotice = scoped ? `<div class="note hide-mobile" style="margin-bottom:14px">You can search and view the whole community directory. You can only <b>edit</b> people inside your own ${APP.user.role === 'dept_head' ? 'department' : APP.user.role === 'preaching_coord' ? 'batch' : 'care list'}.</div>` : '';
 
       if (currentTab === 'dashboard') {
         return pageHead + viewTabs + scopedNotice + viewDevoteeDashboard(rows);
@@ -41897,7 +42190,7 @@ label {
         }
         case 'open-devotee': stop(); {
           const dId = id || t.dataset.id || '';
-          if (window.innerWidth <= 640 && dId && !t.closest('.detail-sheet')) {
+          if (window.innerWidth <= 768 && dId && !t.closest('.detail-sheet')) {
             openDevoteeDetailSheet(dId);
           } else {
             go('#/devotee/' + dId);
@@ -41906,7 +42199,7 @@ label {
         }
         case 'open-devotee-row': stop(); {
           const dId = t.dataset.id || id || '';
-          if (window.innerWidth <= 640 && dId && !t.closest('.detail-sheet')) {
+          if (window.innerWidth <= 768 && dId && !t.closest('.detail-sheet')) {
             openDevoteeDetailSheet(dId);
           } else {
             go('#/devotee/' + dId);
@@ -41978,6 +42271,32 @@ label {
           render(); break
         }
         case 'toggle-mob-filters': { stop(); APP.mobFilterOpen = !APP.mobFilterOpen; render(); break }
+        case 'dev-chip': {
+          stop();
+          const chip = t.dataset.chip;
+          APP.filters.dev = APP.filters.dev || {};
+          APP.page.dev = 1;
+          if (chip === 'all') {
+            APP.filters.dev.status = '';
+            APP.filters.dev.level = '';
+            APP.filters.dev.role = '';
+            APP.filters.dev.dept = '';
+          } else if (chip === 'active') {
+            APP.filters.dev.status = APP.filters.dev.status === 'Active' ? '' : 'Active';
+          } else if (chip === 'l1') {
+            APP.filters.dev.level = APP.filters.dev.level === '1' ? '' : '1';
+          } else if (chip === 'l2') {
+            APP.filters.dev.level = APP.filters.dev.level === '2' ? '' : '2';
+          } else if (chip === 'l3') {
+            APP.filters.dev.level = APP.filters.dev.level === '3' ? '' : '3';
+          } else if (chip === 'l4') {
+            APP.filters.dev.level = APP.filters.dev.level === '4' ? '' : '4';
+          } else if (chip === 'leaders') {
+            APP.filters.dev.role = APP.filters.dev.role === 'leader' ? '' : 'leader';
+          }
+          render();
+          break;
+        }
         case 'set-dev-sort': { stop(); APP.filters.dev = APP.filters.dev || {}; APP.filters.dev.sort = t.dataset.v; APP.page.dev = 1; render(); break }
         case 'toggle-dev-sort': { stop(); APP.filters.dev = APP.filters.dev || {}; APP.filters.dev.sort = APP.filters.dev.sort === 'name_asc' ? 'name_desc' : 'name_asc'; APP.page.dev = 1; render(); break }
         case 'set-per-page': { stop(); const tId = t.dataset.t; const n = parseInt(t.dataset.n, 10) || 10; APP.perPage = APP.perPage || {}; APP.perPage[tId] = n; APP.page[tId] = 1; render(); break }
