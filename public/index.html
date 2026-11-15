@@ -22828,7 +22828,7 @@
     }
     function dashboardCalendarWidget() {
       const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768;
-      const calView = APP.filters.dashCalView || (isMobile ? 'week' : 'month');
+      const calView = APP.filters.dashCalView || 'week';
       const today = new Date(TODAY);
       const offset = APP.filters.dashCalOff || 0;
       let content = '';
