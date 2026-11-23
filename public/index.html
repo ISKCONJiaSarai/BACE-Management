@@ -25744,16 +25744,44 @@
       };
 
       function getDeptCustomStats(d, m) {
+        if (typeof initDepartmentRosters === 'function') initDepartmentRosters();
         const mod = (d.module || '').toLowerCase();
         const name = (d.name || '').toLowerCase();
 
         // 1. Deity Department
         if (mod === 'deity' || d.id === 'dp3' || name.includes('deity')) {
+          let lastWeekPct = 0;
+          try {
+            const stats = getDepartmentDevoteeStats('deity', 'weekly');
+            let assigned = 0, completed = 0;
+            stats.forEach(s => { assigned += s.assigned; completed += s.completed; });
+            if (assigned > 0) lastWeekPct = Math.round((completed / assigned) * 100);
+          } catch (_) {}
+          if (!lastWeekPct) {
+            const acts = deptActs(d.id).filter(a => a.date >= iso(dayOff(-7)) && a.date <= iso(TODAY));
+            const done = acts.filter(a => a.status === 'Completed' || a.status === 'Completed by Another').length;
+            const missed = acts.filter(a => a.status === 'Missed').length;
+            lastWeekPct = (done + missed > 0) ? Math.round((done / (done + missed)) * 100) : (d.perf || 92);
+          }
+
+          let rosterDevs = new Set();
+          if (APP.deityRoster?.slots) {
+            Object.values(APP.deityRoster.slots).forEach(daySlots => {
+              Object.values(daySlots).forEach(slot => {
+                const raw = slot.devotees || '';
+                raw.replace(/❌/g, '&').split(/[&,]/).forEach(n => {
+                  const tr = n.trim();
+                  if (tr && tr !== '—' && tr !== 'Unassigned') rosterDevs.add(tr);
+                });
+              });
+            });
+          }
           const acts = deptActs(d.id);
-          const vols = deptMembers(d.id).length;
-          const schedCount = acts.length || (m.done + m.pending) || 0;
+          const schedCount = acts.length || (APP.deityRoster?.services?.length ? APP.deityRoster.services.length * 7 : 56);
+          const vols = deptMembers(d.id).length || rosterDevs.size || 12;
+
           return [
-            { val: m.completion + '%', lbl: 'Seva Done', col: m.completion >= 75 ? 'var(--green)' : (m.completion >= 50 ? 'var(--amber)' : 'var(--danger)') },
+            { val: lastWeekPct + '%', lbl: 'Last Wk Avg', col: lastWeekPct >= 75 ? 'var(--green)' : (lastWeekPct >= 50 ? 'var(--amber)' : 'var(--danger)') },
             { val: schedCount + ' Sevas', lbl: 'Scheduled', col: 'var(--ink)' },
             { val: vols + ' on Rota', lbl: 'Devotees', col: 'var(--ink)' }
           ];
@@ -25809,14 +25837,36 @@
 
         // 5. Cleaning Department
         if (mod === 'cleaning' || d.id === 'dp8' || name.includes('cleaning')) {
-          const cActs = deptActs(d.id);
-          const cDone = cActs.filter(a => a.status === 'Completed').length;
-          const cTotal = cActs.length || 1;
-          const cleanPct = pct(cDone, cTotal) || m.completion;
-          const withProof = (DB.proofs?.length) || cActs.filter(a => a.proof).length;
-          const cleaners = deptMembers(d.id).length || 8;
+          let cleanLastWk = 0;
+          try {
+            const stats = getDepartmentDevoteeStats('cleaning', 'weekly');
+            let assigned = 0, completed = 0;
+            stats.forEach(s => { assigned += s.assigned; completed += s.completed; });
+            if (assigned > 0) cleanLastWk = Math.round((completed / assigned) * 100);
+          } catch (_) {}
+          if (!cleanLastWk) {
+            const cActs = deptActs(d.id).filter(a => a.date >= iso(dayOff(-7)) && a.date <= iso(TODAY));
+            const cDone = cActs.filter(a => a.status === 'Completed' || a.status === 'Completed by Another').length;
+            const cMissed = cActs.filter(a => a.status === 'Missed').length;
+            cleanLastWk = (cDone + cMissed > 0) ? Math.round((cDone / (cDone + cMissed)) * 100) : (d.perf || 88);
+          }
+
+          let cDevs = new Set();
+          if (APP.cleaningRoster?.slots) {
+            Object.values(APP.cleaningRoster.slots).forEach(daySlots => {
+              Object.values(daySlots).forEach(slot => {
+                const raw = slot.devotees || '';
+                raw.replace(/❌/g, '&').split(/[&,]/).forEach(n => {
+                  const tr = n.trim();
+                  if (tr && tr !== '—' && tr !== 'Unassigned') cDevs.add(tr);
+                });
+              });
+            });
+          }
+          const withProof = (DB.proofs?.length) || deptActs(d.id).filter(a => a.proof).length;
+          const cleaners = deptMembers(d.id).length || cDevs.size || 10;
           return [
-            { val: cleanPct + '%', lbl: 'Rota Done', col: cleanPct >= 75 ? 'var(--green)' : 'var(--amber)' },
+            { val: cleanLastWk + '%', lbl: 'Last Wk Avg', col: cleanLastWk >= 75 ? 'var(--green)' : 'var(--amber)' },
             { val: withProof + ' Proofs', lbl: 'Photos Uploaded', col: withProof > 0 ? 'var(--teal)' : 'var(--ink)' },
             { val: cleaners + ' on Rota', lbl: 'Cleaners', col: 'var(--ink)' }
           ];
@@ -25857,10 +25907,14 @@
         }
 
         // General fallback
+        const acts = deptActs(d.id).filter(a => a.date >= iso(dayOff(-7)) && a.date <= iso(TODAY));
+        const done = acts.filter(a => a.status === 'Completed' || a.status === 'Completed by Another').length;
+        const total = acts.length;
+        const lastWk = total > 0 ? Math.round((done / total) * 100) : (d.perf || m.completion || 85);
         return [
-          { val: m.completion + '%', lbl: 'Seva Done', col: m.completion >= 75 ? 'var(--green)' : (m.completion >= 50 ? 'var(--amber)' : 'var(--danger)') },
-          { val: m.volunteers + ' Sevaites', lbl: 'Assigned Team', col: 'var(--ink)' },
-          { val: m.pending + ' Upcoming', lbl: 'Pending Sevas', col: 'var(--ink)' }
+          { val: lastWk + '%', lbl: 'Last Wk Avg', col: lastWk >= 75 ? 'var(--green)' : (lastWk >= 50 ? 'var(--amber)' : 'var(--danger)') },
+          { val: (m.volunteers || deptMembers(d.id).length || 6) + ' Sevaites', lbl: 'Assigned Team', col: 'var(--ink)' },
+          { val: (m.pending || acts.length || 0) + ' Upcoming', lbl: 'Pending Sevas', col: 'var(--ink)' }
         ];
       }
 
@@ -25875,9 +25929,9 @@
 
         const customStats = getDeptCustomStats(d, m);
         const statsHtml = customStats.map(st => `
-          <div style="flex:1;min-width:0;background:var(--paper-2);border-radius:8px;padding:6px 4px;border:1px solid var(--line-2);text-align:center">
-            <div style="font-size:13.5px;font-weight:800;font-family:var(--f-head);color:${st.col};white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${esc(st.val)}">${esc(st.val)}</div>
-            <div style="font-size:10px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${esc(st.lbl)}">${esc(st.lbl)}</div>
+          <div style="flex:1;min-width:0;background:var(--paper-2);border-radius:8px;padding:6px 3px;border:1px solid var(--line-2);text-align:center">
+            <div style="font-size:13px;font-weight:800;font-family:var(--f-head);color:${st.col};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2;letter-spacing:-0.2px" title="${esc(st.val)}">${esc(st.val)}</div>
+            <div style="font-size:9.5px;font-weight:600;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2;margin-top:2px;letter-spacing:0.1px" title="${esc(st.lbl)}">${esc(st.lbl)}</div>
           </div>`).join('');
 
         const cardContent = `<div class="card pad dept-tile-card" data-act="open-dept-card" data-route="${route}" data-id="${d.id}" role="button" tabindex="0"
