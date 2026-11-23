@@ -15785,10 +15785,19 @@
       margin-bottom: 20px !important;
     }
 
+    .bento-kpi-grid.g-dept-kpis,
+    .bento-kpi-grid.g4 {
+      grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    }
+
     @media (max-width: 1080px) {
       .bento-kpi-grid {
         grid-template-columns: repeat(3, 1fr) !important;
         gap: 10px !important;
+      }
+      .bento-kpi-grid.g-dept-kpis,
+      .bento-kpi-grid.g4 {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
       }
     }
 
@@ -17062,24 +17071,28 @@
       }
 
       /* Distinct KPI Ribbon Colors in Light & Dark Mode */
+      [data-theme="light"] .grid.g4>.stat:nth-child(1),
       [data-theme="light"] .grid.g5>.stat:nth-child(1),
       [data-theme="light"] .grid.g6>.stat:nth-child(1),
       [data-theme="light"] .hero-kpis>.stat:nth-child(1) {
         background: linear-gradient(145deg, #FFF7ED 0%, #FFEDD5 100%) !important;
         border: 1px solid #FDBA74 !important;
       }
+      [data-theme="light"] .grid.g4>.stat:nth-child(2),
       [data-theme="light"] .grid.g5>.stat:nth-child(2),
       [data-theme="light"] .grid.g6>.stat:nth-child(2),
       [data-theme="light"] .hero-kpis>.stat:nth-child(2) {
         background: linear-gradient(145deg, #FEFCE8 0%, #FEF9C3 100%) !important;
         border: 1px solid #FDE047 !important;
       }
+      [data-theme="light"] .grid.g4>.stat:nth-child(3),
       [data-theme="light"] .grid.g5>.stat:nth-child(3),
       [data-theme="light"] .grid.g6>.stat:nth-child(3),
       [data-theme="light"] .hero-kpis>.stat:nth-child(3) {
         background: linear-gradient(145deg, #EEF2FF 0%, #E0E7FF 100%) !important;
         border: 1px solid #A5B4FC !important;
       }
+      [data-theme="light"] .grid.g4>.stat:nth-child(4),
       [data-theme="light"] .grid.g5>.stat:nth-child(4),
       [data-theme="light"] .grid.g6>.stat:nth-child(4),
       [data-theme="light"] .hero-kpis>.stat:nth-child(4) {
@@ -17097,24 +17110,28 @@
         border: 1px solid #7DD3FC !important;
       }
 
+      [data-theme="dark"] .grid.g4>.stat:nth-child(1),
       [data-theme="dark"] .grid.g5>.stat:nth-child(1),
       [data-theme="dark"] .grid.g6>.stat:nth-child(1),
       [data-theme="dark"] .hero-kpis>.stat:nth-child(1) {
         background: linear-gradient(145deg, #271A14 0%, #1D130E 100%) !important;
         border: 1px solid rgba(249, 115, 22, 0.38) !important;
       }
+      [data-theme="dark"] .grid.g4>.stat:nth-child(2),
       [data-theme="dark"] .grid.g5>.stat:nth-child(2),
       [data-theme="dark"] .grid.g6>.stat:nth-child(2),
       [data-theme="dark"] .hero-kpis>.stat:nth-child(2) {
         background: linear-gradient(145deg, #262112 0%, #1B170B 100%) !important;
         border: 1px solid rgba(245, 158, 11, 0.38) !important;
       }
+      [data-theme="dark"] .grid.g4>.stat:nth-child(3),
       [data-theme="dark"] .grid.g5>.stat:nth-child(3),
       [data-theme="dark"] .grid.g6>.stat:nth-child(3),
       [data-theme="dark"] .hero-kpis>.stat:nth-child(3) {
         background: linear-gradient(145deg, #151A2E 0%, #0F1222 100%) !important;
         border: 1px solid rgba(129, 140, 248, 0.38) !important;
       }
+      [data-theme="dark"] .grid.g4>.stat:nth-child(4),
       [data-theme="dark"] .grid.g5>.stat:nth-child(4),
       [data-theme="dark"] .grid.g6>.stat:nth-child(4),
       [data-theme="dark"] .hero-kpis>.stat:nth-child(4) {
@@ -25572,12 +25589,10 @@
         `<button class="btn pri" data-act="add-dept">${ic('plus')}Add Department</button>` +
         (can('assign') ? `<button class="btn" data-act="open-assign" data-type="Seva">📋 Assign Seva</button>` : '') +
         `<button class="btn" data-act="go" data-r="#/sops">📘 SOPs</button>`) +
-        `<div class="grid g6 bento-kpi-grid" style="margin-bottom:18px">
+        `<div class="grid g4 bento-kpi-grid g-dept-kpis" style="margin-bottom:18px">
     ${stat('Departments', activeList.length, 'active', { em: '🏛️' })}
     ${stat('Sevaites', tot.vol, 'in seva', { em: '🛠', act: 'go', r: '#/assign' })}
     ${stat('Completion', completionPct + '%', 'this period', { em: '📈' })}
-    ${stat('Missed', tot.missed, 'activities', { em: '⚠️', tint: tot.missed > 0 })}
-    ${stat('Reports', pendReports, 'outstanding', { em: '📋', tint: pendReports > 0, act: 'go', r: '#/dept-reports' })}
     ${stat('Unfilled', s.unfilled, 'slots open', { em: '🎯', tint: s.unfilled > 0, act: 'go', r: '#/assign' })}
   </div>
   <div class="grid g3 g-dept-hub-tiles" style="margin-bottom:20px">
