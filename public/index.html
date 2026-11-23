@@ -11154,8 +11154,11 @@
       }
 
       /* Safe clearance for mobile bottom navigation and FAB */
+      .main {
+        padding-bottom: 0 !important;
+      }
       .view {
-        padding-bottom: calc(105px + env(safe-area-inset-bottom, 0px)) !important;
+        padding-bottom: calc(75px + env(safe-area-inset-bottom, 0px)) !important;
       }
 
       /* Diminished card dimension, uniform height and flex alignment */
@@ -16348,18 +16351,20 @@
         background: #F3F4F8 !important;
       }
 
-      .view,
-      #view,
       .main,
-      .shell {
-        padding-bottom: calc(145px + env(safe-area-inset-bottom, 0px)) !important;
+      .shell,
+      .app-layout {
+        padding-bottom: 0 !important;
         max-width: 100% !important;
       }
 
-      .view {
+      .view,
+      #view {
         padding-top: 10px !important;
         padding-left: 12px !important;
         padding-right: 12px !important;
+        padding-bottom: calc(75px + env(safe-area-inset-bottom, 0px)) !important;
+        max-width: 100% !important;
       }
 
       /* 2. Transform the heavy dark hero banner into a COASTOK airy, white floating card */
@@ -16583,6 +16588,7 @@
         border-radius: 20px !important;
         padding: 0 !important;
         margin-bottom: 0 !important;
+        min-height: auto !important;
       }
 
       .dash-hub-card .card-b {
@@ -17159,15 +17165,19 @@
         z-index: 100 !important;
       }
 
-      /* Guaranteed bottom scroll clearance: ensure no text is trapped under the buttons */
-      .view,
+      /* Clean, non-accumulating bottom scroll clearance: ONLY on .view so padding never multiplies */
       .main,
       .layout-no-side .main,
       #app .main,
       .dash-bento-grid,
       .dash-quad-grid,
       .g-dept-hub-tiles {
-        padding-bottom: calc(140px + env(safe-area-inset-bottom, 0px)) !important;
+        padding-bottom: 0 !important;
+      }
+
+      .view,
+      #view {
+        padding-bottom: calc(75px + env(safe-area-inset-bottom, 0px)) !important;
       }
 
       .botnav button {
