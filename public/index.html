@@ -26429,12 +26429,19 @@
       const dp = dept(id); if (!dp) return emptyState('Department not found', '', '<a class="btn" href="#/mgmt">Back to departments</a>');
       APP.crumbLeaf = dp.name;
 
-      // Pure dedicated panels for Deity and Cleaning departments (default to today & tomorrow photo view and all-days)
-      if (dp.module === 'deity' || dp.id === 'dp3' || (dp.name && dp.name.toLowerCase().includes('deity'))) {
+      // Default to today & tomorrow photo view and all-days ONLY when newly entering department
+      if (APP.lastVisitedDept !== id) {
+        APP.lastVisitedDept = id;
         APP.rosterViewMode = APP.rosterViewMode || {};
         APP.rosterViewMode['deity'] = 'photo';
+        APP.rosterViewMode['cleaning'] = 'photo';
         APP.mobileWeeklyDay = APP.mobileWeeklyDay || {};
         APP.mobileWeeklyDay['deity'] = 'all';
+        APP.mobileWeeklyDay['cleaning'] = 'all';
+      }
+
+      // Pure dedicated panels for Deity and Cleaning departments
+      if (dp.module === 'deity' || dp.id === 'dp3' || (dp.name && dp.name.toLowerCase().includes('deity'))) {
         return head(dp.icon + ' Department', dp.name, `${dp.desc} · head ${nameOf(dp.head)} · ${dp.status}`,
           `${ownsDept(dp.id) ? `<button class="btn" data-act="edit-dept" data-id="${dp.id}">${ic('edit')}Edit</button>
         <button class="btn" data-act="dept-report-range" data-id="${dp.id}">📄 Reports</button>
@@ -26443,10 +26450,6 @@
       }
 
       if (dp.module === 'cleaning' || dp.id === 'dp8' || (dp.name && dp.name.toLowerCase().includes('cleaning'))) {
-        APP.rosterViewMode = APP.rosterViewMode || {};
-        APP.rosterViewMode['cleaning'] = 'photo';
-        APP.mobileWeeklyDay = APP.mobileWeeklyDay || {};
-        APP.mobileWeeklyDay['cleaning'] = 'all';
         return head(dp.icon + ' Department', dp.name, `${dp.desc} · head ${nameOf(dp.head)} · ${dp.status}`,
           `${ownsDept(dp.id) ? `<button class="btn" data-act="edit-dept" data-id="${dp.id}">${ic('edit')}Edit</button>
         <button class="btn" data-act="dept-report-range" data-id="${dp.id}">📄 Reports</button>
@@ -42277,6 +42280,9 @@ label {
       try {
         const r = APP.route.replace(/^#\//, '');
         const [seg, arg] = r.split('/');
+        if (seg !== 'dept') {
+          APP.lastVisitedDept = null;
+        }
         APP.crumbLeaf = null;
         const guard = (mod, fn) => can(mod) ? fn() : denied();
         switch (seg) {
