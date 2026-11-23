@@ -11730,6 +11730,62 @@
       font-weight: 400;
     }
 
+    /* ── Today & Tomorrow Modern View ── */
+    .tt-desktop-tbl {
+      display: block !important;
+    }
+
+    .tt-mobile-cards {
+      display: none !important;
+    }
+
+    .tt-dev-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--paper-2);
+      border: 1px solid var(--line-2);
+      border-radius: 9px;
+      padding: 5px 10px;
+      cursor: pointer;
+      transition: all .15s ease;
+      max-width: 100%;
+    }
+
+    .tt-dev-pill:hover {
+      border-color: var(--saffron);
+      background: var(--surface-2);
+    }
+
+    .tt-mob-card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px 12px;
+      transition: all .15s ease;
+    }
+
+    .tt-slot-box {
+      background: var(--paper-2);
+      border: 1px solid var(--line-2);
+      border-radius: 8px;
+      padding: 6px 9px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      cursor: pointer;
+      transition: all .15s ease;
+      min-width: 0;
+    }
+
+    .tt-slot-box:hover {
+      border-color: var(--saffron);
+    }
+
+    .tt-slot-box:active {
+      transform: scale(0.98);
+    }
+
     .roster-weekly-mobile-wrap {
       display: none !important;
     }
@@ -12000,6 +12056,14 @@
 
       .roster-stat-chip .rsc-lbl {
         font-size: 9.5px !important;
+      }
+
+      .tt-desktop-tbl {
+        display: none !important;
+      }
+
+      .tt-mobile-cards {
+        display: flex !important;
       }
 
       .roster-weekly-desktop-tbl {
@@ -33151,18 +33215,12 @@ label {
         </div>
       </div>
 
-      <!-- Center: Segmented Navigation Switcher -->
+      <!-- Right: Segmented Navigation Switcher -->
       <div class="roster-seg-nav">
         <button type="button" class="roster-seg-btn ${viewMode === 'photo' ? 'active' : ''}" data-act="roster-view-mode" data-dept="${deptKey}" data-m="photo" title="Today & Tomorrow Report">📋 Today &amp; Tmrw</button>
         <button type="button" class="roster-seg-btn ${viewMode === 'weekly' ? 'active' : ''}" data-act="roster-view-mode" data-dept="${deptKey}" data-m="weekly" title="Weekly 7-Day Chart">📅 Weekly</button>
         <button type="button" class="roster-seg-btn ${viewMode === 'single-day' ? 'active' : ''}" data-act="roster-view-mode" data-dept="${deptKey}" data-m="single-day" title="Single Day Detailed View">📆 Day</button>
         <button type="button" class="roster-seg-btn ${viewMode === 'analytics' ? 'active' : ''}" data-act="roster-view-mode" data-dept="${deptKey}" data-m="analytics" title="Devotee Analytics & Graphs">📊 Stats</button>
-      </div>
-
-      <!-- Right: Action Buttons -->
-      <div class="roster-top-actions" style="display:flex;align-items:center;gap:6px">
-        <button type="button" class="btn pri sm" data-act="${viewMode === 'weekly' ? 'share-weekly-photo' : 'share-roster-photo'}" data-dept="${deptKey}" style="padding:5px 10px;font-size:12px;font-weight:700" title="Generate & share WhatsApp photo">📸 <span class="hide-mobile">Share Photo</span></button>
-        <button type="button" class="btn sm" data-act="export-roster-csv" data-dept="${deptKey}" style="padding:5px 9px;font-size:12px" title="Export CSV">${ic('download')}<span class="hide-mobile">CSV</span></button>
       </div>
     </div>
 
@@ -33199,31 +33257,31 @@ label {
     </div>
 
     ${viewMode === 'photo' ? `
-    <!-- TODAY & TOMORROW PHOTO VIEW (Styled exactly like user's reference photo) -->
-    <div class="card" style="margin-bottom:16px;overflow:hidden;border:2px solid #222">
-      <div style="background:#222;color:#fff;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
-        <div style="font-weight:600;font-size:14px;display:flex;align-items:center;gap:6px">
-          <span>📸</span> Official Service Report & Schedule Preview (Click any devotee or status to edit/toggle)
+    <!-- TODAY & TOMORROW MODERN VIEW (Website Theme) -->
+    <div class="card" style="margin-bottom:16px;overflow:hidden">
+      <!-- Clean Sleek Header -->
+      <div class="card-h" style="padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;border-bottom:1px solid var(--line-2)">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-weight:700;font-size:13.5px;color:var(--ink)">📋 Today &amp; Tomorrow Sevas</span>
         </div>
-        <div style="display:flex;gap:8px">
-          <button class="btn pri sm" data-act="share-roster-photo" data-dept="${deptKey}">📸 Generate & Share Photo</button>
-        </div>
+        <button type="button" class="btn pri sm" data-act="share-roster-photo" data-dept="${deptKey}" style="font-size:11.5px;padding:4px 9px;font-weight:700;display:inline-flex;align-items:center;gap:5px" title="Generate and share WhatsApp photo">
+          <span>📸</span> Share Photo
+        </button>
       </div>
 
-      <div class="mobile-swipe-hint">
-        <span>👉 <b>Swipe table</b> to view Tomorrow's schedule</span>
-        <span>⟷ Scrollable</span>
-      </div>
-      <div class="tbl-wrap roster-table-scroll roster-photo-wrap" style="overflow-x:auto;-webkit-overflow-scrolling:touch">
-        <table class="roster-photo-table" style="width:100%;border-collapse:collapse;text-align:center;font-family:'Inter', sans-serif">
+      <!-- Desktop / Tablet Table View (Website Theme) -->
+      <div class="tt-desktop-tbl tbl-wrap" style="overflow-x:auto">
+        <table class="tbl" style="width:100%;border-collapse:collapse">
           <thead>
-            <tr style="background:#F5A869;border-bottom:2px solid #000;color:#111">
-              <th class="col-srv" style="padding:14px 10px;width:30%;border-right:1.5px solid #000;font-size:16px;font-weight:700">Services</th>
-              <th class="col-today" style="padding:14px 10px;width:35%;border-right:1.5px solid #000;font-size:16px;font-weight:700">
-                Today's ${isDeity ? 'Deity' : 'Cleaning'} services<br>report (${fullDayName(todayStr)}, ${fmtD(todayStr)})
+            <tr style="background:var(--surface-2);border-bottom:1px solid var(--line)">
+              <th style="padding:10px 14px;width:30%;font-size:12px;font-weight:700;color:var(--ink);text-align:left">Service</th>
+              <th style="padding:10px 14px;width:35%;font-size:12px;font-weight:700;color:var(--ink);text-align:center">
+                <span class="badge b-saffron" style="font-size:10px;padding:2px 7px;margin-right:6px">TODAY</span>
+                ${fullDayName(todayStr).slice(0, 3)}, ${fmtD(todayStr)}
               </th>
-              <th class="col-tmrw" style="padding:14px 10px;width:35%;font-size:16px;font-weight:700">
-                Tomorrow ${isDeity ? 'Deity' : 'Cleaning'}<br>services chart (${fullDayName(tomorrowStr)}, ${fmtD(tomorrowStr)})
+              <th style="padding:10px 14px;width:35%;font-size:12px;font-weight:700;color:var(--ink);text-align:center">
+                <span class="badge" style="font-size:10px;padding:2px 7px;margin-right:6px">TOMORROW</span>
+                ${fullDayName(tomorrowStr).slice(0, 3)}, ${fmtD(tomorrowStr)}
               </th>
             </tr>
           </thead>
@@ -33231,38 +33289,100 @@ label {
             ${services.map(s => {
         const tSlot = getRosterSlot(roster, todayStr, s.id);
         const tmSlot = getRosterSlot(roster, tomorrowStr, s.id);
-        return `<tr style="border-bottom:1.5px solid #000;min-height:56px">
-                <!-- Services Column (Pale Golden Yellow #FFE5A3) -->
-                <td class="col-srv" style="background:#FFE5A3;padding:12px 10px;border-right:1.5px solid #000;font-weight:600;font-size:14.5px;color:#111;text-align:center">
-                  <div class="photo-srv-title">${esc(s.name)}</div>
-                  <div class="photo-srv-time" style="font-size:11px;color:#555;margin-top:2px;font-weight:normal">${s.time}</div>
+        const isSub = isDeity && (s.isSub || s.id === 'd4' || s.id === 'd5');
+        const tDone = tSlot.status === 'done' || (tSlot.devotees && tSlot.devotees.includes('❌'));
+        const tMissed = tSlot.status === 'missed';
+        const tHasDev = tSlot.devotees && tSlot.devotees.trim() && tSlot.devotees !== '—' && tSlot.devotees !== 'Unassigned';
+        const tmHasDev = tmSlot.devotees && tmSlot.devotees.trim() && tmSlot.devotees !== '—' && tmSlot.devotees !== 'Unassigned';
+
+        return `<tr style="border-bottom:1px solid var(--line-2)">
+                <!-- Service Name & Time -->
+                <td style="padding:11px 14px;vertical-align:middle">
+                  <div style="font-weight:700;font-size:13.5px;color:var(--ink);display:flex;align-items:center;gap:5px">
+                    ${isSub ? '<span style="color:var(--saffron);font-weight:bold">↳</span>' : ''}
+                    <span>${esc(s.name)}</span>
+                  </div>
+                  ${s.time ? `<div class="tiny" style="color:var(--ink-3);margin-top:2px;font-family:monospace;font-weight:600">${esc(s.time)}</div>` : ''}
                 </td>
 
-                <!-- Today's Report Column (Pale Lavender #E5DCF7) -->
-                <td class="col-today" style="background:#E5DCF7;padding:10px 12px;border-right:1.5px solid #000;color:#111;text-align:center">
-                  <div style="display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap">
-                    <span class="photo-dev-name" data-gesture-slot="true" style="font-weight:700;font-size:14.5px;cursor:pointer" data-act="edit-roster-slot" data-dept="${deptKey}" data-dt="${todayStr}" data-s="${s.id}" data-src="today" title="Click or hold to edit devotee">
+                <!-- Today's Report Column -->
+                <td style="padding:10px 14px;vertical-align:middle;text-align:center;background:rgba(245,168,105,0.04)">
+                  <div class="tt-dev-pill" data-gesture-slot="true" data-dept="${deptKey}" data-dt="${todayStr}" data-s="${s.id}" data-src="today" title="Click or hold to edit devotee">
+                    <span style="font-weight:700;font-size:13px;color:${tHasDev ? 'var(--ink)' : 'var(--ink-3)'}" data-act="edit-roster-slot" data-dept="${deptKey}" data-dt="${todayStr}" data-s="${s.id}" data-src="today">
                       ${esc(tSlot.devotees || 'Unassigned')}
                     </span>
-                    <!-- One click toggle: Tick ✅ or Cross ❌ -->
-                    <button type="button" class="photo-status-btn" style="border:none;background:transparent;cursor:pointer;font-size:17px;padding:2px 4px" data-act="toggle-roster-status" data-dept="${deptKey}" data-dt="${todayStr}" data-s="${s.id}" title="Click to toggle Done/Missed">
-                      ${tSlot.status === 'done' ? '✅' : (tSlot.status === 'missed' ? '❌' : '⏳')}
+                    <button type="button" class="badge ${tDone ? 'b-green' : (tMissed ? 'b-red' : 'b-amber')}" style="border:none;cursor:pointer;padding:2px 7px;font-size:11px" data-act="toggle-roster-status" data-dept="${deptKey}" data-dt="${todayStr}" data-s="${s.id}" title="Toggle status">
+                      ${tDone ? '✅ Done' : (tMissed ? '❌ Missed' : '⏳ Pending')}
                     </button>
                   </div>
                 </td>
 
-                <!-- Tomorrow's Chart Column (Pale Lavender #E5DCF7) -->
-                <td class="col-tmrw" style="background:#E5DCF7;padding:10px 12px;color:#111;text-align:center">
-                  <div style="display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap">
-                    <span class="photo-dev-name" data-gesture-slot="true" style="font-size:14.5px;cursor:pointer" data-act="edit-roster-slot" data-dept="${deptKey}" data-dt="${tomorrowStr}" data-s="${s.id}" data-src="tomorrow" title="Click or hold to edit devotee">
+                <!-- Tomorrow's Chart Column -->
+                <td style="padding:10px 14px;vertical-align:middle;text-align:center">
+                  <div class="tt-dev-pill" data-gesture-slot="true" data-dept="${deptKey}" data-dt="${tomorrowStr}" data-s="${s.id}" data-src="tomorrow" data-act="edit-roster-slot" title="Click or hold to edit devotee">
+                    <span style="font-weight:600;font-size:13px;color:${tmHasDev ? 'var(--ink)' : 'var(--ink-3)'}">
                       ${esc(tmSlot.devotees || 'Unassigned')}
                     </span>
+                    <span class="tiny" style="color:var(--ink-3)">✏️</span>
                   </div>
                 </td>
               </tr>`;
       }).join('')}
           </tbody>
         </table>
+      </div>
+
+      <!-- Mobile Split Cards (No Horizontal Scrolling, Sleek Theme Fit) -->
+      <div class="tt-mobile-cards" style="padding:10px 12px;display:flex;flex-direction:column;gap:8px">
+        ${services.map(s => {
+        const tSlot = getRosterSlot(roster, todayStr, s.id);
+        const tmSlot = getRosterSlot(roster, tomorrowStr, s.id);
+        const isSub = isDeity && (s.isSub || s.id === 'd4' || s.id === 'd5');
+        const tDone = tSlot.status === 'done' || (tSlot.devotees && tSlot.devotees.includes('❌'));
+        const tMissed = tSlot.status === 'missed';
+        const tHasDev = tSlot.devotees && tSlot.devotees.trim() && tSlot.devotees !== '—' && tSlot.devotees !== 'Unassigned';
+        const tmHasDev = tmSlot.devotees && tmSlot.devotees.trim() && tmSlot.devotees !== '—' && tmSlot.devotees !== 'Unassigned';
+        const borderAccent = tDone ? '#10B981' : (tMissed ? '#EF4444' : 'var(--saffron)');
+
+        return `<div class="tt-mob-card" style="border-left:3px solid ${borderAccent}">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:7px">
+              <span style="font-weight:700;font-size:13px;color:var(--ink);line-height:1.25">
+                ${isSub ? '<span style="color:var(--saffron)">↳ </span>' : ''}${esc(s.name)}
+              </span>
+              ${s.time ? `<span style="font-size:11px;color:var(--ink-3);font-family:monospace;font-weight:600">${esc(s.time)}</span>` : ''}
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+              <!-- Today Slot -->
+              <div class="tt-slot-box" data-gesture-slot="true" data-dept="${deptKey}" data-dt="${todayStr}" data-s="${s.id}" data-src="today">
+                <div style="display:flex;align-items:center;justify-content:space-between;line-height:1">
+                  <span style="font-size:9.5px;font-weight:700;color:var(--saffron);text-transform:uppercase;letter-spacing:0.3px">Today</span>
+                  <button type="button" class="badge ${tDone ? 'b-green' : (tMissed ? 'b-red' : 'b-amber')}" style="padding:1px 5px;font-size:9.5px;border:none;cursor:pointer" data-act="toggle-roster-status" data-dept="${deptKey}" data-dt="${todayStr}" data-s="${s.id}" title="Toggle status">
+                    ${tDone ? '✅' : (tMissed ? '❌' : '⏳')}
+                  </button>
+                </div>
+                <div style="font-weight:700;font-size:12px;color:${tHasDev ? 'var(--ink)' : 'var(--ink-3)'};margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" data-act="edit-roster-slot" data-dept="${deptKey}" data-dt="${todayStr}" data-s="${s.id}" data-src="today" title="Tap or hold to edit devotee">
+                  ${esc(tSlot.devotees || 'Unassigned')}
+                </div>
+              </div>
+
+              <!-- Tomorrow Slot -->
+              <div class="tt-slot-box" data-gesture-slot="true" data-dept="${deptKey}" data-dt="${tomorrowStr}" data-s="${s.id}" data-src="tomorrow" data-act="edit-roster-slot" title="Tap or hold to edit devotee">
+                <div style="display:flex;align-items:center;justify-content:space-between;line-height:1">
+                  <span style="font-size:9.5px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:0.3px">Tomorrow</span>
+                  <span class="tiny" style="color:var(--ink-3)">✏️</span>
+                </div>
+                <div style="font-weight:600;font-size:12px;color:${tmHasDev ? 'var(--ink)' : 'var(--ink-3)'};margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+                  ${esc(tmSlot.devotees || 'Unassigned')}
+                </div>
+              </div>
+            </div>
+          </div>`;
+      }).join('')}
+      </div>
+
+      <div class="tbl-foot">
+        <span class="tiny">👉 Tap status badge to toggle · Tap devotee or hold to edit devotee assignment</span>
       </div>
     </div>
     ` : viewMode === 'single-day' ? (() => {
