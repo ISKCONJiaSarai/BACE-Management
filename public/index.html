@@ -26429,8 +26429,12 @@
       const dp = dept(id); if (!dp) return emptyState('Department not found', '', '<a class="btn" href="#/mgmt">Back to departments</a>');
       APP.crumbLeaf = dp.name;
 
-      // Pure dedicated panels for Deity and Cleaning departments
+      // Pure dedicated panels for Deity and Cleaning departments (default to today & tomorrow photo view and all-days)
       if (dp.module === 'deity' || dp.id === 'dp3' || (dp.name && dp.name.toLowerCase().includes('deity'))) {
+        APP.rosterViewMode = APP.rosterViewMode || {};
+        APP.rosterViewMode['deity'] = 'photo';
+        APP.mobileWeeklyDay = APP.mobileWeeklyDay || {};
+        APP.mobileWeeklyDay['deity'] = 'all';
         return head(dp.icon + ' Department', dp.name, `${dp.desc} · head ${nameOf(dp.head)} · ${dp.status}`,
           `${ownsDept(dp.id) ? `<button class="btn" data-act="edit-dept" data-id="${dp.id}">${ic('edit')}Edit</button>
         <button class="btn" data-act="dept-report-range" data-id="${dp.id}">📄 Reports</button>
@@ -26439,6 +26443,10 @@
       }
 
       if (dp.module === 'cleaning' || dp.id === 'dp8' || (dp.name && dp.name.toLowerCase().includes('cleaning'))) {
+        APP.rosterViewMode = APP.rosterViewMode || {};
+        APP.rosterViewMode['cleaning'] = 'photo';
+        APP.mobileWeeklyDay = APP.mobileWeeklyDay || {};
+        APP.mobileWeeklyDay['cleaning'] = 'all';
         return head(dp.icon + ' Department', dp.name, `${dp.desc} · head ${nameOf(dp.head)} · ${dp.status}`,
           `${ownsDept(dp.id) ? `<button class="btn" data-act="edit-dept" data-id="${dp.id}">${ic('edit')}Edit</button>
         <button class="btn" data-act="dept-report-range" data-id="${dp.id}">📄 Reports</button>
@@ -29396,6 +29404,9 @@ label {
                 s.sort = defS.sort;
               }
             });
+            if (!parsed.weeklySlots || !Object.keys(parsed.weeklySlots).length) {
+              parsed.weeklySlots = getDefaultWeeklySlots(key);
+            }
             if (!parsed.slots) parsed.slots = {};
             if (!parsed.slots[iso(TODAY)] || !Object.keys(parsed.slots[iso(TODAY)]).length) {
               parsed.slots[iso(TODAY)] = defaultToday;
@@ -29416,11 +29427,182 @@ label {
       } catch (e) { }
       return {
         services: defaultServices,
+        weeklySlots: getDefaultWeeklySlots(key),
         slots: {
           [iso(TODAY)]: defaultToday,
           [iso(dayOff(1))]: defaultTomorrow
         }
       };
+    }
+
+    function getDefaultWeeklySlots(deptKey) {
+      if (deptKey === 'deity') {
+        return {
+          Mon: {
+            d1: { devotees: 'Sai Sriram Pr & Neetesh', time: '04:30 AM' },
+            d2: { devotees: 'Dhirendra Pr', time: '05:15 AM' },
+            d3: { devotees: 'HG Janardan Shyam Pr', time: '06:30 AM' },
+            d4: { devotees: 'Sameer Pr', time: '' },
+            d5: { devotees: 'Sumit Pr', time: '' },
+            d6: { devotees: 'Mayank Pr', time: '07:30 AM' },
+            d7: { devotees: 'Sumit Pr', time: '05:30 PM' },
+            d8: { devotees: 'Suraj Pr', time: '08:45 PM' }
+          },
+          Tue: {
+            d1: { devotees: 'Suraj Pr & Sumit Pr', time: '04:30 AM' },
+            d2: { devotees: 'Neetesh', time: '05:15 AM' },
+            d3: { devotees: 'Neetesh', time: '06:30 AM' },
+            d4: { devotees: 'Mayank Pr', time: '' },
+            d5: { devotees: 'Rajesh Roy Pr', time: '' },
+            d6: { devotees: 'Himanshu Pr', time: '07:30 AM' },
+            d7: { devotees: 'Mayank Pr', time: '05:30 PM' },
+            d8: { devotees: 'Suresh Pr', time: '08:45 PM' }
+          },
+          Wed: {
+            d1: { devotees: 'Sai Sriram Pr & Suresh Pr', time: '04:30 AM' },
+            d2: { devotees: 'Dhirendra Pr', time: '05:15 AM' },
+            d3: { devotees: 'HG Janardan Shyam Pr', time: '06:30 AM' },
+            d4: { devotees: 'Sameer Pr', time: '' },
+            d5: { devotees: 'Sumit Pr', time: '' },
+            d6: { devotees: 'Mayank Pr', time: '07:30 AM' },
+            d7: { devotees: 'Suraj Pr', time: '05:30 PM' },
+            d8: { devotees: 'Aman Pr', time: '08:45 PM' }
+          },
+          Thu: {
+            d1: { devotees: 'Neetesh & Sumit Pr', time: '04:30 AM' },
+            d2: { devotees: 'Dhirendra Pr', time: '05:15 AM' },
+            d3: { devotees: 'Suraj Pr', time: '06:30 AM' },
+            d4: { devotees: 'Mayank Pr', time: '' },
+            d5: { devotees: 'Rajesh Roy Pr', time: '' },
+            d6: { devotees: 'Himanshu Pr', time: '07:30 AM' },
+            d7: { devotees: 'Sameer Pr', time: '05:30 PM' },
+            d8: { devotees: 'Suresh Pr', time: '08:45 PM' }
+          },
+          Fri: {
+            d1: { devotees: 'Sai Sriram Pr & Neetesh', time: '04:30 AM' },
+            d2: { devotees: 'Neetesh', time: '05:15 AM' },
+            d3: { devotees: 'HG Janardan Shyam Pr', time: '06:30 AM' },
+            d4: { devotees: 'Sameer Pr', time: '' },
+            d5: { devotees: 'Sumit Pr', time: '' },
+            d6: { devotees: 'Mayank Pr', time: '07:30 AM' },
+            d7: { devotees: 'Sumit Pr', time: '05:30 PM' },
+            d8: { devotees: 'Suraj Pr', time: '08:45 PM' }
+          },
+          Sat: {
+            d1: { devotees: 'Suraj Pr & Sumit Pr', time: '04:30 AM' },
+            d2: { devotees: 'Dhirendra Pr', time: '05:15 AM' },
+            d3: { devotees: 'HG Janardan Shyam Pr', time: '06:30 AM' },
+            d4: { devotees: 'Mayank Pr', time: '' },
+            d5: { devotees: 'Rajesh Roy Pr', time: '' },
+            d6: { devotees: 'Himanshu Pr', time: '07:30 AM' },
+            d7: { devotees: 'Mayank Pr', time: '05:30 PM' },
+            d8: { devotees: 'Aman Pr', time: '08:45 PM' }
+          },
+          Sun: {
+            d1: { devotees: 'Sai Sriram Pr & Suresh Pr', time: '04:30 AM' },
+            d2: { devotees: 'Dhirendra Pr', time: '05:15 AM' },
+            d3: { devotees: 'HG Janardan Shyam Pr', time: '06:30 AM' },
+            d4: { devotees: 'Sameer Pr', time: '' },
+            d5: { devotees: 'Sumit Pr', time: '' },
+            d6: { devotees: 'Mayank Pr', time: '07:30 AM' },
+            d7: { devotees: 'Suraj Pr', time: '05:30 PM' },
+            d8: { devotees: 'Neetesh', time: '08:45 PM' }
+          }
+        };
+      } else {
+        return {
+          Mon: {
+            c1: { devotees: 'Ankit Pr & Rahul Pr', time: '04:30 AM' },
+            c2: { devotees: 'Sai Sriram Pr', time: '05:30 AM' },
+            c3: { devotees: 'Mayank Pr', time: '08:00 AM' },
+            c4: { devotees: 'Dhirendra Pr', time: '09:30 AM' },
+            c5: { devotees: 'Keshav Pr & Sumit Pr', time: '02:00 PM' },
+            c6: { devotees: 'Suraj Pr', time: '04:00 PM' },
+            c7: { devotees: 'Neetesh', time: '06:00 PM' },
+            c8: { devotees: 'Himanshu Pr', time: '09:00 PM' }
+          },
+          Tue: {
+            c1: { devotees: 'Suraj Pr & Suresh Pr', time: '04:30 AM' },
+            c2: { devotees: 'Dhirendra Pr', time: '05:30 AM' },
+            c3: { devotees: 'Sameer Pr', time: '08:00 AM' },
+            c4: { devotees: 'Sumit Pr', time: '09:30 AM' },
+            c5: { devotees: 'Rahul Pr & Ankit Pr', time: '02:00 PM' },
+            c6: { devotees: 'Neetesh', time: '04:00 PM' },
+            c7: { devotees: 'Rajesh Roy Pr', time: '06:00 PM' },
+            c8: { devotees: 'Mayank Pr', time: '09:00 PM' }
+          },
+          Wed: {
+            c1: { devotees: 'Keshav Pr & Sumit Pr', time: '04:30 AM' },
+            c2: { devotees: 'Sai Sriram Pr', time: '05:30 AM' },
+            c3: { devotees: 'Mayank Pr', time: '08:00 AM' },
+            c4: { devotees: 'Dhirendra Pr', time: '09:30 AM' },
+            c5: { devotees: 'Ankit Pr & Rahul Pr', time: '02:00 PM' },
+            c6: { devotees: 'Suraj Pr', time: '04:00 PM' },
+            c7: { devotees: 'Neetesh', time: '06:00 PM' },
+            c8: { devotees: 'Himanshu Pr', time: '09:00 PM' }
+          },
+          Thu: {
+            c1: { devotees: 'Suraj Pr & Suresh Pr', time: '04:30 AM' },
+            c2: { devotees: 'Dhirendra Pr', time: '05:30 AM' },
+            c3: { devotees: 'Sameer Pr', time: '08:00 AM' },
+            c4: { devotees: 'Sumit Pr', time: '09:30 AM' },
+            c5: { devotees: 'Rahul Pr & Ankit Pr', time: '02:00 PM' },
+            c6: { devotees: 'Neetesh', time: '04:00 PM' },
+            c7: { devotees: 'Rajesh Roy Pr', time: '06:00 PM' },
+            c8: { devotees: 'Mayank Pr', time: '09:00 PM' }
+          },
+          Fri: {
+            c1: { devotees: 'Ankit Pr & Rahul Pr', time: '04:30 AM' },
+            c2: { devotees: 'Sai Sriram Pr', time: '05:30 AM' },
+            c3: { devotees: 'Mayank Pr', time: '08:00 AM' },
+            c4: { devotees: 'Dhirendra Pr', time: '09:30 AM' },
+            c5: { devotees: 'Keshav Pr & Sumit Pr', time: '02:00 PM' },
+            c6: { devotees: 'Suraj Pr', time: '04:00 PM' },
+            c7: { devotees: 'Neetesh', time: '06:00 PM' },
+            c8: { devotees: 'Himanshu Pr', time: '09:00 PM' }
+          },
+          Sat: {
+            c1: { devotees: 'Suraj Pr & Suresh Pr', time: '04:30 AM' },
+            c2: { devotees: 'Dhirendra Pr', time: '05:30 AM' },
+            c3: { devotees: 'Sameer Pr', time: '08:00 AM' },
+            c4: { devotees: 'Sumit Pr', time: '09:30 AM' },
+            c5: { devotees: 'Rahul Pr & Ankit Pr', time: '02:00 PM' },
+            c6: { devotees: 'Neetesh', time: '04:00 PM' },
+            c7: { devotees: 'Rajesh Roy Pr', time: '06:00 PM' },
+            c8: { devotees: 'Mayank Pr', time: '09:00 PM' }
+          },
+          Sun: {
+            c1: { devotees: 'Keshav Pr & Sumit Pr', time: '04:30 AM' },
+            c2: { devotees: 'Sai Sriram Pr', time: '05:30 AM' },
+            c3: { devotees: 'Mayank Pr', time: '08:00 AM' },
+            c4: { devotees: 'Dhirendra Pr', time: '09:30 AM' },
+            c5: { devotees: 'Ankit Pr & Rahul Pr', time: '02:00 PM' },
+            c6: { devotees: 'Suraj Pr', time: '04:00 PM' },
+            c7: { devotees: 'Neetesh', time: '06:00 PM' },
+            c8: { devotees: 'Himanshu Pr', time: '09:00 PM' }
+          }
+        };
+      }
+    }
+
+    function getDayKey(dateStr) {
+      try {
+        const d = new Date(dateStr + 'T12:00:00');
+        return ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.getDay()] || 'Mon';
+      } catch (e) { return 'Mon'; }
+    }
+
+    function getWeeklyMasterSlot(roster, dayKey, sId) {
+      if (!roster.weeklySlots) roster.weeklySlots = {};
+      if (!roster.weeklySlots[dayKey]) roster.weeklySlots[dayKey] = {};
+      if (!roster.weeklySlots[dayKey][sId]) {
+        const s = roster.services ? roster.services.find(x => x.id === sId) : null;
+        roster.weeklySlots[dayKey][sId] = {
+          devotees: '',
+          time: s ? s.time : '04:30 AM'
+        };
+      }
+      return roster.weeklySlots[dayKey][sId];
     }
 
     function saveStoredRoster(key, data) {
@@ -29434,6 +29616,9 @@ label {
         APP.deityRoster.dressingSchedule = getDefaultDressingSchedule();
       }
       if (APP.deityRoster) {
+        if (!APP.deityRoster.weeklySlots || !Object.keys(APP.deityRoster.weeklySlots).length) {
+          APP.deityRoster.weeklySlots = getDefaultWeeklySlots('deity');
+        }
         DEFAULT_DEITY_SERVICES.forEach(defS => {
           let s = APP.deityRoster.services && APP.deityRoster.services.find(x => x.id === defS.id);
           if (!s && (defS.id === 'd4' || defS.id === 'd5')) {
@@ -29461,45 +29646,50 @@ label {
       }
       if (!APP.deityRoster) {
         APP.deityRoster = getStoredRoster('deity', DEFAULT_DEITY_SERVICES, {
-          d1: { devotees: 'Sai Sriram Pr & Neetesh', time: '04:30 AM', status: 'done' },
-          d2: { devotees: 'Dhirendra Pr', time: '05:15 AM', status: 'done' },
-          d3: { devotees: 'HG Janardan Shyam Pr', time: '06:30 AM', status: 'done' },
-          d4: { devotees: 'Sameer Pr', time: '', status: 'done' },
-          d5: { devotees: 'Sumit Pr', time: '', status: 'done' },
-          d6: { devotees: 'Mayank Pr', time: '07:30 AM', status: 'done' },
-          d7: { devotees: 'Sumit Pr', time: '05:30 PM', status: 'done' },
-          d8: { devotees: 'Suraj Pr ❌ Aman Pr', time: '08:45 PM', status: 'done' }
+          d1: { devotees: 'Sai Sriram Pr & Neetesh', time: '04:30 AM', status: 'done', isDailyOverride: true },
+          d2: { devotees: 'Dhirendra Pr', time: '05:15 AM', status: 'done', isDailyOverride: true },
+          d3: { devotees: 'HG Janardan Shyam Pr', time: '06:30 AM', status: 'done', isDailyOverride: true },
+          d4: { devotees: 'Sameer Pr', time: '', status: 'done', isDailyOverride: true },
+          d5: { devotees: 'Sumit Pr', time: '', status: 'done', isDailyOverride: true },
+          d6: { devotees: 'Mayank Pr', time: '07:30 AM', status: 'done', isDailyOverride: true },
+          d7: { devotees: 'Sumit Pr', time: '05:30 PM', status: 'done', isDailyOverride: true },
+          d8: { devotees: 'Suraj Pr ❌ Aman Pr', time: '08:45 PM', status: 'done', isDailyOverride: true }
         }, {
-          d1: { devotees: 'Suraj Pr & Sumit Pr', time: '04:30 AM', status: 'pending' },
-          d2: { devotees: 'Neetesh', time: '05:15 AM', status: 'pending' },
-          d3: { devotees: 'Neetesh', time: '06:30 AM', status: 'pending' },
-          d4: { devotees: 'Mayank Pr', time: '', status: 'pending' },
-          d5: { devotees: 'Rajesh Roy Pr', time: '', status: 'pending' },
-          d6: { devotees: 'Himanshu Pr', time: '07:30 AM', status: 'pending' },
-          d7: { devotees: 'Mayank Pr', time: '05:30 PM', status: 'pending' },
-          d8: { devotees: 'Suresh Pr', time: '08:45 PM', status: 'pending' }
+          d1: { devotees: 'Suraj Pr & Sumit Pr', time: '04:30 AM', status: 'pending', isDailyOverride: true },
+          d2: { devotees: 'Neetesh', time: '05:15 AM', status: 'pending', isDailyOverride: true },
+          d3: { devotees: 'Neetesh', time: '06:30 AM', status: 'pending', isDailyOverride: true },
+          d4: { devotees: 'Mayank Pr', time: '', status: 'pending', isDailyOverride: true },
+          d5: { devotees: 'Rajesh Roy Pr', time: '', status: 'pending', isDailyOverride: true },
+          d6: { devotees: 'Himanshu Pr', time: '07:30 AM', status: 'pending', isDailyOverride: true },
+          d7: { devotees: 'Mayank Pr', time: '05:30 PM', status: 'pending', isDailyOverride: true },
+          d8: { devotees: 'Suresh Pr', time: '08:45 PM', status: 'pending', isDailyOverride: true }
         });
       }
 
+      if (APP.cleaningRoster) {
+        if (!APP.cleaningRoster.weeklySlots || !Object.keys(APP.cleaningRoster.weeklySlots).length) {
+          APP.cleaningRoster.weeklySlots = getDefaultWeeklySlots('cleaning');
+        }
+      }
       if (!APP.cleaningRoster) {
         APP.cleaningRoster = getStoredRoster('cleaning', DEFAULT_CLEANING_SERVICES, {
-          c1: { devotees: 'Ankit Pr & Rahul Pr', time: '04:30 AM', status: 'done' },
-          c2: { devotees: 'Sai Sriram Pr', time: '05:30 AM', status: 'done' },
-          c3: { devotees: 'Mayank Pr', time: '08:00 AM', status: 'done' },
-          c4: { devotees: 'Dhirendra Pr', time: '09:30 AM', status: 'done' },
-          c5: { devotees: 'Keshav Pr & Sumit Pr', time: '02:00 PM', status: 'done' },
-          c6: { devotees: 'Suraj Pr ❌ Aman Pr', time: '04:00 PM', status: 'done' },
-          c7: { devotees: 'Neetesh', time: '06:00 PM', status: 'done' },
-          c8: { devotees: 'Himanshu Pr', time: '09:00 PM', status: 'done' }
+          c1: { devotees: 'Ankit Pr & Rahul Pr', time: '04:30 AM', status: 'done', isDailyOverride: true },
+          c2: { devotees: 'Sai Sriram Pr', time: '05:30 AM', status: 'done', isDailyOverride: true },
+          c3: { devotees: 'Mayank Pr', time: '08:00 AM', status: 'done', isDailyOverride: true },
+          c4: { devotees: 'Dhirendra Pr', time: '09:30 AM', status: 'done', isDailyOverride: true },
+          c5: { devotees: 'Keshav Pr & Sumit Pr', time: '02:00 PM', status: 'done', isDailyOverride: true },
+          c6: { devotees: 'Suraj Pr ❌ Aman Pr', time: '04:00 PM', status: 'done', isDailyOverride: true },
+          c7: { devotees: 'Neetesh', time: '06:00 PM', status: 'done', isDailyOverride: true },
+          c8: { devotees: 'Himanshu Pr', time: '09:00 PM', status: 'done', isDailyOverride: true }
         }, {
-          c1: { devotees: 'Suraj Pr & Suresh Pr', time: '04:30 AM', status: 'pending' },
-          c2: { devotees: 'Dhirendra Pr', time: '05:30 AM', status: 'pending' },
-          c3: { devotees: 'Sameer Pr', time: '08:00 AM', status: 'pending' },
-          c4: { devotees: 'Sumit Pr', time: '09:30 AM', status: 'pending' },
-          c5: { devotees: 'Rahul Pr & Ankit Pr', time: '02:00 PM', status: 'pending' },
-          c6: { devotees: 'Neetesh', time: '04:00 PM', status: 'pending' },
-          c7: { devotees: 'Rajesh Roy Pr', time: '06:00 PM', status: 'pending' },
-          c8: { devotees: 'Mayank Pr', time: '09:00 PM', status: 'pending' }
+          c1: { devotees: 'Suraj Pr & Suresh Pr', time: '04:30 AM', status: 'pending', isDailyOverride: true },
+          c2: { devotees: 'Dhirendra Pr', time: '05:30 AM', status: 'pending', isDailyOverride: true },
+          c3: { devotees: 'Sameer Pr', time: '08:00 AM', status: 'pending', isDailyOverride: true },
+          c4: { devotees: 'Sumit Pr', time: '09:30 AM', status: 'pending', isDailyOverride: true },
+          c5: { devotees: 'Rahul Pr & Ankit Pr', time: '02:00 PM', status: 'pending', isDailyOverride: true },
+          c6: { devotees: 'Neetesh', time: '04:00 PM', status: 'pending', isDailyOverride: true },
+          c7: { devotees: 'Rajesh Roy Pr', time: '06:00 PM', status: 'pending', isDailyOverride: true },
+          c8: { devotees: 'Mayank Pr', time: '09:00 PM', status: 'pending', isDailyOverride: true }
         });
       }
     }
@@ -29507,13 +29697,21 @@ label {
     function getRosterSlot(roster, dateStr, sId) {
       if (!roster.slots) roster.slots = {};
       if (!roster.slots[dateStr]) roster.slots[dateStr] = {};
+      const dayK = getDayKey(dateStr);
+      const master = getWeeklyMasterSlot(roster, dayK, sId);
+
       if (!roster.slots[dateStr][sId]) {
-        const s = roster.services.find(x => x.id === sId);
+        const s = roster.services ? roster.services.find(x => x.id === sId) : null;
         roster.slots[dateStr][sId] = {
-          devotees: '',
-          time: s ? s.time : '04:30 AM',
-          status: 'pending'
+          devotees: master.devotees || '',
+          time: master.time || (s ? s.time : '04:30 AM'),
+          status: dateStr === iso(TODAY) ? 'done' : (dateStr < iso(TODAY) ? 'done' : 'pending'),
+          isDailyOverride: false
         };
+      } else if (!roster.slots[dateStr][sId].isDailyOverride) {
+        // Keep in sync with master weekly template unless overridden
+        roster.slots[dateStr][sId].devotees = master.devotees || '';
+        if (master.time) roster.slots[dateStr][sId].time = master.time;
       }
       return roster.slots[dateStr][sId];
     }
@@ -31253,11 +31451,10 @@ label {
             ctx.fillRect(x, rowY, colDayW, rowH);
           }
 
-          const sl = getRosterSlot(roster, d, s.id);
+          const dayK = getDayKey(d);
+          const sl = getWeeklyMasterSlot(roster, dayK, s.id);
           const devs = (sl.devotees || '—').trim();
           const hasDev = devs && devs !== '—' && devs !== 'Unassigned';
-          const isDone = sl.status === 'done' || devs.includes('✅');
-          const isMissed = sl.status === 'missed';
 
           const pW = colDayW - 12;
           const pH = rowH - 16;
@@ -31268,15 +31465,7 @@ label {
           let pillBorder = 'rgba(255, 255, 255, 0.06)';
           let nameColor = '#94A3B8';
 
-          if (isDone) {
-            pillBg = 'rgba(16, 185, 129, 0.12)';
-            pillBorder = 'rgba(16, 185, 129, 0.28)';
-            nameColor = '#ECFDF5';
-          } else if (isMissed) {
-            pillBg = 'rgba(239, 68, 68, 0.12)';
-            pillBorder = 'rgba(239, 68, 68, 0.28)';
-            nameColor = '#FEF2F2';
-          } else if (hasDev) {
+          if (hasDev) {
             pillBg = isCur ? 'rgba(255, 159, 46, 0.1)' : 'rgba(255, 255, 255, 0.06)';
             pillBorder = isCur ? 'rgba(255, 159, 46, 0.25)' : 'rgba(255, 255, 255, 0.1)';
             nameColor = isCur ? '#FEF3C7' : '#F1F5F9';
@@ -31293,24 +31482,15 @@ label {
             const parts = devs.split('&');
             ctx.font = 'bold 11.5px "Inter", sans-serif';
             ctx.fillText(parts[0].trim() + ' &', pX + (pW / 2), pY + (pH / 2) - 7);
-            ctx.fillText((parts[1] || '').trim() + (isDone ? ' ✅' : (isMissed ? ' ❌' : '')), pX + (pW / 2), pY + (pH / 2) + 8);
-          } else if (devs.includes('❌')) {
-            const parts = devs.split('❌');
-            ctx.font = 'bold 11px "Inter", "Segoe UI Emoji", sans-serif';
-            ctx.fillStyle = '#F87171';
-            ctx.fillText(parts[0].trim() + ' ❌', pX + (pW / 2), pY + (pH / 2) - 7);
-            ctx.fillStyle = '#34D399';
-            ctx.fillText((parts[1] || '').trim() + ' ✅', pX + (pW / 2), pY + (pH / 2) + 8);
+            ctx.fillText((parts[1] || '').trim(), pX + (pW / 2), pY + (pH / 2) + 8);
           } else if (devs.length > 15) {
             const parts = devs.split(' ');
             const mid = Math.ceil(parts.length / 2);
             ctx.font = 'bold 11.5px "Inter", sans-serif';
             ctx.fillText(parts.slice(0, mid).join(' '), pX + (pW / 2), pY + (pH / 2) - 7);
-            ctx.fillText(parts.slice(mid).join(' ') + (isDone ? ' ✅' : ''), pX + (pW / 2), pY + (pH / 2) + 8);
+            ctx.fillText(parts.slice(mid).join(' '), pX + (pW / 2), pY + (pH / 2) + 8);
           } else {
-            let disp = hasDev ? devs : '—';
-            if (hasDev && isDone && !disp.includes('✅')) disp += ' ✅';
-            ctx.fillText(disp, pX + (pW / 2), pY + (pH / 2));
+            ctx.fillText(hasDev ? devs : '—', pX + (pW / 2), pY + (pH / 2));
           }
         });
       });
@@ -32068,20 +32248,27 @@ label {
       const isDeity = deptKey === 'deity';
       const roster = isDeity ? APP.deityRoster : APP.cleaningRoster;
       const service = roster.services.find(s => s.id === sId) || { name: 'Seva', time: '04:30 AM' };
-      const slot = getRosterSlot(roster, dateStr, sId);
 
       const currentView = source || (APP.rosterViewMode && APP.rosterViewMode[deptKey]) || 'photo';
       const isWeeklyChart = currentView === 'weekly';
       const isToday = dateStr === iso(TODAY);
       const isTomorrow = dateStr === iso(dayOff(1));
+      const dayK = getDayKey(dateStr);
 
-      // Service Completion Status dropdown is strictly for Today's Report in Today & Tomorrow view.
-      // In the Weekly Service Chart, status option/dropdown is completely removed for all days.
-      const showStatusDropdown = isToday && !isWeeklyChart;
+      let slot;
+      if (isWeeklyChart) {
+        slot = getWeeklyMasterSlot(roster, dayK, sId);
+      } else {
+        slot = getRosterSlot(roster, dateStr, sId);
+      }
+
+      // Seva done, missed and replaced editing option is strictly for Today & Tomorrow view!
+      // In the Weekly and Single Day views, status and replacement editing are completely hidden.
+      const showStatusDropdown = (currentView === 'photo' || currentView === 'today' || currentView === 'tomorrow') && isToday;
 
       const dayTitle = isWeeklyChart
-        ? `Weekly Chart (${fmtD(dateStr)})`
-        : (isToday ? "Today's Report" : (isTomorrow ? "Tomorrow's Schedule" : fmtD(dateStr)));
+        ? `Weekly Master (${dayK})`
+        : (isToday ? "Today's Report" : (isTomorrow ? "Tomorrow's Schedule" : `${fmtD(dateStr)} (${dayK})`));
 
       let origDev = slot.devotees || '';
       let existingSub = '';
@@ -33358,7 +33545,7 @@ label {
       // 7 Days list for weekly table (Monday to Sunday)
       const days = getWeekDays(TODAY).map(iso);
       APP.mobileWeeklyDay = APP.mobileWeeklyDay || {};
-      const activeWeeklyDay = APP.mobileWeeklyDay[deptKey] || todayStr;
+      const activeWeeklyDay = APP.mobileWeeklyDay[deptKey] || 'all';
 
       return `<div class="roster-view-container" data-gesture-swipe="${viewMode === 'single-day' ? 'single-day' : (viewMode === 'weekly' ? 'weekly' : '')}" data-dept="${deptKey}">
     <!-- Unified Top Command Bar (1 Row on Desktop, Compact Responsive on Mobile) -->
@@ -33710,10 +33897,7 @@ label {
                   ${statusBadge}
                 </td>
                 <td class="col-sd-actions" data-l="Actions" style="text-align:center">
-                  <div style="display:flex;align-items:center;justify-content:center;gap:6px">
-                    <button class="btn sm icon-only" style="height:26px;padding:2px 7px;font-size:12px;background:${isDone ? 'rgba(5,150,105,0.1)' : ''};color:${isDone ? 'var(--green)' : ''}" data-act="toggle-roster-status" data-dept="${deptKey}" data-dt="${sdDate}" data-s="${s.id}" title="Toggle Done/Missed/Pending">${isDone ? '✅' : (isMissed ? '❌' : '⏳')}</button>
-                    ${isMissed || (sl.devotees && sl.devotees.includes('❌')) ? `<button class="btn sm icon-only" style="height:26px;padding:2px 7px;font-size:11px" data-act="open-missed-substitute" data-dept="${deptKey}" data-dt="${sdDate}" data-s="${s.id}" title="Manage substitution">🔄 Sub</button>` : ''}
-                  </div>
+                  <button class="btn sm" data-act="edit-roster-slot" data-dept="${deptKey}" data-dt="${sdDate}" data-s="${s.id}" data-src="single-day" title="Edit devotee" style="padding:3px 10px;font-size:12px">✏️ Edit</button>
                 </td>
               </tr>`;
           }).join('')}
@@ -33739,18 +33923,28 @@ label {
               <div class="sd-cr-dev">${esc(devText)}</div>
             </span>
             <div class="sd-cr-actions">
-              <button class="btn sm icon-only" style="height:28px;width:28px;padding:0;font-size:13px;display:flex;align-items:center;justify-content:center" data-act="toggle-roster-status" data-dept="${deptKey}" data-dt="${sdDate}" data-s="${s.id}" title="Toggle status">${statusIcon}</button>
+              <button class="btn sm icon-only" style="height:28px;width:28px;padding:0;font-size:13px;display:flex;align-items:center;justify-content:center;border-radius:6px;background:var(--surface-2);border:1px solid var(--line)" data-act="edit-roster-slot" data-dept="${deptKey}" data-dt="${sdDate}" data-s="${s.id}" data-src="single-day" title="Edit service devotee">✏️</button>
             </div>
           </div>`;
           }).join('')}
       </div>
 
-      <div class="tbl-foot"><span class="tiny">Click ✏️ Edit to assign a devotee · Click status icon to toggle Done/Missed/Pending</span></div>
+      <div class="tbl-foot"><span class="tiny">Click ✏️ Edit to assign or change a devotee</span></div>
     </div>
     `;
         })() : viewMode === 'weekly' ? `
     <!-- WEEKLY DEITY/CLEANING DEPARTMENT SERVICE CHART -->
     <div class="card" style="margin-bottom:16px;overflow:hidden">
+      <!-- Clean Sleek Header -->
+      <div class="card-h" style="padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;border-bottom:1px solid var(--line-2)">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-weight:700;font-size:13.5px;color:var(--ink)">📅 Weekly Service Chart</span>
+        </div>
+        <button type="button" class="btn pri sm" data-act="share-weekly-photo" data-dept="${deptKey}" style="font-size:11.5px;padding:4px 9px;font-weight:700;display:inline-flex;align-items:center;gap:5px" title="Generate and share Weekly chart photo">
+          <span>📸</span> Share Weekly Photo
+        </button>
+      </div>
+
       <!-- Desktop 8-column Weekly Table (Clean Linear/Notion Grid: Hoverable, Clickable, No Clutter) -->
       <div class="roster-weekly-desktop-tbl tbl-wrap roster-table-scroll" style="overflow-x:auto;-webkit-overflow-scrolling:touch">
         <table class="tbl">
@@ -33776,12 +33970,12 @@ label {
                 ${isSub ? '<div class="tiny" style="color:#b45309;font-style:italic">Deity Worship Sub-category</div>' : (s.time ? `<div class="tiny" style="color:var(--ink-3)">${s.time}</div>` : '')}
               </td>
               ${days.map(d => {
-            const sl = getRosterSlot(roster, d, s.id);
-            const hasDev = sl.devotees && sl.devotees.trim() && sl.devotees !== '—' && sl.devotees !== 'Unassigned';
-            return `<td data-l="${fmtD(d)}" class="roster-desk-cell${d === todayStr ? ' is-today-col' : ''}" data-act="edit-roster-slot" data-dept="${deptKey}" data-dt="${d}" data-s="${s.id}" data-src="weekly" title="Click to edit devotee assignment for ${esc(s.name)} on ${fmtD(d)}">
+            const dayK = getDayKey(d);
+            const masterSl = getWeeklyMasterSlot(roster, dayK, s.id);
+            const hasDev = masterSl.devotees && masterSl.devotees.trim() && masterSl.devotees !== '—' && masterSl.devotees !== 'Unassigned';
+            return `<td data-l="${fmtD(d)}" class="roster-desk-cell${d === todayStr ? ' is-today-col' : ''}" data-act="edit-roster-slot" data-dept="${deptKey}" data-dt="${d}" data-s="${s.id}" data-src="weekly" title="Click to edit weekly schedule for ${esc(s.name)} on ${dayK}">
                   <div class="roster-desk-cell-inner">
-                    <span class="roster-desk-dev ${hasDev ? 'has-dev' : 'no-dev'}">${esc(sl.devotees || '—')}</span>
-                    ${sl.status === 'done' ? '<span title="Done">✅</span>' : (sl.status === 'missed' ? '<span title="Missed">❌</span>' : '')}
+                    <span class="roster-desk-dev ${hasDev ? 'has-dev' : 'no-dev'}">${esc(masterSl.devotees || '—')}</span>
                   </div>
                 </td>`;
           }).join('')}
@@ -33793,9 +33987,9 @@ label {
 
       <!-- Mobile Weekly Compact Small Table (Zero horizontal scroll, readable 12.5px font) -->
       <div class="roster-weekly-mobile-wrap" style="padding:10px 12px">
-        <!-- Day Selector Pills Bar -->
-        <div class="weekly-mob-day-nav" style="margin-bottom:10px">
-          <div class="weekly-day-pills-row">
+        <!-- Day Selector Pills Bar + Camera Button -->
+        <div class="weekly-mob-day-nav" style="margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:6px">
+          <div class="weekly-day-pills-row" style="flex:1;overflow-x:auto">
             <button type="button" class="btn sm weekly-day-pill${activeWeeklyDay === 'all' ? ' pri' : ''}" data-act="set-mobile-weekly-day" data-dept="${deptKey}" data-dt="all">
               <span class="d-pill-name" style="padding:4px 0">All Days</span>
             </button>
@@ -33812,6 +34006,9 @@ label {
               </button>`;
         }).join('')}
           </div>
+          <button type="button" class="btn pri sm icon-only" data-act="share-weekly-photo" data-dept="${deptKey}" style="height:32px;width:32px;flex-shrink:0;padding:0;font-size:14px;display:flex;align-items:center;justify-content:center;border-radius:8px" title="Generate Weekly Chart Photo">
+            📸
+          </button>
         </div>
 
         <!-- Small Table Content -->
@@ -33842,15 +34039,14 @@ label {
                     ${s.time ? `<span class="rhm-srv-time">${s.time}</span>` : ''}
                   </div>
                   ${days.map(d => {
-            const sl = getRosterSlot(roster, d, s.id);
-            const isDone = sl.status === 'done';
-            const isMissed = sl.status === 'missed';
-            const hasDev = sl.devotees && sl.devotees.trim() && sl.devotees !== '—' && sl.devotees !== 'Unassigned';
-            const cellIcon = isDone ? '✅' : (isMissed ? '❌' : (hasDev ? '⏳' : '—'));
-            const cellCls = isDone ? 'rhm-done' : (isMissed ? 'rhm-missed' : (hasDev ? 'rhm-pending' : 'rhm-empty'));
+            const dayK = getDayKey(d);
+            const masterSl = getWeeklyMasterSlot(roster, dayK, s.id);
+            const hasDev = masterSl.devotees && masterSl.devotees.trim() && masterSl.devotees !== '—' && masterSl.devotees !== 'Unassigned';
+            const cellIcon = hasDev ? '👤' : '—';
+            const cellCls = hasDev ? 'rhm-pending' : 'rhm-empty';
             const isCur = d === todayStr;
-            const devTip = esc(sl.devotees || 'Unassigned');
-            return `<div class="rhm-cell rhm-data ${cellCls}${isCur ? ' rhm-today-col' : ''}" data-gesture-slot="true" data-act="toggle-roster-status" data-dept="${deptKey}" data-dt="${d}" data-s="${s.id}" data-src="weekly" title="${devTip} (Tap: toggle, Hold: edit)">
+            const devTip = esc(masterSl.devotees || 'Unassigned');
+            return `<div class="rhm-cell rhm-data ${cellCls}${isCur ? ' rhm-today-col' : ''}" data-gesture-slot="true" data-act="edit-roster-slot" data-dept="${deptKey}" data-dt="${d}" data-s="${s.id}" data-src="weekly" title="${devTip} (Tap to edit devotee)">
                       ${cellIcon}
                     </div>`;
           }).join('')}
@@ -33858,9 +34054,9 @@ label {
         }).join('')}
             </div>
             <!-- Legend -->
-            <div style="display:flex;gap:10px;flex-wrap:wrap;padding:8px 4px 2px;font-size:11px;color:var(--ink-2)">
-              <span>✅ Done</span><span>⏳ Pending/Assigned</span><span>❌ Missed</span><span style="color:var(--ink-3)">— Unassigned</span>
-              <span style="margin-left:auto;color:var(--ink-3);font-size:10px">Tap cell to toggle · Hold to edit</span>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;padding:8px 4px 2px;font-size:11px;color:var(--ink-2);align-items:center">
+              <span>👤 Assigned Devotee</span><span style="color:var(--ink-3)">— Unassigned</span>
+              <span style="margin-left:auto;color:var(--ink-3);font-size:10px">Tap cell to edit weekly master devotee</span>
             </div>
           </div>
           ` : (() => {
@@ -33875,11 +34071,11 @@ label {
                 </div>
                 <div class="weekly-day-cards-list" style="display:flex;flex-direction:column;background:var(--surface)">
                   ${services.map((s, idx) => {
+              const dayK = getDayKey(d);
+              const masterSl = getWeeklyMasterSlot(roster, dayK, s.id);
               const sl = getRosterSlot(roster, d, s.id);
               const isSub = isDeity && (s.isSub || s.id === 'd4' || s.id === 'd5');
               const hasDev = sl.devotees && sl.devotees.trim() && sl.devotees !== '—' && sl.devotees !== 'Unassigned';
-              const isDone = sl.status === 'done' || (sl.devotees && sl.devotees.includes('❌'));
-              const isMissed = sl.status === 'missed';
               const isLast = idx === services.length - 1;
               return `
                       <div class="weekly-service-card" data-gesture-slot="true" data-dept="${deptKey}" data-dt="${d}" data-s="${s.id}" data-src="weekly" style="padding:9px 12px;${isLast ? '' : 'border-bottom:1px solid var(--line-2);'}display:flex;flex-direction:column;gap:4px;background:var(--surface);cursor:pointer">
@@ -33890,14 +34086,12 @@ label {
                           </span>
                           ${s.time ? `<span style="font-size:11px;color:var(--ink-3);font-family:monospace;font-weight:600;flex-shrink:0">${esc(s.time)}</span>` : ''}
                         </div>
-                        <!-- Row 2: Assigned Devotee + Quick Status toggle -->
+                        <!-- Row 2: Assigned Devotee + Edit button -->
                         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
                           <span style="font-weight:600;font-size:12.5px;color:${hasDev ? 'var(--ink)' : 'var(--ink-3)'};word-break:break-word" data-act="edit-roster-slot" data-dept="${deptKey}" data-dt="${d}" data-s="${s.id}" data-src="weekly" title="Click to assign devotee">
                             ${esc(sl.devotees || 'Unassigned')}
                           </span>
-                          ${isDone ? `<button type="button" class="badge b-green" style="font-size:10.5px;padding:2px 7px;border:none;cursor:pointer" data-act="toggle-roster-status" data-dept="${deptKey}" data-dt="${d}" data-s="${s.id}" title="Toggle status">✅ Done</button>`
-                  : (isMissed ? `<button type="button" class="badge b-red" style="font-size:10.5px;padding:2px 7px;border:none;cursor:pointer" data-act="toggle-roster-status" data-dept="${deptKey}" data-dt="${d}" data-s="${s.id}" title="Toggle status">❌ Missed</button>`
-                    : (hasDev ? `<button type="button" class="badge b-amber" style="font-size:10.5px;padding:2px 7px;border:none;cursor:pointer" data-act="toggle-roster-status" data-dept="${deptKey}" data-dt="${d}" data-s="${s.id}" title="Toggle status">⏳ Pending</button>` : ''))}
+                          <button type="button" class="btn sm icon-only" style="height:26px;width:26px;padding:0;font-size:12px;border-radius:6px;background:var(--surface-2);border:1px solid var(--line)" data-act="edit-roster-slot" data-dept="${deptKey}" data-dt="${d}" data-s="${s.id}" data-src="weekly" title="Edit devotee">✏️</button>
                         </div>
                       </div>
                     `;
@@ -33909,7 +34103,7 @@ label {
         </div>
       </div>
       <div class="tbl-foot">
-        <span class="tiny">👉 Tap cell or status to toggle · Hold (long-press) to assign devotee · Swipe left/right to change days</span>
+        <span class="tiny">👉 Tap cell or ✏️ to assign devotee · Swipe left/right to change days</span>
       </div>
     </div>
 
@@ -45090,6 +45284,10 @@ label {
           const m = t.dataset.m || 'photo';
           APP.rosterViewMode = APP.rosterViewMode || {};
           APP.rosterViewMode[deptK] = m;
+          if (m === 'weekly') {
+            APP.mobileWeeklyDay = APP.mobileWeeklyDay || {};
+            APP.mobileWeeklyDay[deptK] = 'all';
+          }
           render();
           break;
         }
@@ -45128,6 +45326,8 @@ label {
             toast("Showing Today's & Tomorrow's services report", '📋');
           } else if (target === 'weekly') {
             APP.rosterViewMode[deptK] = 'weekly';
+            APP.mobileWeeklyDay = APP.mobileWeeklyDay || {};
+            APP.mobileWeeklyDay[deptK] = 'all';
             toast("Showing Weekly Service Chart", '📅');
           } else if (target.startsWith('analytics')) {
             APP.rosterViewMode[deptK] = 'analytics';
@@ -45514,7 +45714,7 @@ label {
         }
         case 'save-roster-slot-modal': stop(); {
           if (!APP.editingSlot) break;
-          const { deptKey, dateStr, sId } = APP.editingSlot;
+          const { deptKey, dateStr, sId, source } = APP.editingSlot;
           const devInput = document.getElementById('edit-slot-devotees');
           const timeInput = document.getElementById('edit-slot-time');
           const statusSelect = document.getElementById('edit-slot-status');
@@ -45522,19 +45722,46 @@ label {
 
           initDepartmentRosters();
           const roster = deptKey === 'deity' ? APP.deityRoster : APP.cleaningRoster;
-          const slot = getRosterSlot(roster, dateStr, sId);
-          const dev = devInput ? devInput.value.trim() : (slot.devotees || '');
-          const status = statusSelect ? statusSelect.value : (slot.status || 'pending');
+          const dev = devInput ? devInput.value.trim() : '';
+          const status = statusSelect ? statusSelect.value : 'pending';
           const sub = subInput ? subInput.value.trim() : '';
+          const dayK = getDayKey(dateStr);
 
-          if (status === 'missed' && sub) {
+          if (source === 'weekly') {
+            // Master recurring weekly chart edit
+            const masterSlot = getWeeklyMasterSlot(roster, dayK, sId);
+            masterSlot.devotees = dev;
+            if (timeInput && timeInput.value.trim()) masterSlot.time = timeInput.value.trim();
+
+            // Synchronize with active daily slots for this weekday that don't have historical overrides
+            if (roster.slots) {
+              Object.keys(roster.slots).forEach(dStr => {
+                if (getDayKey(dStr) === dayK && roster.slots[dStr][sId] && !roster.slots[dStr][sId].isDailyOverride) {
+                  roster.slots[dStr][sId].devotees = dev;
+                  if (masterSlot.time) roster.slots[dStr][sId].time = masterSlot.time;
+                }
+              });
+            }
+            saveStoredRoster(deptKey, roster);
+            APP.modal = '';
+            toast(`Updated weekly master schedule for ${dayK}`, '✅');
+            render();
+            break;
+          }
+
+          // Daily execution edit (Today & Tomorrow or Single Day)
+          // Mark as isDailyOverride so that master weekly chart is NOT touched
+          const slot = getRosterSlot(roster, dateStr, sId);
+          slot.isDailyOverride = true;
+
+          if (statusSelect && status === 'missed' && sub) {
             slot.devotees = `${dev} ❌ ${sub}`;
             slot.status = 'done'; // The replacement devotee performed it
           } else {
             slot.devotees = dev;
             if (statusSelect) slot.status = status;
           }
-          if (timeInput) slot.time = timeInput.value.trim();
+          if (timeInput && timeInput.value.trim()) slot.time = timeInput.value.trim();
           saveStoredRoster(deptKey, roster);
           APP.modal = '';
           toast('Seva slot updated successfully', '✅');
