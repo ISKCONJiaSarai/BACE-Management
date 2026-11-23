@@ -10225,6 +10225,83 @@
       }
     }
 
+    /* ── Department Tile Modern Gestures & Cards ── */
+    .dept-tile-dots {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 1px solid var(--line);
+      background: var(--surface-2);
+      color: var(--ink-2);
+      font-size: 15px;
+      font-weight: 700;
+      line-height: 1;
+      cursor: pointer;
+      padding: 0;
+      margin: 0;
+      transition: background .15s ease, transform .15s ease, border-color .15s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .dept-tile-dots:hover {
+      background: var(--surface-3, var(--line));
+      color: var(--ink);
+      transform: scale(1.08);
+    }
+    .dept-tile-dots:active {
+      transform: scale(0.92);
+    }
+    [data-theme="dark"] .dept-tile-dots {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.14);
+      color: var(--ink-2);
+    }
+    [data-theme="dark"] .dept-tile-dots:hover {
+      background: rgba(255, 255, 255, 0.18);
+      color: var(--ink);
+    }
+    .dept-touch-holding {
+      transform: scale(0.97) !important;
+      transition: transform .2s ease !important;
+      box-shadow: 0 0 0 2px var(--accent) !important;
+    }
+    .dept-tile-card {
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+    .dept-tile-card:active {
+      transform: scale(0.985);
+    }
+    .swipe-row-wrap.dept-swipe-wrap {
+      border-radius: var(--r-card, 16px);
+      background: transparent;
+      display: flex;
+      flex-direction: column;
+    }
+    .swipe-row-wrap.dept-swipe-wrap > .swipe-row-content {
+      background: transparent;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    .swipe-row-wrap.dept-swipe-wrap > .swipe-row-content > .dept-tile-card {
+      flex: 1;
+      height: 100%;
+      margin-bottom: 0;
+    }
+    .swipe-row-wrap.dept-swipe-wrap > .swipe-row-actions {
+      border-radius: 0 var(--r-card, 16px) var(--r-card, 16px) 0;
+    }
+    .swipe-row-wrap.dept-swipe-wrap .swipe-row-action-btn {
+      width: 68px;
+      font-size: 11.5px;
+      font-weight: 600;
+      padding: 0 4px;
+    }
+
     /* ── 1g. Collapsible Section CSS ── */
     .collapsible-section {
       overflow: hidden;
@@ -20478,14 +20555,14 @@
        content    = inner HTML of the main row
        actions    = array of {cls, icon, label, act, arg} objects
     */
-    function swipeRow(content, actions = []) {
+    function swipeRow(content, actions = [], extraCls = '') {
       const actionBtns = actions.map(a =>
         `<button class="swipe-row-action-btn ${esc(a.cls || '')}" data-act="${esc(a.act || '')}" data-id="${esc(a.id || '')}" data-arg="${esc(a.arg || '')}" aria-label="${esc(a.label || '')}">
       <span class="sa-icon">${a.icon || ''}</span>
       <span>${esc(a.label || '')}</span>
     </button>`
       ).join('');
-      return `<div class="swipe-row-wrap">
+      return `<div class="swipe-row-wrap${extraCls ? ' ' + esc(extraCls) : ''}">
     <div class="swipe-row-actions">${actionBtns}</div>
     <div class="swipe-row-content">${content}</div>
   </div>`;
@@ -20677,6 +20754,111 @@
         title: 'Devotee Overview',
         body,
         footerBtns
+      });
+    }
+
+    /* ── Department Quick Action Bottom Sheet & Gestures ── */
+    function openDeptActionSheet(deptId) {
+      const d = dept(deptId) || DB.departments.find(x => x.id === deptId);
+      if (!d) return;
+      const m = deptMetrics(d.id);
+      const pillarRoutes = { morning: '#/attendance', deity: '#/dept/' + d.id, cleaning: '#/dept/' + d.id, accounts: '#/accounts' };
+      const route = (d.module && pillarRoutes[d.module]) || (d.name && d.name.toLowerCase().includes('accounts') ? '#/accounts' : '#/dept/' + d.id);
+      const headName = d.head ? nameOf(d.head) : 'Unassigned';
+
+      const body = `
+      <div style="display:flex;align-items:center;gap:12px;padding:4px 0 14px;border-bottom:1px solid var(--line-2)">
+        <div style="width:48px;height:48px;border-radius:14px;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0">${d.icon}</div>
+        <div style="min-width:0;flex:1">
+          <div style="font-size:16px;font-weight:700;color:var(--ink);font-family:var(--f-head)">${esc(d.name)}</div>
+          <div style="font-size:12px;color:var(--ink-3);margin-top:2px">Head: <b>${esc(headName)}</b> · ${m.volunteers} Sevaites · ${m.completion}% Done</div>
+        </div>
+      </div>
+      <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px">
+        <button type="button" class="btn" data-act="dept-action-open" data-route="${route}" style="display:flex;align-items:center;justify-content:flex-start;gap:12px;padding:12px 14px;min-height:46px;width:100%;text-align:left;border-radius:12px;font-size:13.5px;font-weight:600">
+          <span style="font-size:18px">🚀</span>
+          <span style="flex:1">Open Department Dashboard</span>
+          <span style="color:var(--ink-3);font-size:14px">›</span>
+        </button>
+        <button type="button" class="btn" data-act="dept-action-edit" data-id="${d.id}" style="display:flex;align-items:center;justify-content:flex-start;gap:12px;padding:12px 14px;min-height:46px;width:100%;text-align:left;border-radius:12px;font-size:13.5px;font-weight:600">
+          <span style="font-size:18px">✏️</span>
+          <span style="flex:1">Edit Department Details</span>
+          <span style="color:var(--ink-3);font-size:14px">›</span>
+        </button>
+        ${can('assign') ? `
+        <button type="button" class="btn" data-act="dept-action-assign" data-id="${d.id}" style="display:flex;align-items:center;justify-content:flex-start;gap:12px;padding:12px 14px;min-height:46px;width:100%;text-align:left;border-radius:12px;font-size:13.5px;font-weight:600">
+          <span style="font-size:18px">📋</span>
+          <span style="flex:1">Assign Seva</span>
+          <span style="color:var(--ink-3);font-size:14px">›</span>
+        </button>` : ''}
+        <button type="button" class="btn" data-act="dept-action-sops" style="display:flex;align-items:center;justify-content:flex-start;gap:12px;padding:12px 14px;min-height:46px;width:100%;text-align:left;border-radius:12px;font-size:13.5px;font-weight:600">
+          <span style="font-size:18px">📘</span>
+          <span style="flex:1">Department SOPs</span>
+          <span style="color:var(--ink-3);font-size:14px">›</span>
+        </button>
+        <button type="button" class="btn danger" data-act="dept-action-remove" data-id="${d.id}" style="display:flex;align-items:center;justify-content:flex-start;gap:12px;padding:12px 14px;min-height:46px;width:100%;text-align:left;border-radius:12px;font-size:13.5px;font-weight:600;background:rgba(220,53,69,0.08);color:var(--danger);border-color:rgba(220,53,69,0.25)">
+          <span style="font-size:18px">🗑️</span>
+          <span style="flex:1">Remove from Dept Hub</span>
+          <span style="color:var(--danger);font-size:14px">›</span>
+        </button>
+      </div>`;
+
+      openDetailSheet({
+        title: 'Department Actions',
+        body,
+        footerBtns: [{ label: 'Done', pri: false, act: 'close-detail-sheet' }]
+      });
+    }
+
+    function initDeptTileGestures(container) {
+      if (!container) return;
+      container.querySelectorAll('.dept-tile-card').forEach(card => {
+        let timer = null;
+        let startX = 0, startY = 0;
+        const deptId = card.dataset.id;
+
+        card.addEventListener('touchstart', e => {
+          if (e.touches.length !== 1) return;
+          startX = e.touches[0].clientX;
+          startY = e.touches[0].clientY;
+          card.classList.add('dept-touch-holding');
+          timer = setTimeout(() => {
+            APP._justLongPressed = true;
+            card.classList.remove('dept-touch-holding');
+            if (navigator.vibrate) {
+              try { navigator.vibrate(15); } catch (_) {}
+            }
+            openDeptActionSheet(deptId);
+            setTimeout(() => { APP._justLongPressed = false; }, 400);
+          }, 500);
+        }, { passive: true });
+
+        card.addEventListener('touchmove', e => {
+          if (!timer) return;
+          const dx = Math.abs(e.touches[0].clientX - startX);
+          const dy = Math.abs(e.touches[0].clientY - startY);
+          if (dx > 8 || dy > 8) {
+            clearTimeout(timer);
+            timer = null;
+            card.classList.remove('dept-touch-holding');
+          }
+        }, { passive: true });
+
+        card.addEventListener('touchend', () => {
+          if (timer) {
+            clearTimeout(timer);
+            timer = null;
+          }
+          card.classList.remove('dept-touch-holding');
+        }, { passive: true });
+
+        card.addEventListener('touchcancel', () => {
+          if (timer) {
+            clearTimeout(timer);
+            timer = null;
+          }
+          card.classList.remove('dept-touch-holding');
+        }, { passive: true });
       });
     }
 
@@ -25542,18 +25724,23 @@
         const dotColor = isOk ? 'var(--green)' : isWarn ? 'var(--amber)' : 'var(--danger)';
         const pillarRoutes = { morning: '#/attendance', deity: '#/dept/' + d.id, cleaning: '#/dept/' + d.id, accounts: '#/accounts' };
         const route = (d.module && pillarRoutes[d.module]) || (d.name && d.name.toLowerCase().includes('accounts') ? '#/accounts' : '#/dept/' + d.id);
-        return `<div class="card pad dept-tile-card" style="display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden;border-left:3px solid ${gFrom};transition:box-shadow .18s ease,transform .18s ease"
+
+        const cardContent = `<div class="card pad dept-tile-card" data-act="open-dept-card" data-route="${route}" data-id="${d.id}" role="button" tabindex="0"
+      style="display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden;border-left:3px solid ${gFrom};cursor:pointer;transition:box-shadow .18s ease,transform .18s ease"
       onmouseenter="this.style.boxShadow='0 8px 28px -6px ${gFrom}33';this.style.transform='translateY(-2px)'"
       onmouseleave="this.style.boxShadow='';this.style.transform=''">
       <div style="position:absolute;right:-10px;top:-10px;font-size:50px;opacity:0.07;pointer-events:none;line-height:1">${d.icon}</div>
-      <a href="${route}" style="text-decoration:none;color:inherit;display:block">
+      <div>
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
           <div style="width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,${gFrom},${gTo});display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;box-shadow:0 3px 10px ${gFrom}44">${d.icon}</div>
           <div style="min-width:0;flex:1">
             <div style="font-weight:800;font-size:14px;font-family:var(--f-head);color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(d.name)}</div>
             <div style="font-size:11.5px;color:var(--ink-3);margin-top:1px">${esc(d.desc.slice(0, 52))}${d.desc.length > 52 ? '…' : ''}</div>
           </div>
-          <span style="width:9px;height:9px;border-radius:50%;background:${dotColor};flex-shrink:0;margin-top:2px" title="${m.completion}% completion"></span>
+          <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+            <button type="button" class="dept-tile-dots" data-act="open-dept-menu" data-id="${d.id}" aria-label="Department actions" title="More options" onclick="event.stopPropagation()">⋯</button>
+            <span style="width:9px;height:9px;border-radius:50%;background:${dotColor};flex-shrink:0" title="${m.completion}% completion"></span>
+          </div>
         </div>
         <div style="display:flex;gap:8px;margin-bottom:8px">
           <div style="flex:1;background:var(--paper-2);border-radius:8px;padding:6px 8px;border:1px solid var(--line-2);text-align:center">
@@ -25570,15 +25757,17 @@
           </div>
         </div>
         ${prog(m.completion, isOk ? 'var(--green)' : isWarn ? 'var(--amber)' : 'var(--danger)')}
-      </a>
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:12px;padding-top:10px;border-top:1px solid var(--line-2)">
-        <a href="${route}" class="btn sm" style="text-decoration:none;font-weight:600">Open &rarr;</a>
-        <div style="display:flex;gap:5px">
-          <button class="btn sm" data-act="edit-dept" data-id="${d.id}" title="Edit department">✏️ Edit</button>
-          <button class="btn sm danger" data-act="remove-dept" data-id="${d.id}" title="Remove department from Dept Hub">🗑️ Remove</button>
-        </div>
+      </div>
+      <div class="dept-tile-footer" style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;padding-top:8px;border-top:1px solid var(--line-2);font-size:11px;color:var(--ink-3)">
+        <span>Tap to open · Hold for options</span>
+        <span style="font-size:13px;font-weight:700;color:var(--accent)">›</span>
       </div>
     </div>`;
+
+        return swipeRow(cardContent, [
+          { cls: 'edit', icon: '✏️', label: 'Edit', act: 'edit-dept', id: d.id },
+          { cls: 'delete', icon: '🗑️', label: 'Remove', act: 'remove-dept', id: d.id }
+        ], 'dept-swipe-wrap');
       }
 
       const deptTiles = activeList.length
@@ -41297,6 +41486,7 @@ label {
       const viewEl = document.querySelector('.view');
       if (viewEl) {
         initSwipeRows(viewEl);
+        initDeptTileGestures(viewEl);
         initMobTabs(viewEl);
       }
       if (APP.mobileNavOpen) {
@@ -42630,6 +42820,70 @@ label {
           drillList(dept(id).name + ' — ' + kind, acts, `${acts.length} records behind this number`); break
         }
         /* ---- departments ---- */
+        case 'open-dept-card': {
+          if (APP._justLongPressed) break;
+          const wrap = t.closest('.swipe-row-wrap');
+          if (wrap && wrap.classList.contains('revealed')) {
+            wrap.classList.remove('revealed');
+            const c = wrap.querySelector('.swipe-row-content');
+            if (c) c.style.transform = '';
+            break;
+          }
+          const route = t.dataset.route || (id ? '#/dept/' + id : '');
+          if (route) go(route);
+          break;
+        }
+        case 'open-dept-menu': {
+          stop();
+          if (id) openDeptActionSheet(id);
+          break;
+        }
+        case 'dept-action-open': {
+          stop();
+          closeDetailSheet();
+          const route = t.dataset.route;
+          if (route) go(route);
+          break;
+        }
+        case 'dept-action-edit': {
+          stop();
+          closeDetailSheet();
+          if (id) openDeptForm(id);
+          break;
+        }
+        case 'dept-action-assign': {
+          stop();
+          closeDetailSheet();
+          APP.draft.assign = null;
+          const asd = assignDraft();
+          asd.type = 'Seva';
+          if (id) asd.dept = id;
+          APP.fabOpen = false;
+          APP.modal = 'assign';
+          render();
+          break;
+        }
+        case 'dept-action-sops': {
+          stop();
+          closeDetailSheet();
+          go('#/sops');
+          break;
+        }
+        case 'dept-action-remove': {
+          stop();
+          closeDetailSheet();
+          if (id) {
+            const d = dept(id);
+            if (d && confirm(`Are you sure you want to remove the "${d.name}" department from Dept Hub?`)) {
+              d.status = 'Archived';
+              logAudit('Department removed from Hub', d.name);
+              saveDepartments(d);
+              toast(d.name + ' removed from Hub', '🗑️');
+              render();
+            }
+          }
+          break;
+        }
         case 'add-dept': openDeptForm(null); break;
         case 'edit-dept': stop(); openDeptForm(id); break;
         case 'save-dept': {
