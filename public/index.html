@@ -3509,15 +3509,16 @@
     }
 
     .btn.pri {
-      background: linear-gradient(135deg, #FF7A00 0%, #EA580C 100%);
-      border-color: transparent;
-      color: #FFF;
-      box-shadow: 0 2px 8px rgba(234, 88, 12, 0.32), 0 1px 2px rgba(0, 0, 0, 0.1);
+      background: linear-gradient(135deg, #F6DA6A 0%, #E8C34A 55%, #D4A72C 100%);
+      border-color: rgba(232, 195, 74, 0.75);
+      color: #21163F;
+      font-weight: 800;
+      box-shadow: 0 3px 12px rgba(232, 195, 74, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.45);
     }
 
     .btn.pri:hover {
-      background: linear-gradient(135deg, #FF8C1A 0%, #F97316 100%);
-      box-shadow: 0 6px 18px rgba(234, 88, 12, 0.45);
+      background: linear-gradient(135deg, #F9E27E 0%, #F6DA6A 55%, #E8C34A 100%);
+      box-shadow: 0 6px 20px rgba(232, 195, 74, 0.48), inset 0 1px 0 rgba(255, 255, 255, 0.55);
       transform: translateY(-1px);
     }
 
@@ -7105,11 +7106,11 @@
       width: 54px;
       height: 54px;
       border-radius: 50%;
-      background: linear-gradient(135deg, var(--saffron), var(--saffron-2));
-      color: #fff;
+      background: linear-gradient(135deg, #F6DA6A 0%, #E8C34A 55%, #D4A72C 100%);
+      color: #21163F;
       display: grid;
       place-items: center;
-      box-shadow: 0 4px 16px rgba(224, 96, 18, .35);
+      box-shadow: 0 4px 18px rgba(232, 195, 74, .45);
       transition: transform .2s, box-shadow .2s
     }
 
@@ -9150,9 +9151,10 @@
     }
 
     .pillar-calendar-row>.dash-cal-col .btn.sm.pri {
-      background: linear-gradient(135deg, #FF7A00 0%, #EA580C 100%);
-      color: #fff;
-      box-shadow: 0 1px 1px rgba(255, 255, 255, 0.3) inset, 0 3px 8px rgba(234, 88, 12, 0.35);
+      background: linear-gradient(135deg, #F6DA6A 0%, #E8C34A 55%, #D4A72C 100%);
+      color: #21163F;
+      font-weight: 800;
+      box-shadow: 0 1px 1px rgba(255, 255, 255, 0.45) inset, 0 3px 10px rgba(232, 195, 74, 0.38);
     }
 
     .pillar-calendar-row>.dash-cal-col a[href*="#/activity/"] {
@@ -9634,20 +9636,20 @@
       border: 1px solid rgba(251, 113, 133, 0.45) !important;
     }
 
-    /* Buttons in Dark Mode */
+    /* Buttons in Dark Mode — Sastra Nidhi Golden Gradient */
     [data-theme="dark"] .btn.pri,
     [data-theme="dark"] button.pri {
-      background: linear-gradient(135deg, #FF7A00 0%, #EA580C 100%) !important;
-      color: #FFFFFF !important;
-      border: none !important;
-      font-weight: 700 !important;
-      box-shadow: 0 3px 12px rgba(234, 88, 12, 0.42) !important;
+      background: linear-gradient(135deg, #F6DA6A 0%, #E8C34A 55%, #D4A72C 100%) !important;
+      color: #21163F !important;
+      border: 1px solid rgba(243, 223, 160, 0.75) !important;
+      font-weight: 800 !important;
+      box-shadow: 0 4px 16px rgba(232, 195, 74, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.45) !important;
     }
 
     [data-theme="dark"] .btn.pri:hover,
     [data-theme="dark"] button.pri:hover {
-      background: linear-gradient(135deg, #FF8C00 0%, #F97316 100%) !important;
-      box-shadow: 0 4px 18px rgba(234, 88, 12, 0.55) !important;
+      background: linear-gradient(135deg, #F9E27E 0%, #F6DA6A 55%, #E8C34A 100%) !important;
+      box-shadow: 0 6px 22px rgba(232, 195, 74, 0.52), inset 0 1px 0 rgba(255, 255, 255, 0.55) !important;
       transform: translateY(-1.5px) !important;
     }
 
@@ -9730,8 +9732,9 @@
     }
 
     [data-theme="dark"] .fab {
-      background: linear-gradient(135deg, #FF7A00, #EA580C) !important;
-      box-shadow: 0 4px 20px rgba(234, 88, 12, 0.5) !important
+      background: linear-gradient(135deg, #F6DA6A 0%, #E8C34A 55%, #D4A72C 100%) !important;
+      color: #21163F !important;
+      box-shadow: 0 4px 20px rgba(232, 195, 74, 0.48) !important
     }
 
     [data-theme="dark"] input,
@@ -12230,74 +12233,27 @@
 
       /* 3. Weekly Seva Chart (Mobile View Mode) */
       .roster-command-bar {
-        padding: 10px 12px !important;
-        gap: 10px !important;
-        border-radius: 16px !important;
-      }
-
-      .roster-seg-nav {
-        display: grid !important;
-        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-        width: 100% !important;
-        overflow-x: visible !important;
-        padding: 3px !important;
-        gap: 3px !important;
-      }
-
-      .roster-seg-btn {
-        min-height: 46px !important;
-        padding: 6px 4px !important;
-        font-size: 11.5px !important;
-        line-height: 1.15 !important;
-        white-space: normal !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        text-align: center !important;
-      }
-
-      .roster-report-period-bar {
-        display: grid !important;
-        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-        width: 100% !important;
+        padding: 8px 10px !important;
         gap: 8px !important;
-      }
-
-      .roster-report-period-bar .btn[data-act="roster-report-period"] {
-        min-height: 44px !important;
-        padding: 8px 6px !important;
-        font-size: 12px !important;
-        line-height: 1.2 !important;
-        white-space: normal !important;
-        justify-content: center !important;
-        text-align: center !important;
-      }
-
-      .roster-report-period-bar .btn[data-act="share-dept-report-photo"] {
-        grid-column: 1 / -1 !important;
-        min-height: 44px !important;
-        justify-content: center !important;
       }
 
       .roster-micro-stats-strip {
         grid-template-columns: repeat(2, 1fr) !important;
-        gap: 8px !important;
-        margin-bottom: 12px !important;
+        gap: 6px !important;
+        margin-bottom: 10px !important;
       }
 
       .roster-stat-chip {
-        padding: 8px 10px !important;
-        gap: 8px !important;
-        min-height: 50px !important;
-        border-radius: 12px !important;
+        padding: 5px 8px !important;
+        gap: 6px !important;
       }
 
       .roster-stat-chip .rsc-val {
-        font-size: 15px !important;
+        font-size: 12.5px !important;
       }
 
       .roster-stat-chip .rsc-lbl {
-        font-size: 11px !important;
+        font-size: 9.5px !important;
       }
 
       .tt-desktop-tbl {
@@ -15767,15 +15723,17 @@
     }
 
     .mob-tab-btn.on {
-      background: linear-gradient(145deg, #FF7A00 0%, #EA580C 100%) !important;
-      border: 1.5px solid rgba(255, 122, 0, 0.55) !important;
-      border-top-color: rgba(255, 160, 80, 0.80) !important;
-      border-bottom-color: rgba(180, 60, 8, 0.60) !important;
+      background: linear-gradient(135deg, #F6DA6A 0%, #E8C34A 55%, #D4A72C 100%) !important;
+      color: #21163F !important;
+      font-weight: 800 !important;
+      border: 1.5px solid rgba(243, 223, 160, 0.78) !important;
+      border-top-color: rgba(255, 248, 214, 0.9) !important;
+      border-bottom-color: rgba(169, 118, 25, 0.65) !important;
       box-shadow:
-        0 1px 0 rgba(255, 180, 100, 0.60) inset,
-        0 -1.5px 0 rgba(150, 50, 8, 0.35) inset,
-        0 3px 8px rgba(234, 88, 12, 0.40),
-        0 8px 20px rgba(234, 88, 12, 0.25) !important;
+        0 1px 0 rgba(255, 255, 255, 0.6) inset,
+        0 -1.5px 0 rgba(169, 118, 25, 0.35) inset,
+        0 3px 10px rgba(232, 195, 74, 0.42),
+        0 8px 20px rgba(232, 195, 74, 0.25) !important;
     }
 
     [data-theme="dark"] .mob-tab-btn {
@@ -15894,36 +15852,38 @@
       transform: translateY(-1.5px) !important;
     }
 
-    /* ── .btn.pri — Primary CTA with 3D saffron glass finish ── */
+    /* ── .btn.pri — Primary CTA with 3D Golden Gradient finish ── */
     .btn.pri {
-      background: linear-gradient(145deg, #FF8C1A 0%, #EA580C 55%, #C9460A 100%) !important;
-      border: 1.5px solid rgba(255, 140, 26, 0.55) !important;
-      border-top-color: rgba(255, 180, 100, 0.75) !important;
-      border-bottom-color: rgba(150, 50, 8, 0.55) !important;
+      background: linear-gradient(135deg, #F6DA6A 0%, #E8C34A 55%, #D4A72C 100%) !important;
+      color: #21163F !important;
+      font-weight: 800 !important;
+      border: 1.5px solid rgba(243, 223, 160, 0.78) !important;
+      border-top-color: rgba(255, 248, 214, 0.92) !important;
+      border-bottom-color: rgba(169, 118, 25, 0.65) !important;
       box-shadow:
-        0 1px 0 rgba(255, 180, 100, 0.55) inset,
-        0 -2px 0 rgba(150, 50, 8, 0.30) inset,
-        0 3px 8px rgba(234, 88, 12, 0.38),
-        0 8px 20px rgba(234, 88, 12, 0.22),
-        0 18px 36px rgba(234, 88, 12, 0.12) !important;
+        0 1px 0 rgba(255, 255, 255, 0.55) inset,
+        0 -2px 0 rgba(169, 118, 25, 0.30) inset,
+        0 3px 10px rgba(232, 195, 74, 0.38),
+        0 8px 20px rgba(232, 195, 74, 0.22),
+        0 18px 36px rgba(232, 195, 74, 0.12) !important;
     }
 
     .btn.pri:hover {
-      background: linear-gradient(145deg, #FF9A2E 0%, #F97316 55%, #DC6209 100%) !important;
+      background: linear-gradient(135deg, #F9E27E 0%, #F6DA6A 55%, #E8C34A 100%) !important;
       box-shadow:
-        0 1px 0 rgba(255, 190, 120, 0.65) inset,
-        0 -2px 0 rgba(160, 60, 10, 0.38) inset,
-        0 5px 14px rgba(234, 88, 12, 0.50),
-        0 14px 32px rgba(234, 88, 12, 0.30),
-        0 28px 52px rgba(234, 88, 12, 0.15) !important;
+        0 1px 0 rgba(255, 255, 255, 0.65) inset,
+        0 -2px 0 rgba(169, 118, 25, 0.38) inset,
+        0 5px 14px rgba(232, 195, 74, 0.50),
+        0 14px 32px rgba(232, 195, 74, 0.30),
+        0 28px 52px rgba(232, 195, 74, 0.15) !important;
       transform: translateY(-1.5px) !important;
     }
 
     .btn.pri:active {
       transform: translateY(1px) scale(0.98) !important;
       box-shadow:
-        0 0 0 rgba(255, 180, 100, 0) inset,
-        0 2px 4px rgba(234, 88, 12, 0.20) !important;
+        0 0 0 rgba(255, 255, 255, 0) inset,
+        0 2px 4px rgba(232, 195, 74, 0.25) !important;
     }
 
     /* ── .btn.danger-solid — Solid red destructive action buttons ── */
@@ -17124,9 +17084,10 @@
       }
 
       [data-theme="dark"] .dash-seg-btn.active {
-        background: linear-gradient(135deg, #FF7A00 0%, #EA580C 100%) !important;
-        color: #FFFFFF !important;
-        box-shadow: 0 2px 10px rgba(234, 88, 12, 0.4) !important;
+        background: linear-gradient(135deg, #F6DA6A 0%, #E8C34A 55%, #D4A72C 100%) !important;
+        color: #21163F !important;
+        font-weight: 800 !important;
+        box-shadow: 0 2px 12px rgba(232, 195, 74, 0.45) !important;
       }
 
       /* Mobile Card Switching in dash-quad-grid */
@@ -17384,13 +17345,6 @@
         font-weight: 700 !important;
         font-size: 13px !important;
         color: var(--ink) !important;
-      }
-
-      #dashCalWidget .dash-cal-day-cell.is-selected,
-      #dashCalWidget .dash-cal-day-cell.is-today,
-      #dashCalWidget .dash-cal-day-cell.is-selected span,
-      #dashCalWidget .dash-cal-day-cell.is-today span {
-        color: #FFFFFF !important;
       }
 
       /* Calendar Widget Mobile Compactness: Tight hug around content with NO bottom empty space */
@@ -17840,26 +17794,26 @@
       }
 
       [data-theme="dark"] .botnav button.on {
-        color: #FFA040 !important;
-        background: rgba(255, 122, 0, 0.16) !important;
+        color: #F6DA6A !important;
+        background: rgba(232, 195, 74, 0.16) !important;
       }
 
       /* Quick Action Plus Button integrated in Bottom Nav */
       .botnav button.botnav-fab-btn {
-        color: var(--saffron) !important;
+        color: var(--gold-deep, #A97619) !important;
         font-weight: 700 !important;
       }
 
       .botnav button.botnav-fab-btn .em {
-        color: #FFFFFF !important;
-        background: linear-gradient(135deg, #EA580C, #F97316) !important;
+        color: #21163F !important;
+        background: linear-gradient(135deg, #F6DA6A 0%, #E8C34A 55%, #D4A72C 100%) !important;
         width: 28px !important;
         height: 28px !important;
         border-radius: 50% !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
-        box-shadow: 0 2px 8px rgba(234, 88, 12, 0.4) !important;
+        box-shadow: 0 2px 10px rgba(232, 195, 74, 0.45) !important;
         margin: 0 auto 2px !important;
         transition: all .2s ease !important;
       }
@@ -30595,7 +30549,7 @@ label {
             <span>🎯</span>
             <span>Active Category: <b>${filterSt ? (filterSt === 'Attended' ? 'Present / Attended' : filterSt) : (activeBucket ? `Timeline: ${activeBucket}` : '')}</b> — <b>${rows.length}</b> devotee${rows.length !== 1 ? 's' : ''}</span>
           </div>
-          <div class="roster-report-period-bar" style="display:flex;flex-wrap:wrap;gap:6px">
+          <div style="display:flex;gap:6px">
             <button class="btn sm pri" data-act="morning-category-modal" data-s="${esc(filterSt)}" data-b="${esc(activeBucket)}" style="padding:2px 10px;font-size:11.5px">🔍 Open Category Modal</button>
             <button class="btn sm" data-act="morning-clear-filters" style="padding:2px 8px;font-size:11.5px">✕ Show All (${m.total})</button>
           </div>
@@ -34427,7 +34381,7 @@ label {
               Individual devotee metrics · Services assigned vs performed · Reliability & completion rates
             </div>
           </div>
-          <div class="roster-report-period-bar" style="display:flex;flex-wrap:wrap;gap:6px">
+          <div style="display:flex;gap:6px">
             <button class="btn sm ${reportPeriod === 'weekly' ? 'pri' : ''}" data-act="roster-report-period" data-dept="${deptKey}" data-period="weekly">
               📅 Weekly (Last 7 Days)
             </button>
@@ -40869,7 +40823,7 @@ label {
       <div class="ms-menu" id="ms-menu-${esc(f.n)}" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:#ffffff;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:0 12px 36px rgba(0,0,0,0.22),0 2px 8px rgba(0,0,0,0.08);z-index:10000;padding:8px;box-sizing:border-box">
         <div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:8px;border-bottom:1px solid var(--line);margin-bottom:6px;background:inherit">
           <input type="text" class="ms-search" data-act="ms-search" data-name="${esc(f.n)}" placeholder="Filter facilitators..." style="flex:1;min-width:0;padding:6px 10px;border:1px solid var(--line);border-radius:6px;font-size:12.5px;background:var(--surface-2);color:var(--ink);margin-right:8px">
-          <div class="roster-report-period-bar" style="display:flex;flex-wrap:wrap;gap:6px">
+          <div style="display:flex;gap:6px">
             <button type="button" class="btn sm" data-act="ms-select-all" data-name="${esc(f.n)}" style="padding:4px 9px;font-size:11.5px">All</button>
             <button type="button" class="btn sm" data-act="ms-clear-all" data-name="${esc(f.n)}" style="padding:4px 9px;font-size:11.5px">Clear</button>
           </div>
