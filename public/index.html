@@ -84,7 +84,7 @@
       --today-w: 325px;
       --f-head: "Cinzel", "Outfit", Georgia, serif;
       --f-ui: "Manrope", "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      --f-script: "Playfair Display", "Newsreader", Georgia, serif;
+      --f-script: "Newsreader", "Georgia", serif;
       --glass: rgba(255, 250, 244, .88);
       --glass-border: rgba(200, 150, 50, 0.25);
     }
@@ -2803,15 +2803,15 @@
       font-family: var(--f-script);
       font-style: italic;
       color: #FDE68A;
-      margin-top: 11px;
-      font-size: 16.5px;
-      font-weight: 500;
-      line-height: 1.4;
+      margin-top: 10px;
+      font-size: 14px;
+      font-weight: 400;
+      line-height: 1.45;
       text-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
-      letter-spacing: 0.02em;
+      letter-spacing: 0.01em;
       display: flex;
       align-items: flex-start;
-      gap: 8px;
+      gap: 7px;
     }
 
     .hero .quote:before {
@@ -9901,10 +9901,10 @@
     }
 
     .nectar-quote-text {
-      font-family: 'Caveat', cursive;
-      font-size: 21px;
-      line-height: 1.42;
-      font-weight: 600;
+      font-family: var(--f-script);
+      font-size: 14.5px;
+      line-height: 1.45;
+      font-weight: 400;
       color: var(--ink);
       margin: 4px 0 6px 0;
     }
@@ -9954,8 +9954,8 @@
       }
 
       .nectar-quote-text {
-        font-size: 16.8px !important;
-        line-height: 1.34 !important;
+        font-size: 14px !important;
+        line-height: 1.4 !important;
         margin: 2px 0 4px 0 !important;
       }
 
@@ -11768,21 +11768,21 @@
       justify-content: space-between;
       gap: 12px;
       flex-wrap: wrap;
-      padding: 12px 16px;
-      margin-bottom: 14px;
-      border-radius: 16px;
+      padding: 10px 14px;
+      margin-bottom: 12px;
+      border-radius: 12px;
       background: var(--surface);
       border: 1px solid var(--line);
-      box-shadow: var(--sh-card);
+      box-shadow: var(--sh-s);
     }
 
     .roster-seg-nav {
       display: inline-flex;
       background: var(--paper-2);
       border: 1px solid var(--line-2);
-      border-radius: 12px;
-      padding: 4px;
-      gap: 4px;
+      border-radius: 10px;
+      padding: 3px;
+      gap: 3px;
       max-width: 100%;
       overflow-x: auto;
       scrollbar-width: none;
@@ -11795,15 +11795,14 @@
     .roster-seg-btn {
       border: none;
       background: transparent;
-      min-height: 38px;
-      padding: 7px 14px;
-      font-size: 13.5px;
+      padding: 5px 12px;
+      font-size: 12px;
       font-weight: 600;
       color: var(--ink-2);
-      border-radius: 9px;
+      border-radius: 8px;
       cursor: pointer;
       white-space: nowrap;
-      transition: all .18s ease;
+      transition: all .15s ease;
       font-family: inherit;
     }
 
@@ -11813,41 +11812,40 @@
     }
 
     .roster-seg-btn.active {
-      background: linear-gradient(135deg, var(--saffron) 0%, #F5A623 100%);
+      background: var(--saffron);
       color: #fff;
       font-weight: 700;
-      box-shadow: 0 2px 12px rgba(255, 140, 0, 0.38);
+      box-shadow: 0 1px 4px rgba(234, 88, 12, 0.3);
     }
 
     .roster-micro-stats-strip {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 10px;
-      margin-bottom: 16px;
+      gap: 8px;
+      margin-bottom: 14px;
     }
 
     .roster-stat-chip {
       background: var(--surface);
       border: 1px solid var(--line);
-      border-radius: 13px;
-      padding: 10px 14px;
+      border-radius: 10px;
+      padding: 6px 10px;
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
       cursor: pointer;
-      transition: all .18s ease;
+      transition: all .15s ease;
       min-width: 0;
-      box-shadow: var(--sh-1);
     }
 
     .roster-stat-chip:hover {
       border-color: var(--saffron);
-      transform: translateY(-2px);
-      box-shadow: var(--sh-card-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
     }
 
     .roster-stat-chip .rsc-icon {
-      font-size: 20px;
+      font-size: 16px;
       line-height: 1;
       flex-shrink: 0;
     }
@@ -11856,11 +11854,11 @@
       min-width: 0;
       display: flex;
       flex-direction: column;
-      line-height: 1.2;
+      line-height: 1.15;
     }
 
     .roster-stat-chip .rsc-val {
-      font-size: 16px;
+      font-size: 13.5px;
       font-weight: 800;
       color: var(--ink);
       white-space: nowrap;
@@ -11870,12 +11868,12 @@
     }
 
     .roster-stat-chip .rsc-lbl {
-      font-size: 11.5px;
+      font-size: 10px;
       color: var(--ink-3);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      margin-top: 2px;
+      margin-top: 1px;
     }
 
     .roster-desk-cell {
@@ -11948,22 +11946,19 @@
     .tt-mob-card {
       background: var(--surface);
       border: 1px solid var(--line);
-      border-radius: 14px;
-      padding: 14px;
-      transition: all .18s ease;
-      box-shadow: var(--sh-card);
+      border-radius: 10px;
+      padding: 10px 12px;
+      transition: all .15s ease;
     }
 
     .tt-slot-box {
       background: var(--paper-2);
       border: 1px solid var(--line-2);
-      border-radius: 10px;
-      padding: 9px 12px;
-      min-height: 48px;
+      border-radius: 8px;
+      padding: 6px 9px;
       display: flex;
       flex-direction: column;
-      justify-content: center;
-      gap: 4px;
+      gap: 3px;
       cursor: pointer;
       transition: all .15s ease;
       min-width: 0;
@@ -12226,40 +12221,27 @@
 
       /* 3. Weekly Seva Chart (Mobile View Mode) */
       .roster-command-bar {
-        padding: 12px 14px !important;
-        gap: 10px !important;
-        border-radius: 16px !important;
-      }
-
-      .roster-seg-btn {
-        min-height: 44px !important;
-        padding: 8px 15px !important;
-        font-size: 14px !important;
+        padding: 8px 10px !important;
+        gap: 8px !important;
       }
 
       .roster-micro-stats-strip {
         grid-template-columns: repeat(2, 1fr) !important;
-        gap: 8px !important;
-        margin-bottom: 14px !important;
+        gap: 6px !important;
+        margin-bottom: 10px !important;
       }
 
       .roster-stat-chip {
-        padding: 10px 12px !important;
-        gap: 8px !important;
-        min-height: 54px !important;
-        border-radius: 12px !important;
-      }
-
-      .roster-stat-chip .rsc-icon {
-        font-size: 20px !important;
+        padding: 5px 8px !important;
+        gap: 6px !important;
       }
 
       .roster-stat-chip .rsc-val {
-        font-size: 16px !important;
+        font-size: 12.5px !important;
       }
 
       .roster-stat-chip .rsc-lbl {
-        font-size: 11.5px !important;
+        font-size: 9.5px !important;
       }
 
       .tt-desktop-tbl {
@@ -16708,10 +16690,10 @@
     }
 
     .hero .quote {
-      font-size: 16.5px !important;
+      font-size: 14px !important;
       line-height: 1.45 !important;
       color: #FEF08A !important;
-      font-weight: 500 !important;
+      font-weight: 400 !important;
     }
 
     .hero-header p {
@@ -16954,10 +16936,10 @@
 
       .hero .quote {
         color: var(--ink-2) !important;
-        font-size: 16.5px !important;
+        font-size: 13.5px !important;
         font-family: var(--f-script) !important;
         font-style: italic !important;
-        font-weight: 500 !important;
+        font-weight: 400 !important;
         line-height: 1.45 !important;
         text-shadow: none !important;
         margin-top: 8px !important;
@@ -19202,9 +19184,9 @@
     .dash-quad-grid .nectar-quote-text {
       font-family: var(--f-script) !important;
       font-style: italic !important;
-      font-size: 15.5px !important;
-      line-height: 1.5 !important;
-      font-weight: 500 !important;
+      font-size: 14px !important;
+      line-height: 1.48 !important;
+      font-weight: 400 !important;
       color: var(--ink) !important;
       margin: 3px 0 4px 0 !important;
       max-height: none !important;
@@ -19278,9 +19260,9 @@
       .dash-quad-grid .nectar-quote-text {
         font-family: var(--f-script) !important;
         font-style: italic !important;
-        font-size: 18.5px !important;
-        line-height: 1.48 !important;
-        font-weight: 500 !important;
+        font-size: 14.5px !important;
+        line-height: 1.45 !important;
+        font-weight: 400 !important;
       }
 
       .nectar-citation,
