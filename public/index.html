@@ -12230,27 +12230,74 @@
 
       /* 3. Weekly Seva Chart (Mobile View Mode) */
       .roster-command-bar {
-        padding: 8px 10px !important;
+        padding: 10px 12px !important;
+        gap: 10px !important;
+        border-radius: 16px !important;
+      }
+
+      .roster-seg-nav {
+        display: grid !important;
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        width: 100% !important;
+        overflow-x: visible !important;
+        padding: 3px !important;
+        gap: 3px !important;
+      }
+
+      .roster-seg-btn {
+        min-height: 46px !important;
+        padding: 6px 4px !important;
+        font-size: 11.5px !important;
+        line-height: 1.15 !important;
+        white-space: normal !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        text-align: center !important;
+      }
+
+      .roster-report-period-bar {
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        width: 100% !important;
         gap: 8px !important;
+      }
+
+      .roster-report-period-bar .btn[data-act="roster-report-period"] {
+        min-height: 44px !important;
+        padding: 8px 6px !important;
+        font-size: 12px !important;
+        line-height: 1.2 !important;
+        white-space: normal !important;
+        justify-content: center !important;
+        text-align: center !important;
+      }
+
+      .roster-report-period-bar .btn[data-act="share-dept-report-photo"] {
+        grid-column: 1 / -1 !important;
+        min-height: 44px !important;
+        justify-content: center !important;
       }
 
       .roster-micro-stats-strip {
         grid-template-columns: repeat(2, 1fr) !important;
-        gap: 6px !important;
-        margin-bottom: 10px !important;
+        gap: 8px !important;
+        margin-bottom: 12px !important;
       }
 
       .roster-stat-chip {
-        padding: 5px 8px !important;
-        gap: 6px !important;
+        padding: 8px 10px !important;
+        gap: 8px !important;
+        min-height: 50px !important;
+        border-radius: 12px !important;
       }
 
       .roster-stat-chip .rsc-val {
-        font-size: 12.5px !important;
+        font-size: 15px !important;
       }
 
       .roster-stat-chip .rsc-lbl {
-        font-size: 9.5px !important;
+        font-size: 11px !important;
       }
 
       .tt-desktop-tbl {
@@ -17337,6 +17384,13 @@
         font-weight: 700 !important;
         font-size: 13px !important;
         color: var(--ink) !important;
+      }
+
+      #dashCalWidget .dash-cal-day-cell.is-selected,
+      #dashCalWidget .dash-cal-day-cell.is-today,
+      #dashCalWidget .dash-cal-day-cell.is-selected span,
+      #dashCalWidget .dash-cal-day-cell.is-today span {
+        color: #FFFFFF !important;
       }
 
       /* Calendar Widget Mobile Compactness: Tight hug around content with NO bottom empty space */
@@ -30541,7 +30595,7 @@ label {
             <span>🎯</span>
             <span>Active Category: <b>${filterSt ? (filterSt === 'Attended' ? 'Present / Attended' : filterSt) : (activeBucket ? `Timeline: ${activeBucket}` : '')}</b> — <b>${rows.length}</b> devotee${rows.length !== 1 ? 's' : ''}</span>
           </div>
-          <div style="display:flex;gap:6px">
+          <div class="roster-report-period-bar" style="display:flex;flex-wrap:wrap;gap:6px">
             <button class="btn sm pri" data-act="morning-category-modal" data-s="${esc(filterSt)}" data-b="${esc(activeBucket)}" style="padding:2px 10px;font-size:11.5px">🔍 Open Category Modal</button>
             <button class="btn sm" data-act="morning-clear-filters" style="padding:2px 8px;font-size:11.5px">✕ Show All (${m.total})</button>
           </div>
@@ -34373,7 +34427,7 @@ label {
               Individual devotee metrics · Services assigned vs performed · Reliability & completion rates
             </div>
           </div>
-          <div style="display:flex;gap:6px">
+          <div class="roster-report-period-bar" style="display:flex;flex-wrap:wrap;gap:6px">
             <button class="btn sm ${reportPeriod === 'weekly' ? 'pri' : ''}" data-act="roster-report-period" data-dept="${deptKey}" data-period="weekly">
               📅 Weekly (Last 7 Days)
             </button>
@@ -40815,7 +40869,7 @@ label {
       <div class="ms-menu" id="ms-menu-${esc(f.n)}" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:#ffffff;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:0 12px 36px rgba(0,0,0,0.22),0 2px 8px rgba(0,0,0,0.08);z-index:10000;padding:8px;box-sizing:border-box">
         <div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:8px;border-bottom:1px solid var(--line);margin-bottom:6px;background:inherit">
           <input type="text" class="ms-search" data-act="ms-search" data-name="${esc(f.n)}" placeholder="Filter facilitators..." style="flex:1;min-width:0;padding:6px 10px;border:1px solid var(--line);border-radius:6px;font-size:12.5px;background:var(--surface-2);color:var(--ink);margin-right:8px">
-          <div style="display:flex;gap:6px">
+          <div class="roster-report-period-bar" style="display:flex;flex-wrap:wrap;gap:6px">
             <button type="button" class="btn sm" data-act="ms-select-all" data-name="${esc(f.n)}" style="padding:4px 9px;font-size:11.5px">All</button>
             <button type="button" class="btn sm" data-act="ms-clear-all" data-name="${esc(f.n)}" style="padding:4px 9px;font-size:11.5px">Clear</button>
           </div>
