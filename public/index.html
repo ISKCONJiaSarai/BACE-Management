@@ -162,70 +162,6 @@
       100% { left: 125%; }
     }
 
-    @keyframes goldSheen {
-      0%   { transform: translateX(-140%) skewX(-22deg); opacity: 0; }
-      18%  { opacity: 0.9; }
-      82%  { opacity: 0.75; }
-      100% { transform: translateX(260%) skewX(-22deg); opacity: 0; }
-    }
-
-    /* ── Shine once on appear + replay on click (.is-shining) for Golden Buttons & Cards ── */
-    .btn.pri,
-    button.pri,
-    .roster-seg-btn.active,
-    .mob-tab-btn.on,
-    .mobile-today-btn,
-    .fab,
-    [data-theme="dark"] .dash-seg-btn.active {
-      position: relative;
-      overflow: hidden !important;
-    }
-
-    .btn.pri::after,
-    button.pri::after,
-    .roster-seg-btn.active::after,
-    .mob-tab-btn.on::after,
-    .mobile-today-btn::after,
-    .fab::after,
-    [data-theme="dark"] .dash-seg-btn.active::after {
-      content: "";
-      position: absolute;
-      top: -20%;
-      left: 0;
-      width: 42%;
-      height: 140%;
-      background: linear-gradient(105deg, transparent 0%, rgba(255, 255, 255, 0.72) 50%, transparent 100%);
-      pointer-events: none;
-      transform: translateX(-140%) skewX(-22deg);
-      animation: goldSheen 0.95s cubic-bezier(0.22, 1, 0.36, 1) 0.12s 1 both;
-      z-index: 3;
-    }
-
-    .nectar-card-wrapper::after {
-      content: "";
-      position: absolute;
-      top: -20%;
-      left: 0;
-      width: 38%;
-      height: 140%;
-      background: linear-gradient(105deg, transparent 0%, rgba(255, 248, 214, 0.52) 50%, transparent 100%);
-      pointer-events: none;
-      transform: translateX(-140%) skewX(-22deg);
-      animation: goldSheen 1.1s cubic-bezier(0.22, 1, 0.36, 1) 0.2s 1 both;
-      z-index: 2;
-    }
-
-    .btn.pri.is-shining::after,
-    button.pri.is-shining::after,
-    .roster-seg-btn.active.is-shining::after,
-    .mob-tab-btn.on.is-shining::after,
-    .mobile-today-btn.is-shining::after,
-    .fab.is-shining::after,
-    .nectar-card-wrapper.is-shining::after,
-    [data-theme="dark"] .dash-seg-btn.active.is-shining::after {
-      animation: goldSheen 0.72s cubic-bezier(0.22, 1, 0.36, 1) 1 both !important;
-    }
-
     @keyframes glowPulseGreen {
       0%,100% { box-shadow: 0 0 8px rgba(47, 104, 79, 0.35); }
       50%      { box-shadow: 0 0 18px rgba(52, 211, 153, 0.7); }
@@ -395,6 +331,124 @@
     [data-theme="light"] .dept-tile-card:hover {
       border-color: rgba(232, 195, 74, 0.65);
       box-shadow: 0 12px 32px rgba(69, 33, 139, 0.14), 0 0 16px rgba(232, 195, 74, 0.2);
+    }
+
+    /* ── Light Mode Color Gradations & Dark Mode Parity ── */
+    [data-theme="light"] .app-header {
+      background: rgba(248, 246, 253, 0.92) !important;
+      border-bottom: 1px solid rgba(69, 33, 139, 0.14) !important;
+    }
+
+    [data-theme="light"] .crumbs .crumb.on,
+    [data-theme="light"] .crumbs a.crumb {
+      background: linear-gradient(135deg, #EFE8FB 0%, #FFFFFF 100%) !important;
+      border-color: rgba(69, 33, 139, 0.18) !important;
+      color: #45218B !important;
+    }
+
+    /* Pulse Stat Pills — 3 Distinct Jewel-Tone Gradations */
+    [data-theme="light"] .ashram-pulse-row .pulse-pill:nth-child(1) {
+      background: linear-gradient(135deg, #FFF6DC 0%, #FFFFFF 100%) !important;
+      border: 1px solid rgba(232, 195, 74, 0.45) !important;
+    }
+    [data-theme="light"] .ashram-pulse-row .pulse-pill:nth-child(1) .pulse-val { color: #A97619 !important; }
+
+    [data-theme="light"] .ashram-pulse-row .pulse-pill:nth-child(2) {
+      background: linear-gradient(135deg, #E3F4F6 0%, #FFFFFF 100%) !important;
+      border: 1px solid rgba(31, 94, 110, 0.28) !important;
+    }
+    [data-theme="light"] .ashram-pulse-row .pulse-pill:nth-child(2) .pulse-val { color: #1F5E6E !important; }
+
+    [data-theme="light"] .ashram-pulse-row .pulse-pill:nth-child(3) {
+      background: linear-gradient(135deg, #EFE8FB 0%, #FFFFFF 100%) !important;
+      border: 1px solid rgba(69, 33, 139, 0.25) !important;
+    }
+    [data-theme="light"] .ashram-pulse-row .pulse-pill:nth-child(3) .pulse-val { color: #45218B !important; }
+
+    /* Management | Preaching Switcher in Light Mode */
+    [data-theme="light"] .mobile-dash-segment-bar {
+      background: #E8E1F7 !important;
+      border: 1px solid rgba(69, 33, 139, 0.16) !important;
+    }
+    [data-theme="light"] .dash-seg-btn.active {
+      background: linear-gradient(135deg, #45218B 0%, #6933C9 100%) !important;
+      color: #FFFFFF !important;
+      box-shadow: 0 3px 12px rgba(69, 33, 139, 0.28) !important;
+    }
+
+    /* Dashboard Hub Cards — Peach-Gold (Mgmt) & Lavender-Indigo (Preach) */
+    [data-theme="light"] [data-mob-card="mgmt"],
+    [data-theme="light"] .dash-bento-mgmt {
+      background: linear-gradient(135deg, #FFF3E6 0%, #FFFDF9 100%) !important;
+      border: 1px solid rgba(168, 72, 26, 0.22) !important;
+    }
+    [data-theme="light"] [data-mob-card="preach"],
+    [data-theme="light"] .dash-bento-preach {
+      background: linear-gradient(135deg, #EFE8FB 0%, #FFFFFF 100%) !important;
+      border: 1px solid rgba(69, 33, 139, 0.2) !important;
+    }
+
+    /* Department Pages (Deity & Cleaning) — Bright Royal Violet Command Bar in Light Mode */
+    [data-theme="light"] .roster-command-bar {
+      background: linear-gradient(125deg, #3A1C82 0%, #5129A8 65%, #6933C9 100%) !important;
+      border-color: rgba(232, 195, 74, 0.45) !important;
+      box-shadow: 0 10px 26px rgba(69, 33, 139, 0.2) !important;
+      color: #FFFFFF !important;
+    }
+    [data-theme="light"] .roster-command-bar div,
+    [data-theme="light"] .roster-command-bar .tiny {
+      color: #FFFFFF !important;
+    }
+    [data-theme="light"] .roster-command-bar .badge {
+      background: rgba(255, 255, 255, 0.16) !important;
+      color: #F6DA6A !important;
+      border-color: rgba(246, 218, 106, 0.4) !important;
+    }
+    [data-theme="light"] .roster-command-bar .roster-seg-nav {
+      background: rgba(20, 11, 46, 0.35) !important;
+      border-color: rgba(232, 195, 74, 0.25) !important;
+    }
+    [data-theme="light"] .roster-command-bar .roster-seg-btn {
+      color: rgba(255, 255, 255, 0.88) !important;
+    }
+    [data-theme="light"] .roster-command-bar .roster-seg-btn.active {
+      color: #21163F !important;
+    }
+
+    /* Roster Micro Stat Chips — 4 Distinct Jewel-Tone Gradations in Light Mode */
+    [data-theme="light"] .roster-micro-stats-strip .roster-stat-chip:nth-child(1) {
+      background: linear-gradient(135deg, #E6F7F0 0%, #FFFFFF 100%) !important;
+      border-color: rgba(47, 104, 79, 0.26) !important;
+    }
+    [data-theme="light"] .roster-micro-stats-strip .roster-stat-chip:nth-child(2) {
+      background: linear-gradient(135deg, #EAF2FF 0%, #FFFFFF 100%) !important;
+      border-color: rgba(43, 58, 140, 0.24) !important;
+    }
+    [data-theme="light"] .roster-micro-stats-strip .roster-stat-chip:nth-child(3) {
+      background: linear-gradient(135deg, #FFF6DC 0%, #FFFFFF 100%) !important;
+      border-color: rgba(232, 195, 74, 0.45) !important;
+    }
+    [data-theme="light"] .roster-micro-stats-strip .roster-stat-chip:nth-child(4) {
+      background: linear-gradient(135deg, #F1EAFC 0%, #FFFFFF 100%) !important;
+      border-color: rgba(69, 33, 139, 0.24) !important;
+    }
+
+    /* Department Hub Tiles — Alternating Jewel-Tone Gradations in Light Mode */
+    [data-theme="light"] .g-dept-hub-tiles > *:nth-child(4n+1) .dept-tile-card {
+      background: linear-gradient(145deg, #FFF3E6 0%, #FFFFFF 100%) !important;
+      border-color: rgba(168, 72, 26, 0.24) !important;
+    }
+    [data-theme="light"] .g-dept-hub-tiles > *:nth-child(4n+2) .dept-tile-card {
+      background: linear-gradient(145deg, #E3F4F6 0%, #FFFFFF 100%) !important;
+      border-color: rgba(31, 94, 110, 0.24) !important;
+    }
+    [data-theme="light"] .g-dept-hub-tiles > *:nth-child(4n+3) .dept-tile-card {
+      background: linear-gradient(145deg, #EFE8FB 0%, #FFFFFF 100%) !important;
+      border-color: rgba(69, 33, 139, 0.24) !important;
+    }
+    [data-theme="light"] .g-dept-hub-tiles > *:nth-child(4n+4) .dept-tile-card {
+      background: linear-gradient(145deg, #E6F7F0 0%, #FFFFFF 100%) !important;
+      border-color: rgba(47, 104, 79, 0.24) !important;
     }
 
     /* ── Header: taller on mobile + Royal Violet/Gold polish ── */
@@ -1890,19 +1944,18 @@
     .mobile-today-btn {
       display: none;
       position: fixed;
-      overflow: hidden !important;
       bottom: calc(66px + env(safe-area-inset-bottom, 0px)) !important;
       left: 50% !important;
       transform: translateX(-50%) !important;
       z-index: 95 !important;
-      padding: 8px 18px !important;
-      border-radius: 999px !important;
-      background: linear-gradient(135deg, #F6DA6A 0%, #E8C34A 55%, #D4A72C 100%) !important;
-      color: #21163F !important;
-      font-size: 12.5px !important;
-      font-weight: 800 !important;
-      box-shadow: 0 4px 18px rgba(232, 195, 74, 0.48), 0 2px 6px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.55) !important;
-      border: 1.5px solid rgba(243, 223, 160, 0.85) !important;
+      padding: 6.5px 16px !important;
+      border-radius: 20px !important;
+      background: linear-gradient(135deg, #FF7A00, #EA580C) !important;
+      color: #fff !important;
+      font-size: 12px !important;
+      font-weight: 700 !important;
+      box-shadow: 0 4px 18px rgba(234, 88, 12, 0.45), 0 2px 5px rgba(0, 0, 0, 0.18) !important;
+      border: none !important;
       cursor: pointer !important;
       transition: transform .2s, box-shadow .2s !important;
       white-space: nowrap !important;
@@ -11857,8 +11910,8 @@
       background: var(--paper-2);
       border: 1px solid var(--line-2);
       border-radius: 999px;
-      padding: 3px;
-      gap: 2px;
+      padding: 4px;
+      gap: 4px;
       max-width: 100%;
       overflow-x: auto;
       scrollbar-width: none;
@@ -11872,8 +11925,8 @@
       border: none;
       background: transparent;
       min-height: 38px;
-      padding: 7px 12px;
-      font-size: 13px;
+      padding: 7px 16px;
+      font-size: 13.5px;
       font-weight: 600;
       color: var(--ink-2);
       border-radius: 999px;
@@ -12298,73 +12351,27 @@
 
       /* 3. Weekly Seva Chart (Mobile View Mode) */
       .roster-command-bar {
-        padding: 10px 10px !important;
+        padding: 8px 10px !important;
         gap: 8px !important;
-        border-radius: 16px !important;
-      }
-
-      .roster-seg-nav {
-        display: grid !important;
-        grid-template-columns: 1.28fr 0.96fr 0.84fr 0.92fr !important;
-        width: 100% !important;
-        overflow-x: visible !important;
-        padding: 3px !important;
-        gap: 2px !important;
-      }
-
-      .roster-seg-btn {
-        min-height: 42px !important;
-        padding: 6px 2px !important;
-        font-size: 11px !important;
-        line-height: 1.15 !important;
-        white-space: nowrap !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        text-align: center !important;
-        overflow: hidden !important;
-      }
-
-      .roster-report-period-bar {
-        display: grid !important;
-        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-        width: 100% !important;
-        gap: 8px !important;
-      }
-
-      .roster-report-period-bar .btn[data-act="roster-report-period"] {
-        min-height: 42px !important;
-        padding: 8px 6px !important;
-        font-size: 13px !important;
-        justify-content: center !important;
-        text-align: center !important;
-      }
-
-      .roster-report-period-bar .btn[data-act="share-dept-report-photo"] {
-        grid-column: 1 / -1 !important;
-        min-height: 44px !important;
-        justify-content: center !important;
       }
 
       .roster-micro-stats-strip {
         grid-template-columns: repeat(2, 1fr) !important;
-        gap: 8px !important;
-        margin-bottom: 12px !important;
+        gap: 6px !important;
+        margin-bottom: 10px !important;
       }
 
       .roster-stat-chip {
-        padding: 8px 10px !important;
-        gap: 8px !important;
-        min-height: 50px !important;
-        border-radius: 12px !important;
+        padding: 5px 8px !important;
+        gap: 6px !important;
       }
 
       .roster-stat-chip .rsc-val {
-        font-size: 15px !important;
+        font-size: 12.5px !important;
       }
 
       .roster-stat-chip .rsc-lbl {
-        font-size: 11px !important;
+        font-size: 9.5px !important;
       }
 
       .tt-desktop-tbl {
@@ -17000,7 +17007,8 @@
 
       /* 1. Global whitespace & safe bottom spacing */
       [data-theme="light"] body {
-        background: #F3F4F8 !important;
+        background: linear-gradient(180deg, #EFEBF9 0%, #F7F4FC 45%, #EDE8F8 100%) !important;
+        background-attachment: fixed !important;
       }
 
       .main,
@@ -17019,20 +17027,21 @@
         max-width: 100% !important;
       }
 
-      /* 2. Mobile Hero Card — Sastra Nidhi light airy card in light mode, Royal Violet + Gold Curve */
+      /* 2. Mobile Hero Card — Bright Royal Violet Anchor + Gold-Rimmed Curve (Light & Dark Parity) */
       .hero {
-        background: linear-gradient(160deg, #FFFFFF 0%, #F8F6FC 100%) !important;
-        border: 1.5px solid rgba(69, 33, 139, 0.18) !important;
+        background: linear-gradient(125deg, #2D165E 0%, #45218B 52%, #6933C9 100%) !important;
+        border: 1.5px solid rgba(232, 195, 74, 0.55) !important;
         border-radius: 22px !important;
-        padding: 18px 18px 32px !important;
+        padding: 18px 18px 34px !important;
         margin-bottom: 14px !important;
-        box-shadow: 0 8px 26px rgba(69, 33, 139, 0.08) !important;
+        box-shadow: 0 12px 32px rgba(69, 33, 139, 0.24), 0 4px 14px rgba(232, 195, 74, 0.18) !important;
         min-height: auto !important;
+        color: #FFFFFF !important;
       }
 
       .hero::after {
-        height: 26px !important;
-        bottom: -13px !important;
+        height: 28px !important;
+        bottom: -14px !important;
       }
 
       .hero-inner {
@@ -17047,36 +17056,36 @@
 
       .hero-greeting {
         font-size: 11.5px !important;
-        font-weight: 700 !important;
-        color: var(--saffron) !important;
+        font-weight: 800 !important;
+        color: #F6DA6A !important;
         text-transform: uppercase !important;
-        letter-spacing: 0.05em !important;
-        text-shadow: none !important;
+        letter-spacing: 0.06em !important;
+        text-shadow: 0 1px 4px rgba(0, 0, 0, 0.25) !important;
       }
 
       .hero-name {
-        font-size: 18px !important;
+        font-size: 19px !important;
         font-weight: 800 !important;
-        color: var(--ink) !important;
-        text-shadow: none !important;
+        color: #FFFFFF !important;
+        text-shadow: 0 2px 8px rgba(0, 0, 0, 0.25) !important;
       }
 
       .hero p {
-        color: var(--ink-3) !important;
-        font-size: 11px !important;
+        color: #E2D9F7 !important;
+        font-size: 12px !important;
       }
 
       .hero .quote {
-        color: var(--ink-2) !important;
+        color: #FFF3C9 !important;
         font-size: 13.5px !important;
         font-family: var(--f-script) !important;
         font-style: italic !important;
         font-weight: 400 !important;
         line-height: 1.45 !important;
-        text-shadow: none !important;
+        text-shadow: 0 1px 4px rgba(0, 0, 0, 0.2) !important;
         margin-top: 8px !important;
         padding-top: 8px !important;
-        border-top: 1px dashed var(--line-2) !important;
+        border-top: 1px dashed rgba(232, 195, 74, 0.35) !important;
       }
 
       /* Hide the 3 overwhelming stat cards in hero on mobile */
@@ -17189,9 +17198,9 @@
       }
 
       .dash-seg-btn.active {
-        background: #FFFFFF !important;
-        color: var(--saffron) !important;
-        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08) !important;
+        background: linear-gradient(135deg, #45218B 0%, #6933C9 100%) !important;
+        color: #FFFFFF !important;
+        box-shadow: 0 3px 12px rgba(69, 33, 139, 0.28) !important;
       }
 
       [data-theme="dark"] .dash-seg-btn.active {
@@ -34492,12 +34501,12 @@ label {
               Individual devotee metrics · Services assigned vs performed · Reliability & completion rates
             </div>
           </div>
-          <div class="roster-report-period-bar" style="display:flex;flex-wrap:wrap;gap:6px">
+          <div style="display:flex;gap:6px">
             <button class="btn sm ${reportPeriod === 'weekly' ? 'pri' : ''}" data-act="roster-report-period" data-dept="${deptKey}" data-period="weekly">
-              📅 Weekly
+              📅 Weekly (Last 7 Days)
             </button>
             <button class="btn sm ${reportPeriod === 'monthly' ? 'pri' : ''}" data-act="roster-report-period" data-dept="${deptKey}" data-period="monthly">
-              🗓️ Monthly
+              🗓️ Monthly (Last 30 Days)
             </button>
             <button class="btn sm pri" data-act="share-dept-report-photo" data-dept="${deptKey}" data-period="${reportPeriod}" style="background:#25D366;color:#fff;border:none;display:inline-flex;align-items:center;gap:6px" title="Generate and share photo of this view to WhatsApp">
               <span>📸</span> Generate & Share Photo
@@ -47677,16 +47686,6 @@ label {
     render();
     syncDevoteesFromServer(true); // forceImmediate on first page load
     verifyUserSessionFromServer();
-
-    // Replay gold shine sweep when clicking golden buttons or cards
-    document.addEventListener('pointerdown', (e) => {
-      const target = e.target.closest('.btn.pri, button.pri, .roster-seg-btn.active, .mob-tab-btn.on, .mobile-today-btn, .fab, .nectar-card-wrapper, .dash-seg-btn.active');
-      if (!target) return;
-      target.classList.remove('is-shining');
-      void target.offsetWidth;
-      target.classList.add('is-shining');
-      setTimeout(() => target.classList.remove('is-shining'), 800);
-    }, { passive: true });
 
 
   </script>
