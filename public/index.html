@@ -174,10 +174,13 @@
     button.pri,
     .roster-seg-btn.active,
     .mob-tab-btn.on,
-    .mobile-today-btn,
-    .fab,
     [data-theme="dark"] .dash-seg-btn.active {
       position: relative;
+      overflow: hidden !important;
+    }
+
+    .mobile-today-btn,
+    .fab {
       overflow: hidden !important;
     }
 
@@ -241,10 +244,7 @@
       50%      { box-shadow: 0 0 20px rgba(246, 218, 106, 0.68); }
     }
 
-    /* Premium card entrance */
-    .card, .card-h, .dept-tile-card, .nectar-card-wrapper {
-      animation: fadeSlideUp 0.38s cubic-bezier(0.22,1,0.36,1) both;
-    }
+    /* Keep cards rock-solid on re-renders (no whole-screen fadeSlideUp blink) */
 
     /* ── Sastra Nidhi Diagonal Shine Sweep on Hover ── */
     .dept-tile-card, .nectar-card-wrapper {
